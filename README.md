@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.4-dev`
+- Current development line: `0.9.5-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -145,3 +145,23 @@ The 0.9.4 development line closes the core authentication and administrator-secu
 - account, onboarding, notification, domain, release-security, and exact-package installer smoke tests remain mandatory CI gates
 
 See `docs/SECURITY_HARDENING.md` and `docs/RELEASE_GATES.md` for the current release contract and the remaining open v1.0.0 gates.
+
+
+## Secure upgrade workflow
+
+The 0.9.5 development line adds the canonical customer-facing updater at `/updater/`.
+
+- the main domain redirects to the updater before normal application boot when the installed version does not match the uploaded package
+- updater POST requests use the canonical trailing-slash path
+- customers confirm a current database/files backup before migration
+- an active administrator must re-authenticate before changes begin
+- the installed activation token, installation ID, product, domain, and status are validated without asking for the original purchase code again
+- a concurrency lock prevents parallel upgrade runs
+- downgrades are rejected
+- only pending ordered migrations are executed
+- protected installation metadata and `installation.version` advance only after migrations succeed
+- successful upgrades create a security audit event
+- replaying the updater on the current version is a clean no-op
+- CI reconstructs a `0.9.3-dev` database and verifies the upgrade once from source and again from the exact generated customer ZIP
+
+See `docs/UPGRADE.md` for the supported workflow and validation contract.

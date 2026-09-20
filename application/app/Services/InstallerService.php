@@ -49,10 +49,13 @@ final class InstallerService
 
         foreach ([
             'index.php',
+            'installer/index.php',
+            'updater/index.php',
             'VERSION',
             '.htaccess',
             'application/bootstrap/app.php',
             'application/bootstrap/runtime.php',
+            'application/app/Services/UpgradeService.php',
             'application/routes/web.php',
             'assets/css/app.css',
             'assets/js/app.js',

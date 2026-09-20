@@ -138,3 +138,12 @@ The exact-package QA must cover at minimum:
 The package QA installs from the extracted ZIP into a fresh MySQL database. It does not ship or enable a licensing bypass; the successful remote License Manager path remains a separate release gate.
 
 A live License Manager success remains a release gate until a Barama-specific valid test purchase/license value is available for end-to-end verification.
+
+
+## Upgrade handoff
+
+The one-click installer is only for fresh installations. After installation is locked, a newer customer package is handled by the canonical `/updater/` workflow.
+
+When an installed package version differs from the uploaded `VERSION`, the main front controller redirects to `/updater/` before normal application boot. The updater reuses protected runtime/license state, requires administrator re-authentication and backup confirmation, validates the installed activation state, applies only pending ordered migrations, advances protected version metadata, and then returns the customer to the website.
+
+See `docs/UPGRADE.md` for the upgrade contract.

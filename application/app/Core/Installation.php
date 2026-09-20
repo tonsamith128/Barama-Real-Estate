@@ -116,6 +116,36 @@ final class Installation
         self::writeState(self::licensePath(), $values);
     }
 
+    /** @param array<string,mixed> $values */
+    public static function refreshLicenseState(array $values): void
+    {
+        if (!self::isInstalled()) {
+            throw new RuntimeException('License state can be refreshed only after installation.');
+        }
+
+        unset($values['purchase_code'], $values['license_key']);
+
+        self::writeState(
+            self::licensePath(),
+            array_merge(self::licenseState(), $values)
+        );
+    }
+
+    /** @param array<string,mixed> $values */
+    public static function updateInstalledMetadata(array $values): void
+    {
+        if (!self::isInstalled()) {
+            throw new RuntimeException('Installation metadata is unavailable.');
+        }
+
+        unset($values['installed_at'], $values['installation_id']);
+
+        self::writeState(
+            self::lockPath(),
+            array_merge(self::metadata(), $values)
+        );
+    }
+
     /** @param array<string,mixed> $metadata */
     public static function markInstalled(array $metadata): void
     {

@@ -42,6 +42,9 @@ foreach ([
     'tools/notification-smoke.php',
     'tools/account-onboarding-smoke.php',
     'tools/security-hardening-smoke.php',
+    'tools/upgrade-smoke.php',
+    'tools/upgrade-smoke-runner.php',
+    'tools/package-upgrade-smoke.php',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -53,7 +56,11 @@ foreach ([
 foreach ([
     'index.php',
     'installer/index.php',
+    'updater/index.php',
     'application/bootstrap/runtime.php',
+    'application/app/Http/Controllers/UpgradeController.php',
+    'application/app/Services/UpgradeService.php',
+    'application/resources/views/updater/index.php',
     'application/app/Services/InstallerService.php',
     'application/app/Services/LicenseManagerClient.php',
     'application/resources/views/installer/index.php',
@@ -295,14 +302,35 @@ $rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
 $controllerSource = (string) file_get_contents(
     $temporaryRoot . '/application/app/Http/Controllers/InstallerController.php'
 );
+$upgradeControllerSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Http/Controllers/UpgradeController.php'
+);
+$upgradeServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/UpgradeService.php'
+);
+$updaterViewSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/updater/index.php'
+);
 
 if (
     !str_contains($rootIndex, '/installer/')
+    || !str_contains($rootIndex, '/updater/')
+    || !str_contains($rootIndex, 'APP_VERSION')
     || !str_contains($rootIndex, 'Cache-Control: no-store')
     || !str_contains($controllerSource, 'Csrf::validate')
     || !str_contains($controllerSource, 'agree_terms')
+    || !str_contains($upgradeControllerSource, 'Csrf::validate')
+    || !str_contains($upgradeServiceSource, 'backup_confirmed')
+    || !str_contains($upgradeServiceSource, 'authenticateAdministrator')
+    || !str_contains($upgradeServiceSource, 'validateLicenseForUpgrade')
+    || !str_contains($upgradeServiceSource, 'Downgrades are not supported')
+    || !str_contains($upgradeServiceSource, 'system.upgrade_completed')
+    || !str_contains($updaterViewSource, 'Authenticate &amp; Upgrade')
+    || !str_contains($updaterViewSource, 'action="<?= e($updaterUrl) ?>"')
 ) {
-    throw new RuntimeException('Installer redirect or server-side protection is incomplete.');
+    throw new RuntimeException(
+        'Installer/updater redirect or server-side protection is incomplete.'
+    );
 }
 
 $_SERVER['SCRIPT_NAME'] = '/barama/installer/index.php';
@@ -476,6 +504,6 @@ fwrite(
     STDOUT,
     '[PASS] Exact customer ZIP verified: structure, five steps, bad database recovery, '
     . 'subdirectory URLs, clean MySQL installation, production state, migration replay, '
-    . 'administrator provisioning and installation lock.'
+    . 'administrator provisioning, installation lock and packaged updater contract.'
     . PHP_EOL
 );

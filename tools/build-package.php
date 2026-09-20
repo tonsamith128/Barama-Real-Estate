@@ -40,7 +40,7 @@ $allowedStorage = [
     'application/storage/uploads/.htaccess' => true,
 ];
 
-foreach (['installer', 'application', 'assets'] as $relativeDirectory) {
+foreach (['installer', 'updater', 'application', 'assets'] as $relativeDirectory) {
     $directory = $root . '/' . $relativeDirectory;
     $iterator = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),

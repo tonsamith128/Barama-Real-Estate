@@ -83,11 +83,17 @@ jobs:
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 
+      - name: Run source upgrade compatibility smoke test
+        run: php tools/upgrade-smoke.php
+
       - name: Build exact customer package
         run: php tools/build-package.php
 
       - name: Validate exact customer package installer
         run: php tools/package-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
+
+      - name: Validate exact customer package upgrade
+        run: php tools/package-upgrade-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
 
       - name: Upload validated customer package
         uses: actions/upload-artifact@v4

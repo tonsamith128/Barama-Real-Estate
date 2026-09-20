@@ -14,11 +14,13 @@ GitHub Actions currently runs the following against MySQL 8 and the exact genera
 6. account and company-onboarding smoke tests
 7. release security hardening smoke tests
 8. notification delivery smoke tests
-9. exact customer ZIP build
-10. clean installation from the extracted customer ZIP
-11. production runtime state verification
-12. installer lock and migration replay verification
-13. validated artifact upload
+9. source upgrade-from-previous-release smoke test
+10. exact customer ZIP build
+11. clean installation from the extracted customer ZIP
+12. production runtime state verification
+13. installer lock and migration replay verification
+14. exact customer ZIP upgrade-from-previous-release smoke test
+15. validated artifact upload
 
 The automated gates also enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
@@ -34,7 +36,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.4 development line has automated coverage for:
+The current 0.9.5 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -47,12 +49,19 @@ The current 0.9.4 development line has automated coverage for:
 - immutable security audit events with hashed origin metadata
 - installer-created verified administrator
 - exact-package security schema installation
+- root version-mismatch redirect to the canonical `/updater/` path
+- administrator re-authentication and server-side backup confirmation before upgrade
+- installed-license validation and offline-grace behavior
+- downgrade blocking and concurrent-upgrade locking
+- ordered pending-migration execution with clean replay
+- protected installation-version metadata updates
+- upgrade security-audit events
+- source and exact-customer-ZIP `0.9.3-dev` upgrade compatibility
 
 ## Open gates before CodeCanyon v1.0.0
 
 These remain intentionally open:
 
-- customer-facing upgrade workflow and upgrade-from-previous-release QA
 - live Ton Samith License Manager success using a Barama-specific valid test credential
 - supported Apache shared-hosting installation validation
 - supported Nginx installation validation
