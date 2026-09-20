@@ -93,6 +93,34 @@ $renderActions = static function (array $row) use (
     $status = (string) ($row['status'] ?? $row['stage'] ?? '');
     $buttons = [];
 
+    $viewResource = $workspaceType === 'developer'
+        ? match ($activeSection) {
+            'overview', 'inquiries' => 'inquiry',
+            'company' => 'company',
+            'projects' => 'project',
+            'properties' => 'property',
+            'listings' => 'listing',
+            'leads' => 'lead',
+            default => null,
+        }
+        : match ($activeSection) {
+            'overview', 'approvals' => (string) ($row['entity_type'] ?? ''),
+            'companies' => 'company',
+            'projects' => 'project',
+            'properties' => 'property',
+            'listings' => 'listing',
+            'inquiries' => 'inquiry',
+            'leads' => 'lead',
+            default => null,
+        };
+
+    if (is_string($viewResource) && $viewResource !== '') {
+        $base = $workspaceType === 'admin' ? '/dashboard/manage/' : '/developer/manage/';
+        $buttons[] = '<a class="table-action" href="' . e(url(
+            $base . rawurlencode($viewResource) . '/' . $id
+        )) . '">View</a>';
+    }
+
     if ($workspaceType === 'developer') {
         $resource = match ($activeSection) {
             'company' => 'company',

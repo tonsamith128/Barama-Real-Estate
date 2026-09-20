@@ -46,6 +46,12 @@ final class MediaStorageService
 
         (new CompanyAccessService())->assertCanManage((int) $context['company_id']);
 
+        if (!in_array((string) $context['status'], ['draft', 'rejected'], true)) {
+            throw new DomainException(
+                'Reviewed or published records are locked. Return the target to an editable review state before changing its media.'
+            );
+        }
+
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
 
         if ($error !== UPLOAD_ERR_OK) {

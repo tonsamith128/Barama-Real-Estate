@@ -67,6 +67,11 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
 );
 $router->get(
+    '/developer/manage/{resource}/{id}',
+    [DeveloperController::class, 'record'],
+    [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
+);
+$router->get(
     '/developer/{section}',
     [DeveloperController::class, 'section'],
     [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
@@ -133,6 +138,16 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('lead.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/developer/media/{id}/primary',
+    [DeveloperManagementController::class, 'setPrimaryMedia'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/developer/media/{id}/remove',
+    [DeveloperManagementController::class, 'removeMedia'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/developer/media',
     [DeveloperManagementController::class, 'uploadMedia'],
     [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
@@ -141,6 +156,11 @@ $router->post(
 $router->get(
     '/dashboard',
     [DashboardController::class, 'index'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->get(
+    '/dashboard/manage/{resource}/{id}',
+    [DashboardController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
 );
 $router->get(

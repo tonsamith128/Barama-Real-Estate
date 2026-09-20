@@ -48,8 +48,10 @@ final class ListingManagementService
 
         (new CompanyAccessService())->assertCanManage((int) $listing['company_id']);
 
-        if (!in_array((string) $listing['status'], ['draft', 'rejected', 'paused'], true)) {
-            throw new DomainException('Only draft, rejected, or paused listings can be edited.');
+        if (!in_array((string) $listing['status'], ['draft', 'rejected'], true)) {
+            throw new DomainException(
+                'Reviewed or published listings are locked. Return the listing to an editable review state before changing its content.'
+            );
         }
 
         $property = (new PropertyWriteRepository())->findById((int) $listing['property_id']);

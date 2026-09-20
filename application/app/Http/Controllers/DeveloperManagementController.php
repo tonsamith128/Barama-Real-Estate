@@ -11,6 +11,7 @@ use Barama\Services\DomainWorkflowService;
 use Barama\Services\LeadManagementService;
 use Barama\Services\ListingManagementService;
 use Barama\Services\MediaStorageService;
+use Barama\Services\MediaManagementService;
 use Barama\Services\MembershipService;
 use Barama\Services\ProjectManagementService;
 use Barama\Services\PropertyManagementService;
@@ -142,6 +143,32 @@ final class DeveloperManagementController
                 $request->all()
             ),
         ], 201);
+    }
+
+    public function setPrimaryMedia(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            $attachmentId = $this->id($id);
+            (new MediaManagementService())->setPrimary($attachmentId);
+
+            return [
+                'attachment_id' => $attachmentId,
+                'primary' => true,
+            ];
+        });
+    }
+
+    public function removeMedia(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            $attachmentId = $this->id($id);
+            (new MediaManagementService())->remove($attachmentId);
+
+            return [
+                'attachment_id' => $attachmentId,
+                'removed' => true,
+            ];
+        });
     }
 
     public function uploadMedia(Request $request): Response

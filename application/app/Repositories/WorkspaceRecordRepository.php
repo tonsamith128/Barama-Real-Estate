@@ -1,0 +1,221 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Barama\Repositories;
+
+use Barama\Core\Database;
+use InvalidArgumentException;
+use PDO;
+
+final class WorkspaceRecordRepository
+{
+    /** @return array{record:array<string,mixed>,history:array<int,array<string,mixed>>,media:array<int,array<string,mixed>>}|null */
+    public function developerRecord(int $userId, string $resource, int $id): ?array
+    {
+        $sql = match ($resource) {
+            'company' => 'SELECT c.*, loc.name AS location_name, cm.member_role AS viewer_role
+                          FROM companies c
+                          INNER JOIN company_members cm
+                             ON cm.company_id = c.id
+                            AND cm.user_id = :user_id
+                            AND cm.status = "active"
+                          LEFT JOIN locations loc ON loc.id = c.location_id
+                          WHERE c.id = :id AND c.deleted_at IS NULL LIMIT 1',
+            'project' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
+                                 loc.name AS location_name, cm.member_role AS viewer_role
+                          FROM projects p
+                          INNER JOIN companies c ON c.id = p.company_id
+                          INNER JOIN company_members cm
+                             ON cm.company_id = p.company_id
+                            AND cm.user_id = :user_id
+                            AND cm.status = "active"
+                          LEFT JOIN locations loc ON loc.id = p.location_id
+                          WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
+            'property' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
+                                  pr.name AS project_name, pr.slug AS project_slug,
+                                  loc.name AS location_name, cm.member_role AS viewer_role
+                           FROM properties p
+                           INNER JOIN companies c ON c.id = p.company_id
+                           INNER JOIN company_members cm
+                              ON cm.company_id = p.company_id
+                             AND cm.user_id = :user_id
+                             AND cm.status = "active"
+                           LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
+                           LEFT JOIN locations loc ON loc.id = p.location_id
+                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
+            'listing' => 'SELECT l.*, p.company_id, p.title AS property_title,
+                                 p.reference_code, p.property_type,
+                                 p.status AS property_status,
+                                 c.name AS company_name, c.slug AS company_slug,
+                                 loc.name AS location_name, cm.member_role AS viewer_role
+                          FROM listings l
+                          INNER JOIN properties p ON p.id = l.property_id
+                          INNER JOIN companies c ON c.id = p.company_id
+                          INNER JOIN company_members cm
+                             ON cm.company_id = p.company_id
+                            AND cm.user_id = :user_id
+                            AND cm.status = "active"
+                          LEFT JOIN locations loc ON loc.id = p.location_id
+                          WHERE l.id = :id
+                            AND l.deleted_at IS NULL
+                            AND p.deleted_at IS NULL
+                          LIMIT 1',
+            'inquiry' => 'SELECT i.*, c.name AS company_name,
+                                 p.title AS property_title, l.slug AS listing_slug,
+                                 cm.member_role AS viewer_role
+                          FROM inquiries i
+                          INNER JOIN companies c ON c.id = i.company_id
+                          INNER JOIN company_members cm
+                             ON cm.company_id = i.company_id
+                            AND cm.user_id = :user_id
+                            AND cm.status = "active"
+                          LEFT JOIN properties p ON p.id = i.property_id
+                          LEFT JOIN listings l ON l.id = i.listing_id
+                          WHERE i.id = :id LIMIT 1',
+            'lead' => 'SELECT l.*, c.name AS company_name,
+                              u.name AS assigned_user_name,
+                              loc.name AS preferred_location_name,
+                              cm.member_role AS viewer_role
+                       FROM leads l
+                       INNER JOIN companies c ON c.id = l.company_id
+                       INNER JOIN company_members cm
+                          ON cm.company_id = l.company_id
+                         AND cm.user_id = :user_id
+                         AND cm.status = "active"
+                       LEFT JOIN users u ON u.id = l.assigned_user_id
+                       LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                       WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
+            default => throw new InvalidArgumentException('Unsupported workspace resource.'),
+        };
+
+        $statement = Database::connection()->prepare($sql);
+        $statement->execute(['user_id' => $userId, 'id' => $id]);
+        $record = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($record)) {
+            return null;
+        }
+
+        return [
+            'record' => $record,
+            'history' => $this->history($resource, $id),
+            'media' => in_array($resource, ['company', 'project', 'property', 'listing'], true)
+                ? $this->media($resource, $id)
+                : [],
+        ];
+    }
+
+    /** @return array{record:array<string,mixed>,history:array<int,array<string,mixed>>,media:array<int,array<string,mixed>>}|null */
+    public function adminRecord(string $resource, int $id): ?array
+    {
+        $sql = match ($resource) {
+            'company' => 'SELECT c.*, loc.name AS location_name
+                          FROM companies c
+                          LEFT JOIN locations loc ON loc.id = c.location_id
+                          WHERE c.id = :id AND c.deleted_at IS NULL LIMIT 1',
+            'project' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
+                                 loc.name AS location_name
+                          FROM projects p
+                          INNER JOIN companies c ON c.id = p.company_id
+                          LEFT JOIN locations loc ON loc.id = p.location_id
+                          WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
+            'property' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
+                                  pr.name AS project_name, pr.slug AS project_slug,
+                                  loc.name AS location_name
+                           FROM properties p
+                           LEFT JOIN companies c ON c.id = p.company_id
+                           LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
+                           LEFT JOIN locations loc ON loc.id = p.location_id
+                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
+            'listing' => 'SELECT l.*, p.company_id, p.title AS property_title,
+                                 p.reference_code, p.property_type,
+                                 p.status AS property_status,
+                                 c.name AS company_name, c.slug AS company_slug,
+                                 loc.name AS location_name
+                          FROM listings l
+                          INNER JOIN properties p ON p.id = l.property_id
+                          LEFT JOIN companies c ON c.id = p.company_id
+                          LEFT JOIN locations loc ON loc.id = p.location_id
+                          WHERE l.id = :id
+                            AND l.deleted_at IS NULL
+                            AND p.deleted_at IS NULL
+                          LIMIT 1',
+            'inquiry' => 'SELECT i.*, c.name AS company_name,
+                                 p.title AS property_title, l.slug AS listing_slug,
+                                 u.name AS assigned_user_name
+                          FROM inquiries i
+                          LEFT JOIN companies c ON c.id = i.company_id
+                          LEFT JOIN properties p ON p.id = i.property_id
+                          LEFT JOIN listings l ON l.id = i.listing_id
+                          LEFT JOIN users u ON u.id = i.assigned_user_id
+                          WHERE i.id = :id LIMIT 1',
+            'lead' => 'SELECT l.*, c.name AS company_name,
+                              u.name AS assigned_user_name,
+                              loc.name AS preferred_location_name
+                       FROM leads l
+                       INNER JOIN companies c ON c.id = l.company_id
+                       LEFT JOIN users u ON u.id = l.assigned_user_id
+                       LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                       WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
+            default => throw new InvalidArgumentException('Unsupported workspace resource.'),
+        };
+
+        $statement = Database::connection()->prepare($sql);
+        $statement->execute(['id' => $id]);
+        $record = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($record)) {
+            return null;
+        }
+
+        return [
+            'record' => $record,
+            'history' => $this->history($resource, $id),
+            'media' => in_array($resource, ['company', 'project', 'property', 'listing'], true)
+                ? $this->media($resource, $id)
+                : [],
+        ];
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    private function history(string $resource, int $id): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT h.*, u.name AS actor_name
+             FROM entity_status_history h
+             LEFT JOIN users u ON u.id = h.actor_user_id
+             WHERE h.entity_type = :entity_type
+               AND h.entity_id = :entity_id
+             ORDER BY h.created_at DESC, h.id DESC
+             LIMIT 100'
+        );
+        $statement->execute([
+            'entity_type' => $resource,
+            'entity_id' => $id,
+        ]);
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    private function media(string $resource, int $id): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT ma.id AS attachment_id, ma.collection, ma.position, ma.is_primary,
+                    m.id AS media_id, m.uuid, m.original_name, m.mime_type,
+                    m.size_bytes, m.width_px, m.height_px, m.alt_text, m.created_at
+             FROM media_attachments ma
+             INNER JOIN media_assets m ON m.id = ma.media_asset_id
+             WHERE ma.entity_type = :entity_type
+               AND ma.entity_id = :entity_id
+             ORDER BY ma.is_primary DESC, ma.collection ASC, ma.position ASC, ma.id ASC'
+        );
+        $statement->execute([
+            'entity_type' => $resource,
+            'entity_id' => $id,
+        ]);
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+}

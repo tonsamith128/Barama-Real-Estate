@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Repositories\WorkspaceReadRepository;
+use Barama\Repositories\WorkspaceRecordRepository;
 
 final class DeveloperController
 {
@@ -58,6 +59,63 @@ final class DeveloperController
     public function section(Request $request, string $section): Response
     {
         return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    public function record(Request $request, string $resource, string $id): Response
+    {
+        $resource = strtolower(trim($resource));
+
+        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead'], true)
+            || !ctype_digit($id)
+            || (int) $id < 1
+        ) {
+            return Response::html(
+                View::render('errors/404', ['pageTitle' => 'Record not found']),
+                404
+            );
+        }
+
+        $user = auth_user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        $data = (new WorkspaceRecordRepository())->developerRecord(
+            (int) $user['id'],
+            $resource,
+            (int) $id
+        );
+
+        if ($data === null) {
+            return Response::html(
+                View::render('errors/404', ['pageTitle' => 'Record not found']),
+                404
+            );
+        }
+
+        $record = $data['record'];
+        $title = (string) (
+            $record['name']
+            ?? $record['title']
+            ?? $record['property_title']
+            ?? $record['contact_name']
+            ?? ucfirst($resource)
+        );
+
+        return Response::html(View::render('workspace/record', [
+            'pageTitle' => $title . ' · Developer',
+            'activeArea' => 'developer',
+            'workspaceType' => 'developer',
+            'workspaceLabel' => 'Developer Workspace',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => $this->sectionForResource($resource),
+            'recordResource' => $resource,
+            'record' => $record,
+            'history' => $data['history'],
+            'media' => $data['media'],
+            'formOptions' => (new WorkspaceReadRepository())->developerOptions((int) $user['id']),
+        ]));
     }
 
     private function renderSection(Request $request, string $section): Response
@@ -130,6 +188,19 @@ final class DeveloperController
             ['label' => 'Team', 'path' => '/developer/team', 'icon' => 'users'],
             ['label' => 'Media', 'path' => '/developer/media', 'icon' => 'image'],
         ];
+    }
+
+    private function sectionForResource(string $resource): string
+    {
+        return match ($resource) {
+            'company' => 'company',
+            'project' => 'projects',
+            'property' => 'properties',
+            'listing' => 'listings',
+            'inquiry' => 'inquiries',
+            'lead' => 'leads',
+            default => 'overview',
+        };
     }
 
     /** @return array<string, string> */

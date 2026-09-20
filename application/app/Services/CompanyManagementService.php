@@ -8,6 +8,7 @@ use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\CatalogRepository;
 use Barama\Repositories\CompanyMembershipWriteRepository;
+use Barama\Repositories\CompanyRepository;
 use Barama\Repositories\CompanyWriteRepository;
 use Barama\Support\DomainInput;
 use Barama\Support\Slugger;
@@ -94,6 +95,18 @@ final class CompanyManagementService
     public function update(int $companyId, array $input): void
     {
         (new CompanyAccessService())->assertCanManage($companyId);
+
+        $company = (new CompanyRepository())->findById($companyId);
+
+        if ($company === null) {
+            throw new InvalidArgumentException('Company was not found.');
+        }
+
+        if (!in_array((string) $company['status'], ['draft', 'rejected'], true)) {
+            throw new DomainException(
+                'Reviewed or published company records are locked. Return the company to an editable review state before changing its profile.'
+            );
+        }
 
         $name = DomainInput::requiredString($input, 'name', 180, 2);
         $companyType = DomainInput::requiredString($input, 'company_type', 40);

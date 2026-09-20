@@ -7,6 +7,7 @@ use Barama\Core\Session;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
 use Barama\Repositories\WorkspaceReadRepository;
+use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\MarketplaceRepository;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\CompanyManagementService;
@@ -15,6 +16,7 @@ use Barama\Services\InquiryService;
 use Barama\Services\LeadManagementService;
 use Barama\Services\ListingManagementService;
 use Barama\Services\MediaStorageService;
+use Barama\Services\MediaManagementService;
 use Barama\Services\ProjectManagementService;
 use Barama\Services\PropertyManagementService;
 use DomainException;
@@ -114,6 +116,65 @@ $listingId = (new ListingManagementService())->create([
     'negotiable' => true,
 ]);
 
+$png = base64_decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl8sAAAAASUVORK5CYII=',
+    true
+);
+
+if (!is_string($png)) {
+    throw new RuntimeException('Unable to prepare QA image.');
+}
+
+$tmp = tempnam(sys_get_temp_dir(), 'barama-media-');
+
+if ($tmp === false) {
+    throw new RuntimeException('Unable to create QA media temp file.');
+}
+
+file_put_contents($tmp, $png);
+
+$mediaId = (new MediaStorageService())->storeAndAttach([
+    'name' => 'qa-image.png',
+    'tmp_name' => $tmp,
+    'error' => UPLOAD_ERR_OK,
+    'size' => filesize($tmp),
+], [
+    'entity_type' => 'listing',
+    'entity_id' => $listingId,
+    'collection' => 'gallery',
+    'is_primary' => false,
+    'alt_text' => 'QA listing image',
+]);
+
+
+$attachmentStatement = $pdo->prepare(
+    'SELECT id FROM media_attachments WHERE media_asset_id = :media_id LIMIT 1'
+);
+$attachmentStatement->execute(['media_id' => $mediaId]);
+$attachmentId = (int) $attachmentStatement->fetchColumn();
+
+if ($attachmentId < 1) {
+    throw new RuntimeException('Media attachment was not created.');
+}
+
+(new MediaManagementService())->setPrimary($attachmentId);
+
+$mediaUuidStatement = $pdo->prepare('SELECT uuid FROM media_assets WHERE id = :id LIMIT 1');
+$mediaUuidStatement->execute(['id' => $mediaId]);
+$mediaUuid = (string) $mediaUuidStatement->fetchColumn();
+$marketplace = new MarketplaceRepository();
+
+if ($mediaUuid === '' || $marketplace->publicMedia($mediaUuid) !== null) {
+    throw new RuntimeException('Draft media became public before marketplace publication.');
+}
+
+$recordReader = new WorkspaceRecordRepository();
+$draftRecord = $recordReader->developerRecord($developerId, 'listing', $listingId);
+
+if ($draftRecord === null || count($draftRecord['media']) !== 1) {
+    throw new RuntimeException('Developer record detail did not return scoped draft media.');
+}
+
 $workflow = new DomainWorkflowService();
 $workflow->transition('company', $companyId, 'pending', 'QA submit');
 $workflow->transition('project', $projectId, 'pending', 'QA submit');
@@ -148,35 +209,40 @@ $leadId = (new LeadManagementService())->convertInquiry($inquiryId, [
 
 $workflow->transition('lead', $leadId, 'contacted', 'QA follow-up');
 
-$png = base64_decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl8sAAAAASUVORK5CYII=',
-    true
-);
-
-if (!is_string($png)) {
-    throw new RuntimeException('Unable to prepare QA image.');
+$listingEditLocked = false;
+try {
+    (new ListingManagementService())->update($listingId, [
+        'transaction_type' => 'sale',
+        'price' => '149000',
+        'currency' => 'USD',
+    ]);
+} catch (DomainException) {
+    $listingEditLocked = true;
 }
 
-$tmp = tempnam(sys_get_temp_dir(), 'barama-media-');
-
-if ($tmp === false) {
-    throw new RuntimeException('Unable to create QA media temp file.');
+$companyEditLocked = false;
+try {
+    (new CompanyManagementService())->update($companyId, [
+        'name' => 'Barama QA Development Changed',
+        'company_type' => 'developer',
+    ]);
+} catch (DomainException) {
+    $companyEditLocked = true;
 }
 
-file_put_contents($tmp, $png);
+$mediaEditLocked = false;
+try {
+    (new MediaStorageService())->storeAndAttach([], [
+        'entity_type' => 'listing',
+        'entity_id' => $listingId,
+    ]);
+} catch (DomainException) {
+    $mediaEditLocked = true;
+}
 
-$mediaId = (new MediaStorageService())->storeAndAttach([
-    'name' => 'qa-image.png',
-    'tmp_name' => $tmp,
-    'error' => UPLOAD_ERR_OK,
-    'size' => filesize($tmp),
-], [
-    'entity_type' => 'listing',
-    'entity_id' => $listingId,
-    'collection' => 'gallery',
-    'is_primary' => true,
-    'alt_text' => 'QA listing image',
-]);
+if (!$listingEditLocked || !$companyEditLocked || !$mediaEditLocked) {
+    throw new RuntimeException('Reviewed-content edit locks were not enforced.');
+}
 
 Session::put('auth.user_id', $otherDeveloperId);
 
@@ -193,6 +259,14 @@ try {
 
 if (!$scopeBlocked) {
     throw new RuntimeException('Company scope isolation failed.');
+}
+
+if ($recordReader->developerRecord($otherDeveloperId, 'listing', $listingId) !== null) {
+    throw new RuntimeException('Developer record detail leaked another company listing.');
+}
+
+if ($recordReader->adminRecord('listing', $listingId) === null) {
+    throw new RuntimeException('Admin record detail could not load a platform listing.');
 }
 
 $historyCount = (int) $pdo->query(
@@ -231,14 +305,9 @@ if (
     throw new RuntimeException('Admin workspace read model did not return platform records.');
 }
 
-$marketplace = new MarketplaceRepository();
 $publicListings = $marketplace->listings(['offer' => 'sale'], 1, 10);
 $publicProjects = $marketplace->projects([], 1, 10);
 $publicCompanies = $marketplace->companies([], 1, 10);
-$mediaUuidStatement = $pdo->prepare('SELECT uuid FROM media_assets WHERE id = :id LIMIT 1');
-$mediaUuidStatement->execute(['id' => $mediaId]);
-$mediaUuid = (string) $mediaUuidStatement->fetchColumn();
-
 if (
     (int) $publicListings['total'] < 1
     || (int) $publicProjects['total'] < 1
@@ -254,5 +323,5 @@ if (
 
 fwrite(
     STDOUT,
-    "[PASS] Domain smoke test: writes, workflows, workspace reads, public marketplace reads, guarded media and company-scope isolation verified.\n"
+    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, workspace reads, public marketplace reads, guarded media and company-scope isolation verified.\n"
 );
