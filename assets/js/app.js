@@ -156,4 +156,64 @@
             }
         });
     });
+
+    document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const notice = form.parentElement?.querySelector('[data-inquiry-notice]');
+            const submitter = event.submitter;
+
+            if (submitter) {
+                submitter.disabled = true;
+            }
+
+            if (notice) {
+                notice.hidden = true;
+                notice.classList.remove('is-success', 'is-error');
+            }
+
+            try {
+                const response = await window.fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const payload = await response.json().catch(() => null);
+
+                if (!response.ok || payload?.ok !== true) {
+                    throw new Error(payload?.message || 'Your inquiry could not be submitted.');
+                }
+
+                if (notice) {
+                    notice.hidden = false;
+                    notice.classList.add('is-success');
+                    notice.textContent = payload?.data?.message || 'Your inquiry has been submitted.';
+                }
+
+                form.querySelectorAll('input:not([type="hidden"]), textarea').forEach((field) => {
+                    if (field.name !== 'website') {
+                        field.value = '';
+                    }
+                });
+            } catch (error) {
+                if (notice) {
+                    notice.hidden = false;
+                    notice.classList.add('is-error');
+                    notice.textContent = error instanceof Error
+                        ? error.message
+                        : 'Your inquiry could not be submitted.';
+                }
+            } finally {
+                if (submitter) {
+                    submitter.disabled = false;
+                }
+            }
+        });
+    });
 })();

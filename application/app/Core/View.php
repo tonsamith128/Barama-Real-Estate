@@ -30,6 +30,14 @@ final class View
     /**
      * @param array<string, mixed> $data
      */
+    public static function partial(string $view, array $data = []): string
+    {
+        return self::capture($view, $data);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
     private static function capture(string $view, array $data): string
     {
         if (

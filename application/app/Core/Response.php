@@ -36,6 +36,20 @@ final class Response
         ]);
     }
 
+    /**
+     * @param array<string, string> $headers
+     */
+    public static function binary(
+        string $content,
+        string $contentType,
+        array $headers = [],
+        int $status = 200
+    ): self {
+        return new self($content, $status, array_merge([
+            'Content-Type' => $contentType,
+        ], $headers));
+    }
+
     public static function redirect(string $location, int $status = 302): self
     {
         return new self('', $status, ['Location' => $location]);

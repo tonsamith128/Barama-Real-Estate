@@ -13,6 +13,8 @@ use Barama\Http\Controllers\DeveloperController;
 use Barama\Http\Controllers\DeveloperManagementController;
 use Barama\Http\Controllers\HomeController;
 use Barama\Http\Controllers\InquiryController;
+use Barama\Http\Controllers\MarketplaceController;
+use Barama\Http\Controllers\PublicMediaController;
 use Barama\Http\Middleware\AuthMiddleware;
 use Barama\Http\Middleware\CsrfMiddleware;
 use Barama\Http\Middleware\GuestMiddleware;
@@ -23,6 +25,12 @@ $guestPost = [new GuestMiddleware(), new CsrfMiddleware()];
 $csrf = [new CsrfMiddleware()];
 
 $router->get('/', [HomeController::class, 'index']);
+
+$router->get('/properties', [MarketplaceController::class, 'properties']);
+$router->get('/properties/{slug}', [MarketplaceController::class, 'property']);
+$router->get('/projects', [MarketplaceController::class, 'projects']);
+$router->get('/projects/{slug}', [MarketplaceController::class, 'project']);
+$router->get('/media/{uuid}', [PublicMediaController::class, 'show']);
 
 $router->get('/company', [CompanyController::class, 'index']);
 $router->get('/company/{slug}', [CompanyController::class, 'show']);

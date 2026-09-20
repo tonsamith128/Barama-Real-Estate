@@ -27,6 +27,8 @@
 
                 <nav class="main-nav" aria-label="Primary navigation">
                     <a class="<?= ($activeArea ?? '') === 'home' ? 'is-active' : '' ?>" href="<?= e(url('/')) ?>">Home</a>
+                    <a class="<?= ($activeArea ?? '') === 'properties' ? 'is-active' : '' ?>" href="<?= e(url('/properties')) ?>">Properties</a>
+                    <a class="<?= ($activeArea ?? '') === 'projects' ? 'is-active' : '' ?>" href="<?= e(url('/projects')) ?>">Projects</a>
                     <a class="<?= ($activeArea ?? '') === 'company' ? 'is-active' : '' ?>" href="<?= e(url('/company')) ?>">Developers</a>
 
                     <?php if (auth_check()): ?>

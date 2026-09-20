@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Barama\Http\Controllers;
+
+use Barama\Core\Request;
+use Barama\Core\Response;
+use Barama\Repositories\MarketplaceRepository;
+
+final class PublicMediaController
+{
+    public function show(Request $request, string $uuid): Response
+    {
+        if (
+            preg_match(
+                '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+                $uuid
+            ) !== 1
+        ) {
+            return Response::html('', 404);
+        }
+
+        $media = (new MarketplaceRepository())->publicMedia($uuid);
+
+        if ($media === null) {
+            return Response::html('', 404);
+        }
+
+        $storageRoot = realpath(APP_PATH . '/storage/uploads');
+        $path = realpath(APP_PATH . '/storage/uploads/' . ltrim((string) $media['path'], '/'));
+
+        if (
+            $storageRoot === false
+            || $path === false
+            || !str_starts_with($path, $storageRoot . DIRECTORY_SEPARATOR)
+            || !is_file($path)
+        ) {
+            return Response::html('', 404);
+        }
+
+        $content = file_get_contents($path);
+
+        if (!is_string($content)) {
+            return Response::html('', 404);
+        }
+
+        return Response::binary($content, (string) $media['mime_type'], [
+            'Cache-Control' => 'public, max-age=86400, immutable',
+            'Content-Length' => (string) strlen($content),
+            'Content-Disposition' => 'inline; filename="' . rawurlencode((string) $media['original_name']) . '"',
+        ]);
+    }
+}

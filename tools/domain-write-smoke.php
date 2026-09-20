@@ -7,6 +7,7 @@ use Barama\Core\Session;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
 use Barama\Repositories\WorkspaceReadRepository;
+use Barama\Repositories\MarketplaceRepository;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\CompanyManagementService;
 use Barama\Services\DomainWorkflowService;
@@ -230,7 +231,28 @@ if (
     throw new RuntimeException('Admin workspace read model did not return platform records.');
 }
 
+$marketplace = new MarketplaceRepository();
+$publicListings = $marketplace->listings(['offer' => 'sale'], 1, 10);
+$publicProjects = $marketplace->projects([], 1, 10);
+$publicCompanies = $marketplace->companies([], 1, 10);
+$mediaUuidStatement = $pdo->prepare('SELECT uuid FROM media_assets WHERE id = :id LIMIT 1');
+$mediaUuidStatement->execute(['id' => $mediaId]);
+$mediaUuid = (string) $mediaUuidStatement->fetchColumn();
+
+if (
+    (int) $publicListings['total'] < 1
+    || (int) $publicProjects['total'] < 1
+    || (int) $publicCompanies['total'] < 1
+    || $marketplace->listingBySlug((string) $publicListings['rows'][0]['slug']) === null
+    || $marketplace->projectBySlug((string) $publicProjects['rows'][0]['slug']) === null
+    || $marketplace->companyBySlug((string) $publicCompanies['rows'][0]['slug']) === null
+    || $mediaUuid === ''
+    || $marketplace->publicMedia($mediaUuid) === null
+) {
+    throw new RuntimeException('Public marketplace read model or guarded public media lookup failed.');
+}
+
 fwrite(
     STDOUT,
-    "[PASS] Domain write smoke test: company, project, property, listing, inquiry, lead, media, workflow, workspace read models and company-scope isolation verified.\n"
+    "[PASS] Domain smoke test: writes, workflows, workspace reads, public marketplace reads, guarded media and company-scope isolation verified.\n"
 );
