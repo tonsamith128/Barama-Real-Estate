@@ -18,6 +18,7 @@ final class InquiryRepository
                                  properties.id AS property_id, listings.id AS listing_id
                           FROM listings
                           INNER JOIN properties ON properties.id = listings.property_id
+                          LEFT JOIN companies ON companies.id = properties.company_id
                           WHERE listings.id = :id
                             AND listings.status = "published"
                             AND listings.published_at IS NOT NULL
@@ -25,21 +26,45 @@ final class InquiryRepository
                             AND (listings.expires_at IS NULL OR listings.expires_at > CURRENT_TIMESTAMP)
                             AND properties.status = "approved"
                             AND properties.deleted_at IS NULL
+                            AND (
+                                properties.company_id IS NULL
+                                OR (
+                                    companies.status = "approved"
+                                    AND companies.published_at IS NOT NULL
+                                    AND companies.deleted_at IS NULL
+                                )
+                            )
                           LIMIT 1',
-            'property' => 'SELECT company_id, project_id, id AS property_id, NULL AS listing_id
+            'property' => 'SELECT properties.company_id, properties.project_id,
+                                  properties.id AS property_id, NULL AS listing_id
                            FROM properties
-                           WHERE id = :id
-                             AND status = "approved"
-                             AND deleted_at IS NULL
+                           LEFT JOIN companies ON companies.id = properties.company_id
+                           WHERE properties.id = :id
+                             AND properties.status = "approved"
+                             AND properties.deleted_at IS NULL
+                             AND (
+                                 properties.company_id IS NULL
+                                 OR (
+                                     companies.status = "approved"
+                                     AND companies.published_at IS NOT NULL
+                                     AND companies.deleted_at IS NULL
+                                 )
+                             )
                            LIMIT 1',
-            'project' => 'SELECT company_id, id AS project_id, NULL AS property_id, NULL AS listing_id
+            'project' => 'SELECT projects.company_id, projects.id AS project_id,
+                                 NULL AS property_id, NULL AS listing_id
                           FROM projects
-                          WHERE id = :id
-                            AND status = "published"
-                            AND published_at IS NOT NULL
-                            AND deleted_at IS NULL
+                          INNER JOIN companies ON companies.id = projects.company_id
+                          WHERE projects.id = :id
+                            AND projects.status = "published"
+                            AND projects.published_at IS NOT NULL
+                            AND projects.deleted_at IS NULL
+                            AND companies.status = "approved"
+                            AND companies.published_at IS NOT NULL
+                            AND companies.deleted_at IS NULL
                           LIMIT 1',
-            'company' => 'SELECT id AS company_id, NULL AS project_id, NULL AS property_id, NULL AS listing_id
+            'company' => 'SELECT id AS company_id, NULL AS project_id,
+                                 NULL AS property_id, NULL AS listing_id
                           FROM companies
                           WHERE id = :id
                             AND status = "approved"

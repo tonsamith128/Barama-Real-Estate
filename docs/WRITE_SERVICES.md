@@ -49,7 +49,7 @@ This history is append-only at the application layer.
 
 Global developer permissions are not sufficient to mutate a company resource.
 
-The authenticated user must also be an active member of the owning company. Company owner or manager membership is required to manage team membership.
+The authenticated user must also be an active member of the owning company. Company owner or manager membership is required to manage team membership. Adding a member and granting the global developer role occur in one database transaction, and owner membership cannot be deactivated through team management.
 
 Administrators bypass company membership scope only through their explicit administrator role.
 
@@ -76,3 +76,6 @@ Nginx protection will be generated/validated by the final installer/deployment l
 Projects and properties can currently be edited by developers only while draft or rejected. Listings can be edited while draft, rejected, or paused.
 
 This deliberately avoids silently changing already-approved marketplace content. A later revision workflow can support post-publication edits with re-approval without weakening the canonical approval history.
+
+
+Public property/listing lookup and inquiry targeting also require the owning company to remain approved and published. Suspending or archiving a company therefore removes its company-owned inventory from public availability without rewriting every child record.

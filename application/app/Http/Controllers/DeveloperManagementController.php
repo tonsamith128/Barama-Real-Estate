@@ -50,6 +50,21 @@ final class DeveloperManagementController
         });
     }
 
+    public function deactivateMember(Request $request, string $id, string $userId): Response
+    {
+        return $this->execute(function () use ($id, $userId): array {
+            $companyId = $this->id($id);
+            $memberUserId = $this->id($userId);
+            (new MembershipService())->deactivate($companyId, $memberUserId);
+
+            return [
+                'company_id' => $companyId,
+                'user_id' => $memberUserId,
+                'member_deactivated' => true,
+            ];
+        });
+    }
+
     public function createProject(Request $request): Response
     {
         return $this->execute(fn (): array => [

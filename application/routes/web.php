@@ -75,6 +75,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('company.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/developer/companies/{id}/members/{userId}/deactivate',
+    [DeveloperManagementController::class, 'deactivateMember'],
+    [new AuthMiddleware(), new PermissionMiddleware('company.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/developer/projects',
     [DeveloperManagementController::class, 'createProject'],
     [new AuthMiddleware(), new PermissionMiddleware('project.manage'), new CsrfMiddleware()]
