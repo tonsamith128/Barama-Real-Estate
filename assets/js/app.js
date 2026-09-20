@@ -702,3 +702,140 @@
         }
     });
 })();
+
+
+/* Shared responsive shell and authentication controls */
+(() => {
+    'use strict';
+
+    const header = document.querySelector('[data-site-header]');
+    const menuToggle = document.querySelector('[data-site-menu-toggle]');
+    const navigation = document.querySelector('[data-site-navigation]');
+
+    const closeMenu = () => {
+        if (!header || !menuToggle) {
+            return;
+        }
+
+        header.classList.remove('is-menu-open');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        menuToggle.setAttribute('aria-label', 'Open navigation');
+    };
+
+    menuToggle?.addEventListener('click', () => {
+        if (!header) {
+            return;
+        }
+
+        const open = !header.classList.contains('is-menu-open');
+        header.classList.toggle('is-menu-open', open);
+        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        menuToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+    });
+
+    navigation?.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', closeMenu);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeMenu();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 991) {
+            closeMenu();
+        }
+    });
+
+    document.querySelectorAll('[data-auth-password-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const wrapper = button.closest('.auth-input');
+            const field = wrapper?.querySelector('[data-auth-password]');
+
+            if (!field) {
+                return;
+            }
+
+            const reveal = field.type === 'password';
+            field.type = reveal ? 'text' : 'password';
+            button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+        });
+    });
+
+    const secureRandom = (max) => {
+        const value = new Uint32Array(1);
+        window.crypto.getRandomValues(value);
+        return value[0] % max;
+    };
+
+    const shuffle = (characters) => {
+        const output = [...characters];
+
+        for (let index = output.length - 1; index > 0; index -= 1) {
+            const target = secureRandom(index + 1);
+            [output[index], output[target]] = [output[target], output[index]];
+        }
+
+        return output.join('');
+    };
+
+    const updateStrength = (field) => {
+        const meter = field?.closest('.auth-form')?.querySelector('[data-auth-password-strength]');
+
+        if (!meter) {
+            return;
+        }
+
+        const value = field.value || '';
+        let score = 0;
+
+        if (value.length >= 12) score += 1;
+        if (value.length >= 16) score += 1;
+        if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score += 1;
+        if (/\d/.test(value) && /[^A-Za-z0-9]/.test(value)) score += 1;
+
+        meter.dataset.level = score >= 4 ? 'strong' : (score >= 2 ? 'medium' : (value ? 'weak' : ''));
+    };
+
+    document.querySelectorAll('[data-auth-password-primary]').forEach((field) => {
+        field.addEventListener('input', () => updateStrength(field));
+        updateStrength(field);
+    });
+
+    document.querySelectorAll('[data-auth-generate-password]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const form = button.closest('.auth-form');
+            const password = form?.querySelector('[data-auth-password-primary]');
+            const confirmation = form?.querySelector('[data-auth-password-confirmation]');
+
+            if (!password || !confirmation || !window.crypto?.getRandomValues) {
+                return;
+            }
+
+            const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            const lower = 'abcdefghijkmnopqrstuvwxyz';
+            const numbers = '23456789';
+            const symbols = '!@#$%*-_=+?';
+            const all = upper + lower + numbers + symbols;
+            let generated = upper[secureRandom(upper.length)]
+                + lower[secureRandom(lower.length)]
+                + numbers[secureRandom(numbers.length)]
+                + symbols[secureRandom(symbols.length)];
+
+            while (generated.length < 20) {
+                generated += all[secureRandom(all.length)];
+            }
+
+            generated = shuffle(generated);
+            password.value = generated;
+            confirmation.value = generated;
+            password.type = 'text';
+            confirmation.type = 'text';
+            password.dispatchEvent(new Event('input', { bubbles: true }));
+            password.focus();
+            password.select();
+        });
+    });
+})();

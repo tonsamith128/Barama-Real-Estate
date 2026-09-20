@@ -63,6 +63,21 @@ $propertySearchUrl = static function (array $search): string {
             <a href="<?= e(url('/account/notifications')) ?>"><span><?= app_icon('bell') ?></span><strong><?= e((string) $summary['notifications']) ?></strong><small>Unread notifications</small></a>
         </div>
 
+        <div class="account-quick-actions" aria-label="Account shortcuts">
+            <a href="<?= e(url('/properties')) ?>">
+                <span><?= app_icon('search') ?></span>
+                <span><strong>Find properties</strong><small>Browse approved sale and rental listings.</small></span>
+            </a>
+            <a href="<?= e(url('/account/saved')) ?>">
+                <span><?= app_icon('heart') ?></span>
+                <span><strong>Open shortlist</strong><small>Return to properties you saved.</small></span>
+            </a>
+            <a href="<?= e(url('/account/alerts')) ?>">
+                <span><?= app_icon('bell') ?></span>
+                <span><strong>Create an alert</strong><small>Save criteria and receive matching updates.</small></span>
+            </a>
+        </div>
+
         <?php if ($savedListings !== []): ?>
             <section class="account-section">
                 <div class="section-heading-row">

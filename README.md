@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.0-dev`
+- Current development line: `0.9.1-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -18,7 +18,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 - Admin Dashboard: `/dashboard`
 - User Account: `/account`
 - Public Developer / Company: `/company`
-- Developer Account: `/developer`
+- Company / Vendor Workspace: `/developer`
 
 ## Architecture rules
 
@@ -79,3 +79,16 @@ The v0.9 development line includes the canonical five-step browser installer at 
 Step 1 supports both a Ton Samith license key and a CodeCanyon/Envato purchase code through one shared license field with a Validate action. Verification is handled through the Ton Samith License Manager and the original credential is not retained after activation.
 
 GitHub Actions also builds the customer ZIP, extracts that exact ZIP, performs a clean MySQL installation from the packaged code, validates production runtime state, migration replay, administrator provisioning, subdirectory URLs, and installation locking, then uploads the validated ZIP plus SHA256 checksum as a workflow artifact. See `docs/INSTALLER.md` for the installer and package-validation contract.
+
+
+## Unified customer interface
+
+The 0.9.1 development line consolidates the public marketplace, customer account, company/vendor workspace, administrator dashboard, global header/footer, authentication screens, and featured inventory cards into the canonical shared interface system.
+
+- role-aware responsive global navigation
+- customer account shortcuts backed by existing saved-property, alert, inquiry, viewing, and notification actions
+- company/vendor workspace backed by the existing developer permissions and company-membership boundaries
+- administrator dashboard backed by existing moderation and catalog actions
+- premium authentication with SVG field icons, password visibility controls, secure password generation for registration/reset, and existing CSRF/login-throttle/reset protections
+- modern translucent featured cards using the existing property/project/company data
+- one first-party stylesheet and one first-party JavaScript file remain canonical

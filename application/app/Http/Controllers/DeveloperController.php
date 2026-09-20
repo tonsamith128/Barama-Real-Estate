@@ -109,10 +109,10 @@ final class DeveloperController
         );
 
         return Response::html(View::render('workspace/record', [
-            'pageTitle' => $title . ' · Developer',
+            'pageTitle' => $title . ' · Company / Vendor',
             'activeArea' => 'developer',
             'workspaceType' => 'developer',
-            'workspaceLabel' => 'Developer Workspace',
+            'workspaceLabel' => 'Company / Vendor Workspace',
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => $this->sectionForResource($resource),
             'recordResource' => $resource,
@@ -167,10 +167,10 @@ final class DeveloperController
         );
 
         return Response::html(View::render('workspace/index', [
-            'pageTitle' => self::SECTIONS[$section]['title'] . ' · Developer',
+            'pageTitle' => self::SECTIONS[$section]['title'] . ' · Company / Vendor',
             'activeArea' => 'developer',
             'workspaceType' => 'developer',
-            'workspaceLabel' => 'Developer Workspace',
+            'workspaceLabel' => 'Company / Vendor Workspace',
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => $section,
             'sectionTitle' => self::SECTIONS[$section]['title'],

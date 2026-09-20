@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 $kind = (string) ($kind ?? '');
@@ -26,6 +25,7 @@ if ($kind === 'listing') {
     }
     $eyebrow = ($item['transaction_type'] ?? '') === 'rent' ? 'For rent' : 'For sale';
     $footer = (string) ($item['company_name'] ?? '');
+    $icon = 'home';
 } elseif ($kind === 'project') {
     $href = url('/projects/' . rawurlencode((string) ($item['slug'] ?? '')));
     $title = (string) ($item['name'] ?? 'Project');
@@ -37,7 +37,9 @@ if ($kind === 'listing') {
     $price = '';
     $eyebrow = 'Development';
     $footer = (string) ($item['company_name'] ?? '');
+    $icon = 'layers';
 } else {
+    $kind = 'company';
     $href = url('/company/' . rawurlencode((string) ($item['slug'] ?? '')));
     $title = (string) ($item['name'] ?? 'Company');
     $meta = array_filter([
@@ -50,10 +52,12 @@ if ($kind === 'listing') {
     $listingCount = (int) ($item['listing_count'] ?? 0);
     $footer = $projectCount . ' project' . ($projectCount === 1 ? '' : 's')
         . ' · ' . $listingCount . ' listing' . ($listingCount === 1 ? '' : 's');
+    $icon = 'building';
 }
 ?>
-<article class="inventory-card">
+<article class="inventory-card inventory-card--<?= e($kind) ?>">
     <a class="inventory-card__media" href="<?= e($href) ?>" aria-label="<?= e($title) ?>">
+        <span class="inventory-card__ambient" aria-hidden="true"></span>
         <?php if ($imageUuid !== ''): ?>
             <img
                 src="<?= e(url('/media/' . rawurlencode($imageUuid))) ?>"
@@ -63,23 +67,25 @@ if ($kind === 'listing') {
             >
         <?php else: ?>
             <span class="inventory-card__placeholder" aria-hidden="true">
-                <?= app_icon($kind === 'company' ? 'building' : ($kind === 'project' ? 'layers' : 'home')) ?>
+                <span class="inventory-card__placeholder-icon"><?= app_icon($icon) ?></span>
             </span>
         <?php endif; ?>
         <span class="inventory-card__eyebrow"><?= e($eyebrow) ?></span>
+        <span class="inventory-card__open" aria-hidden="true">↗</span>
     </a>
     <div class="inventory-card__body">
         <div class="inventory-card__heading">
             <h3><a href="<?= e($href) ?>"><?= e($title) ?></a></h3>
-            <?php if ($price !== ''): ?>
-                <strong><?= e($price) ?></strong>
-            <?php endif; ?>
+            <?php if ($price !== ''): ?><strong><?= e($price) ?></strong><?php endif; ?>
         </div>
         <?php if ($meta !== []): ?>
             <p class="inventory-card__meta"><?= e(implode(' · ', array_map('strval', $meta))) ?></p>
         <?php endif; ?>
         <?php if ($footer !== ''): ?>
-            <div class="inventory-card__footer"><?= e($footer) ?></div>
+            <div class="inventory-card__footer">
+                <span class="inventory-card__footer-icon"><?= app_icon($kind === 'company' ? 'check' : 'building') ?></span>
+                <span><?= e($footer) ?></span>
+            </div>
         <?php endif; ?>
     </div>
 </article>

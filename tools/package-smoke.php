@@ -55,6 +55,12 @@ foreach ([
     'application/app/Services/InstallerService.php',
     'application/app/Services/LicenseManagerClient.php',
     'application/resources/views/installer/index.php',
+    'application/resources/views/layouts/app.php',
+    'application/resources/views/auth/login.php',
+    'application/resources/views/auth/register.php',
+    'application/resources/views/auth/forgot-password.php',
+    'application/resources/views/auth/reset-password.php',
+    'application/resources/views/components/inventory-card.php',
     'assets/css/app.css',
     'assets/js/app.js',
     'tools/notifications.php',
@@ -136,6 +142,39 @@ if (
     || !str_contains($javascriptSource, 'window.localStorage.setItem(storageKey, next)')
 ) {
     throw new RuntimeException('Responsive or Light/Dark installer behavior is incomplete.');
+}
+
+$layoutSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/layouts/app.php'
+);
+$loginSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/auth/login.php'
+);
+$registerSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/auth/register.php'
+);
+$resetSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/auth/reset-password.php'
+);
+$cardSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/components/inventory-card.php'
+);
+
+if (
+    !str_contains($layoutSource, 'data-site-menu-toggle')
+    || !str_contains($layoutSource, 'Company / Vendor')
+    || !str_contains($layoutSource, 'site-footer__grid')
+    || !str_contains($loginSource, 'auth-premium')
+    || !str_contains($loginSource, 'data-auth-password-toggle')
+    || !str_contains($registerSource, 'data-auth-generate-password')
+    || !str_contains($resetSource, 'data-auth-generate-password')
+    || !str_contains($cardSource, 'inventory-card--')
+    || !str_contains($stylesheetSource, '.auth-premium')
+    || !str_contains($stylesheetSource, '.account-quick-actions')
+    || !str_contains($javascriptSource, '[data-site-menu-toggle]')
+    || !str_contains($javascriptSource, '[data-auth-generate-password]')
+) {
+    throw new RuntimeException('Global shell, account, auth, or featured-card interface contract is incomplete.');
 }
 
 $rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
