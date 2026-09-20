@@ -6,6 +6,7 @@ use Barama\Core\Config;
 use Barama\Core\Csrf;
 use Barama\Core\RuntimeEnvironment;
 use Barama\Services\AuthService;
+use Barama\Support\Locale;
 
 if (!function_exists('e')) {
     function e(mixed $value): string
@@ -142,6 +143,18 @@ if (!function_exists('auth_can')) {
     }
 }
 
+
+if (!function_exists('app_locale')) {
+    function app_locale(): string { return Locale::current(); }
+}
+if (!function_exists('app_locales')) {
+    /** @return array<string,string> */
+    function app_locales(): array { return Locale::supported(); }
+}
+if (!function_exists('t')) {
+    /** @param array<string,string|int|float> $replace */
+    function t(string $key, array $replace = []): string { return Locale::translate($key, $replace); }
+}
 
 if (!function_exists('app_icon')) {
     function app_icon(string $name, string $class = ''): string

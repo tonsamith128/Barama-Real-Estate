@@ -6,6 +6,7 @@ namespace Barama\Services;
 
 use Barama\Core\Installation;
 use Barama\Support\IdGenerator;
+use Barama\Support\Locale;
 use DateTimeZone;
 use PDO;
 use PDOException;
@@ -14,10 +15,6 @@ use Throwable;
 
 final class InstallerService
 {
-    private const SUPPORTED_LANGUAGES = [
-        'en' => 'English',
-    ];
-
     /** @return array<int,array{label:string,detail:string,status:string,required:bool}> */
     public function requirements(): array
     {
@@ -166,7 +163,7 @@ final class InstallerService
     /** @return array<string,string> */
     public function supportedLanguages(): array
     {
-        return self::SUPPORTED_LANGUAGES;
+        return Locale::supported();
     }
 
     /** @return array<int,string> */
@@ -240,7 +237,7 @@ final class InstallerService
         $siteName = trim((string) ($input['site_name'] ?? ''));
         $siteUrl = rtrim(trim((string) ($input['site_url'] ?? '')), '/');
         $timezone = trim((string) ($input['timezone'] ?? 'UTC'));
-        $language = trim((string) ($input['default_language'] ?? 'en'));
+        $language = Locale::normalize((string) ($input['default_language'] ?? 'en'));
         $adminName = trim((string) ($input['admin_name'] ?? ''));
         $adminEmail = strtolower(trim((string) ($input['admin_email'] ?? '')));
         $password = (string) ($input['admin_password'] ?? '');
@@ -293,7 +290,7 @@ final class InstallerService
             throw new RuntimeException('Choose a valid timezone.');
         }
 
-        if (!isset(self::SUPPORTED_LANGUAGES[$language])) {
+        if ($language === null) {
             throw new RuntimeException('Choose a supported default language.');
         }
 
