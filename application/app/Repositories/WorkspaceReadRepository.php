@@ -153,7 +153,9 @@ final class WorkspaceReadRepository
         string $section,
         string $search,
         int $page,
-        int $perPage = 20
+        int $perPage = 20,
+        array $filters = [],
+        string $sort = 'updated_desc'
     ): array {
         $search = '%' . trim($search) . '%';
 
@@ -181,7 +183,7 @@ final class WorkspaceReadRepository
             ],
             'company' => [
                 'SELECT c.id, c.name, c.company_type, c.status, c.email, c.phone,
-                        c.updated_at, cm.member_role
+                        c.location_id, c.updated_at, cm.member_role
                  FROM companies c
                  INNER JOIN company_members cm ON cm.company_id = c.id
                  WHERE cm.user_id = :user_id
@@ -200,7 +202,7 @@ final class WorkspaceReadRepository
             ],
             'projects' => [
                 'SELECT p.id, p.name, p.project_type, p.completion_status, p.status,
-                        p.updated_at, c.name AS company_name
+                        p.location_id, p.updated_at, c.name AS company_name
                  FROM projects p
                  INNER JOIN company_members cm ON cm.company_id = p.company_id
                  INNER JOIN companies c ON c.id = p.company_id
@@ -220,7 +222,7 @@ final class WorkspaceReadRepository
             ],
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.property_type, p.status,
-                        p.bedrooms, p.bathrooms, p.updated_at,
+                        p.location_id, p.bedrooms, p.bathrooms, p.updated_at,
                         c.name AS company_name
                  FROM properties p
                  INNER JOIN company_members cm ON cm.company_id = p.company_id
@@ -241,6 +243,7 @@ final class WorkspaceReadRepository
             ],
             'listings' => [
                 'SELECT l.id, p.title AS property_title, p.reference_code,
+                        p.property_type, p.location_id,
                         l.transaction_type, l.status, l.price, l.currency,
                         l.pricing_period, l.updated_at
                  FROM listings l
@@ -265,7 +268,8 @@ final class WorkspaceReadRepository
             ],
             'leads' => [
                 'SELECT l.id, l.contact_name, l.contact_email, l.contact_phone,
-                        l.stage, l.transaction_type, l.budget_min, l.budget_max,
+                        l.stage, l.transaction_type, l.preferred_location_id,
+                        l.budget_min, l.budget_max,
                         l.currency, l.updated_at, c.name AS company_name
                  FROM leads l
                  INNER JOIN company_members cm ON cm.company_id = l.company_id
@@ -325,6 +329,15 @@ final class WorkspaceReadRepository
             default => throw new InvalidArgumentException('Unsupported developer workspace section.'),
         };
 
+        [$sql, $countSql, $params] = $this->applyTableOptions(
+            false,
+            $section,
+            $sql,
+            $params,
+            $filters,
+            $sort
+        );
+
         return $this->paginate($sql, $countSql, $params, $page, $perPage);
     }
 
@@ -373,7 +386,9 @@ final class WorkspaceReadRepository
         string $section,
         string $search,
         int $page,
-        int $perPage = 20
+        int $perPage = 20,
+        array $filters = [],
+        string $sort = 'updated_desc'
     ): array {
         $search = '%' . trim($search) . '%';
 
@@ -432,7 +447,7 @@ final class WorkspaceReadRepository
             ],
             'companies' => [
                 'SELECT id, name, company_type, status, email, phone,
-                        verified_at, updated_at
+                        location_id, verified_at, updated_at
                  FROM companies
                  WHERE deleted_at IS NULL
                    AND name LIKE :search
@@ -445,7 +460,7 @@ final class WorkspaceReadRepository
             ],
             'projects' => [
                 'SELECT p.id, p.name, p.project_type, p.completion_status,
-                        p.status, p.updated_at, c.name AS company_name
+                        p.location_id, p.status, p.updated_at, c.name AS company_name
                  FROM projects p
                  INNER JOIN companies c ON c.id = p.company_id
                  WHERE p.deleted_at IS NULL
@@ -459,7 +474,7 @@ final class WorkspaceReadRepository
             ],
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.property_type,
-                        p.status, p.updated_at, c.name AS company_name
+                        p.location_id, p.status, p.updated_at, c.name AS company_name
                  FROM properties p
                  LEFT JOIN companies c ON c.id = p.company_id
                  WHERE p.deleted_at IS NULL
@@ -473,6 +488,7 @@ final class WorkspaceReadRepository
             ],
             'listings' => [
                 'SELECT l.id, p.title AS property_title, p.reference_code,
+                        p.property_type, p.location_id,
                         l.transaction_type, l.status, l.price, l.currency,
                         l.updated_at
                  FROM listings l
@@ -503,7 +519,8 @@ final class WorkspaceReadRepository
             ],
             'leads' => [
                 'SELECT l.id, l.contact_name, l.contact_email, l.contact_phone,
-                        l.stage, l.transaction_type, l.budget_min, l.budget_max,
+                        l.stage, l.transaction_type, l.preferred_location_id,
+                        l.budget_min, l.budget_max,
                         l.currency, l.updated_at, c.name AS company_name
                  FROM leads l
                  INNER JOIN companies c ON c.id = l.company_id
@@ -554,6 +571,15 @@ final class WorkspaceReadRepository
             default => throw new InvalidArgumentException('Unsupported admin workspace section.'),
         };
 
+        [$sql, $countSql, $params] = $this->applyTableOptions(
+            true,
+            $section,
+            $sql,
+            $params,
+            $filters,
+            $sort
+        );
+
         return $this->paginate($sql, $countSql, $params, $page, $perPage);
     }
 
@@ -569,6 +595,178 @@ final class WorkspaceReadRepository
                  LIMIT 300'
             )
             ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    /**
+     * @param array<string, int|string> $params
+     * @param array<string, mixed> $filters
+     * @return array{0:string,1:string,2:array<string,int|string>}
+     */
+    private function applyTableOptions(
+        bool $admin,
+        string $section,
+        string $sql,
+        array $params,
+        array $filters,
+        string $sort
+    ): array {
+        $key = $admin ? 'admin:' . $section : 'developer:' . $section;
+
+        $definitions = [
+            'developer:overview' => [
+                'filters' => ['status' => 'status'],
+                'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC'],
+            ],
+            'developer:inquiries' => [
+                'filters' => ['status' => 'status'],
+                'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC'],
+            ],
+            'developer:company' => [
+                'filters' => ['status' => 'status', 'type' => 'company_type', 'location' => 'location_id'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'name ASC',
+                    'name_desc' => 'name DESC',
+                ],
+            ],
+            'developer:projects' => [
+                'filters' => ['status' => 'status', 'type' => 'project_type', 'location' => 'location_id'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'name ASC',
+                    'name_desc' => 'name DESC',
+                ],
+            ],
+            'developer:properties' => [
+                'filters' => ['status' => 'status', 'type' => 'property_type', 'location' => 'location_id'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'title ASC',
+                    'name_desc' => 'title DESC',
+                ],
+            ],
+            'developer:listings' => [
+                'filters' => ['status' => 'status', 'type' => 'transaction_type', 'location' => 'location_id'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'price_asc' => 'price ASC',
+                    'price_desc' => 'price DESC',
+                    'name_asc' => 'property_title ASC',
+                ],
+            ],
+            'developer:leads' => [
+                'filters' => ['status' => 'stage', 'type' => 'transaction_type', 'location' => 'preferred_location_id'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'price_asc' => 'budget_max ASC',
+                    'price_desc' => 'budget_max DESC',
+                    'name_asc' => 'contact_name ASC',
+                ],
+            ],
+            'developer:team' => [
+                'filters' => ['status' => 'status', 'type' => 'member_role'],
+                'sorts' => ['name_asc' => 'name ASC', 'name_desc' => 'name DESC', 'updated_desc' => 'joined_at DESC'],
+            ],
+            'developer:media' => [
+                'filters' => ['type' => 'mime_type'],
+                'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC', 'name_asc' => 'original_name ASC'],
+            ],
+            'admin:overview' => [
+                'filters' => ['type' => 'entity_type'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'title ASC'],
+            ],
+            'admin:approvals' => [
+                'filters' => ['type' => 'entity_type'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'title ASC'],
+            ],
+            'admin:companies' => [
+                'filters' => ['status' => 'status', 'type' => 'company_type', 'location' => 'location_id'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'name ASC', 'name_desc' => 'name DESC'],
+            ],
+            'admin:projects' => [
+                'filters' => ['status' => 'status', 'type' => 'project_type', 'location' => 'location_id'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'name ASC', 'name_desc' => 'name DESC'],
+            ],
+            'admin:properties' => [
+                'filters' => ['status' => 'status', 'type' => 'property_type', 'location' => 'location_id'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'title ASC', 'name_desc' => 'title DESC'],
+            ],
+            'admin:listings' => [
+                'filters' => ['status' => 'status', 'type' => 'transaction_type', 'location' => 'location_id'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'price_asc' => 'price ASC', 'price_desc' => 'price DESC', 'name_asc' => 'property_title ASC'],
+            ],
+            'admin:inquiries' => [
+                'filters' => ['status' => 'status'],
+                'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC', 'name_asc' => 'contact_name ASC'],
+            ],
+            'admin:leads' => [
+                'filters' => ['status' => 'stage', 'type' => 'transaction_type', 'location' => 'preferred_location_id'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'price_asc' => 'budget_max ASC', 'price_desc' => 'budget_max DESC', 'name_asc' => 'contact_name ASC'],
+            ],
+            'admin:catalog' => [
+                'filters' => ['status' => 'status', 'type' => 'entity_type'],
+                'sorts' => ['name_asc' => 'title ASC', 'name_desc' => 'title DESC', 'updated_desc' => 'updated_at DESC'],
+            ],
+            'admin:media' => [
+                'filters' => ['type' => 'mime_type'],
+                'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC', 'name_asc' => 'original_name ASC'],
+            ],
+        ];
+
+        $definition = $definitions[$key] ?? ['filters' => [], 'sorts' => []];
+        $baseSql = preg_replace('/\s+ORDER\s+BY\s+.+$/is', '', trim($sql));
+
+        if (!is_string($baseSql) || $baseSql === '') {
+            throw new InvalidArgumentException('Workspace table query could not be prepared.');
+        }
+
+        $outerWhere = [];
+        $filterParams = [];
+
+        foreach ($definition['filters'] as $filterKey => $column) {
+            $value = trim((string) ($filters[$filterKey] ?? ''));
+
+            if ($value === '') {
+                continue;
+            }
+
+            if ($filterKey === 'location') {
+                if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < 1) {
+                    continue;
+                }
+                $filterParams['filter_' . $filterKey] = (int) $value;
+            } else {
+                $filterParams['filter_' . $filterKey] = mb_substr($value, 0, 80);
+            }
+
+            $outerWhere[] = $column . ' = :filter_' . $filterKey;
+        }
+
+        $whereSql = $outerWhere === []
+            ? ''
+            : ' WHERE ' . implode(' AND ', $outerWhere);
+
+        $sorts = $definition['sorts'];
+        $orderSql = $sorts[$sort] ?? $sorts['updated_desc'] ?? $sorts['name_asc'] ?? 'id DESC';
+
+        $wrapped = 'SELECT * FROM (' . $baseSql . ') workspace_rows'
+            . $whereSql
+            . ' ORDER BY ' . $orderSql;
+
+        $count = 'SELECT COUNT(*) FROM (' . $baseSql . ') workspace_rows'
+            . $whereSql;
+
+        return [
+            $wrapped,
+            $count,
+            array_merge($params, $filterParams),
+        ];
     }
 
     /**

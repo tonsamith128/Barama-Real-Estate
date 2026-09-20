@@ -95,11 +95,64 @@
         });
     });
 
+    const bulkToggle = document.querySelector('[data-bulk-toggle]');
+    const bulkItems = Array.from(document.querySelectorAll('[data-bulk-item]'));
+    const bulkCount = document.querySelector('[data-bulk-count]');
+    const bulkSubmit = document.querySelector('[data-bulk-submit]');
+
+    const updateBulkState = () => {
+        const checked = bulkItems.filter((item) => item.checked).length;
+
+        if (bulkCount) {
+            bulkCount.textContent = String(checked);
+        }
+
+        if (bulkSubmit) {
+            bulkSubmit.disabled = checked === 0;
+        }
+
+        if (bulkToggle) {
+            bulkToggle.checked = checked > 0 && checked === bulkItems.length;
+            bulkToggle.indeterminate = checked > 0 && checked < bulkItems.length;
+        }
+    };
+
+    bulkToggle?.addEventListener('change', () => {
+        bulkItems.forEach((item) => {
+            item.checked = bulkToggle.checked;
+        });
+        updateBulkState();
+    });
+
+    bulkItems.forEach((item) => {
+        item.addEventListener('change', updateBulkState);
+    });
+
+    updateBulkState();
+
     document.querySelectorAll('[data-workspace-form]').forEach((form) => {
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const submitter = event.submitter;
+
+            if (form.matches('[data-bulk-form]')) {
+                const selected = bulkItems.filter((item) => item.checked).length;
+
+                if (selected < 1) {
+                    showWorkspaceNotice('Select at least one record before applying a bulk action.', 'error');
+                    return;
+                }
+
+                const decision = form.querySelector('[name="decision"]')?.value;
+
+                if (
+                    decision === 'reject'
+                    && !window.confirm('Reject the selected pending records?')
+                ) {
+                    return;
+                }
+            }
 
             if (
                 submitter?.classList.contains('table-action--danger')

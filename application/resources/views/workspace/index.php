@@ -10,6 +10,17 @@ $companies = is_array($formOptions['companies'] ?? null) ? $formOptions['compani
 $projects = is_array($formOptions['projects'] ?? null) ? $formOptions['projects'] : [];
 $properties = is_array($formOptions['properties'] ?? null) ? $formOptions['properties'] : [];
 $locations = is_array($formOptions['locations'] ?? null) ? $formOptions['locations'] : [];
+$tableFilters = is_array($tableFilters ?? null) ? $tableFilters : [];
+$filterOptions = is_array($filterOptions ?? null) ? $filterOptions : [];
+$tableSort = trim((string) ($tableSort ?? 'updated_desc'));
+$bulkMode = $workspaceType === 'admin' && $activeSection === 'approvals';
+$queryBase = array_filter([
+    'q' => $search,
+    'status' => (string) ($tableFilters['status'] ?? ''),
+    'type' => (string) ($tableFilters['type'] ?? ''),
+    'location' => (string) ($tableFilters['location'] ?? ''),
+    'sort' => $tableSort,
+], static fn (string $value): bool => $value !== '');
 
 $humanize = static fn (mixed $value): string =>
     ucwords(str_replace('_', ' ', trim((string) $value)));
@@ -525,17 +536,88 @@ $renderActions = static function (array $row) use (
                 <span><?= e(number_format($total)) ?> record<?= $total === 1 ? '' : 's' ?></span>
             </div>
 
-            <form method="get" class="workspace-search" role="search">
-                <span><?= app_icon('search') ?></span>
-                <input name="q" value="<?= e($search) ?>" placeholder="Search records" maxlength="80" aria-label="Search records">
-                <button type="submit">Search</button>
+            <form method="get" class="workspace-table-controls" role="search">
+                <div class="workspace-search">
+                    <span><?= app_icon('search') ?></span>
+                    <input name="q" value="<?= e($search) ?>" placeholder="Search records" maxlength="80" aria-label="Search records">
+                </div>
+
+                <?php if (($filterOptions['statuses'] ?? []) !== []): ?>
+                    <select name="status" aria-label="Filter by status">
+                        <option value="">All statuses</option>
+                        <?php foreach ($filterOptions['statuses'] as $option): ?>
+                            <option value="<?= e((string) $option) ?>" <?= (string) ($tableFilters['status'] ?? '') === (string) $option ? 'selected' : '' ?>>
+                                <?= e($humanize($option)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
+
+                <?php if (($filterOptions['types'] ?? []) !== []): ?>
+                    <select name="type" aria-label="Filter by type">
+                        <option value="">All types</option>
+                        <?php foreach ($filterOptions['types'] as $option): ?>
+                            <option value="<?= e((string) $option) ?>" <?= (string) ($tableFilters['type'] ?? '') === (string) $option ? 'selected' : '' ?>>
+                                <?= e($humanize($option)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
+
+                <?php if (!empty($filterOptions['location'])): ?>
+                    <select name="location" aria-label="Filter by location">
+                        <option value="">All locations</option>
+                        <?php foreach ($locations as $location): ?>
+                            <option value="<?= e((string) $location['id']) ?>" <?= (string) ($tableFilters['location'] ?? '') === (string) $location['id'] ? 'selected' : '' ?>>
+                                <?= e((string) $location['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
+
+                <?php if (($filterOptions['sorts'] ?? []) !== []): ?>
+                    <select name="sort" aria-label="Sort records">
+                        <?php foreach ($filterOptions['sorts'] as $value => $label): ?>
+                            <option value="<?= e((string) $value) ?>" <?= $tableSort === (string) $value ? 'selected' : '' ?>>
+                                <?= e((string) $label) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
+
+                <button type="submit">Apply</button>
+                <?php if ($queryBase !== []): ?>
+                    <a href="<?= e(url($workspaceType === 'admin'
+                        ? ($activeSection === 'overview' ? '/dashboard' : '/dashboard/' . $activeSection)
+                        : ($activeSection === 'overview' ? '/developer' : '/developer/' . $activeSection))) ?>">Reset</a>
+                <?php endif; ?>
             </form>
         </div>
+
+        <?php if ($bulkMode && $rows !== []): ?>
+            <div class="workspace-bulk-bar">
+                <form id="bulk-moderation-form" action="<?= e(url('/dashboard/bulk-workflow')) ?>" method="post" data-workspace-form data-bulk-form>
+                    <?= csrf_field() ?>
+                    <span><strong data-bulk-count>0</strong> selected</span>
+                    <select name="decision" aria-label="Bulk moderation action" required>
+                        <option value="approve">Approve selected</option>
+                        <option value="reject">Reject selected</option>
+                    </select>
+                    <input name="note" maxlength="500" placeholder="Optional moderation note">
+                    <button type="submit" disabled data-bulk-submit>Apply action</button>
+                </form>
+            </div>
+        <?php endif; ?>
 
         <div class="workspace-table-wrap">
             <table class="workspace-table">
                 <thead>
                     <tr>
+                        <?php if ($bulkMode): ?>
+                            <th scope="col" class="workspace-table__check">
+                                <input type="checkbox" data-bulk-toggle aria-label="Select all records on this page">
+                            </th>
+                        <?php endif; ?>
                         <?php foreach ($columns as $label): ?>
                             <th scope="col"><?= e($label) ?></th>
                         <?php endforeach; ?>
@@ -545,7 +627,7 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1)) ?>" class="workspace-empty">
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0))) ?>" class="workspace-empty">
                                 <strong>No records found</strong>
                                 <span>Records matching this section and search will appear here.</span>
                             </td>
@@ -553,6 +635,18 @@ $renderActions = static function (array $row) use (
                     <?php else: ?>
                         <?php foreach ($rows as $row): ?>
                             <tr>
+                                <?php if ($bulkMode): ?>
+                                    <td class="workspace-table__check">
+                                        <input
+                                            type="checkbox"
+                                            name="records[]"
+                                            value="<?= e((string) ($row['entity_type'] ?? '')) ?>:<?= e((string) ($row['id'] ?? '')) ?>"
+                                            form="bulk-moderation-form"
+                                            data-bulk-item
+                                            aria-label="Select <?= e((string) ($row['title'] ?? 'record')) ?>"
+                                        >
+                                    </td>
+                                <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
                                     <td><?= $formatCell($key, $row) ?></td>
                                 <?php endforeach; ?>
@@ -569,10 +663,12 @@ $renderActions = static function (array $row) use (
                 <span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span>
                 <div>
                     <?php if ($page > 1): ?>
-                        <a href="?<?= e(http_build_query(['q' => $search, 'page' => $page - 1])) ?>">Previous</a>
+                        <?php $previousQuery = $queryBase; $previousQuery['page'] = $page - 1; ?>
+                        <a href="?<?= e(http_build_query($previousQuery)) ?>">Previous</a>
                     <?php endif; ?>
                     <?php if ($page < $pages): ?>
-                        <a href="?<?= e(http_build_query(['q' => $search, 'page' => $page + 1])) ?>">Next</a>
+                        <?php $nextQuery = $queryBase; $nextQuery['page'] = $page + 1; ?>
+                        <a href="?<?= e(http_build_query($nextQuery)) ?>">Next</a>
                     <?php endif; ?>
                 </div>
             </nav>

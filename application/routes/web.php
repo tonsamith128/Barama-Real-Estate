@@ -179,6 +179,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/bulk-workflow',
+    [AdminManagementController::class, 'bulkWorkflow'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
     '/dashboard/workflow/{resource}/{id}',
     [AdminManagementController::class, 'workflow'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]

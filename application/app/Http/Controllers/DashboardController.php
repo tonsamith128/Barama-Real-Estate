@@ -7,6 +7,7 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
+use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 
@@ -131,13 +132,22 @@ final class DashboardController
         );
         $page = $page === false ? 1 : (int) $page;
 
+        $filters = [
+            'status' => mb_substr(trim((string) $request->input('status', '')), 0, 40),
+            'type' => mb_substr(trim((string) $request->input('type', '')), 0, 80),
+            'location' => trim((string) $request->input('location', '')),
+        ];
+        $sort = mb_substr(trim((string) $request->input('sort', 'updated_desc')), 0, 40);
+
         $repository = new WorkspaceReadRepository();
         $summary = $repository->adminSummary();
         $records = $repository->adminSection(
             $section,
             $search,
             $page,
-            $section === 'overview' ? 8 : 20
+            $section === 'overview' ? 8 : 20,
+            $filters,
+            $sort
         );
 
         return Response::html(View::render('workspace/index', [
@@ -159,6 +169,9 @@ final class DashboardController
             'records' => $records,
             'columns' => $this->columns($section),
             'search' => $search,
+            'tableFilters' => $filters,
+            'tableSort' => $sort,
+            'filterOptions' => $this->filterOptions($section),
             'formOptions' => [
                 'locations' => $repository->adminLocations(),
             ],
@@ -192,6 +205,111 @@ final class DashboardController
             'inquiry' => 'inquiries',
             'lead' => 'leads',
             default => 'overview',
+        };
+    }
+
+    /** @return array<string, mixed> */
+    private function filterOptions(string $section): array
+    {
+        return match ($section) {
+            'overview', 'approvals' => [
+                'statuses' => [],
+                'types' => ['company', 'project', 'property', 'listing'],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Newest submitted',
+                    'updated_asc' => 'Oldest submitted',
+                    'name_asc' => 'Record A–Z',
+                ],
+            ],
+            'companies' => [
+                'statuses' => DomainRules::COMPANY_STATUSES,
+                'types' => DomainRules::COMPANY_TYPES,
+                'location' => true,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Name A–Z',
+                    'name_desc' => 'Name Z–A',
+                ],
+            ],
+            'projects' => [
+                'statuses' => DomainRules::PROJECT_STATUSES,
+                'types' => DomainRules::PROJECT_TYPES,
+                'location' => true,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Name A–Z',
+                    'name_desc' => 'Name Z–A',
+                ],
+            ],
+            'properties' => [
+                'statuses' => DomainRules::PROPERTY_STATUSES,
+                'types' => DomainRules::PROPERTY_TYPES,
+                'location' => true,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Title A–Z',
+                    'name_desc' => 'Title Z–A',
+                ],
+            ],
+            'listings' => [
+                'statuses' => DomainRules::LISTING_STATUSES,
+                'types' => DomainRules::LISTING_TRANSACTION_TYPES,
+                'location' => true,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'price_asc' => 'Price low to high',
+                    'price_desc' => 'Price high to low',
+                    'name_asc' => 'Property A–Z',
+                ],
+            ],
+            'inquiries' => [
+                'statuses' => DomainRules::INQUIRY_STATUSES,
+                'types' => [],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Newest received',
+                    'updated_asc' => 'Oldest received',
+                    'name_asc' => 'Contact A–Z',
+                ],
+            ],
+            'leads' => [
+                'statuses' => DomainRules::LEAD_STAGES,
+                'types' => DomainRules::LISTING_TRANSACTION_TYPES,
+                'location' => true,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'price_asc' => 'Budget low to high',
+                    'price_desc' => 'Budget high to low',
+                    'name_asc' => 'Contact A–Z',
+                ],
+            ],
+            'catalog' => [
+                'statuses' => ['active', 'inactive'],
+                'types' => ['location', 'amenity'],
+                'location' => false,
+                'sorts' => [
+                    'name_asc' => 'Name A–Z',
+                    'name_desc' => 'Name Z–A',
+                    'updated_desc' => 'Recently updated',
+                ],
+            ],
+            'media' => [
+                'statuses' => [],
+                'types' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Newest uploaded',
+                    'updated_asc' => 'Oldest uploaded',
+                    'name_asc' => 'Filename A–Z',
+                ],
+            ],
+            default => ['statuses' => [], 'types' => [], 'location' => false, 'sorts' => []],
         };
     }
 

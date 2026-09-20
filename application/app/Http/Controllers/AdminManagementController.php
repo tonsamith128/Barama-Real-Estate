@@ -6,6 +6,7 @@ namespace Barama\Http\Controllers;
 
 use Barama\Core\Request;
 use Barama\Core\Response;
+use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
 use DomainException;
@@ -25,6 +26,35 @@ final class AdminManagementController
         return $this->execute(fn (): array => [
             'amenity_id' => (new CatalogManagementService())->createAmenity($request->all()),
         ], 201);
+    }
+
+    public function bulkWorkflow(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            $records = $request->input('records', []);
+
+            if (!is_array($records)) {
+                throw new InvalidArgumentException('Selected moderation records are invalid.');
+            }
+
+            $decision = trim((string) $request->input('decision', ''));
+            $note = trim((string) $request->input('note', ''));
+
+            $result = (new BulkModerationService())->moderate(
+                $records,
+                $decision,
+                $note !== '' ? mb_substr($note, 0, 500) : null
+            );
+
+            $result['message'] = sprintf(
+                'Bulk moderation processed %d record(s): %d succeeded, %d failed.',
+                $result['processed'],
+                $result['succeeded'],
+                $result['failed']
+            );
+
+            return $result;
+        });
     }
 
     public function workflow(Request $request, string $resource, string $id): Response

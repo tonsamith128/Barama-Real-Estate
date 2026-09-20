@@ -9,6 +9,7 @@ use Barama\Repositories\UserRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\MarketplaceRepository;
+use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\CompanyManagementService;
 use Barama\Services\DomainWorkflowService;
@@ -321,7 +322,72 @@ if (
     throw new RuntimeException('Public marketplace read model or guarded public media lookup failed.');
 }
 
+$filteredDeveloperListings = $workspace->developerSection(
+    $developerId,
+    'listings',
+    '',
+    1,
+    20,
+    [
+        'status' => 'published',
+        'type' => 'sale',
+        'location' => (string) $cityId,
+    ],
+    'price_desc'
+);
+
+$filteredAdminCompanies = $workspace->adminSection(
+    'companies',
+    '',
+    1,
+    20,
+    [
+        'status' => 'approved',
+        'type' => 'developer',
+        'location' => (string) $cityId,
+    ],
+    'name_asc'
+);
+
+if (
+    (int) $filteredDeveloperListings['total'] < 1
+    || (int) $filteredAdminCompanies['total'] < 1
+) {
+    throw new RuntimeException('Workspace table filtering or sorting removed valid scoped records.');
+}
+
+Session::put('auth.user_id', $developerId);
+
+$bulkCompanyId = (new CompanyManagementService())->create([
+    'name' => 'Barama QA Bulk Development',
+    'company_type' => 'developer',
+    'location_id' => $cityId,
+    'email' => 'bulk-company@example.test',
+]);
+
+$workflow->transition('company', $bulkCompanyId, 'pending', 'QA bulk submit');
+
+Session::put('auth.user_id', $adminId);
+
+$bulkResult = (new BulkModerationService())->moderate(
+    ['company:' . $bulkCompanyId],
+    'approve',
+    'QA bulk approval'
+);
+
+$bulkRecord = $recordReader->adminRecord('company', $bulkCompanyId);
+
+if (
+    $bulkResult['processed'] !== 1
+    || $bulkResult['succeeded'] !== 1
+    || $bulkResult['failed'] !== 0
+    || $bulkRecord === null
+    || (string) $bulkRecord['record']['status'] !== 'approved'
+) {
+    throw new RuntimeException('Bulk moderation did not approve the pending company.');
+}
+
 fwrite(
     STDOUT,
-    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, workspace reads, public marketplace reads, guarded media and company-scope isolation verified.\n"
+    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, filtered workspace reads, bulk moderation, public marketplace reads, guarded media and company-scope isolation verified.\n"
 );
