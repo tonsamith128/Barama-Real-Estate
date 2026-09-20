@@ -47,6 +47,7 @@ $requiredTables = [
     'notifications',
     'email_outbox',
     'saved_search_matches',
+    'application_settings',
 ];
 
 $statement = $pdo->query(

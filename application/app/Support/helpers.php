@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Barama\Core\Config;
 use Barama\Core\Csrf;
+use Barama\Core\RuntimeEnvironment;
 use Barama\Services\AuthService;
 
 if (!function_exists('e')) {
@@ -23,6 +24,13 @@ if (!function_exists('config')) {
 if (!function_exists('env')) {
     function env(string $key, mixed $default = null): mixed
     {
+        if (
+            class_exists(RuntimeEnvironment::class)
+            && RuntimeEnvironment::has($key)
+        ) {
+            return RuntimeEnvironment::get($key, $default);
+        }
+
         $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
 
         if ($value === false || $value === null || $value === '') {
@@ -158,6 +166,17 @@ if (!function_exists('app_icon')) {
             'calendar' => '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
             'bell' => '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
             'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+            'key' => '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M17 6l2 2M14 9l2 2"/>',
+            'server' => '<rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/>',
+            'database' => '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+            'globe' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+            'language' => '<path d="M4 5h8M8 3v2M5 9c2-1 4-3 5-6M6 6c1 2 3 4 6 5M14 19l3-8 3 8M15 16h4"/>',
+            'user' => '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+            'lock' => '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+            'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+            'check' => '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
+            'alert' => '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v4M12 17h.01"/>',
+            'eye' => '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',
         ];
 
         $path = $paths[$name] ?? $paths['grid'];

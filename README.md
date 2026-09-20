@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.x`
+- Current development line: `0.9.0-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -70,3 +70,10 @@ Management HTTP endpoints are protected by authentication, permissions, company 
 ## Automated database QA
 
 GitHub Actions runs repository lint/structure QA and a MySQL 8 smoke installation. The workflow applies all ordered migrations, verifies the expected schema/role/permission seeds and lifecycle rules, then reruns the migration command to confirm a clean no-op replay. It also executes an end-to-end domain write smoke test against MySQL.
+
+
+## One-click installer
+
+The v0.9 development line includes the canonical five-step browser installer at `/installer/`: License & Terms, Requirements, Database, Website, and System Health / Finish. An uninstalled root request redirects to the installer automatically. Runtime configuration, license state, and the installation lock are stored under protected application runtime storage; buyers do not create or edit `.env` manually.
+
+The license field is verified through the Ton Samith License Manager and the original purchase code is not retained after activation. See `docs/INSTALLER.md` for the internal architecture and release-validation contract.

@@ -3560,3 +3560,910 @@ html[data-bs-theme="dark"] {
         height: 34px;
     }
 }
+
+
+/* 16. One-click installer */
+.installer-body {
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.installer-shell {
+    display: grid;
+    min-height: 100vh;
+    grid-template-columns: 320px minmax(0, 1fr);
+    background: var(--barama-bg);
+}
+
+.installer-sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    border-right: 1px solid var(--barama-border);
+    background: var(--barama-surface);
+    padding: 1.35rem;
+}
+
+.installer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.15rem 0.25rem 1.25rem;
+}
+
+.installer-brand strong,
+.installer-brand span {
+    display: block;
+}
+
+.installer-brand strong {
+    font-size: 0.92rem;
+    font-weight: 860;
+}
+
+.installer-brand > div > span {
+    margin-top: 0.2rem;
+    color: var(--barama-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.installer-progress {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.installer-progress li {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.7rem;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    padding: 0.72rem;
+    color: var(--barama-muted);
+}
+
+.installer-progress li.is-active {
+    border-color: color-mix(in srgb, var(--barama-primary) 22%, var(--barama-border));
+    background: color-mix(in srgb, var(--barama-primary) 7%, var(--barama-surface));
+    color: var(--barama-text);
+}
+
+.installer-progress li.is-complete {
+    color: var(--barama-text);
+}
+
+.installer-progress__number {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid var(--barama-border);
+    border-radius: 11px;
+    background: var(--barama-bg);
+    color: var(--barama-muted);
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.installer-progress li.is-active .installer-progress__number {
+    border-color: var(--barama-primary);
+    background: var(--barama-primary);
+    color: #fff;
+}
+
+.installer-progress li.is-complete .installer-progress__number {
+    border-color: color-mix(in srgb, var(--barama-success) 28%, var(--barama-border));
+    background: color-mix(in srgb, var(--barama-success) 10%, var(--barama-surface));
+    color: var(--barama-success);
+}
+
+.installer-progress__number svg {
+    width: 17px;
+    height: 17px;
+}
+
+.installer-progress strong,
+.installer-progress small {
+    display: block;
+}
+
+.installer-progress strong {
+    font-size: 0.76rem;
+    font-weight: 820;
+}
+
+.installer-progress small {
+    margin-top: 0.16rem;
+    font-size: 0.61rem;
+    line-height: 1.35;
+}
+
+.installer-sidebar__footer {
+    margin-top: auto;
+    border-top: 1px solid var(--barama-border);
+    padding: 1rem 0.25rem 0;
+    color: var(--barama-muted);
+    font-size: 0.64rem;
+}
+
+.installer-sidebar__footer span,
+.installer-sidebar__footer small {
+    display: block;
+}
+
+.installer-sidebar__footer small {
+    margin-top: 0.2rem;
+}
+
+.installer-workspace {
+    min-width: 0;
+}
+
+.installer-topbar {
+    display: flex;
+    min-height: 68px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--barama-border);
+    background: color-mix(in srgb, var(--barama-bg) 88%, transparent);
+    padding: 0 1.5rem;
+    backdrop-filter: blur(14px);
+}
+
+.installer-topbar > span {
+    color: var(--barama-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.installer-utilities {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.installer-language {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--barama-border);
+    border-radius: 12px;
+    background: var(--barama-surface);
+    padding: 0 0.55rem;
+}
+
+.installer-language svg {
+    width: 17px;
+    height: 17px;
+    color: var(--barama-muted);
+}
+
+.installer-language select {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--barama-text);
+    font-size: 0.7rem;
+    font-weight: 760;
+}
+
+.installer-main {
+    width: min(100%, 980px);
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.installer-heading {
+    margin-bottom: 1.15rem;
+}
+
+.installer-heading .eyebrow {
+    margin-bottom: 0.45rem;
+}
+
+.installer-heading h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 3vw, 2.6rem);
+    font-weight: 880;
+    letter-spacing: -0.045em;
+}
+
+.installer-heading p {
+    max-width: 700px;
+    margin: 0.55rem 0 0;
+    color: var(--barama-muted);
+    font-size: 0.79rem;
+    line-height: 1.65;
+}
+
+.installer-card,
+.installer-finish {
+    border: 1px solid var(--barama-border);
+    border-radius: 18px;
+    background: var(--barama-surface);
+    box-shadow: var(--barama-shadow);
+    overflow: hidden;
+}
+
+.installer-card__head {
+    border-bottom: 1px solid var(--barama-border);
+    padding: 1rem 1.1rem;
+}
+
+.installer-card__head > div {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.installer-card__head > div > span {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 11px;
+    background: var(--barama-surface-soft);
+    color: var(--barama-primary);
+}
+
+.installer-card__head svg {
+    width: 18px;
+    height: 18px;
+}
+
+.installer-card__head h2 {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 850;
+}
+
+.installer-card__head p {
+    margin: 0.22rem 0 0;
+    color: var(--barama-muted);
+    font-size: 0.66rem;
+}
+
+.installer-card > form,
+.installer-form {
+    padding: 1.1rem;
+}
+
+.installer-field {
+    display: grid;
+    gap: 0.38rem;
+}
+
+.installer-field__label,
+.installer-section-label {
+    color: var(--barama-muted);
+    font-size: 0.66rem;
+    font-weight: 800;
+}
+
+.installer-field > small {
+    color: var(--barama-muted);
+    font-size: 0.61rem;
+    line-height: 1.45;
+}
+
+.installer-input {
+    display: flex;
+    min-height: 46px;
+    align-items: stretch;
+    border: 1px solid var(--barama-border);
+    border-radius: 11px;
+    background: var(--barama-bg);
+    overflow: hidden;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.installer-input:focus-within {
+    border-color: color-mix(in srgb, var(--barama-primary) 70%, var(--barama-border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--barama-primary) 10%, transparent);
+}
+
+.installer-input__icon {
+    display: grid;
+    width: 43px;
+    flex: 0 0 43px;
+    place-items: center;
+    color: var(--barama-muted);
+}
+
+.installer-input__icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.installer-input .form-control,
+.installer-input .form-select {
+    min-width: 0;
+    min-height: 44px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--barama-text);
+    padding-left: 0;
+    font-size: 0.75rem;
+    box-shadow: none !important;
+}
+
+.installer-input .form-select {
+    padding-right: 2rem;
+}
+
+.installer-input__action,
+.installer-input__icon-button {
+    flex: 0 0 auto;
+    border: 0;
+    border-left: 1px solid var(--barama-border);
+    background: var(--barama-surface);
+    color: var(--barama-text);
+    padding: 0 0.85rem;
+    font-size: 0.68rem;
+    font-weight: 820;
+}
+
+.installer-input__icon-button {
+    display: grid;
+    width: 44px;
+    place-items: center;
+    padding: 0;
+}
+
+.installer-input__icon-button svg {
+    width: 17px;
+    height: 17px;
+}
+
+.installer-input__action:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.installer-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.installer-field--wide {
+    grid-column: 1 / -1;
+}
+
+.installer-section-label {
+    margin: 0.2rem 0 0.8rem;
+    color: var(--barama-text);
+    font-size: 0.69rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+.installer-section-label:not(:first-of-type) {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--barama-border);
+}
+
+.installer-option,
+.installer-agreement {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    color: var(--barama-text);
+    font-size: 0.68rem;
+}
+
+.installer-option input,
+.installer-agreement input {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    margin-top: 0.08rem;
+    accent-color: var(--barama-primary);
+}
+
+.installer-option strong,
+.installer-option small {
+    display: block;
+}
+
+.installer-option small {
+    margin-top: 0.15rem;
+    color: var(--barama-muted);
+    font-size: 0.61rem;
+}
+
+.installer-agreement input:disabled + span {
+    color: var(--barama-muted);
+}
+
+.installer-terms-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--barama-border);
+    padding-top: 1rem;
+}
+
+.installer-terms-row .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.installer-terms-row .btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.installer-license-status {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--barama-success) 9%, var(--barama-surface));
+    color: var(--barama-success);
+    padding: 0.65rem 0.75rem;
+    font-size: 0.67rem;
+    font-weight: 780;
+}
+
+.installer-license-status.is-error {
+    background: color-mix(in srgb, #d43b4f 8%, var(--barama-surface));
+    color: #d43b4f;
+}
+
+.installer-license-status svg {
+    width: 17px;
+    height: 17px;
+}
+
+.installer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.15rem;
+    border-top: 1px solid var(--barama-border);
+    padding-top: 1rem;
+}
+
+.installer-actions__note {
+    max-width: 530px;
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+    line-height: 1.5;
+}
+
+.installer-actions .btn {
+    min-width: 140px;
+    font-size: 0.72rem;
+    font-weight: 820;
+}
+
+.installer-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--barama-primary) 18%, var(--barama-border));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--barama-primary) 5%, var(--barama-surface));
+    color: var(--barama-text);
+    padding: 0.7rem 0.8rem;
+    font-size: 0.68rem;
+    line-height: 1.5;
+}
+
+.installer-alert.is-error {
+    border-color: color-mix(in srgb, #d43b4f 32%, var(--barama-border));
+    background: color-mix(in srgb, #d43b4f 7%, var(--barama-surface));
+    color: #b62b3d;
+}
+
+.installer-alert.is-success {
+    border-color: color-mix(in srgb, var(--barama-success) 30%, var(--barama-border));
+    background: color-mix(in srgb, var(--barama-success) 7%, var(--barama-surface));
+    color: var(--barama-success);
+}
+
+.installer-alert svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
+.installer-check-list {
+    display: grid;
+}
+
+.installer-check,
+.installer-health {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.7rem;
+    border-bottom: 1px solid var(--barama-border);
+    padding: 0.72rem 1.1rem;
+}
+
+.installer-check:last-child,
+.installer-health:last-child {
+    border-bottom: 0;
+}
+
+.installer-check__icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 10px;
+}
+
+.installer-check__icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.installer-check__icon--pass {
+    background: color-mix(in srgb, var(--barama-success) 10%, var(--barama-surface));
+    color: var(--barama-success);
+}
+
+.installer-check__icon--warning {
+    background: color-mix(in srgb, #d88b17 11%, var(--barama-surface));
+    color: #b9720d;
+}
+
+.installer-check__icon--fix {
+    background: color-mix(in srgb, #d43b4f 9%, var(--barama-surface));
+    color: #d43b4f;
+}
+
+.installer-check strong,
+.installer-check small,
+.installer-health strong,
+.installer-health small {
+    display: block;
+}
+
+.installer-check strong,
+.installer-health strong {
+    font-size: 0.7rem;
+    font-weight: 820;
+}
+
+.installer-check small,
+.installer-health small {
+    margin-top: 0.14rem;
+    color: var(--barama-muted);
+    font-size: 0.6rem;
+}
+
+.installer-status {
+    border-radius: 999px;
+    padding: 0.32rem 0.55rem;
+    font-size: 0.56rem;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.installer-status--pass {
+    background: color-mix(in srgb, var(--barama-success) 10%, var(--barama-surface));
+    color: var(--barama-success);
+}
+
+.installer-status--warning {
+    background: color-mix(in srgb, #d88b17 11%, var(--barama-surface));
+    color: #b9720d;
+}
+
+.installer-status--fix {
+    background: color-mix(in srgb, #d43b4f 9%, var(--barama-surface));
+    color: #d43b4f;
+}
+
+.installer-modal {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(4, 11, 22, 0.62);
+    padding: 1rem;
+    backdrop-filter: blur(8px);
+}
+
+.installer-modal[hidden] {
+    display: none;
+}
+
+.installer-modal__dialog {
+    width: min(100%, 680px);
+    max-height: min(86vh, 760px);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--barama-border);
+    border-radius: 18px;
+    background: var(--barama-surface);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+}
+
+.installer-modal__head,
+.installer-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+}
+
+.installer-modal__head {
+    border-bottom: 1px solid var(--barama-border);
+}
+
+.installer-modal__head .eyebrow {
+    margin-bottom: 0.2rem;
+}
+
+.installer-modal__head h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 860;
+}
+
+.installer-modal__head > button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid var(--barama-border);
+    border-radius: 10px;
+    background: var(--barama-bg);
+    color: var(--barama-text);
+    font-size: 1.2rem;
+}
+
+.installer-modal__body {
+    overflow: auto;
+    padding: 0.25rem 1.1rem;
+}
+
+.installer-modal__body section {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--barama-border);
+}
+
+.installer-modal__body section:last-child {
+    border-bottom: 0;
+}
+
+.installer-modal__body h3 {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 840;
+}
+
+.installer-modal__body p {
+    margin: 0.38rem 0 0;
+    color: var(--barama-muted);
+    font-size: 0.68rem;
+    line-height: 1.65;
+}
+
+.installer-modal__footer {
+    border-top: 1px solid var(--barama-border);
+}
+
+body.installer-modal-open {
+    overflow: hidden;
+}
+
+.installer-finish {
+    padding: 1.2rem;
+}
+
+.installer-finish__hero {
+    display: grid;
+    justify-items: center;
+    border-bottom: 1px solid var(--barama-border);
+    padding: 1.1rem 1rem 1.5rem;
+    text-align: center;
+}
+
+.installer-finish__icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    margin-bottom: 0.8rem;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--barama-success) 12%, var(--barama-surface));
+    color: var(--barama-success);
+}
+
+.installer-finish__icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.installer-finish__hero .eyebrow {
+    margin-bottom: 0.25rem;
+}
+
+.installer-finish__hero h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 880;
+}
+
+.installer-finish__hero p {
+    margin: 0.45rem 0 0;
+    color: var(--barama-muted);
+    font-size: 0.72rem;
+}
+
+.installer-health-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 1rem;
+    border: 1px solid var(--barama-border);
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.installer-health:nth-child(odd) {
+    border-right: 1px solid var(--barama-border);
+}
+
+.installer-health {
+    border-bottom: 1px solid var(--barama-border);
+    padding: 0.72rem;
+}
+
+.installer-finish__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.55rem;
+    padding-top: 1.15rem;
+}
+
+.installer-finish__actions .btn {
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+@media (max-width: 991.98px) {
+    .installer-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .installer-sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--barama-border);
+        padding: 1rem;
+    }
+
+    .installer-progress {
+        grid-template-columns: repeat(5, minmax(145px, 1fr));
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+    }
+
+    .installer-progress li {
+        min-width: 145px;
+    }
+
+    .installer-progress small,
+    .installer-sidebar__footer {
+        display: none;
+    }
+
+    .installer-main {
+        padding-top: 1.6rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .installer-form__grid,
+    .installer-health-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .installer-field--wide {
+        grid-column: auto;
+    }
+
+    .installer-health:nth-child(odd) {
+        border-right: 0;
+    }
+
+    .installer-terms-row,
+    .installer-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .installer-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .installer-sidebar {
+        padding: 0.8rem;
+    }
+
+    .installer-brand {
+        padding-bottom: 0.8rem;
+    }
+
+    .installer-progress {
+        grid-template-columns: repeat(5, minmax(125px, 1fr));
+    }
+
+    .installer-progress li {
+        grid-template-columns: 30px minmax(0, 1fr);
+        min-width: 125px;
+        padding: 0.55rem;
+    }
+
+    .installer-progress__number {
+        width: 29px;
+        height: 29px;
+    }
+
+    .installer-topbar {
+        min-height: 62px;
+        padding: 0 0.85rem;
+    }
+
+    .installer-main {
+        padding: 1rem 0.8rem 1.5rem;
+    }
+
+    .installer-card > form,
+    .installer-form,
+    .installer-card__head {
+        padding: 0.85rem;
+    }
+
+    .installer-check {
+        grid-template-columns: 30px minmax(0, 1fr);
+        padding: 0.68rem 0.85rem;
+    }
+
+    .installer-check .installer-status {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .installer-language {
+        padding: 0 0.4rem;
+    }
+
+    .installer-language select {
+        width: 62px;
+    }
+}

@@ -7,7 +7,8 @@ Keep the product understandable to a buyer, maintainable by the author, and revi
 ## Canonical layers
 
 - index.php: the only web front controller.
-- application/bootstrap/app.php: boot sequence, autoloading, configuration, sessions, and exception handling.
+- application/bootstrap/runtime.php: shared runtime bootstrap, autoloading, persisted runtime configuration and sessions.
+- application/bootstrap/app.php: installed-application exception handling and router boot sequence.
 - application/app/Core: framework primitives only.
 - application/app/Http/Controllers: request orchestration by product area.
 - application/app/Domain: canonical business rules, status catalogs, and lifecycle rules.
@@ -62,3 +63,12 @@ Git history is the source-history mechanism. The repository tree should contain 
 - no credentials committed to source
 
 Authentication, authorization, login throttling, and CSRF enforcement are implemented in the current foundation. Domain validation is centralized as modules are added. Upload security, installer hardening, broader rate limiting, and audit logging remain required before the final v1.0.0 release.
+
+
+## Installer boundary
+
+`/installer/` is a physical installer entry point so both GET and POST use the same canonical trailing-slash URL without depending on front-controller rewrite redirects. The root `index.php` redirects uninstalled requests to that path with no-cache headers.
+
+The customer sees exactly five installation steps. Installer state is server-side session data; purchase codes and form passwords are not written into persistent installer state. Successful installation stores protected runtime configuration, normalized license activation state, and an installation lock under `application/storage/app`.
+
+The installed application and the installer share the canonical `assets/css/app.css` and `assets/js/app.js`; installer-specific first-party CSS/JavaScript files are prohibited.

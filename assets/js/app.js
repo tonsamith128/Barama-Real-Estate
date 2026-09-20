@@ -340,3 +340,340 @@
         });
     });
 })();
+
+
+/* One-click installer */
+(() => {
+    'use strict';
+
+    const installer = document.querySelector('[data-installer]');
+
+    if (!installer) {
+        return;
+    }
+
+    const installerUrl = installer.getAttribute('data-installer-url') || '/installer/';
+    const notice = document.querySelector('[data-installer-notice]');
+    const licenseForm = document.querySelector('[data-installer-license-form]');
+    const purchaseCode = document.querySelector('[data-purchase-code]');
+    const agreement = document.querySelector('[data-terms-agreement]');
+    const validateButton = document.querySelector('[data-license-validate]');
+    const continueButton = document.querySelector('[data-license-continue]');
+    const licenseStatus = document.querySelector('[data-license-status]');
+    const termsModal = document.querySelector('[data-installer-terms-modal]');
+    let licenseValidated = installer.getAttribute('data-license-validated') === '1';
+
+    const showNotice = (message, type = 'error') => {
+        if (!notice) {
+            return;
+        }
+
+        notice.hidden = false;
+        notice.classList.remove('is-error', 'is-success');
+        notice.classList.add(type === 'success' ? 'is-success' : 'is-error');
+        notice.innerHTML = '';
+        const span = document.createElement('span');
+        span.textContent = message;
+        notice.appendChild(span);
+    };
+
+    const hideNotice = () => {
+        if (notice) {
+            notice.hidden = true;
+            notice.classList.remove('is-error', 'is-success');
+            notice.textContent = '';
+        }
+    };
+
+    const updateLicenseButtons = () => {
+        if (!licenseForm) {
+            return;
+        }
+
+        const hasCode = (purchaseCode?.value || '').trim().length > 0;
+        const accepted = agreement?.checked === true;
+
+        if (validateButton) {
+            validateButton.disabled = !(hasCode && accepted);
+        }
+
+        if (continueButton) {
+            continueButton.disabled = !(licenseValidated && accepted);
+        }
+    };
+
+    purchaseCode?.addEventListener('input', () => {
+        if (licenseValidated) {
+            licenseValidated = false;
+            installer.setAttribute('data-license-validated', '0');
+
+            if (licenseStatus) {
+                licenseStatus.hidden = true;
+                licenseStatus.classList.remove('is-valid', 'is-error');
+            }
+        }
+
+        updateLicenseButtons();
+    });
+
+    agreement?.addEventListener('change', updateLicenseButtons);
+    updateLicenseButtons();
+
+    const openTerms = () => {
+        if (!termsModal) {
+            return;
+        }
+
+        termsModal.hidden = false;
+        termsModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('installer-modal-open');
+        termsModal.querySelector('[data-accept-terms]')?.focus();
+    };
+
+    const closeTerms = () => {
+        if (!termsModal) {
+            return;
+        }
+
+        termsModal.hidden = true;
+        termsModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('installer-modal-open');
+        document.querySelector('[data-open-terms]')?.focus();
+    };
+
+    document.querySelector('[data-open-terms]')?.addEventListener('click', openTerms);
+    document.querySelectorAll('[data-close-terms]').forEach((button) => {
+        button.addEventListener('click', closeTerms);
+    });
+
+    termsModal?.addEventListener('click', (event) => {
+        if (event.target === termsModal) {
+            closeTerms();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && termsModal && !termsModal.hidden) {
+            closeTerms();
+        }
+    });
+
+    document.querySelector('[data-accept-terms]')?.addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        const csrf = licenseForm?.querySelector('input[name="_token"]')?.value || '';
+
+        button.disabled = true;
+        hideNotice();
+
+        try {
+            const body = new FormData();
+            body.append('_token', csrf);
+            body.append('action', 'accept_terms');
+
+            const response = await fetch(installerUrl, {
+                method: 'POST',
+                body,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok || payload?.ok !== true) {
+                throw new Error(payload?.message || 'Terms could not be accepted.');
+            }
+
+            installer.setAttribute('data-terms-reviewed', '1');
+
+            if (agreement) {
+                agreement.disabled = false;
+                agreement.focus();
+            }
+
+            closeTerms();
+            showNotice(
+                payload?.data?.message || 'Terms reviewed. You may now accept the agreement.',
+                'success'
+            );
+            updateLicenseButtons();
+        } catch (error) {
+            showNotice(
+                error instanceof Error ? error.message : 'Terms could not be accepted.'
+            );
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    licenseForm?.addEventListener('submit', async (event) => {
+        const submitter = event.submitter;
+
+        if (submitter?.value !== 'validate_license') {
+            return;
+        }
+
+        event.preventDefault();
+        hideNotice();
+        submitter.disabled = true;
+
+        if (licenseStatus) {
+            licenseStatus.hidden = true;
+            licenseStatus.classList.remove('is-valid', 'is-error');
+        }
+
+        try {
+            const body = new FormData(licenseForm);
+            body.set('action', 'validate_license');
+
+            const response = await fetch(installerUrl, {
+                method: 'POST',
+                body,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok || payload?.ok !== true) {
+                throw new Error(
+                    payload?.message
+                    || 'The purchase code could not be verified.'
+                );
+            }
+
+            licenseValidated = true;
+            installer.setAttribute('data-license-validated', '1');
+
+            if (licenseStatus) {
+                licenseStatus.hidden = false;
+                licenseStatus.classList.add('is-valid');
+                const statusText = licenseStatus.querySelector('span');
+
+                if (statusText) {
+                    statusText.textContent = payload?.data?.message
+                        || 'License validated successfully.';
+                }
+            }
+
+            showNotice(
+                payload?.data?.message || 'License validated successfully.',
+                'success'
+            );
+        } catch (error) {
+            licenseValidated = false;
+            installer.setAttribute('data-license-validated', '0');
+
+            if (licenseStatus) {
+                licenseStatus.hidden = false;
+                licenseStatus.classList.add('is-error');
+                const statusText = licenseStatus.querySelector('span');
+
+                if (statusText) {
+                    statusText.textContent = error instanceof Error
+                        ? error.message
+                        : 'The purchase code could not be verified.';
+                }
+            }
+
+            showNotice(
+                error instanceof Error
+                    ? error.message
+                    : 'The purchase code could not be verified.'
+            );
+        } finally {
+            updateLicenseButtons();
+        }
+    });
+
+    const secureRandom = (max) => {
+        const array = new Uint32Array(1);
+        window.crypto.getRandomValues(array);
+
+        return array[0] % max;
+    };
+
+    const secureShuffle = (characters) => {
+        const values = [...characters];
+
+        for (let index = values.length - 1; index > 0; index -= 1) {
+            const target = secureRandom(index + 1);
+            [values[index], values[target]] = [values[target], values[index]];
+        }
+
+        return values.join('');
+    };
+
+    document.querySelector('[data-generate-password]')?.addEventListener('click', () => {
+        const password = document.querySelector('[data-admin-password]');
+        const confirmation = document.querySelector('[data-admin-password-confirmation]');
+
+        if (!password || !confirmation || !window.crypto?.getRandomValues) {
+            showNotice('Secure password generation is unavailable in this browser.');
+            return;
+        }
+
+        const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const lower = 'abcdefghijkmnopqrstuvwxyz';
+        const numbers = '23456789';
+        const symbols = '!@#$%*-_=+?';
+        const all = upper + lower + numbers + symbols;
+        let generated = upper[secureRandom(upper.length)]
+            + lower[secureRandom(lower.length)]
+            + numbers[secureRandom(numbers.length)]
+            + symbols[secureRandom(symbols.length)];
+
+        while (generated.length < 20) {
+            generated += all[secureRandom(all.length)];
+        }
+
+        generated = secureShuffle(generated);
+        password.value = generated;
+        confirmation.value = generated;
+        password.type = 'text';
+        confirmation.type = 'text';
+        password.dispatchEvent(new Event('input', { bubbles: true }));
+        showNotice(
+            'A strong password was generated. Save it securely before continuing.',
+            'success'
+        );
+        password.focus();
+        password.select();
+    });
+
+    document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const wrapper = button.closest('.installer-input');
+            const field = wrapper?.querySelector('[data-password-field]');
+
+            if (!field) {
+                return;
+            }
+
+            const show = field.type === 'password';
+            field.type = show ? 'text' : 'password';
+            button.setAttribute(
+                'aria-label',
+                show ? 'Hide password' : 'Show password'
+            );
+        });
+    });
+
+    document.querySelector('[data-installer-final-form]')?.addEventListener('submit', (event) => {
+        if (!event.currentTarget.checkValidity()) {
+            return;
+        }
+
+        const button = document.querySelector('[data-install-submit]');
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Installing…';
+        }
+    });
+})();
