@@ -94,13 +94,13 @@ final class DomainInput
     /** @param array<string, mixed> $input */
     public static function optionalDecimal(array $input, string $key): ?string
     {
-        return self::optionalNumber($input, $key, false);
+        return self::optionalNumber($input, $key, false, 2);
     }
 
     /** @param array<string, mixed> $input */
     public static function optionalSignedDecimal(array $input, string $key): ?string
     {
-        return self::optionalNumber($input, $key, true);
+        return self::optionalNumber($input, $key, true, 7);
     }
 
     /** @param array<string, mixed> $input */
@@ -113,7 +113,8 @@ final class DomainInput
     private static function optionalNumber(
         array $input,
         string $key,
-        bool $allowNegative
+        bool $allowNegative,
+        int $precision
     ): ?string {
         $raw = $input[$key] ?? null;
 
@@ -135,7 +136,7 @@ final class DomainInput
             );
         }
 
-        return number_format($number, 7, '.', '');
+        return number_format($number, $precision, '.', '');
     }
 
     private function __construct()

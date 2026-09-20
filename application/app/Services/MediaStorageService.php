@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\MediaRepository;
 use Barama\Repositories\WorkflowRepository;
@@ -13,6 +14,7 @@ use DomainException;
 use finfo;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 final class MediaStorageService
 {
@@ -36,10 +38,7 @@ final class MediaStorageService
         }
 
         $entityId = DomainInput::requiredPositiveInt($input, 'entity_id');
-        $context = (new WorkflowRepository())->context(
-            $entityType === 'company' ? 'company' : $entityType,
-            $entityId
-        );
+        $context = (new WorkflowRepository())->context($entityType, $entityId);
 
         if ($context === null || $context['company_id'] === null) {
             throw new InvalidArgumentException('Media target was not found.');
@@ -63,8 +62,14 @@ final class MediaStorageService
             throw new InvalidArgumentException('The uploaded file could not be verified.');
         }
 
-        $size = (int) ($file['size'] ?? filesize($temporaryPath));
-        $maxBytes = (int) config('domain.media_max_upload_bytes', 10 * 1024 * 1024);
+        $actualSize = filesize($temporaryPath);
+
+        if ($actualSize === false) {
+            throw new InvalidArgumentException('The uploaded file size could not be verified.');
+        }
+
+        $size = (int) $actualSize;
+        $maxBytes = max(1, (int) config('domain.media_max_upload_bytes', 10 * 1024 * 1024));
 
         if ($size < 1 || $size > $maxBytes) {
             throw new InvalidArgumentException('The uploaded file exceeds the allowed size.');
@@ -91,6 +96,11 @@ final class MediaStorageService
 
             $width = (int) $dimensions[0];
             $height = (int) $dimensions[1];
+            $maxPixels = max(1, (int) config('domain.media_max_image_pixels', 50_000_000));
+
+            if ($width < 1 || $height < 1 || ($width * $height) > $maxPixels) {
+                throw new InvalidArgumentException('The uploaded image dimensions are not allowed.');
+            }
         }
 
         $relativeDirectory = date('Y/m');
@@ -103,9 +113,15 @@ final class MediaStorageService
         $filename = str_replace('-', '', IdGenerator::uuid()) . '.' . $extension;
         $destination = $directory . '/' . $filename;
 
-        $moved = defined('BARAMA_CLI')
-            ? rename($temporaryPath, $destination)
-            : move_uploaded_file($temporaryPath, $destination);
+        if (defined('BARAMA_CLI')) {
+            $moved = copy($temporaryPath, $destination);
+
+            if ($moved) {
+                @unlink($temporaryPath);
+            }
+        } else {
+            $moved = move_uploaded_file($temporaryPath, $destination);
+        }
 
         if (!$moved) {
             throw new RuntimeException('The uploaded file could not be stored.');
@@ -114,28 +130,44 @@ final class MediaStorageService
         @chmod($destination, 0640);
 
         $relativePath = 'private/' . $relativeDirectory . '/' . $filename;
-        $mediaId = (new MediaRepository())->create([
-            'created_by_user_id' => (int) $user['id'],
-            'path' => $relativePath,
-            'original_name' => basename((string) ($file['name'] ?? 'upload.' . $extension)),
-            'mime_type' => $mime,
-            'extension' => $extension,
-            'size_bytes' => $size,
-            'width_px' => $width,
-            'height_px' => $height,
-            'alt_text' => DomainInput::optionalString($input, 'alt_text', 255),
-            'checksum_sha256' => hash_file('sha256', $destination),
-        ]);
+        $repository = new MediaRepository();
+        $pdo = Database::connection();
 
-        (new MediaRepository())->attach(
-            $mediaId,
-            $entityType,
-            $entityId,
-            DomainInput::optionalString($input, 'collection', 40) ?? 'gallery',
-            (int) ($input['position'] ?? 0),
-            DomainInput::boolean($input, 'is_primary')
-        );
+        try {
+            $pdo->beginTransaction();
 
-        return $mediaId;
+            $mediaId = $repository->create([
+                'created_by_user_id' => (int) $user['id'],
+                'path' => $relativePath,
+                'original_name' => basename((string) ($file['name'] ?? 'upload.' . $extension)),
+                'mime_type' => $mime,
+                'extension' => $extension,
+                'size_bytes' => $size,
+                'width_px' => $width,
+                'height_px' => $height,
+                'alt_text' => DomainInput::optionalString($input, 'alt_text', 255),
+                'checksum_sha256' => hash_file('sha256', $destination),
+            ]);
+
+            $repository->attach(
+                $mediaId,
+                $entityType,
+                $entityId,
+                DomainInput::optionalString($input, 'collection', 40) ?? 'gallery',
+                (int) ($input['position'] ?? 0),
+                DomainInput::boolean($input, 'is_primary')
+            );
+
+            $pdo->commit();
+
+            return $mediaId;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            @unlink($destination);
+            throw $exception;
+        }
     }
 }
