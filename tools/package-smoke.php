@@ -250,7 +250,7 @@ $membershipServiceSource = (string) file_get_contents(
 );
 
 if (
-    !str_contains($accountSource, 'Company Access')
+    !str_contains($accountSource, 'Company access')
     || !str_contains($accountSource, '/account/company/onboard')
     || !str_contains($accountSource, '/account/security/password')
     || !str_contains($accountSource, '/account/security/email')
