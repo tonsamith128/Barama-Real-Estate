@@ -59,8 +59,8 @@ assert_location() {
     local actual
 
     actual="$(
-        curl -sS -D - -o /dev/null "$url"
-        | tr -d '\r'
+        curl -sS -D - -o /dev/null "$url" \
+        | tr -d '\r' \
         | awk 'tolower($1) == "location:" {print $2; exit}'
     )"
 
