@@ -41,15 +41,23 @@ Permanent product slug:
 
 barama-real-estate
 
-The installer submits a purchase code or provided license key only to the Ton Samith License Manager activation endpoint. The License Manager may resolve the value directly or validate it with Envato. Barama does not contact Envato directly.
+Step 1 offers two verification methods while keeping one shared credential field and one Validate button:
+
+- Ton Samith License — a license key provided directly by Ton Samith
+- CodeCanyon / Envato — a CodeCanyon purchase code
+
+Both methods are resolved through the Ton Samith License Manager. For the CodeCanyon / Envato method, the License Manager may verify the purchase with Envato Market. Barama does not contact Envato directly and does not expose license-service implementation details in the customer interface.
+
+The selected method is bound to the validated installer session. Changing the method requires validation again.
 
 The activation request binds:
 
 - product slug
 - canonical domain
 - persistent installation ID
+- selected verification method
 
-The original purchase code is not stored in persistent runtime state. Successful activation stores only normalized license metadata and the activation token.
+The original purchase code or license key is not stored in persistent runtime state. Successful activation stores only normalized license metadata and the activation token.
 
 The Envato item ID remains zero before marketplace publication and is omitted from activation requests until a real item ID is assigned.
 
@@ -102,7 +110,7 @@ There is no browser reset/uninstall action. Recovery must be an explicit guarded
 
 ## Release validation
 
-The release package must be validated from the exact generated customer ZIP, not only from the repository working tree.
+The release package is built by tools/build-package.php and validated from the exact generated customer ZIP, not only from the repository working tree. GitHub Actions uploads the ZIP and its SHA256 checksum only after exact-package QA passes.
 
 The exact-package QA must cover at minimum:
 
@@ -121,5 +129,12 @@ The exact-package QA must cover at minimum:
 - sealed installer after completion
 - canonical CSS and JavaScript
 - no secret/runtime state shipped in the ZIP
+- database failure followed by a clean retry
+- production runtime mode
+- migration replay after installation
+- first administrator role assignment
+- second-install attempt blocked by the installation lock
+
+The package QA installs from the extracted ZIP into a fresh MySQL database. It does not ship or enable a licensing bypass; the successful remote License Manager path remains a separate release gate.
 
 A live License Manager success remains a release gate until a Barama-specific valid test purchase/license value is available for end-to-end verification.

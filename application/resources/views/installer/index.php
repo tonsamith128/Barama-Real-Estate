@@ -14,6 +14,9 @@ $current = $steps[$step] ?? $steps[1];
 $assetBase = rtrim((string) $basePath, '/');
 $termsReviewed = (bool) $termsReviewed;
 $licenseValidated = (bool) $licenseValidated;
+$licenseMethod = in_array((string) ($licenseMethod ?? 'envato'), ['direct', 'envato'], true)
+    ? (string) $licenseMethod
+    : 'envato';
 $healthChecks = is_array($health['checks'] ?? null)
     ? $health['checks']
     : [];
@@ -164,8 +167,40 @@ $languageValue = (string) (
                     >
                         <?= csrf_field() ?>
 
+                        <fieldset class="installer-license-methods">
+                            <legend class="installer-field__label">Verification method</legend>
+                            <label class="installer-license-method <?= $licenseMethod === 'envato' ? 'is-selected' : '' ?>">
+                                <input
+                                    type="radio"
+                                    name="license_method"
+                                    value="envato"
+                                    <?= $licenseMethod === 'envato' ? 'checked' : '' ?>
+                                    data-license-method
+                                >
+                                <span class="installer-license-method__icon"><?= app_icon('tag') ?></span>
+                                <span>
+                                    <strong>CodeCanyon / Envato</strong>
+                                    <small>Use your CodeCanyon purchase code.</small>
+                                </span>
+                            </label>
+                            <label class="installer-license-method <?= $licenseMethod === 'direct' ? 'is-selected' : '' ?>">
+                                <input
+                                    type="radio"
+                                    name="license_method"
+                                    value="direct"
+                                    <?= $licenseMethod === 'direct' ? 'checked' : '' ?>
+                                    data-license-method
+                                >
+                                <span class="installer-license-method__icon"><?= app_icon('key') ?></span>
+                                <span>
+                                    <strong>Ton Samith License</strong>
+                                    <small>Use a license key provided by Ton Samith.</small>
+                                </span>
+                            </label>
+                        </fieldset>
+
                         <label class="installer-field">
-                            <span class="installer-field__label">Purchase code / license key</span>
+                            <span class="installer-field__label">License key / purchase code</span>
                             <span class="installer-input installer-input--action">
                                 <span class="installer-input__icon">
                                     <?= app_icon('key') ?>
@@ -178,7 +213,7 @@ $languageValue = (string) (
                                     autocapitalize="off"
                                     spellcheck="false"
                                     maxlength="120"
-                                    placeholder="Enter your purchase code"
+                                    placeholder="Enter your license key or purchase code"
                                     data-purchase-code
                                 >
                                 <button
@@ -231,7 +266,7 @@ $languageValue = (string) (
 
                         <div class="installer-actions">
                             <span class="installer-actions__note">
-                                Your purchase code is used only for verification.
+                                The entered code is used only for license verification.
                             </span>
                             <button
                                 class="btn btn-primary"

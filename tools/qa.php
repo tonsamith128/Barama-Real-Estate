@@ -113,6 +113,8 @@ $required = [
     'tools/domain-write-smoke.php',
     'tools/notification-smoke.php',
     'tools/notifications.php',
+    'tools/build-package.php',
+    'tools/package-smoke.php',
     'application/config/license.php',
 ];
 

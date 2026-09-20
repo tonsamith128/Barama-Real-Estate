@@ -428,6 +428,9 @@ final class InstallerService
                 'status' => (string) ($license['status'] ?? 'active'),
                 'domain' => (string) $license['domain'],
                 'installation_id' => $installationId,
+                'verification_method' => (string) (
+                    $license['verification_method'] ?? 'envato'
+                ),
                 'validated_at' => (string) (
                     $license['validated_at'] ?? gmdate('c')
                 ),
@@ -559,7 +562,12 @@ SQL);
                     === (string) config(
                         'license.product_slug',
                         'barama-real-estate'
-                    ),
+                    )
+                && in_array(
+                    (string) ($license['verification_method'] ?? ''),
+                    ['direct', 'envato'],
+                    true
+                ),
             'Purchase activation is bound to this installation.'
         );
 
@@ -1019,6 +1027,11 @@ SQL);
             || LicenseManagerClient::canonicalDomain(
                 (string) ($license['domain'] ?? '')
             ) === ''
+            || !in_array(
+                (string) ($license['verification_method'] ?? ''),
+                ['direct', 'envato'],
+                true
+            )
         ) {
             throw new RuntimeException(
                 'Validate the purchase code before continuing.'

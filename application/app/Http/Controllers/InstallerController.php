@@ -148,7 +148,8 @@ final class InstallerController
         $license = (new LicenseManagerClient())->activate(
             (string) $request->input('purchase_code', ''),
             $service->detectedDomain(),
-            Installation::installationId()
+            Installation::installationId(),
+            (string) $request->input('license_method', 'envato')
         );
 
         Session::put(self::LICENSE_KEY, $license);
@@ -184,7 +185,21 @@ final class InstallerController
             || trim((string) ($license['activation_token'] ?? '')) === ''
         ) {
             throw new RuntimeException(
-                'Validate the purchase code before continuing.'
+                'Validate the license before continuing.'
+            );
+        }
+
+        $selectedMethod = strtolower(trim(
+            (string) $request->input('license_method', 'envato')
+        ));
+
+        if (
+            $selectedMethod !== strtolower(
+                (string) ($license['verification_method'] ?? '')
+            )
+        ) {
+            throw new RuntimeException(
+                'Validate the license again after changing the verification method.'
             );
         }
 
@@ -336,6 +351,14 @@ final class InstallerController
                     && trim(
                         (string) ($license['activation_token'] ?? '')
                     ) !== '',
+                'licenseMethod' => is_array($license)
+                    && in_array(
+                        (string) ($license['verification_method'] ?? ''),
+                        ['direct', 'envato'],
+                        true
+                    )
+                        ? (string) $license['verification_method']
+                        : 'envato',
                 'requirements' => $service->requirements(),
                 'requirementsReady' => $service->requirementsReady(),
                 'oldDatabase' => is_array($oldDatabase)
@@ -380,7 +403,7 @@ final class InstallerController
             || trim((string) ($license['activation_token'] ?? '')) === ''
         ) {
             throw new RuntimeException(
-                'Validate the purchase code before continuing.'
+                'Validate the license before continuing.'
             );
         }
 

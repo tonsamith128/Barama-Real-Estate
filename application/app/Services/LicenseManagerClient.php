@@ -12,18 +12,24 @@ final class LicenseManagerClient
     public function activate(
         string $purchaseCode,
         string $domain,
-        string $installationId
+        string $installationId,
+        string $verificationMethod = 'envato'
     ): array {
         $purchaseCode = trim($purchaseCode);
         $domain = self::canonicalDomain($domain);
         $installationId = strtolower(trim($installationId));
+        $verificationMethod = strtolower(trim($verificationMethod));
+
+        if (!in_array($verificationMethod, ['direct', 'envato'], true)) {
+            throw new RuntimeException('Choose a valid license verification method.');
+        }
 
         if (
             strlen($purchaseCode) < 8
             || strlen($purchaseCode) > 120
             || preg_match('/^[A-Za-z0-9-]+$/', $purchaseCode) !== 1
         ) {
-            throw new RuntimeException('Enter a valid CodeCanyon purchase code or license key.');
+            throw new RuntimeException('Enter a valid license key or CodeCanyon purchase code.');
         }
 
         if ($domain === '') {
@@ -39,6 +45,7 @@ final class LicenseManagerClient
             'product_slug' => (string) config('license.product_slug', 'barama-real-estate'),
             'domain' => $domain,
             'installation_id' => $installationId,
+            'verification_method' => $verificationMethod,
         ];
 
         $itemId = (int) config('license.envato_item_id', 0);
@@ -103,6 +110,7 @@ final class LicenseManagerClient
             'status' => $status !== '' ? $status : 'active',
             'domain' => $domain,
             'installation_id' => $installationId,
+            'verification_method' => $verificationMethod,
             'validated_at' => gmdate('c'),
         ];
     }
