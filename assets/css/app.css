@@ -759,7 +759,7 @@ html[data-bs-theme="dark"] {
 
 .workspace-nav a.is-active {
     background: color-mix(in srgb, var(--barama-primary) 11%, var(--barama-surface));
-    color: var(--barama-primary);
+    color: var(--barama-primary-strong);
 }
 
 .workspace-nav__icon,
