@@ -2,11 +2,6 @@
 
 declare(strict_types=1);
 
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use RuntimeException;
-use ZipArchive;
-
 $root = dirname(__DIR__);
 $version = trim((string) file_get_contents($root . '/VERSION'));
 

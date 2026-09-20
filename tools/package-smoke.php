@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 use Barama\Core\Installation;
 use Barama\Services\InstallerService;
-use PDO;
-use RuntimeException;
-use ZipArchive;
 
 $zipPath = $argv[1] ?? '';
 
@@ -71,10 +68,10 @@ foreach ([
 
 foreach ($entries as $entry) {
     if (
-        str_contains($entry, '/installed.php')
-        || str_contains($entry, '/environment.php')
-        || str_contains($entry, '/license.php')
-        || str_contains($entry, '/installation-id.php')
+        $entry === 'application/storage/app/installation/installed.php'
+        || $entry === 'application/storage/app/installation/environment.php'
+        || $entry === 'application/storage/app/license/license.php'
+        || $entry === 'application/storage/app/license/installation-id.php'
         || preg_match('/\.(?:log|sql|bak|backup)$/i', $entry) === 1
     ) {
         throw new RuntimeException('Customer package contains runtime/private state: ' . $entry);
