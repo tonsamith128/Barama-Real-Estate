@@ -6,6 +6,7 @@ use Barama\Core\Database;
 use Barama\Core\Session;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
+use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\CompanyManagementService;
 use Barama\Services\DomainWorkflowService;
@@ -205,7 +206,31 @@ if ($mediaId < 1 || $leadId < 1) {
     throw new RuntimeException('Domain write chain did not create expected records.');
 }
 
+$workspace = new WorkspaceReadRepository();
+$developerSummary = $workspace->developerSummary($developerId);
+$developerListings = $workspace->developerSection($developerId, 'listings', '', 1, 20);
+$adminSummary = $workspace->adminSummary();
+$adminCompanies = $workspace->adminSection('companies', '', 1, 20);
+
+if (
+    $developerSummary['companies'] < 1
+    || $developerSummary['properties'] < 1
+    || $developerSummary['published_listings'] < 1
+    || (int) $developerListings['total'] < 1
+) {
+    throw new RuntimeException('Developer workspace read model did not return scoped domain records.');
+}
+
+if (
+    $adminSummary['companies'] < 1
+    || $adminSummary['properties'] < 1
+    || $adminSummary['published_listings'] < 1
+    || (int) $adminCompanies['total'] < 1
+) {
+    throw new RuntimeException('Admin workspace read model did not return platform records.');
+}
+
 fwrite(
     STDOUT,
-    "[PASS] Domain write smoke test: company, project, property, listing, inquiry, lead, media, workflow and company-scope isolation verified.\n"
+    "[PASS] Domain write smoke test: company, project, property, listing, inquiry, lead, media, workflow, workspace read models and company-scope isolation verified.\n"
 );

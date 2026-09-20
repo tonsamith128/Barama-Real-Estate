@@ -58,6 +58,11 @@ $router->get(
     [DeveloperController::class, 'index'],
     [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
 );
+$router->get(
+    '/developer/{section}',
+    [DeveloperController::class, 'section'],
+    [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
+);
 
 $router->post(
     '/developer/companies',
@@ -128,6 +133,11 @@ $router->post(
 $router->get(
     '/dashboard',
     [DashboardController::class, 'index'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->get(
+    '/dashboard/{section}',
+    [DashboardController::class, 'section'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
 );
 $router->post(

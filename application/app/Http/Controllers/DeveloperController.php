@@ -7,14 +7,196 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
+use Barama\Repositories\WorkspaceReadRepository;
 
 final class DeveloperController
 {
+    private const SECTIONS = [
+        'overview' => [
+            'title' => 'Workspace Overview',
+            'description' => 'Track company inventory, live marketplace activity, inquiries, and active leads.',
+        ],
+        'company' => [
+            'title' => 'Company Profile',
+            'description' => 'Manage the developer or agency records that own projects, properties, and team access.',
+        ],
+        'projects' => [
+            'title' => 'Development Projects',
+            'description' => 'Create and maintain project inventory before submitting it for marketplace review.',
+        ],
+        'properties' => [
+            'title' => 'Properties',
+            'description' => 'Manage canonical property records, specifications, and approval state.',
+        ],
+        'listings' => [
+            'title' => 'Listings',
+            'description' => 'Control sale and rental offers separately from the underlying property record.',
+        ],
+        'inquiries' => [
+            'title' => 'Inquiries',
+            'description' => 'Review marketplace messages, record responses, and convert qualified interest into leads.',
+        ],
+        'leads' => [
+            'title' => 'Lead Pipeline',
+            'description' => 'Move qualified prospects through contact, viewing, negotiation, won, and lost stages.',
+        ],
+        'team' => [
+            'title' => 'Team Members',
+            'description' => 'Manage company representatives without weakening company ownership boundaries.',
+        ],
+        'media' => [
+            'title' => 'Media Library',
+            'description' => 'Upload validated private media and attach it to company-owned marketplace records.',
+        ],
+    ];
+
     public function index(Request $request): Response
     {
-        return Response::html(View::render('developer/index', [
-            'pageTitle' => 'Developer Account',
+        return $this->renderSection($request, 'overview');
+    }
+
+    public function section(Request $request, string $section): Response
+    {
+        return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    private function renderSection(Request $request, string $section): Response
+    {
+        if (!isset(self::SECTIONS[$section])) {
+            return Response::html(
+                View::render('errors/404', ['pageTitle' => 'Page not found']),
+                404
+            );
+        }
+
+        $user = auth_user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        $search = mb_substr(trim((string) $request->input('q', '')), 0, 80);
+        $page = filter_var(
+            $request->input('page', 1),
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+        $page = $page === false ? 1 : (int) $page;
+
+        $repository = new WorkspaceReadRepository();
+        $summary = $repository->developerSummary((int) $user['id']);
+        $records = $repository->developerSection(
+            (int) $user['id'],
+            $section,
+            $search,
+            $page,
+            $section === 'overview' ? 6 : 20
+        );
+
+        return Response::html(View::render('workspace/index', [
+            'pageTitle' => self::SECTIONS[$section]['title'] . ' · Developer',
             'activeArea' => 'developer',
+            'workspaceType' => 'developer',
+            'workspaceLabel' => 'Developer Workspace',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => $section,
+            'sectionTitle' => self::SECTIONS[$section]['title'],
+            'sectionDescription' => self::SECTIONS[$section]['description'],
+            'stats' => [
+                ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building'],
+                ['label' => 'Properties', 'value' => $summary['properties'], 'icon' => 'home'],
+                ['label' => 'Published', 'value' => $summary['published_listings'], 'icon' => 'tag'],
+                ['label' => 'Open inquiries', 'value' => $summary['open_inquiries'], 'icon' => 'message'],
+                ['label' => 'Active leads', 'value' => $summary['active_leads'], 'icon' => 'pipeline'],
+            ],
+            'records' => $records,
+            'columns' => $this->columns($section),
+            'search' => $search,
+            'formOptions' => $repository->developerOptions((int) $user['id']),
         ]));
+    }
+
+    /** @return array<int, array{label:string,path:string,icon:string}> */
+    private function navigation(): array
+    {
+        return [
+            ['label' => 'Overview', 'path' => '/developer', 'icon' => 'grid'],
+            ['label' => 'Company', 'path' => '/developer/company', 'icon' => 'building'],
+            ['label' => 'Projects', 'path' => '/developer/projects', 'icon' => 'layers'],
+            ['label' => 'Properties', 'path' => '/developer/properties', 'icon' => 'home'],
+            ['label' => 'Listings', 'path' => '/developer/listings', 'icon' => 'tag'],
+            ['label' => 'Inquiries', 'path' => '/developer/inquiries', 'icon' => 'message'],
+            ['label' => 'Leads', 'path' => '/developer/leads', 'icon' => 'pipeline'],
+            ['label' => 'Team', 'path' => '/developer/team', 'icon' => 'users'],
+            ['label' => 'Media', 'path' => '/developer/media', 'icon' => 'image'],
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function columns(string $section): array
+    {
+        return match ($section) {
+            'overview', 'inquiries' => [
+                'contact_name' => 'Contact',
+                'company_name' => 'Company',
+                'property_title' => 'Property',
+                'status' => 'Status',
+                'created_at' => 'Received',
+            ],
+            'company' => [
+                'name' => 'Company',
+                'company_type' => 'Type',
+                'member_role' => 'My role',
+                'status' => 'Status',
+                'updated_at' => 'Updated',
+            ],
+            'projects' => [
+                'name' => 'Project',
+                'company_name' => 'Company',
+                'project_type' => 'Type',
+                'completion_status' => 'Completion',
+                'status' => 'Status',
+                'updated_at' => 'Updated',
+            ],
+            'properties' => [
+                'reference_code' => 'Reference',
+                'title' => 'Property',
+                'property_type' => 'Type',
+                'company_name' => 'Company',
+                'status' => 'Status',
+                'updated_at' => 'Updated',
+            ],
+            'listings' => [
+                'property_title' => 'Property',
+                'transaction_type' => 'Offer',
+                'price' => 'Price',
+                'status' => 'Status',
+                'updated_at' => 'Updated',
+            ],
+            'leads' => [
+                'contact_name' => 'Contact',
+                'company_name' => 'Company',
+                'transaction_type' => 'Interest',
+                'budget_max' => 'Budget',
+                'stage' => 'Stage',
+                'updated_at' => 'Updated',
+            ],
+            'team' => [
+                'name' => 'Member',
+                'company_name' => 'Company',
+                'email' => 'Email',
+                'member_role' => 'Role',
+                'status' => 'Status',
+                'joined_at' => 'Joined',
+            ],
+            'media' => [
+                'original_name' => 'File',
+                'mime_type' => 'Type',
+                'size_bytes' => 'Size',
+                'width_px' => 'Dimensions',
+                'created_at' => 'Uploaded',
+            ],
+            default => [],
+        };
     }
 }

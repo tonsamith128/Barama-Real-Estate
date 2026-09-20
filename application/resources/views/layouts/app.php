@@ -69,9 +69,72 @@
         </div>
     </header>
 
-    <main>
-        <?= $content ?>
-    </main>
+    <?php if (isset($workspaceNavigation) && is_array($workspaceNavigation)): ?>
+        <div class="workspace-shell">
+            <aside class="workspace-sidebar" data-workspace-sidebar>
+                <div class="workspace-sidebar__top">
+                    <div>
+                        <span>Workspace</span>
+                        <strong><?= e($workspaceLabel ?? 'Management') ?></strong>
+                    </div>
+                    <button
+                        type="button"
+                        class="workspace-sidebar__close"
+                        data-workspace-close
+                        aria-label="Close workspace navigation"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <nav class="workspace-nav" aria-label="<?= e(($workspaceLabel ?? 'Workspace') . ' navigation') ?>">
+                    <?php foreach ($workspaceNavigation as $item): ?>
+                        <?php
+                        $itemPath = (string) ($item['path'] ?? '/');
+                        $itemLabel = (string) ($item['label'] ?? 'Section');
+                        $itemIcon = (string) ($item['icon'] ?? 'grid');
+                        $sectionSlug = trim((string) parse_url($itemPath, PHP_URL_PATH), '/');
+                        $sectionSlug = str_contains($sectionSlug, '/')
+                            ? substr($sectionSlug, strrpos($sectionSlug, '/') + 1)
+                            : 'overview';
+                        $isActive = ($activeSection ?? 'overview') === $sectionSlug
+                            || (($activeSection ?? 'overview') === 'overview'
+                                && in_array($itemPath, ['/developer', '/dashboard'], true));
+                        ?>
+                        <a class="<?= $isActive ? 'is-active' : '' ?>" href="<?= e(url($itemPath)) ?>">
+                            <span class="workspace-nav__icon"><?= app_icon($itemIcon) ?></span>
+                            <span><?= e($itemLabel) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
+
+                <div class="workspace-sidebar__footer">
+                    <span>Barama Real Estate</span>
+                    <small>v<?= e(APP_VERSION) ?></small>
+                </div>
+            </aside>
+
+            <div class="workspace-main">
+                <button
+                    class="workspace-menu-button"
+                    type="button"
+                    data-workspace-open
+                    aria-label="Open workspace navigation"
+                >
+                    <?= app_icon('menu') ?>
+                    <span>Menu</span>
+                </button>
+                <main>
+                    <?= $content ?>
+                </main>
+            </div>
+            <button class="workspace-backdrop" type="button" data-workspace-backdrop aria-label="Close workspace navigation"></button>
+        </div>
+    <?php else: ?>
+        <main>
+            <?= $content ?>
+        </main>
+    <?php endif; ?>
 
     <footer class="site-footer">
         <div class="container app-container site-footer__inner">
