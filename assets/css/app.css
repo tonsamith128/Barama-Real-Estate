@@ -4377,6 +4377,9 @@ body.installer-modal-open {
 
     .installer-sidebar {
         position: static;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
         height: auto;
         border-right: 0;
         border-bottom: 1px solid var(--barama-border);
@@ -4384,8 +4387,12 @@ body.installer-modal-open {
     }
 
     .installer-progress {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
         grid-template-columns: repeat(5, minmax(145px, 1fr));
         overflow-x: auto;
+        overscroll-behavior-inline: contain;
         padding-bottom: 0.25rem;
     }
 
