@@ -6837,3 +6837,232 @@ body.installer-modal-open {
         max-width: 150px;
     }
 }
+
+
+/* 32. Account settings, company onboarding and invitations */
+.account-settings-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+    max-width: 980px;
+}
+
+.account-settings-grid--security {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 1120px;
+}
+
+.account-panel--featured {
+    background:
+        radial-gradient(circle at 95% 0%, color-mix(in srgb, var(--barama-primary) 8%, transparent), transparent 28%),
+        linear-gradient(150deg,
+            color-mix(in srgb, var(--barama-surface) 97%, transparent),
+            color-mix(in srgb, var(--barama-primary) 2%, var(--barama-surface)));
+}
+
+.account-form__span-2 {
+    grid-column: 1 / -1;
+}
+
+.account-company-form {
+    margin-top: 1rem;
+    border-top: 1px solid var(--barama-border);
+    padding-top: 1rem;
+}
+
+.account-company-form .btn,
+.account-settings-grid .account-form .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    justify-self: start;
+    font-size: 0.7rem;
+    font-weight: 850;
+}
+
+.account-company-form .btn svg,
+.account-settings-grid .account-form .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.account-company-status,
+.account-invitation-list {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.8rem;
+}
+
+.account-company-status article,
+.account-invitation-list article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--barama-border) 74%, transparent);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--barama-surface) 76%, transparent);
+    padding: 0.78rem;
+}
+
+.account-company-status h3 {
+    margin: 0.38rem 0 0;
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.account-company-status p {
+    margin: 0.12rem 0 0;
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+}
+
+.account-review-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.account-review-note svg {
+    width: 14px;
+    height: 14px;
+}
+
+.account-review-note.is-danger {
+    color: #c35252;
+}
+
+.account-invitation-list article {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    background:
+        linear-gradient(145deg,
+            color-mix(in srgb, var(--barama-primary) 5%, var(--barama-surface)),
+            color-mix(in srgb, var(--barama-surface) 92%, transparent));
+}
+
+.account-invitation-list__icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--barama-primary) 9%, var(--barama-surface));
+    color: var(--barama-primary);
+}
+
+.account-invitation-list__icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.account-invitation-list strong,
+.account-invitation-list small {
+    display: block;
+}
+
+.account-invitation-list strong {
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.account-invitation-list small {
+    margin-top: 0.12rem;
+    color: var(--barama-muted);
+    font-size: 0.58rem;
+    line-height: 1.45;
+}
+
+.account-access-ready {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 0.68rem;
+    align-items: center;
+    margin-top: 0.85rem;
+    border: 1px solid color-mix(in srgb, var(--barama-success) 20%, var(--barama-border));
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--barama-success) 5%, var(--barama-surface));
+    padding: 0.78rem;
+}
+
+.account-access-ready > svg {
+    width: 22px;
+    height: 22px;
+    color: var(--barama-success);
+}
+
+.account-access-ready strong,
+.account-access-ready span {
+    display: block;
+}
+
+.account-access-ready strong {
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.account-access-ready span {
+    margin-top: 0.12rem;
+    color: var(--barama-muted);
+    font-size: 0.6rem;
+    line-height: 1.5;
+}
+
+.account-danger-zone {
+    grid-column: 1 / -1;
+    border-color: color-mix(in srgb, #c35252 24%, var(--barama-border));
+    background:
+        linear-gradient(150deg,
+            color-mix(in srgb, #c35252 3%, var(--barama-surface)),
+            var(--barama-surface));
+}
+
+.account-confirm-email {
+    display: grid;
+    gap: 0.2rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--barama-border);
+    border-radius: 13px;
+    background: var(--barama-surface-soft);
+    padding: 0.8rem;
+}
+
+.account-confirm-email span {
+    color: var(--barama-muted);
+    font-size: 0.6rem;
+    font-weight: 750;
+}
+
+.account-confirm-email strong {
+    font-size: 0.76rem;
+    word-break: break-word;
+}
+
+@media (max-width: 900px) {
+    .account-settings-grid--security {
+        grid-template-columns: 1fr;
+    }
+
+    .account-danger-zone {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .account-company-status article,
+    .account-invitation-list article,
+    .account-access-ready {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .account-invitation-list__icon {
+        display: none;
+    }
+
+    .account-form__span-2 {
+        grid-column: auto;
+    }
+}

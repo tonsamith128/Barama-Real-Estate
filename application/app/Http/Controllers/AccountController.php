@@ -8,9 +8,11 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\CustomerEngagementRepository;
 use Barama\Repositories\MarketplaceRepository;
 use Barama\Repositories\NotificationRepository;
+use Barama\Services\AccountSettingsService;
 
 final class AccountController
 {
@@ -23,6 +25,10 @@ final class AccountController
         'alerts' => ['title' => 'Saved Searches & Alerts', 'description' => 'Save property criteria and control alert preferences for matching inventory.'],
         'notifications' => ['title' => 'Notifications', 'description' => 'Review marketplace updates and control in-app and email notification preferences.'],
         'recent' => ['title' => 'Recently Viewed', 'description' => 'Return to published properties you recently opened while signed in.'],
+        'company' => ['title' => 'Company Access', 'description' => 'Request your first company workspace or accept invitations from approved companies.'],
+        'profile' => ['title' => 'Profile Settings', 'description' => 'Maintain your personal account details, timezone, and preferred language.'],
+        'privacy' => ['title' => 'Privacy Settings', 'description' => 'Control marketplace activity history and clear personal browsing activity.'],
+        'security' => ['title' => 'Security Settings', 'description' => 'Manage your password, verified email address, and account status securely.'],
     ];
 
     public function index(Request $request): Response
@@ -33,6 +39,24 @@ final class AccountController
     public function section(Request $request, string $section): Response
     {
         return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    public function emailChange(Request $request, string $token): Response
+    {
+        $user = auth_user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        $newEmail = (new AccountSettingsService())->emailChangePreview((int) $user['id'], $token);
+
+        return Response::html(View::render('account/email-change', [
+            'pageTitle' => 'Confirm Email Change · Account',
+            'activeArea' => 'account',
+            'token' => $token,
+            'newEmail' => $newEmail,
+        ]), $newEmail === null ? 404 : 200);
     }
 
     private function renderSection(Request $request, string $section): Response
@@ -54,6 +78,8 @@ final class AccountController
         $engagement = new CustomerEngagementRepository();
         $marketplace = new MarketplaceRepository();
         $notifications = new NotificationRepository();
+        $accountSettings = new AccountSettingsRepository();
+        $profile = $accountSettings->profile($userId);
         $summary = $engagement->summary($userId);
         $summary['notifications'] = $notifications->unreadCount($userId);
 
@@ -66,6 +92,13 @@ final class AccountController
             'sectionTitle' => self::SECTIONS[$section]['title'],
             'sectionDescription' => self::SECTIONS[$section]['description'],
             'accountUser' => $user,
+            'profile' => $profile,
+            'ownedCompanies' => $section === 'company'
+                ? $accountSettings->ownedCompanies($userId)
+                : [],
+            'companyInvitations' => $section === 'company'
+                ? $accountSettings->invitationsForEmail((string) $user['email'])
+                : [],
             'summary' => $summary,
             'savedListings' => in_array($section, ['overview', 'saved'], true)
                 ? $engagement->savedListings($userId, $section === 'overview' ? 3 : 50)
@@ -91,8 +124,12 @@ final class AccountController
             'notificationPreferences' => $section === 'notifications'
                 ? $notifications->preferences($userId)
                 : [],
-            'locations' => $section === 'alerts' ? $marketplace->activeLocations() : [],
+            'locations' => in_array($section, ['alerts', 'company'], true)
+                ? $marketplace->activeLocations()
+                : [],
             'propertyTypes' => DomainRules::PROPERTY_TYPES,
+            'companyTypes' => DomainRules::COMPANY_TYPES,
+            'timezones' => $section === 'profile' ? timezone_identifiers_list() : [],
         ]));
     }
 
@@ -108,6 +145,10 @@ final class AccountController
             ['label' => 'Alerts', 'path' => '/account/alerts', 'icon' => 'bell'],
             ['label' => 'Notifications', 'path' => '/account/notifications', 'icon' => 'bell'],
             ['label' => 'Recent', 'path' => '/account/recent', 'icon' => 'clock'],
+            ['label' => 'Company Access', 'path' => '/account/company', 'icon' => 'building'],
+            ['label' => 'Profile', 'path' => '/account/profile', 'icon' => 'user'],
+            ['label' => 'Privacy', 'path' => '/account/privacy', 'icon' => 'shield'],
+            ['label' => 'Security', 'path' => '/account/security', 'icon' => 'lock'],
         ];
     }
 }

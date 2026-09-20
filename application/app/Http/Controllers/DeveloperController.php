@@ -305,7 +305,7 @@ final class DeveloperController
                 ],
             ],
             'team' => [
-                'statuses' => ['active', 'inactive'],
+                'statuses' => ['active', 'inactive', 'pending'],
                 'types' => ['owner', 'manager', 'agent', 'member'],
                 'location' => false,
                 'sorts' => [

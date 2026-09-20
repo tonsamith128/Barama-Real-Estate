@@ -52,6 +52,24 @@ final class DeveloperManagementController
         });
     }
 
+    public function revokeInvitation(
+        Request $request,
+        string $id,
+        string $invitationId
+    ): Response {
+        return $this->execute(function () use ($id, $invitationId): array {
+            $companyId = $this->id($id);
+            $inviteId = $this->id($invitationId);
+            (new MembershipService())->revokeInvitation($companyId, $inviteId);
+
+            return [
+                'company_id' => $companyId,
+                'invitation_id' => $inviteId,
+                'invitation_revoked' => true,
+            ];
+        });
+    }
+
     public function deactivateMember(Request $request, string $id, string $userId): Response
     {
         return $this->execute(function () use ($id, $userId): array {

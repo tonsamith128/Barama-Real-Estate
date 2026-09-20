@@ -356,6 +356,188 @@ $propertySearchUrl = static function (array $search): string {
                 <?php endif; ?>
             </section>
         </div>
+    <?php elseif ($activeSection === 'company'): ?>
+        <?php
+        $canRequestCompany = true;
+        foreach ($ownedCompanies as $ownedCompany) {
+            if (!in_array((string) $ownedCompany['status'], ['rejected', 'archived'], true)) {
+                $canRequestCompany = false;
+                break;
+            }
+        }
+        ?>
+        <div class="account-settings-grid">
+            <section class="account-panel account-panel--featured">
+                <div class="account-panel__head">
+                    <h2>Company access</h2>
+                    <span>Developer permissions activate only after administrator approval or invitation acceptance.</span>
+                </div>
+
+                <?php if ($companyInvitations !== []): ?>
+                    <div class="account-invitation-list">
+                        <?php foreach ($companyInvitations as $invitation): ?>
+                            <article>
+                                <span class="account-invitation-list__icon"><?= app_icon('building') ?></span>
+                                <div>
+                                    <strong><?= e((string) $invitation['company_name']) ?></strong>
+                                    <small>Invited as <?= e($humanize($invitation['member_role'])) ?> by <?= e((string) $invitation['invited_by_name']) ?></small>
+                                    <small>Expires <?= e((string) $invitation['expires_at']) ?></small>
+                                </div>
+                                <form action="<?= e(url('/account/company-invitations/' . (int) $invitation['id'] . '/accept')) ?>" method="post" data-account-action>
+                                    <?= csrf_field() ?>
+                                    <button class="btn btn-primary btn-sm" type="submit">Accept invitation</button>
+                                </form>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($ownedCompanies !== []): ?>
+                    <div class="account-company-status">
+                        <?php foreach ($ownedCompanies as $company): ?>
+                            <article>
+                                <div>
+                                    <span class="status-badge status-badge--<?= e((string) $company['status']) ?>"><?= e($humanize($company['status'])) ?></span>
+                                    <h3><?= e((string) $company['name']) ?></h3>
+                                    <p><?= e($humanize($company['company_type'])) ?><?= !empty($company['email']) ? ' · ' . e((string) $company['email']) : '' ?></p>
+                                </div>
+                                <?php if ((string) $company['status'] === 'approved' && auth_can('developer.access')): ?>
+                                    <a class="btn btn-primary btn-sm" href="<?= e(url('/developer')) ?>">Open workspace</a>
+                                <?php elseif ((string) $company['status'] === 'pending'): ?>
+                                    <span class="account-review-note"><?= app_icon('clock') ?> Administrator review pending</span>
+                                <?php elseif ((string) $company['status'] === 'rejected'): ?>
+                                    <span class="account-review-note is-danger"><?= app_icon('alert') ?> Request not approved</span>
+                                <?php endif; ?>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($canRequestCompany && !auth_can('developer.access')): ?>
+                    <form action="<?= e(url('/account/company/onboard')) ?>" method="post" data-account-action class="account-form account-company-form">
+                        <?= csrf_field() ?>
+                        <div class="account-form__grid">
+                            <label><span>Company name</span><input class="form-control" name="name" required maxlength="180"></label>
+                            <label><span>Company type</span>
+                                <select class="form-select" name="company_type" required>
+                                    <?php foreach ($companyTypes as $type): ?>
+                                        <option value="<?= e($type) ?>"><?= e($humanize($type)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label><span>Legal name</span><input class="form-control" name="legal_name" maxlength="191"></label>
+                            <label><span>Registration number</span><input class="form-control" name="registration_number" maxlength="120"></label>
+                            <label><span>Company email</span><input class="form-control" name="email" type="email" value="<?= e((string) $accountUser['email']) ?>" maxlength="191"></label>
+                            <label><span>Phone</span><input class="form-control" name="phone" maxlength="60"></label>
+                            <label class="account-form__span-2"><span>Location</span>
+                                <select class="form-select" name="location_id">
+                                    <option value="">Select location</option>
+                                    <?php foreach ($locations as $location): ?>
+                                        <option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?> · <?= e($humanize($location['type'])) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label class="account-form__span-2"><span>Website</span><input class="form-control" name="website" type="url" maxlength="255" placeholder="https://"></label>
+                            <label class="account-form__span-2"><span>Company description</span><textarea class="form-control" name="description" rows="4" maxlength="10000"></textarea></label>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><?= app_icon('building') ?> Submit company for review</button>
+                    </form>
+                <?php elseif (auth_can('developer.access')): ?>
+                    <div class="account-access-ready">
+                        <?= app_icon('check') ?>
+                        <div><strong>Company workspace access is active.</strong><span>Manage approved company records, team invitations, projects, properties, listings, inquiries, and leads.</span></div>
+                        <a class="btn btn-primary btn-sm" href="<?= e(url('/developer')) ?>">Open workspace</a>
+                    </div>
+                <?php endif; ?>
+            </section>
+        </div>
+    <?php elseif ($activeSection === 'profile'): ?>
+        <div class="account-settings-grid">
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Personal profile</h2><span>Your login email is managed separately under Security.</span></div>
+                <form action="<?= e(url('/account/profile')) ?>" method="post" data-account-action class="account-form">
+                    <?= csrf_field() ?>
+                    <label><span>Full name</span><input class="form-control" name="name" value="<?= e((string) ($profile['name'] ?? $accountUser['name'])) ?>" required maxlength="120"></label>
+                    <label><span>Email</span><input class="form-control" value="<?= e((string) $accountUser['email']) ?>" type="email" readonly></label>
+                    <label><span>Phone</span><input class="form-control" name="phone" value="<?= e((string) ($profile['phone'] ?? '')) ?>" maxlength="60"></label>
+                    <div class="account-form__grid">
+                        <label><span>Timezone</span>
+                            <select class="form-select" name="timezone">
+                                <?php $selectedTimezone = (string) ($profile['timezone'] ?? 'UTC'); ?>
+                                <?php foreach ($timezones as $timezone): ?>
+                                    <option value="<?= e($timezone) ?>" <?= $selectedTimezone === $timezone ? 'selected' : '' ?>><?= e($timezone) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label><span>Preferred language</span>
+                            <?php $language = (string) ($profile['preferred_language'] ?? 'en'); ?>
+                            <select class="form-select" name="preferred_language">
+                                <option value="en" <?= $language === 'en' ? 'selected' : '' ?>>English</option>
+                                <option value="km" <?= $language === 'km' ? 'selected' : '' ?>>Khmer</option>
+                                <option value="zh" <?= $language === 'zh' ? 'selected' : '' ?>>Chinese</option>
+                            </select>
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Save profile</button>
+                </form>
+            </section>
+        </div>
+    <?php elseif ($activeSection === 'privacy'): ?>
+        <div class="account-settings-grid">
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Marketplace activity</h2><span>Control whether signed-in property views are kept in your Recently Viewed history.</span></div>
+                <form action="<?= e(url('/account/privacy')) ?>" method="post" data-account-action class="account-form">
+                    <?= csrf_field() ?>
+                    <label class="workspace-check">
+                        <input type="checkbox" name="remember_recent_views" value="1" <?= !isset($profile['remember_recent_views']) || !empty($profile['remember_recent_views']) ? 'checked' : '' ?>>
+                        <span>Remember recently viewed properties on this account</span>
+                    </label>
+                    <button class="btn btn-primary" type="submit">Save privacy settings</button>
+                </form>
+            </section>
+
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Clear browsing activity</h2><span>This removes your signed-in Recently Viewed history. Saved properties, comparisons, inquiries, and viewing requests are not deleted.</span></div>
+                <form action="<?= e(url('/account/privacy/clear-history')) ?>" method="post" data-account-action data-confirm="Clear your recently viewed property history?">
+                    <?= csrf_field() ?>
+                    <button class="btn btn-outline-secondary" type="submit">Clear recently viewed</button>
+                </form>
+            </section>
+        </div>
+    <?php elseif ($activeSection === 'security'): ?>
+        <div class="account-settings-grid account-settings-grid--security">
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Change password</h2><span>Current-password verification is required.</span></div>
+                <form action="<?= e(url('/account/security/password')) ?>" method="post" data-account-action class="account-form">
+                    <?= csrf_field() ?>
+                    <label><span>Current password</span><input class="form-control" name="current_password" type="password" autocomplete="current-password" required></label>
+                    <label><span>New password</span><input class="form-control" name="password" type="password" minlength="12" autocomplete="new-password" required></label>
+                    <label><span>Confirm new password</span><input class="form-control" name="password_confirmation" type="password" minlength="12" autocomplete="new-password" required></label>
+                    <button class="btn btn-primary" type="submit"><?= app_icon('lock') ?> Update password</button>
+                </form>
+            </section>
+
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Change email address</h2><span>A verification link is sent to the new address and expires after 60 minutes.</span></div>
+                <form action="<?= e(url('/account/security/email')) ?>" method="post" data-account-action class="account-form">
+                    <?= csrf_field() ?>
+                    <label><span>Current email</span><input class="form-control" value="<?= e((string) $accountUser['email']) ?>" readonly></label>
+                    <label><span>New email</span><input class="form-control" name="new_email" type="email" required maxlength="191"></label>
+                    <label><span>Current password</span><input class="form-control" name="current_password" type="password" autocomplete="current-password" required></label>
+                    <button class="btn btn-primary" type="submit"><?= app_icon('mail') ?> Send confirmation</button>
+                </form>
+            </section>
+
+            <section class="account-panel account-danger-zone">
+                <div class="account-panel__head"><h2>Deactivate account</h2><span>Sign-in access stops immediately. Company owners must transfer or archive ownership first.</span></div>
+                <form action="<?= e(url('/account/security/deactivate')) ?>" method="post" data-account-action data-confirm="Deactivate your Barama account? You will be signed out." class="account-form">
+                    <?= csrf_field() ?>
+                    <label><span>Current password</span><input class="form-control" name="current_password" type="password" autocomplete="current-password" required></label>
+                    <button class="btn btn-outline-danger" type="submit">Deactivate account</button>
+                </form>
+            </section>
+        </div>
+
     <?php elseif ($activeSection === 'recent'): ?>
         <?php if ($recentViews === []): ?>
             <div class="account-empty"><?= app_icon('clock') ?><strong>No recent property views yet.</strong><span>Properties you open while signed in will appear here.</span></div>

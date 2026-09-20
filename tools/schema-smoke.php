@@ -48,6 +48,9 @@ $requiredTables = [
     'email_outbox',
     'saved_search_matches',
     'application_settings',
+    'user_profiles',
+    'email_change_tokens',
+    'company_invitations',
 ];
 
 $statement = $pdo->query(

@@ -325,28 +325,65 @@ final class WorkspaceReadRepository
                 ['user_id' => $userId, 'search' => $search],
             ],
             'team' => [
-                'SELECT u.id, u.name, u.email, cm.member_role, cm.status,
-                        cm.joined_at, c.id AS company_id, c.name AS company_name
-                 FROM company_members cm
-                 INNER JOIN companies c ON c.id = cm.company_id
-                 INNER JOIN users u ON u.id = cm.user_id
-                 INNER JOIN company_members viewer
-                    ON viewer.company_id = cm.company_id
-                   AND viewer.user_id = :user_id
-                   AND viewer.status = "active"
-                 WHERE c.deleted_at IS NULL
-                   AND CONCAT_WS(" ", u.name, u.email, c.name) LIKE :search
-                 ORDER BY c.name ASC, u.name ASC',
+                'SELECT *
+                 FROM (
+                    SELECT "member" AS row_type, u.id, u.name, u.email,
+                           cm.member_role, cm.status, cm.joined_at,
+                           c.id AS company_id, c.name AS company_name
+                    FROM company_members cm
+                    INNER JOIN companies c ON c.id = cm.company_id
+                    INNER JOIN users u ON u.id = cm.user_id
+                    INNER JOIN company_members viewer
+                       ON viewer.company_id = cm.company_id
+                      AND viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                    WHERE c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT "invitation" AS row_type, i.id,
+                           "Pending invitation" AS name, i.email,
+                           i.member_role, i.status, i.created_at AS joined_at,
+                           c.id AS company_id, c.name AS company_name
+                    FROM company_invitations i
+                    INNER JOIN companies c ON c.id = i.company_id
+                    INNER JOIN company_members viewer
+                       ON viewer.company_id = i.company_id
+                      AND viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                    WHERE i.status = "pending"
+                      AND i.expires_at > CURRENT_TIMESTAMP
+                      AND c.deleted_at IS NULL
+                 ) team_rows
+                 WHERE CONCAT_WS(" ", name, email, company_name) LIKE :search
+                 ORDER BY company_name ASC, name ASC',
                 'SELECT COUNT(*)
-                 FROM company_members cm
-                 INNER JOIN companies c ON c.id = cm.company_id
-                 INNER JOIN users u ON u.id = cm.user_id
-                 INNER JOIN company_members viewer
-                    ON viewer.company_id = cm.company_id
-                   AND viewer.user_id = :user_id
-                   AND viewer.status = "active"
-                 WHERE c.deleted_at IS NULL
-                   AND CONCAT_WS(" ", u.name, u.email, c.name) LIKE :search',
+                 FROM (
+                    SELECT u.name, u.email, c.name AS company_name
+                    FROM company_members cm
+                    INNER JOIN companies c ON c.id = cm.company_id
+                    INNER JOIN users u ON u.id = cm.user_id
+                    INNER JOIN company_members viewer
+                       ON viewer.company_id = cm.company_id
+                      AND viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                    WHERE c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT "Pending invitation" AS name, i.email,
+                           c.name AS company_name
+                    FROM company_invitations i
+                    INNER JOIN companies c ON c.id = i.company_id
+                    INNER JOIN company_members viewer
+                       ON viewer.company_id = i.company_id
+                      AND viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                    WHERE i.status = "pending"
+                      AND i.expires_at > CURRENT_TIMESTAMP
+                      AND c.deleted_at IS NULL
+                 ) team_rows
+                 WHERE CONCAT_WS(" ", name, email, company_name) LIKE :search',
                 ['user_id' => $userId, 'search' => $search],
             ],
             'media' => [

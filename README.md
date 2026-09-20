@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.2-dev`
+- Current development line: `0.9.3-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -108,3 +108,21 @@ The 0.9.2 development line upgrades the public discovery experience while preser
 - shared interactive image preview for property, project, and company media
 - search submission/loading behavior remains inside the canonical JavaScript entry point
 - all marketplace styling remains inside the canonical stylesheet
+
+
+## Account security and company onboarding
+
+The 0.9.3 development line completes the first production-grade account onboarding layer without creating a parallel vendor identity system.
+
+- customer profile settings with phone, timezone, and preferred language including Khmer
+- privacy control for signed-in recently viewed property history
+- current-password-protected password changes
+- verified email-change flow using one-time expiring tokens
+- protected account deactivation with company-owner orphan prevention
+- first-company onboarding from the customer account
+- onboarding creates owner membership but does not grant Developer permissions before review
+- administrator company approval atomically activates Developer access for active company members
+- company team management now sends invitations instead of immediately granting roles
+- invited accounts receive Developer access only after accepting an unexpired invitation matching their login email
+- pending company invitations are visible in the Company / Vendor team workspace and can be revoked
+- account/onboarding lifecycle is covered by a dedicated MySQL smoke test and exact-package contract checks

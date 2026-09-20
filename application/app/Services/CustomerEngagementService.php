@@ -6,6 +6,7 @@ namespace Barama\Services;
 
 use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\CustomerEngagementRepository;
 use Barama\Repositories\WorkflowRepository;
 use Barama\Support\DomainInput;
@@ -75,6 +76,15 @@ final class CustomerEngagementService
 
     public function recordView(int $userId, int $listingId): void
     {
+        $profile = (new AccountSettingsRepository())->profile($userId);
+
+        if (
+            isset($profile['remember_recent_views'])
+            && !(bool) $profile['remember_recent_views']
+        ) {
+            return;
+        }
+
         $repository = new CustomerEngagementRepository();
 
         if ($repository->publicListing($listingId) !== null) {

@@ -74,6 +74,9 @@ jobs:
       - name: Run domain write smoke test
         run: php tools/domain-write-smoke.php
 
+      - name: Run account and onboarding smoke test
+        run: php tools/account-onboarding-smoke.php
+
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 

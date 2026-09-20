@@ -62,6 +62,56 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('account.access')]
 );
 $router->post(
+    '/account/profile',
+    [AccountManagementController::class, 'updateProfile'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/privacy',
+    [AccountManagementController::class, 'updatePrivacy'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/privacy/clear-history',
+    [AccountManagementController::class, 'clearRecentViews'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/security/password',
+    [AccountManagementController::class, 'changePassword'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/security/email',
+    [AccountManagementController::class, 'requestEmailChange'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/security/deactivate',
+    [AccountManagementController::class, 'deactivateAccount'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->get(
+    '/account/email-change/{token}',
+    [AccountController::class, 'emailChange'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access')]
+);
+$router->post(
+    '/account/email-change/{token}',
+    [AccountManagementController::class, 'confirmEmailChange'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/company/onboard',
+    [AccountManagementController::class, 'submitCompanyOnboarding'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/company-invitations/{id}/accept',
+    [AccountManagementController::class, 'acceptCompanyInvitation'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
     '/account/saved/{id}',
     [AccountManagementController::class, 'saveListing'],
     [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
@@ -161,6 +211,11 @@ $router->post(
 $router->post(
     '/developer/companies/{id}/members/{userId}/deactivate',
     [DeveloperManagementController::class, 'deactivateMember'],
+    [new AuthMiddleware(), new PermissionMiddleware('company.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/developer/companies/{id}/invitations/{invitationId}/revoke',
+    [DeveloperManagementController::class, 'revokeInvitation'],
     [new AuthMiddleware(), new PermissionMiddleware('company.manage'), new CsrfMiddleware()]
 );
 $router->post(

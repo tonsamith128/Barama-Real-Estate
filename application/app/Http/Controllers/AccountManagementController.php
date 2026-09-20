@@ -7,13 +7,88 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Repositories\NotificationRepository;
+use Barama\Services\AccountSettingsService;
+use Barama\Services\CompanyOnboardingService;
 use Barama\Services\CustomerEngagementService;
+use Barama\Services\MembershipService;
 use Barama\Services\NotificationService;
 use DomainException;
 use InvalidArgumentException;
 
 final class AccountManagementController
 {
+    public function updateProfile(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new AccountSettingsService())->updateProfile($this->userId(), $request->all());
+            return ['message' => 'Profile updated.'];
+        }, '/account/profile');
+    }
+
+    public function updatePrivacy(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new AccountSettingsService())->updatePrivacy($this->userId(), $request->all());
+            return ['message' => 'Privacy settings updated.'];
+        }, '/account/privacy');
+    }
+
+    public function clearRecentViews(Request $request): Response
+    {
+        return $this->execute(function (): array {
+            (new AccountSettingsService())->clearRecentViews($this->userId());
+            return ['message' => 'Recently viewed history cleared.'];
+        }, '/account/privacy');
+    }
+
+    public function changePassword(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new AccountSettingsService())->changePassword($this->userId(), $request->all());
+            return ['message' => 'Password updated securely.'];
+        }, '/account/security');
+    }
+
+    public function requestEmailChange(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new AccountSettingsService())->requestEmailChange($this->userId(), $request->all());
+            return ['message' => 'Confirmation sent to your new email address.'];
+        }, '/account/security');
+    }
+
+    public function confirmEmailChange(Request $request, string $token): Response
+    {
+        return $this->execute(function () use ($token): array {
+            (new AccountSettingsService())->confirmEmailChange($this->userId(), $token);
+            return ['message' => 'Email address updated and verified.'];
+        }, '/account/security');
+    }
+
+    public function deactivateAccount(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new AccountSettingsService())->deactivateAccount($this->userId(), $request->all());
+            return ['message' => 'Account deactivated.'];
+        }, '/');
+    }
+
+    public function submitCompanyOnboarding(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            $companyId = (new CompanyOnboardingService())->submit($request->all());
+            return ['company_id' => $companyId, 'message' => 'Company submitted for administrator review.'];
+        }, '/account/company', 201);
+    }
+
+    public function acceptCompanyInvitation(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            $companyId = (new MembershipService())->acceptInvitation($this->id($id));
+            return ['company_id' => $companyId, 'message' => 'Company invitation accepted.'];
+        }, '/developer');
+    }
+
     public function saveListing(Request $request, string $id): Response
     {
         return $this->execute($request, function () use ($id): array {

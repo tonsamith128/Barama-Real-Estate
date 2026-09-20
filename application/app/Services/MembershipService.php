@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Barama\Services;
 
 use Barama\Core\Database;
+use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\CompanyMembershipRepository;
 use Barama\Repositories\CompanyMembershipWriteRepository;
+use Barama\Repositories\CompanyRepository;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
 use DomainException;
@@ -20,38 +22,118 @@ final class MembershipService
 
     public function addByEmail(int $companyId, string $email, string $memberRole): void
     {
-        $this->assertCanManageMembers($companyId);
+        $this->inviteByEmail($companyId, $email, $memberRole);
+    }
+
+    public function inviteByEmail(int $companyId, string $email, string $memberRole): int
+    {
+        $actor = $this->assertCanManageMembers($companyId);
 
         if (!in_array($memberRole, self::MEMBER_ROLES, true) || $memberRole === 'owner') {
             throw new InvalidArgumentException('Invalid assignable company member role.');
         }
 
-        $users = new UserRepository();
-        $user = $users->findByEmail($email);
+        $email = strtolower(trim($email));
 
-        if ($user === null || (string) $user['status'] !== 'active') {
-            throw new InvalidArgumentException('No active user account matches that email.');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Enter a valid team member email address.');
         }
 
-        $roles = new RoleRepository();
-        $memberships = new CompanyMembershipWriteRepository();
+        $company = (new CompanyRepository())->findById($companyId);
+
+        if ($company === null || (string) $company['status'] !== 'approved') {
+            throw new DomainException('Team invitations are available after company approval.');
+        }
+
+        $users = new UserRepository();
+        $target = $users->findByEmail($email);
+
+        if (
+            $target !== null
+            && (new CompanyMembershipRepository())->isActiveMember($companyId, (int) $target['id'])
+        ) {
+            throw new InvalidArgumentException('This user is already an active company member.');
+        }
+
+        $invitationId = (new AccountSettingsRepository())->createInvitation(
+            $companyId,
+            (int) $actor['id'],
+            $email,
+            $memberRole,
+            date('Y-m-d H:i:s', time() + 7 * 86400)
+        );
+
+        (new NotificationService())->notifyAddress($email, [
+            'subject' => 'Company invitation · Barama Real Estate',
+            'html' => '<p><strong>You have been invited to ' . e((string) $company['name']) . '</strong></p>'
+                . '<p>Sign in or create an account using this email address, then open Company Access in your account to accept the invitation.</p>'
+                . '<p><a href="' . e(url('/account/company')) . '">Review company invitation</a></p>'
+                . '<p>The invitation expires in 7 days.</p>',
+            'text' => "You have been invited to " . (string) $company['name']
+                . ".\n\nReview the invitation: " . url('/account/company')
+                . "\n\nThe invitation expires in 7 days.",
+            'dedupe_key' => 'company-invitation:' . $invitationId,
+        ]);
+
+        return $invitationId;
+    }
+
+    public function acceptInvitation(int $invitationId): int
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null) {
+            throw new DomainException('Authentication is required.');
+        }
+
+        $repository = new AccountSettingsRepository();
+        $invitation = $repository->pendingInvitation(
+            $invitationId,
+            (string) $user['email']
+        );
+
+        if ($invitation === null) {
+            throw new InvalidArgumentException('This company invitation is unavailable or expired.');
+        }
+
+        if ((string) $invitation['company_status'] !== 'approved') {
+            throw new DomainException('This company is not currently eligible for team access.');
+        }
+
         $pdo = Database::connection();
 
         try {
             $pdo->beginTransaction();
 
+            $roles = new RoleRepository();
+
             if (!$roles->userHasRole((int) $user['id'], 'developer')) {
                 $roles->assignRole((int) $user['id'], 'developer');
             }
 
-            $memberships->upsert($companyId, (int) $user['id'], $memberRole);
+            (new CompanyMembershipWriteRepository())->upsert(
+                (int) $invitation['company_id'],
+                (int) $user['id'],
+                (string) $invitation['member_role']
+            );
+
+            $repository->acceptInvitation($invitationId, (int) $user['id']);
             $pdo->commit();
+
+            return (int) $invitation['company_id'];
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             throw $exception;
         }
+    }
+
+    public function revokeInvitation(int $companyId, int $invitationId): void
+    {
+        $this->assertCanManageMembers($companyId);
+        (new AccountSettingsRepository())->revokeInvitation($invitationId, $companyId);
     }
 
     public function deactivate(int $companyId, int $userId): void
@@ -72,7 +154,8 @@ final class MembershipService
         (new CompanyMembershipWriteRepository())->deactivate($companyId, $userId);
     }
 
-    private function assertCanManageMembers(int $companyId): void
+    /** @return array<string,mixed> */
+    private function assertCanManageMembers(int $companyId): array
     {
         $auth = new AuthService();
         $user = $auth->user();
@@ -82,7 +165,7 @@ final class MembershipService
         }
 
         if ($auth->hasRole('administrator')) {
-            return;
+            return $user;
         }
 
         $membership = (new CompanyMembershipRepository())
@@ -94,5 +177,7 @@ final class MembershipService
         ) {
             throw new DomainException('Company owner or manager access is required.');
         }
+
+        return $user;
     }
 }

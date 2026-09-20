@@ -8,6 +8,7 @@ use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\InquiryRepository;
 use Barama\Repositories\ListingWriteRepository;
+use Barama\Repositories\RoleRepository;
 use Barama\Repositories\WorkflowRepository;
 use DomainException;
 use InvalidArgumentException;
@@ -112,6 +113,28 @@ final class DomainWorkflowService
             $pdo->beginTransaction();
 
             $repository->updateStatus($resource, $entityId, $toStatus);
+
+            if ($resource === 'company' && $toStatus === 'approved') {
+                $memberStatement = $pdo->prepare(
+                    'SELECT u.id, u.email, u.name
+                     FROM company_members cm
+                     INNER JOIN users u ON u.id = cm.user_id
+                     WHERE cm.company_id = :company_id
+                       AND cm.status = "active"
+                       AND u.status = "active"'
+                );
+                $memberStatement->execute(['company_id' => $entityId]);
+                $roles = new RoleRepository();
+
+                foreach ($memberStatement->fetchAll(\PDO::FETCH_ASSOC) as $member) {
+                    $memberId = (int) $member['id'];
+
+                    if (!$roles->userHasRole($memberId, 'developer')) {
+                        $roles->assignRole($memberId, 'developer');
+                    }
+                }
+            }
+
             $repository->record(
                 $resource,
                 $entityId,
@@ -120,6 +143,33 @@ final class DomainWorkflowService
                 $toStatus,
                 $note
             );
+
+            if ($resource === 'company' && $toStatus === 'approved') {
+                $companyMembers = $pdo->prepare(
+                    'SELECT u.email
+                     FROM company_members cm
+                     INNER JOIN users u ON u.id = cm.user_id
+                     WHERE cm.company_id = :company_id
+                       AND cm.member_role = "owner"
+                       AND cm.status = "active"
+                       AND u.status = "active"'
+                );
+                $companyMembers->execute(['company_id' => $entityId]);
+
+                foreach ($companyMembers->fetchAll(\PDO::FETCH_COLUMN) as $ownerEmail) {
+                    if (is_string($ownerEmail) && filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
+                        (new NotificationService())->notifyAddress($ownerEmail, [
+                            'subject' => 'Company approved · Barama Real Estate',
+                            'html' => '<p><strong>Your company has been approved.</strong></p>'
+                                . '<p>Company / Vendor Workspace access is now active for your account.</p>'
+                                . '<p><a href="' . e(url('/developer')) . '">Open company workspace</a></p>',
+                            'text' => "Your company has been approved.\n\nOpen company workspace: "
+                                . url('/developer'),
+                            'dedupe_key' => 'company-approved:' . $entityId,
+                        ]);
+                    }
+                }
+            }
 
             if ($resource === 'inquiry' && in_array($toStatus, ['replied', 'closed'], true)) {
                 $inquiry = (new InquiryRepository())->findById($entityId);

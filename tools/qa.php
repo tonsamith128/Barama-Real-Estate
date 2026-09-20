@@ -115,6 +115,10 @@ $required = [
     'tools/notifications.php',
     'tools/build-package.php',
     'tools/package-smoke.php',
+    'tools/account-onboarding-smoke.php',
+    'application/app/Services/AccountSettingsService.php',
+    'application/app/Services/CompanyOnboardingService.php',
+    'application/app/Repositories/AccountSettingsRepository.php',
     'application/config/license.php',
 ];
 

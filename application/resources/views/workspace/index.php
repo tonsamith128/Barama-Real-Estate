@@ -196,11 +196,21 @@ $renderActions = static function (array $row) use (
                 );
             }
         } elseif ($activeSection === 'team') {
+            $companyId = (int) ($row['company_id'] ?? 0);
+
             if (
+                (string) ($row['row_type'] ?? 'member') === 'invitation'
+                && (string) ($row['status'] ?? '') === 'pending'
+            ) {
+                $buttons[] = '<form action="' . e(url(
+                    '/developer/companies/' . $companyId . '/invitations/' . $id . '/revoke'
+                )) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<button class="table-action table-action--danger" type="submit">Revoke invite</button></form>';
+            } elseif (
                 (string) ($row['status'] ?? '') === 'active'
                 && (string) ($row['member_role'] ?? '') !== 'owner'
             ) {
-                $companyId = (int) ($row['company_id'] ?? 0);
                 $buttons[] = '<form action="' . e(url(
                     '/developer/companies/' . $companyId . '/members/' . $id . '/deactivate'
                 )) . '" method="post" data-workspace-form>'
@@ -442,7 +452,7 @@ $renderActions = static function (array $row) use (
         </details>
     <?php elseif ($workspaceType === 'developer' && $activeSection === 'team'): ?>
         <details class="workspace-create">
-            <summary><?= app_icon('plus') ?><span>Add team member</span></summary>
+            <summary><?= app_icon('plus') ?><span>Invite team member</span></summary>
             <form action="<?= e(url('/developer/companies/' . (int) ($companies[0]['id'] ?? 0) . '/members')) ?>" method="post" data-workspace-form data-company-action class="workspace-form">
                 <?= csrf_field() ?>
                 <div class="workspace-form__grid">
@@ -463,7 +473,7 @@ $renderActions = static function (array $row) use (
                         </select>
                     </label>
                 </div>
-                <button class="btn btn-primary" type="submit">Add member</button>
+                <button class="btn btn-primary" type="submit">Send invitation</button>
             </form>
         </details>
     <?php elseif ($workspaceType === 'developer' && $activeSection === 'media'): ?>

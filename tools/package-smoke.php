@@ -60,6 +60,11 @@ foreach ([
     'application/resources/views/auth/register.php',
     'application/resources/views/auth/forgot-password.php',
     'application/resources/views/auth/reset-password.php',
+    'application/resources/views/account/index.php',
+    'application/resources/views/account/email-change.php',
+    'application/app/Services/AccountSettingsService.php',
+    'application/app/Services/CompanyOnboardingService.php',
+    'application/app/Repositories/AccountSettingsRepository.php',
     'application/resources/views/components/inventory-card.php',
     'application/resources/views/home.php',
     'application/resources/views/marketplace/properties.php',
@@ -228,6 +233,40 @@ if (
     throw new RuntimeException('Public marketplace discovery interface contract is incomplete.');
 }
 
+$accountSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/account/index.php'
+);
+$emailChangeSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/account/email-change.php'
+);
+$routesSource = (string) file_get_contents(
+    $temporaryRoot . '/application/routes/web.php'
+);
+$onboardingServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/CompanyOnboardingService.php'
+);
+$membershipServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/MembershipService.php'
+);
+
+if (
+    !str_contains($accountSource, 'Company Access')
+    || !str_contains($accountSource, '/account/company/onboard')
+    || !str_contains($accountSource, '/account/security/password')
+    || !str_contains($accountSource, '/account/security/email')
+    || !str_contains($accountSource, 'remember_recent_views')
+    || !str_contains($accountSource, 'Khmer')
+    || !str_contains($emailChangeSource, 'Confirm email change')
+    || !str_contains($routesSource, '/account/company-invitations/{id}/accept')
+    || !str_contains($routesSource, '/account/email-change/{token}')
+    || !str_contains($onboardingServiceSource, "'pending'")
+    || !str_contains($membershipServiceSource, 'inviteByEmail')
+    || !str_contains($membershipServiceSource, 'acceptInvitation')
+    || !str_contains($stylesheetSource, '.account-settings-grid')
+) {
+    throw new RuntimeException('Account settings or company onboarding package contract is incomplete.');
+}
+
 $rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
 $controllerSource = (string) file_get_contents(
     $temporaryRoot . '/application/app/Http/Controllers/InstallerController.php'
@@ -365,6 +404,17 @@ $administratorCount = (int) $pdo->query(
 
 if ($administratorCount !== 1) {
     throw new RuntimeException('First administrator was not provisioned correctly.');
+}
+
+$accountTableCount = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME IN ('user_profiles','email_change_tokens','company_invitations')"
+)->fetchColumn();
+
+if ($accountTableCount !== 3) {
+    throw new RuntimeException('Account/onboarding schema is missing from the customer package installation.');
 }
 
 $secondInstallBlocked = false;
