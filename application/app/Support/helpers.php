@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Barama\Core\Config;
 use Barama\Core\Csrf;
+use Barama\Services\AuthService;
 
 if (!function_exists('e')) {
     function e(mixed $value): string
@@ -96,5 +97,39 @@ if (!function_exists('csrf_field')) {
     function csrf_field(): string
     {
         return '<input type="hidden" name="_token" value="' . e(csrf_token()) . '">';
+    }
+}
+
+if (!function_exists('auth')) {
+    function auth(): AuthService
+    {
+        static $service = null;
+
+        if (!$service instanceof AuthService) {
+            $service = new AuthService();
+        }
+
+        return $service;
+    }
+}
+
+if (!function_exists('auth_user')) {
+    function auth_user(): ?array
+    {
+        return auth()->user();
+    }
+}
+
+if (!function_exists('auth_check')) {
+    function auth_check(): bool
+    {
+        return auth()->check();
+    }
+}
+
+if (!function_exists('auth_can')) {
+    function auth_can(string $permission): bool
+    {
+        return auth()->can($permission);
     }
 }

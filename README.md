@@ -10,6 +10,8 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 - Author URL: https://tonsamith.com
 - Demo target: https://baramarealestate.tonsamith.com
 - Marketplace: CodeCanyon
+- Online Documentation: https://docs.tonsamith.com/docs?=228711-barama-real-estate-property-marketplace-developer-management-php-script
+- Support: https://tonsamith.com/contact
 
 ## Account areas
 
@@ -42,4 +44,10 @@ This repository intentionally starts with a small canonical foundation.
 - Apache or Nginx
 - Bootstrap 5 is currently loaded from the official CDN during the foundation phase
 
-The final CodeCanyon package will include installer, upgrade, licensing, documentation, and release QA layers before `v1.0.0`.
+## Authentication foundation
+
+The current development line includes ordered database migrations, customer registration, secure login/logout, password reset links, login throttling, role/permission records, CSRF protection, and middleware-enforced access boundaries for \`/account\`, \`/developer\`, and \`/dashboard\`.
+
+The installer will create the first administrator account from customer-supplied credentials. Administrator credentials are never hard-coded in the repository.
+
+The final CodeCanyon package will include installer, upgrade, licensing, documentation, and release QA layers before \`v1.0.0\`.

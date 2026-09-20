@@ -29,6 +29,16 @@ $required = [
     'application/app/Core/View.php',
     'assets/css/app.css',
     'assets/js/app.js',
+    'application/app/Core/MiddlewareInterface.php',
+    'application/app/Core/Session.php',
+    'application/app/Services/AuthService.php',
+    'application/app/Services/PasswordResetService.php',
+    'application/app/Http/Controllers/AuthController.php',
+    'application/app/Http/Middleware/AuthMiddleware.php',
+    'application/app/Http/Middleware/PermissionMiddleware.php',
+    'application/database/migrations/0001_create_auth_core.php',
+    'application/database/migrations/0002_seed_auth_roles_permissions.php',
+    'tools/migrate.php',
 ];
 
 foreach ($required as $relative) {
@@ -135,6 +145,19 @@ if (!function_exists('exec')) {
             : $fail("PHP syntax error in {$relative}: " . implode(' ', $output));
     }
 }
+
+$migrationFiles = glob($root . '/application/database/migrations/*.php') ?: [];
+$migrationNames = array_map('basename', $migrationFiles);
+$sortedMigrationNames = $migrationNames;
+sort($sortedMigrationNames, SORT_STRING);
+
+$migrationNames === $sortedMigrationNames
+    ? $pass('Database migrations are stored in deterministic filename order.')
+    : $fail('Database migrations must use deterministic ordered filenames.');
+
+count($migrationNames) === count(array_unique($migrationNames))
+    ? $pass('Database migration filenames are unique.')
+    : $fail('Duplicate database migration filenames detected.');
 
 fwrite(
     STDOUT,

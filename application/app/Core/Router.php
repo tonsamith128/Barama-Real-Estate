@@ -13,27 +13,42 @@ final class Router
      * @var array<int, array{
      *     method: string,
      *     path: string,
-     *     handler: callable|array{0: class-string, 1: string}
+     *     handler: callable|array{0: class-string, 1: string},
+     *     middleware: array<int, MiddlewareInterface>
      * }>
      */
     private array $routes = [];
 
-    public function get(string $path, callable|array $handler): self
+    /** @param array<int, MiddlewareInterface> $middleware */
+    public function get(string $path, callable|array $handler, array $middleware = []): self
     {
-        return $this->add('GET', $path, $handler);
+        return $this->add('GET', $path, $handler, $middleware);
     }
 
-    public function post(string $path, callable|array $handler): self
+    /** @param array<int, MiddlewareInterface> $middleware */
+    public function post(string $path, callable|array $handler, array $middleware = []): self
     {
-        return $this->add('POST', $path, $handler);
+        return $this->add('POST', $path, $handler, $middleware);
     }
 
-    public function add(string $method, string $path, callable|array $handler): self
-    {
+    /** @param array<int, MiddlewareInterface> $middleware */
+    public function add(
+        string $method,
+        string $path,
+        callable|array $handler,
+        array $middleware = []
+    ): self {
+        foreach ($middleware as $item) {
+            if (!$item instanceof MiddlewareInterface) {
+                throw new RuntimeException('Route middleware must implement MiddlewareInterface.');
+            }
+        }
+
         $this->routes[] = [
             'method' => strtoupper($method),
             'path' => $this->normalizePath($path),
             'handler' => $handler,
+            'middleware' => $middleware,
         ];
 
         return $this;
@@ -53,17 +68,31 @@ final class Router
             }
 
             $handler = $this->resolveHandler($route['handler']);
-            $result = $handler($request, ...array_values($params));
 
-            if ($result instanceof Response) {
-                return $result;
-            }
+            $destination = static function (Request $currentRequest) use ($handler, $params): Response {
+                $result = $handler($currentRequest, ...array_values($params));
 
-            if (is_string($result)) {
-                return Response::html($result);
-            }
+                if ($result instanceof Response) {
+                    return $result;
+                }
 
-            throw new RuntimeException('Route handlers must return a Response or HTML string.');
+                if (is_string($result)) {
+                    return Response::html($result);
+                }
+
+                throw new RuntimeException('Route handlers must return a Response or HTML string.');
+            };
+
+            $pipeline = array_reduce(
+                array_reverse($route['middleware']),
+                static function (callable $next, MiddlewareInterface $middleware): callable {
+                    return static fn (Request $currentRequest): Response
+                        => $middleware->handle($currentRequest, $next);
+                },
+                $destination
+            );
+
+            return $pipeline($request);
         }
 
         return Response::html(

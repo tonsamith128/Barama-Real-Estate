@@ -13,7 +13,9 @@ return static function (PDO $pdo): void {
     ];
 
     $roleStatement = $pdo->prepare(
-        'INSERT INTO roles (name, slug, is_system) VALUES (:name, :slug, 1)'
+        'INSERT INTO roles (name, slug, is_system)
+         VALUES (:name, :slug, 1)
+         ON DUPLICATE KEY UPDATE name = VALUES(name), is_system = 1'
     );
 
     foreach ($roles as [$name, $slug]) {
@@ -30,7 +32,9 @@ return static function (PDO $pdo): void {
     ];
 
     $permissionStatement = $pdo->prepare(
-        'INSERT INTO permissions (name, slug) VALUES (:name, :slug)'
+        'INSERT INTO permissions (name, slug)
+         VALUES (:name, :slug)
+         ON DUPLICATE KEY UPDATE name = VALUES(name)'
     );
 
     foreach ($permissions as [$name, $slug]) {
@@ -62,7 +66,8 @@ return static function (PDO $pdo): void {
     ];
 
     $assign = $pdo->prepare(
-        'INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :permission_id)'
+        'INSERT IGNORE INTO role_permissions (role_id, permission_id)
+         VALUES (:role_id, :permission_id)'
     );
 
     foreach ($assignments as $roleSlug => $permissionSlugs) {

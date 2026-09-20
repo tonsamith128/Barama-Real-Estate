@@ -6,7 +6,7 @@ use PDO;
 
 return static function (PDO $pdo): void {
     $pdo->exec(<<<'SQL'
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     uuid CHAR(36) NOT NULL,
     name VARCHAR(120) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE users (
 SQL);
 
     $pdo->exec(<<<'SQL'
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(100) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE roles (
 SQL);
 
     $pdo->exec(<<<'SQL'
-CREATE TABLE permissions (
+CREATE TABLE IF NOT EXISTS permissions (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(120) NOT NULL,
     slug VARCHAR(140) NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE permissions (
 SQL);
 
     $pdo->exec(<<<'SQL'
-CREATE TABLE user_roles (
+CREATE TABLE IF NOT EXISTS user_roles (
     user_id BIGINT UNSIGNED NOT NULL,
     role_id BIGINT UNSIGNED NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -64,7 +64,7 @@ CREATE TABLE user_roles (
 SQL);
 
     $pdo->exec(<<<'SQL'
-CREATE TABLE role_permissions (
+CREATE TABLE IF NOT EXISTS role_permissions (
     role_id BIGINT UNSIGNED NOT NULL,
     permission_id BIGINT UNSIGNED NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -77,7 +77,7 @@ CREATE TABLE role_permissions (
 SQL);
 
     $pdo->exec(<<<'SQL'
-CREATE TABLE password_reset_tokens (
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
     token_hash CHAR(64) NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE password_reset_tokens (
 SQL);
 
     $pdo->exec(<<<'SQL'
-CREATE TABLE login_attempts (
+CREATE TABLE IF NOT EXISTS login_attempts (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     key_hash CHAR(64) NOT NULL,
     attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
