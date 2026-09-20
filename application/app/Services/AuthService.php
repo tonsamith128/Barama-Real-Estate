@@ -7,9 +7,11 @@ namespace Barama\Services;
 use Barama\Core\Csrf;
 use Barama\Core\Database;
 use Barama\Core\Session;
+use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
 use Barama\Security\LoginThrottle;
+use Barama\Support\Locale;
 use PDOException;
 use RuntimeException;
 
@@ -82,6 +84,16 @@ final class AuthService
             $this->clearAuthSession();
             $this->resolvedUser = null;
             return null;
+        }
+
+        if (!$cli && !Locale::hasSession()) {
+            $preferred = Locale::normalize((string) (
+                (new AccountSettingsRepository())->preferredLanguage((int) $user['id']) ?? ''
+            ));
+
+            if ($preferred !== null) {
+                Locale::set($preferred);
+            }
         }
 
         if (!$cli) {
@@ -292,6 +304,17 @@ final class AuthService
         Session::put(self::SESSION_VERSION, (int) $user['auth_version']);
         Session::put(self::SESSION_LOGIN_AT, time());
         Session::put(self::SESSION_LAST_ACTIVITY, time());
+
+        $preferred = Locale::normalize((string) (
+            (new AccountSettingsRepository())->preferredLanguage($userId) ?? ''
+        ));
+
+        if ($preferred !== null) {
+            Locale::set($preferred);
+        } elseif (!Locale::hasSession()) {
+            Locale::set(Locale::current());
+        }
+
         $this->resolvedUser = false;
     }
 

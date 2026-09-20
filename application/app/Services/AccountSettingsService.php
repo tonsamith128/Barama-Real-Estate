@@ -8,6 +8,7 @@ use Barama\Core\Database;
 use Barama\Core\Session;
 use Barama\Repositories\AccountSettingsRepository;
 use Barama\Security\PasswordPolicy;
+use Barama\Support\Locale;
 use Barama\Repositories\UserRepository;
 use DomainException;
 use InvalidArgumentException;
@@ -22,7 +23,7 @@ final class AccountSettingsService
         $name = trim((string) ($input['name'] ?? ''));
         $phone = trim((string) ($input['phone'] ?? ''));
         $timezone = trim((string) ($input['timezone'] ?? 'UTC'));
-        $language = strtolower(trim((string) ($input['preferred_language'] ?? 'en')));
+        $language = Locale::normalize((string) ($input['preferred_language'] ?? Locale::current()));
 
         if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
             throw new InvalidArgumentException('Name must be between 2 and 120 characters.');
@@ -36,8 +37,8 @@ final class AccountSettingsService
             throw new InvalidArgumentException('Selected timezone is invalid.');
         }
 
-        if (preg_match('/^[a-z]{2}(?:-[a-z]{2})?$/', $language) !== 1) {
-            throw new InvalidArgumentException('Preferred language is invalid.');
+        if ($language === null) {
+            throw new InvalidArgumentException('Preferred language is not supported.');
         }
 
         (new AccountSettingsRepository())->saveProfile(
@@ -47,6 +48,8 @@ final class AccountSettingsService
             $timezone,
             $language
         );
+
+        Locale::set($language);
     }
 
     /** @param array<string,mixed> $input */

@@ -60,6 +60,35 @@ final class AccountSettingsRepository
         ]);
     }
 
+    public function preferredLanguage(int $userId): ?string
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT preferred_language
+             FROM user_profiles
+             WHERE user_id = :user_id
+             LIMIT 1'
+        );
+        $statement->execute(['user_id' => $userId]);
+        $language = $statement->fetchColumn();
+
+        return is_string($language) && $language !== '' ? $language : null;
+    }
+
+    public function savePreferredLanguage(int $userId, string $language): void
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO user_profiles (user_id, preferred_language)
+             VALUES (:user_id, :preferred_language)
+             ON DUPLICATE KEY UPDATE
+                preferred_language = VALUES(preferred_language),
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'preferred_language' => $language,
+        ]);
+    }
+
     public function savePrivacy(int $userId, bool $rememberRecentViews): void
     {
         $statement = Database::connection()->prepare(

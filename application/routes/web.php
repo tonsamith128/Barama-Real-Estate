@@ -14,6 +14,7 @@ use Barama\Http\Controllers\DeveloperController;
 use Barama\Http\Controllers\DeveloperManagementController;
 use Barama\Http\Controllers\HomeController;
 use Barama\Http\Controllers\InquiryController;
+use Barama\Http\Controllers\LocaleController;
 use Barama\Http\Controllers\MarketplaceController;
 use Barama\Http\Controllers\PublicMediaController;
 use Barama\Http\Middleware\AuthMiddleware;
@@ -26,6 +27,8 @@ $guestPost = [new GuestMiddleware(), new CsrfMiddleware()];
 $csrf = [new CsrfMiddleware()];
 
 $router->get('/', [HomeController::class, 'index']);
+
+$router->post('/locale', [LocaleController::class, 'update'], $csrf);
 
 $router->get('/properties', [MarketplaceController::class, 'properties']);
 $router->get('/properties/{slug}', [MarketplaceController::class, 'property']);
