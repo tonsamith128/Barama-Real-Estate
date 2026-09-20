@@ -41,8 +41,16 @@ $required = [
     'application/database/migrations/0003_create_real_estate_domain.php',
     'application/database/migrations/0004_seed_real_estate_permissions.php',
     'application/app/Domain/RealEstate/DomainRules.php',
+    'application/app/Repositories/LocationRepository.php',
+    'application/app/Repositories/CompanyRepository.php',
+    'application/app/Repositories/CompanyMembershipRepository.php',
+    'application/app/Repositories/ProjectRepository.php',
+    'application/app/Repositories/PropertyRepository.php',
+    'application/app/Repositories/ListingRepository.php',
+    'application/app/Services/CompanyAccessService.php',
     'docs/DOMAIN_MODEL.md',
     'tools/migrate.php',
+    'tools/schema-smoke.php',
 ];
 
 foreach ($required as $relative) {

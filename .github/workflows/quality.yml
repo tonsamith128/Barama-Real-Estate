@@ -14,6 +14,32 @@ jobs:
     name: Foundation QA
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: barama_test
+          MYSQL_USER: barama
+          MYSQL_PASSWORD: barama_test_password
+          MYSQL_ROOT_PASSWORD: root_test_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_test_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      APP_URL: http://localhost
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: barama_test
+      DB_USERNAME: barama
+      DB_PASSWORD: barama_test_password
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,7 +48,17 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: pdo_mysql
           coverage: none
 
       - name: Run repository QA
         run: php tools/qa.php
+
+      - name: Run database migrations
+        run: php tools/migrate.php
+
+      - name: Verify migrated schema
+        run: php tools/schema-smoke.php
+
+      - name: Verify migration replay is clean
+        run: php tools/migrate.php

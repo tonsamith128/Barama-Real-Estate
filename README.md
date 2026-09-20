@@ -50,7 +50,7 @@ The current development line defines the canonical Location, Amenity, Company/De
 
 A Property is the physical asset. A Listing is a sale/rent market offer for that property, so pricing and publication history do not overwrite the underlying asset.
 
-Lifecycle rules and allowed status transitions are centralized in `application/app/Domain/RealEstate/DomainRules.php`. See `docs/DOMAIN_MODEL.md` for the relationship and delete policies.
+Lifecycle rules and allowed status transitions are centralized in `application/app/Domain/RealEstate/DomainRules.php`. Repository boundaries are defined for the first public/read paths, and company-scoped developer access requires active company membership in addition to global permission. See `docs/DOMAIN_MODEL.md` for the relationship and delete policies.
 
 ## Authentication foundation
 
@@ -59,3 +59,8 @@ The current development line includes ordered database migrations, customer regi
 The installer will create the first administrator account from customer-supplied credentials. Administrator credentials are never hard-coded in the repository.
 
 The final CodeCanyon package will include installer, upgrade, licensing, documentation, and release QA layers before \`v1.0.0\`.
+
+
+## Automated database QA
+
+GitHub Actions runs repository lint/structure QA and a MySQL 8 smoke installation. The workflow applies all ordered migrations, verifies the expected schema/role/permission seeds and lifecycle rules, then reruns the migration command to confirm a clean no-op replay.
