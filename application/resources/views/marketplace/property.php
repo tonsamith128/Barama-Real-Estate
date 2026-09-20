@@ -42,6 +42,85 @@ if (($listing['transaction_type'] ?? '') === 'rent' && !empty($listing['pricing_
                 </p>
                 <div class="detail-price"><?= e($price) ?></div>
 
+                <div data-account-notice hidden></div>
+
+                <div class="property-engagement">
+                    <?php if (!empty($engagementState['signed_in'])): ?>
+                        <form
+                            action="<?= e(url('/account/saved/' . (int) $listing['id'] . (!empty($engagementState['saved']) ? '/remove' : ''))) ?>"
+                            method="post"
+                            data-account-action
+                        >
+                            <?= csrf_field() ?>
+                            <button class="property-engagement__button <?= !empty($engagementState['saved']) ? 'is-active' : '' ?>" type="submit">
+                                <?= app_icon('heart') ?>
+                                <span><?= !empty($engagementState['saved']) ? 'Saved' : 'Save property' ?></span>
+                            </button>
+                        </form>
+
+                        <form
+                            action="<?= e(url('/account/compare/' . (int) $listing['id'] . (!empty($engagementState['compared']) ? '/remove' : ''))) ?>"
+                            method="post"
+                            data-account-action
+                        >
+                            <?= csrf_field() ?>
+                            <button class="property-engagement__button <?= !empty($engagementState['compared']) ? 'is-active' : '' ?>" type="submit">
+                                <?= app_icon('compare') ?>
+                                <span><?= !empty($engagementState['compared']) ? 'In comparison' : 'Compare' ?></span>
+                            </button>
+                        </form>
+
+                        <details class="property-viewing-request">
+                            <summary class="property-engagement__button">
+                                <?= app_icon('calendar') ?>
+                                <span>Request viewing</span>
+                            </summary>
+                            <form action="<?= e(url('/account/viewings/' . (int) $listing['id'])) ?>" method="post" data-account-action>
+                                <?= csrf_field() ?>
+                                <div class="property-viewing-request__grid">
+                                    <label>
+                                        <span>Preferred date</span>
+                                        <input class="form-control" type="date" name="preferred_date" min="<?= e(date('Y-m-d')) ?>" required>
+                                    </label>
+                                    <label>
+                                        <span>Preferred time</span>
+                                        <select class="form-select" name="preferred_time_window" required>
+                                            <option value="morning">Morning</option>
+                                            <option value="midday">Midday</option>
+                                            <option value="afternoon">Afternoon</option>
+                                            <option value="evening">Evening</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        <span>Alternate date</span>
+                                        <input class="form-control" type="date" name="alternate_date" min="<?= e(date('Y-m-d')) ?>">
+                                    </label>
+                                    <label>
+                                        <span>Alternate time</span>
+                                        <select class="form-select" name="alternate_time_window">
+                                            <option value="">No alternate</option>
+                                            <option value="morning">Morning</option>
+                                            <option value="midday">Midday</option>
+                                            <option value="afternoon">Afternoon</option>
+                                            <option value="evening">Evening</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                <label>
+                                    <span>Message</span>
+                                    <textarea class="form-control" name="message" rows="3" maxlength="2000" placeholder="Any viewing preferences or questions"></textarea>
+                                </label>
+                                <button class="btn btn-primary btn-sm" type="submit">Submit viewing request</button>
+                            </form>
+                        </details>
+                    <?php else: ?>
+                        <a class="property-engagement__signin" href="<?= e(url('/account')) ?>">
+                            <?= app_icon('heart') ?>
+                            <span>Sign in to save, compare, and request a viewing</span>
+                        </a>
+                    <?php endif; ?>
+                </div>
+
                 <dl class="detail-facts">
                     <div><dt>Type</dt><dd><?= e(ucwords(str_replace('_', ' ', (string) $listing['property_type']))) ?></dd></div>
                     <div><dt>Bedrooms</dt><dd><?= e((string) ($listing['bedrooms'] ?? '—')) ?></dd></div>
@@ -89,8 +168,8 @@ if (($listing['transaction_type'] ?? '') === 'rent' && !empty($listing['pricing_
                     <input type="hidden" name="target_type" value="listing">
                     <input type="hidden" name="target_id" value="<?= e((string) $listing['id']) ?>">
                     <input class="inquiry-honeypot" name="website" autocomplete="off" tabindex="-1" aria-hidden="true">
-                    <label><span>Name</span><input class="form-control" name="contact_name" required maxlength="160"></label>
-                    <label><span>Email</span><input class="form-control" name="contact_email" type="email" maxlength="191"></label>
+                    <label><span>Name</span><input class="form-control" name="contact_name" value="<?= e((string) ($viewer['name'] ?? '')) ?>" required maxlength="160"></label>
+                    <label><span>Email</span><input class="form-control" name="contact_email" type="email" value="<?= e((string) ($viewer['email'] ?? '')) ?>" maxlength="191"></label>
                     <label><span>Phone</span><input class="form-control" name="contact_phone" maxlength="60"></label>
                     <label><span>Message</span><textarea class="form-control" name="message" rows="5" required>I am interested in <?= e((string) $listing['title']) ?>.</textarea></label>
                     <button class="btn btn-primary w-100" type="submit">Send inquiry</button>

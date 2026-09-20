@@ -1,14 +1,261 @@
-<section class="workspace-hero">
-    <div class="container app-container">
-        <span class="eyebrow">User Account</span>
-        <h1>Your real estate activity in one place.</h1>
-        <p>This route is reserved for the authenticated customer workspace.</p>
+<?php
 
-        <div class="workspace-grid">
-            <div class="workspace-card"><strong>Saved properties</strong><span>Personal shortlist and collections</span></div>
-            <div class="workspace-card"><strong>Comparisons</strong><span>Side-by-side property decisions</span></div>
-            <div class="workspace-card"><strong>Inquiries</strong><span>Developer and property conversations</span></div>
-            <div class="workspace-card"><strong>Alerts</strong><span>Saved searches and matching updates</span></div>
+declare(strict_types=1);
+
+$humanize = static fn (mixed $value): string =>
+    ucwords(str_replace('_', ' ', trim((string) $value)));
+
+$formatPrice = static function (array $item): string {
+    if (($item['price'] ?? null) === null) {
+        return 'Price on request';
+    }
+
+    $price = strtoupper((string) ($item['currency'] ?? 'USD'))
+        . ' ' . number_format((float) $item['price'], 0);
+
+    if (($item['transaction_type'] ?? '') === 'rent' && !empty($item['pricing_period'])) {
+        $price .= ' / ' . ucwords(str_replace('_', ' ', (string) $item['pricing_period']));
+    }
+
+    return $price;
+};
+
+$propertySearchUrl = static function (array $search): string {
+    $query = array_filter([
+        'q' => $search['query_text'] ?? '',
+        'offer' => $search['transaction_type'] ?? '',
+        'type' => $search['property_type'] ?? '',
+        'location' => $search['location_id'] ?? '',
+        'bedrooms' => $search['bedrooms_min'] ?? '',
+        'min_price' => $search['price_min'] ?? '',
+        'max_price' => $search['price_max'] ?? '',
+    ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+    return url('/properties' . ($query !== [] ? '?' . http_build_query($query) : ''));
+};
+?>
+<section class="account-page">
+    <div class="account-page__head">
+        <div>
+            <span class="eyebrow">Customer Account</span>
+            <h1><?= e($sectionTitle) ?></h1>
+            <p><?= e($sectionDescription) ?></p>
+        </div>
+        <div class="account-page__identity">
+            <span><?= app_icon('users') ?></span>
+            <div>
+                <strong><?= e((string) $accountUser['name']) ?></strong>
+                <small><?= e((string) $accountUser['email']) ?></small>
+            </div>
         </div>
     </div>
+
+    <div data-account-notice hidden></div>
+
+    <?php if ($activeSection === 'overview'): ?>
+        <div class="account-stat-grid">
+            <a href="<?= e(url('/account/saved')) ?>"><span><?= app_icon('heart') ?></span><strong><?= e((string) $summary['saved']) ?></strong><small>Saved properties</small></a>
+            <a href="<?= e(url('/account/compare')) ?>"><span><?= app_icon('compare') ?></span><strong><?= e((string) $summary['compare']) ?></strong><small>In comparison</small></a>
+            <a href="<?= e(url('/account/inquiries')) ?>"><span><?= app_icon('message') ?></span><strong><?= e((string) $summary['inquiries']) ?></strong><small>Inquiries</small></a>
+            <a href="<?= e(url('/account/viewings')) ?>"><span><?= app_icon('calendar') ?></span><strong><?= e((string) $summary['viewings']) ?></strong><small>Active viewings</small></a>
+            <a href="<?= e(url('/account/alerts')) ?>"><span><?= app_icon('bell') ?></span><strong><?= e((string) $summary['alerts']) ?></strong><small>Active alerts</small></a>
+        </div>
+
+        <?php if ($savedListings !== []): ?>
+            <section class="account-section">
+                <div class="section-heading-row">
+                    <div><span class="eyebrow">Shortlist</span><h2>Saved properties</h2></div>
+                    <a href="<?= e(url('/account/saved')) ?>">View all</a>
+                </div>
+                <div class="inventory-grid">
+                    <?php foreach ($savedListings as $item): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $item]) ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <?php if ($recentViews !== []): ?>
+            <section class="account-section">
+                <div class="section-heading-row">
+                    <div><span class="eyebrow">History</span><h2>Recently viewed</h2></div>
+                    <a href="<?= e(url('/account/recent')) ?>">View all</a>
+                </div>
+                <div class="inventory-grid">
+                    <?php foreach ($recentViews as $item): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $item]) ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <?php if ($savedListings === [] && $recentViews === [] && $viewingRequests === []): ?>
+            <div class="account-empty">
+                <?= app_icon('home') ?>
+                <strong>Your marketplace activity will appear here.</strong>
+                <span>Explore published properties to save, compare, inquire, or request a viewing.</span>
+                <a class="btn btn-primary btn-sm" href="<?= e(url('/properties')) ?>">Browse properties</a>
+            </div>
+        <?php endif; ?>
+    <?php elseif ($activeSection === 'saved'): ?>
+        <?php if ($savedListings === []): ?>
+            <div class="account-empty"><?= app_icon('heart') ?><strong>No saved properties yet.</strong><span>Save a published property to build your shortlist.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/properties')) ?>">Browse properties</a></div>
+        <?php else: ?>
+            <div class="account-listing-grid">
+                <?php foreach ($savedListings as $item): ?>
+                    <div class="account-listing-item">
+                        <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $item]) ?>
+                        <div class="account-listing-item__actions">
+                            <form action="<?= e(url('/account/saved/' . (int) $item['id'] . '/remove')) ?>" method="post" data-account-action>
+                                <?= csrf_field() ?>
+                                <button type="submit"><?= app_icon('heart') ?> Remove</button>
+                            </form>
+                            <form action="<?= e(url('/account/compare/' . (int) $item['id'])) ?>" method="post" data-account-action>
+                                <?= csrf_field() ?>
+                                <button type="submit"><?= app_icon('compare') ?> Compare</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    <?php elseif ($activeSection === 'compare'): ?>
+        <?php if ($comparisonItems === []): ?>
+            <div class="account-empty"><?= app_icon('compare') ?><strong>No properties in comparison.</strong><span>Add up to four published properties from a property page or your saved list.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/properties')) ?>">Find properties</a></div>
+        <?php else: ?>
+            <div class="account-compare-wrap">
+                <table class="account-compare-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <?php foreach ($comparisonItems as $item): ?>
+                                <th>
+                                    <a href="<?= e(url('/properties/' . rawurlencode((string) $item['slug']))) ?>"><?= e((string) $item['title']) ?></a>
+                                    <form action="<?= e(url('/account/compare/' . (int) $item['id'] . '/remove')) ?>" method="post" data-account-action>
+                                        <?= csrf_field() ?><button type="submit">Remove</button>
+                                    </form>
+                                </th>
+                            <?php endforeach; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $compareRows = [
+                            'Price' => static fn (array $item): string => $formatPrice($item),
+                            'Offer' => static fn (array $item): string => $humanize($item['transaction_type'] ?? ''),
+                            'Property type' => static fn (array $item): string => $humanize($item['property_type'] ?? ''),
+                            'Location' => static fn (array $item): string => (string) ($item['location_name'] ?? '—'),
+                            'Bedrooms' => static fn (array $item): string => (string) ($item['bedrooms'] ?? '—'),
+                            'Bathrooms' => static fn (array $item): string => (string) ($item['bathrooms'] ?? '—'),
+                            'Area' => static fn (array $item): string => trim((string) ($item['area_value'] ?? '') . ' ' . (string) ($item['area_unit'] ?? '')) ?: '—',
+                            'Company' => static fn (array $item): string => (string) ($item['company_name'] ?? '—'),
+                        ];
+                        ?>
+                        <?php foreach ($compareRows as $label => $formatter): ?>
+                            <tr><th><?= e($label) ?></th><?php foreach ($comparisonItems as $item): ?><td><?= e($formatter($item)) ?></td><?php endforeach; ?></tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    <?php elseif ($activeSection === 'inquiries'): ?>
+        <?php if ($inquiries === []): ?>
+            <div class="account-empty"><?= app_icon('message') ?><strong>No signed-in inquiries yet.</strong><span>Inquiries sent while you are signed in will be available here.</span></div>
+        <?php else: ?>
+            <div class="account-record-list">
+                <?php foreach ($inquiries as $inquiry): ?>
+                    <article>
+                        <div><span class="status-badge status-badge--<?= e((string) $inquiry['status']) ?>"><?= e($humanize($inquiry['status'])) ?></span><small><?= e((string) $inquiry['created_at']) ?></small></div>
+                        <h2><?= e((string) ($inquiry['property_title'] ?? $inquiry['company_name'] ?? 'Marketplace inquiry')) ?></h2>
+                        <p><?= e((string) $inquiry['message']) ?></p>
+                        <footer><span><?= e((string) ($inquiry['company_name'] ?? '')) ?></span><?php if (!empty($inquiry['listing_slug'])): ?><a href="<?= e(url('/properties/' . rawurlencode((string) $inquiry['listing_slug']))) ?>">View property</a><?php endif; ?></footer>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    <?php elseif ($activeSection === 'viewings'): ?>
+        <?php if ($viewingRequests === []): ?>
+            <div class="account-empty"><?= app_icon('calendar') ?><strong>No viewing requests yet.</strong><span>Open a published property and request a preferred date and time window.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/properties')) ?>">Browse properties</a></div>
+        <?php else: ?>
+            <div class="account-record-list">
+                <?php foreach ($viewingRequests as $viewing): ?>
+                    <article>
+                        <div><span class="status-badge status-badge--<?= e((string) $viewing['status']) ?>"><?= e($humanize($viewing['status'])) ?></span><small>Requested <?= e((string) $viewing['created_at']) ?></small></div>
+                        <h2><?= e((string) $viewing['property_title']) ?></h2>
+                        <dl class="account-inline-facts">
+                            <div><dt>Company</dt><dd><?= e((string) $viewing['company_name']) ?></dd></div>
+                            <div><dt>Preferred</dt><dd><?= e((string) $viewing['preferred_date']) ?> · <?= e($humanize($viewing['preferred_time_window'])) ?></dd></div>
+                            <?php if (!empty($viewing['scheduled_for'])): ?><div><dt>Scheduled</dt><dd><?= e((string) $viewing['scheduled_for']) ?></dd></div><?php endif; ?>
+                        </dl>
+                        <?php if (!empty($viewing['company_note'])): ?><p><?= e((string) $viewing['company_note']) ?></p><?php endif; ?>
+                        <footer>
+                            <a href="<?= e(url('/properties/' . rawurlencode((string) $viewing['listing_slug']))) ?>">View property</a>
+                            <?php if (in_array((string) $viewing['status'], ['pending','confirmed','rescheduled'], true)): ?>
+                                <form action="<?= e(url('/account/viewings/' . (int) $viewing['id'] . '/cancel')) ?>" method="post" data-account-action data-confirm="Cancel this viewing request?"><?= csrf_field() ?><button class="is-danger" type="submit">Cancel request</button></form>
+                            <?php endif; ?>
+                        </footer>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    <?php elseif ($activeSection === 'alerts'): ?>
+        <div class="account-alert-layout">
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Create saved search</h2><span>Alert delivery preferences are stored now; scheduled mail delivery will use the final mail/cron configuration.</span></div>
+                <form action="<?= e(url('/account/alerts')) ?>" method="post" data-account-action class="account-form">
+                    <?= csrf_field() ?>
+                    <label><span>Name</span><input class="form-control" name="name" required maxlength="120" placeholder="e.g. Phnom Penh 2-bedroom condos"></label>
+                    <label><span>Keywords</span><input class="form-control" name="query_text" maxlength="100"></label>
+                    <div class="account-form__grid">
+                        <label><span>Offer</span><select class="form-select" name="transaction_type"><option value="">Sale & rent</option><option value="sale">For sale</option><option value="rent">For rent</option></select></label>
+                        <label><span>Property type</span><select class="form-select" name="property_type"><option value="">All types</option><?php foreach ($propertyTypes as $type): ?><option value="<?= e($type) ?>"><?= e($humanize($type)) ?></option><?php endforeach; ?></select></label>
+                        <label><span>Location</span><select class="form-select" name="location_id"><option value="">All locations</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                        <label><span>Bedrooms</span><input class="form-control" type="number" min="0" step="0.5" name="bedrooms_min"></label>
+                        <label><span>Min price</span><input class="form-control" type="number" min="0" step="100" name="price_min"></label>
+                        <label><span>Max price</span><input class="form-control" type="number" min="0" step="100" name="price_max"></label>
+                        <label><span>Currency</span><input class="form-control" name="currency" value="USD" maxlength="3"></label>
+                        <label><span>Frequency</span><select class="form-select" name="alert_frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label>
+                    </div>
+                    <label class="workspace-check"><input type="checkbox" name="alerts_enabled" value="1" checked><span>Enable matching-property alerts</span></label>
+                    <button class="btn btn-primary" type="submit">Save search</button>
+                </form>
+            </section>
+
+            <section class="account-panel">
+                <div class="account-panel__head"><h2>Saved searches</h2><span><?= e((string) count($savedSearches)) ?> saved</span></div>
+                <?php if ($savedSearches === []): ?><div class="account-record-empty">No saved searches yet.</div><?php endif; ?>
+                <?php foreach ($savedSearches as $search): ?>
+                    <article class="saved-search-row">
+                        <div>
+                            <strong><?= e((string) $search['name']) ?></strong>
+                            <span><?= e(implode(' · ', array_filter([
+                                $search['transaction_type'] ? $humanize($search['transaction_type']) : null,
+                                $search['property_type'] ? $humanize($search['property_type']) : null,
+                                $search['location_name'] ?? null,
+                                $search['price_max'] ? 'Up to ' . $search['currency'] . ' ' . number_format((float) $search['price_max'], 0) : null,
+                            ]))) ?></span>
+                        </div>
+                        <div class="saved-search-row__actions">
+                            <a href="<?= e($propertySearchUrl($search)) ?>">View matches</a>
+                            <form action="<?= e(url('/account/alerts/' . (int) $search['id'])) ?>" method="post" data-account-action>
+                                <?= csrf_field() ?>
+                                <select name="alert_frequency"><option value="daily" <?= $search['alert_frequency'] === 'daily' ? 'selected' : '' ?>>Daily</option><option value="weekly" <?= $search['alert_frequency'] === 'weekly' ? 'selected' : '' ?>>Weekly</option></select>
+                                <label><input type="checkbox" name="alerts_enabled" value="1" <?= !empty($search['alerts_enabled']) ? 'checked' : '' ?>> Alerts</label>
+                                <button type="submit">Update</button>
+                            </form>
+                            <form action="<?= e(url('/account/alerts/' . (int) $search['id'] . '/delete')) ?>" method="post" data-account-action data-confirm="Delete this saved search?"><?= csrf_field() ?><button class="is-danger" type="submit">Delete</button></form>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </section>
+        </div>
+    <?php elseif ($activeSection === 'recent'): ?>
+        <?php if ($recentViews === []): ?>
+            <div class="account-empty"><?= app_icon('clock') ?><strong>No recent property views yet.</strong><span>Properties you open while signed in will appear here.</span></div>
+        <?php else: ?>
+            <div class="inventory-grid">
+                <?php foreach ($recentViews as $item): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $item]) ?><?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
 </section>

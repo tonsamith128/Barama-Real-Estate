@@ -269,4 +269,74 @@
             }
         });
     });
+
+    const accountNotice = document.querySelector('[data-account-notice]');
+
+    const showAccountNotice = (message, type) => {
+        if (!accountNotice) {
+            return;
+        }
+
+        accountNotice.hidden = false;
+        accountNotice.classList.remove('is-success', 'is-error');
+        accountNotice.classList.add(type === 'success' ? 'is-success' : 'is-error');
+        accountNotice.textContent = message;
+        accountNotice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    document.querySelectorAll('[data-account-action]').forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const confirmation = form.getAttribute('data-confirm');
+
+            if (confirmation && !window.confirm(confirmation)) {
+                return;
+            }
+
+            const submitter = event.submitter;
+
+            if (submitter) {
+                submitter.disabled = true;
+            }
+
+            try {
+                const response = await window.fetch(form.action, {
+                    method: form.method || 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const payload = await response.json().catch(() => null);
+
+                if (!response.ok || payload?.ok !== true) {
+                    throw new Error(payload?.message || 'The account action could not be completed.');
+                }
+
+                showAccountNotice(
+                    payload?.data?.message || 'Account activity updated.',
+                    'success'
+                );
+
+                window.setTimeout(() => {
+                    window.location.reload();
+                }, 450);
+            } catch (error) {
+                showAccountNotice(
+                    error instanceof Error
+                        ? error.message
+                        : 'The account action could not be completed.',
+                    'error'
+                );
+
+                if (submitter) {
+                    submitter.disabled = false;
+                }
+            }
+        });
+    });
 })();

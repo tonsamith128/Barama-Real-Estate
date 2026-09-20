@@ -9,9 +9,11 @@ use Barama\Repositories\UserRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\MarketplaceRepository;
+use Barama\Repositories\CustomerEngagementRepository;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\CompanyManagementService;
+use Barama\Services\CustomerEngagementService;
 use Barama\Services\DomainWorkflowService;
 use Barama\Services\InquiryService;
 use Barama\Services\LeadManagementService;
@@ -54,6 +56,8 @@ $makeUser = static function (
 $adminId = $makeUser('QA Admin', 'qa-admin@example.test', 'administrator');
 $developerId = $makeUser('QA Developer', 'qa-developer@example.test', 'developer');
 $otherDeveloperId = $makeUser('QA Other Developer', 'qa-other@example.test', 'developer');
+$customerId = $makeUser('QA Customer', 'qa-customer@example.test', 'user');
+$otherCustomerId = $makeUser('QA Other Customer', 'qa-other-customer@example.test', 'user');
 
 Session::put('auth.user_id', $adminId);
 
@@ -309,6 +313,123 @@ if (
 $publicListings = $marketplace->listings(['offer' => 'sale'], 1, 10);
 $publicProjects = $marketplace->projects([], 1, 10);
 $publicCompanies = $marketplace->companies([], 1, 10);
+
+Session::put('auth.user_id', $customerId);
+
+$customerEngagement = new CustomerEngagementService();
+$customerRepository = new CustomerEngagementRepository();
+
+$customerEngagement->saveListing($customerId, $listingId);
+$customerEngagement->addComparison($customerId, $listingId);
+$customerEngagement->recordView($customerId, $listingId);
+
+$savedSearchId = $customerEngagement->createSavedSearch($customerId, [
+    'name' => 'QA Phnom Penh Condos',
+    'query_text' => 'Riverside',
+    'transaction_type' => 'sale',
+    'property_type' => 'condominium',
+    'location_id' => $cityId,
+    'bedrooms_min' => '2',
+    'price_min' => '100000',
+    'price_max' => '200000',
+    'currency' => 'USD',
+    'alert_frequency' => 'daily',
+    'alerts_enabled' => '1',
+]);
+
+$viewingId = $customerEngagement->createViewingRequest(
+    $customerId,
+    $listingId,
+    [
+        'preferred_date' => date('Y-m-d', strtotime('+1 day')),
+        'preferred_time_window' => 'afternoon',
+        'alternate_date' => date('Y-m-d', strtotime('+2 days')),
+        'alternate_time_window' => 'morning',
+        'message' => 'QA viewing request',
+    ]
+);
+
+$duplicateViewingBlocked = false;
+
+try {
+    $customerEngagement->createViewingRequest(
+        $customerId,
+        $listingId,
+        [
+            'preferred_date' => date('Y-m-d', strtotime('+3 days')),
+            'preferred_time_window' => 'morning',
+        ]
+    );
+} catch (DomainException) {
+    $duplicateViewingBlocked = true;
+}
+
+$customerInquiryId = (new InquiryService())->capture([
+    'website' => '',
+    'target_type' => 'listing',
+    'target_id' => $listingId,
+    'contact_name' => 'QA Customer',
+    'contact_email' => 'qa-customer@example.test',
+    'preferred_contact' => 'email',
+    'message' => 'QA signed-in customer inquiry about the listing.',
+], '127.0.0.88', $customerId);
+
+$customerSummary = $customerRepository->summary($customerId);
+$customerSaved = $customerRepository->savedListings($customerId);
+$customerCompared = $customerRepository->comparisonItems($customerId);
+$customerRecent = $customerRepository->recentViews($customerId);
+$customerSearches = $customerRepository->savedSearches($customerId);
+$customerViewings = $customerRepository->viewingRequests($customerId);
+$customerInquiries = $customerRepository->inquiries($customerId);
+
+if (
+    !$duplicateViewingBlocked
+    || $savedSearchId < 1
+    || $viewingId < 1
+    || $customerInquiryId < 1
+    || $customerSummary['saved'] !== 1
+    || $customerSummary['compare'] !== 1
+    || $customerSummary['inquiries'] !== 1
+    || $customerSummary['viewings'] !== 1
+    || $customerSummary['alerts'] !== 1
+    || count($customerSaved) !== 1
+    || count($customerCompared) !== 1
+    || count($customerRecent) !== 1
+    || count($customerSearches) !== 1
+    || count($customerViewings) !== 1
+    || count($customerInquiries) !== 1
+) {
+    throw new RuntimeException('Customer engagement persistence or scoped account reads failed.');
+}
+
+Session::put('auth.user_id', $otherCustomerId);
+
+$otherCustomerCancelBlocked = false;
+
+try {
+    $customerEngagement->cancelViewingRequest($otherCustomerId, $viewingId);
+} catch (DomainException) {
+    $otherCustomerCancelBlocked = true;
+}
+
+$customerEngagement->removeSavedListing($otherCustomerId, $listingId);
+$customerEngagement->deleteSavedSearch($otherCustomerId, $savedSearchId);
+
+if (
+    !$otherCustomerCancelBlocked
+    || !$customerRepository->isSaved($customerId, $listingId)
+    || count($customerRepository->savedSearches($customerId)) !== 1
+) {
+    throw new RuntimeException('Customer ownership isolation failed.');
+}
+
+Session::put('auth.user_id', $customerId);
+$customerEngagement->cancelViewingRequest($customerId, $viewingId);
+
+if ($customerRepository->summary($customerId)['viewings'] !== 0) {
+    throw new RuntimeException('Customer viewing cancellation state was not reflected in account summary.');
+}
+
 if (
     (int) $publicListings['total'] < 1
     || (int) $publicProjects['total'] < 1
@@ -389,5 +510,5 @@ if (
 
 fwrite(
     STDOUT,
-    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, filtered workspace reads, bulk moderation, public marketplace reads, guarded media and company-scope isolation verified.\n"
+    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, filtered workspace reads, bulk moderation, customer engagement ownership, public marketplace reads, guarded media and company-scope isolation verified.\n"
 );

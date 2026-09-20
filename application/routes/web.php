@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Http\Controllers\AccountController;
+use Barama\Http\Controllers\AccountManagementController;
 use Barama\Http\Controllers\AdminManagementController;
 use Barama\Http\Controllers\AuthController;
 use Barama\Http\Controllers\CompanyController;
@@ -58,6 +59,56 @@ $router->post(
 $router->get(
     '/account',
     [AccountController::class, 'index'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access')]
+);
+$router->post(
+    '/account/saved/{id}',
+    [AccountManagementController::class, 'saveListing'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/saved/{id}/remove',
+    [AccountManagementController::class, 'removeSavedListing'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/compare/{id}',
+    [AccountManagementController::class, 'addComparison'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/compare/{id}/remove',
+    [AccountManagementController::class, 'removeComparison'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/alerts',
+    [AccountManagementController::class, 'createSavedSearch'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/alerts/{id}',
+    [AccountManagementController::class, 'updateSavedSearch'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/alerts/{id}/delete',
+    [AccountManagementController::class, 'deleteSavedSearch'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/viewings/{id}',
+    [AccountManagementController::class, 'createViewing'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/viewings/{id}/cancel',
+    [AccountManagementController::class, 'cancelViewing'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->get(
+    '/account/{section}',
+    [AccountController::class, 'section'],
     [new AuthMiddleware(), new PermissionMiddleware('account.access')]
 );
 

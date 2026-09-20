@@ -38,6 +38,11 @@ $requiredTables = [
     'leads',
     'entity_status_history',
     'inquiry_rate_limits',
+    'saved_listings',
+    'comparison_items',
+    'recent_listing_views',
+    'saved_searches',
+    'viewing_requests',
 ];
 
 $statement = $pdo->query(

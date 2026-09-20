@@ -8,7 +8,9 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\CustomerEngagementRepository;
 use Barama\Repositories\MarketplaceRepository;
+use Barama\Services\CustomerEngagementService;
 
 final class MarketplaceController
 {
@@ -39,11 +41,29 @@ final class MarketplaceController
             );
         }
 
+        $user = auth_user();
+        $engagementState = [
+            'signed_in' => $user !== null,
+            'saved' => false,
+            'compared' => false,
+        ];
+
+        if ($user !== null) {
+            $userId = (int) $user['id'];
+            $listingId = (int) $listing['id'];
+            (new CustomerEngagementService())->recordView($userId, $listingId);
+            $engagement = new CustomerEngagementRepository();
+            $engagementState['saved'] = $engagement->isSaved($userId, $listingId);
+            $engagementState['compared'] = $engagement->isCompared($userId, $listingId);
+        }
+
         return Response::html(View::render('marketplace/property', [
             'pageTitle' => (string) $listing['title'],
             'activeArea' => 'properties',
             'listing' => $listing,
             'gallery' => $repository->gallery('listing', (int) $listing['id']),
+            'viewer' => $user,
+            'engagementState' => $engagementState,
         ]));
     }
 
