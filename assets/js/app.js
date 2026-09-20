@@ -616,6 +616,135 @@
         }
     });
 
+    const finalForm = document.querySelector('[data-installer-final-form]');
+    const mailDriver = finalForm?.querySelector('[data-mail-driver]');
+    const mailFields = Array.from(
+        finalForm?.querySelectorAll('[data-mail-setting]') || []
+    );
+    const smtpFields = Array.from(
+        finalForm?.querySelectorAll('[data-mail-smtp-field]') || []
+    );
+    const mailTestButton = finalForm?.querySelector('[data-mail-test]');
+    const mailTestStatus = finalForm?.querySelector('[data-mail-test-status]');
+    let mailTested = false;
+
+    const updateMailFields = () => {
+        const smtp = mailDriver?.value === 'smtp';
+
+        smtpFields.forEach((wrapper) => {
+            wrapper.hidden = !smtp;
+            wrapper.querySelectorAll('input, select').forEach((field) => {
+                field.disabled = !smtp;
+            });
+        });
+    };
+
+    const invalidateMailTest = () => {
+        mailTested = false;
+
+        if (mailTestStatus) {
+            mailTestStatus.hidden = true;
+            mailTestStatus.classList.remove('is-success', 'is-error');
+            mailTestStatus.textContent = '';
+        }
+    };
+
+    mailFields.forEach((field) => {
+        field.addEventListener('input', invalidateMailTest);
+        field.addEventListener('change', () => {
+            invalidateMailTest();
+
+            if (field === mailDriver) {
+                updateMailFields();
+            }
+        });
+    });
+
+    finalForm?.querySelector('[name="admin_email"]')
+        ?.addEventListener('input', invalidateMailTest);
+
+    updateMailFields();
+
+    mailTestButton?.addEventListener('click', async () => {
+        if (!finalForm) {
+            return;
+        }
+
+        const csrf = finalForm.querySelector('input[name="_token"]')?.value || '';
+        const adminEmail = finalForm.querySelector('[name="admin_email"]');
+        const siteName = finalForm.querySelector('[name="site_name"]');
+        const fromAddress = finalForm.querySelector('[data-mail-from-address]');
+        const fromName = finalForm.querySelector('[data-mail-from-name]');
+
+        if (fromAddress && !fromAddress.value.trim() && adminEmail) {
+            fromAddress.value = adminEmail.value.trim();
+        }
+
+        if (fromName && !fromName.value.trim() && siteName) {
+            fromName.value = siteName.value.trim();
+        }
+
+        invalidateMailTest();
+        mailTestButton.disabled = true;
+
+        if (mailTestStatus) {
+            mailTestStatus.hidden = false;
+            mailTestStatus.classList.add('is-success');
+            mailTestStatus.textContent = 'Testing email delivery…';
+        }
+
+        const body = new FormData();
+        body.append('_token', csrf);
+        body.append('action', 'test_mail');
+        body.append('admin_email', adminEmail?.value || '');
+        body.append('site_name', siteName?.value || '');
+
+        mailFields.forEach((field) => {
+            if (!field.disabled && field.name) {
+                body.append(field.name, field.value);
+            }
+        });
+
+        try {
+            const response = await fetch(installerUrl, {
+                method: 'POST',
+                body,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok || payload?.ok !== true) {
+                throw new Error(
+                    payload?.message || 'The test email could not be sent.'
+                );
+            }
+
+            mailTested = true;
+
+            if (mailTestStatus) {
+                mailTestStatus.classList.remove('is-error');
+                mailTestStatus.classList.add('is-success');
+                mailTestStatus.textContent = payload?.data?.message
+                    || 'Test email sent successfully.';
+            }
+        } catch (error) {
+            if (mailTestStatus) {
+                mailTestStatus.classList.remove('is-success');
+                mailTestStatus.classList.add('is-error');
+                mailTestStatus.textContent = error instanceof Error
+                    ? error.message
+                    : 'The test email could not be sent.';
+            }
+        } finally {
+            mailTestButton.disabled = false;
+        }
+    });
+
     const secureRandom = (max) => {
         const array = new Uint32Array(1);
         window.crypto.getRandomValues(array);
@@ -689,8 +818,23 @@
         });
     });
 
-    document.querySelector('[data-installer-final-form]')?.addEventListener('submit', (event) => {
+    finalForm?.addEventListener('submit', (event) => {
         if (!event.currentTarget.checkValidity()) {
+            return;
+        }
+
+        if (!mailTested) {
+            const status = finalForm.querySelector('[data-mail-test-status]');
+
+            if (status) {
+                status.hidden = false;
+                status.classList.remove('is-success');
+                status.classList.add('is-error');
+                status.textContent = 'Send a successful test email before installation.';
+                status.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            event.preventDefault();
             return;
         }
 

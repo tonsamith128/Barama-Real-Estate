@@ -49,6 +49,8 @@ foreach ([
     'tools/license-live-smoke.php',
     'tools/http-routing-smoke.php',
     'tools/webserver-package-smoke.sh',
+    'tools/smtp-test-server.php',
+    'tools/smtp-smoke.php',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -68,6 +70,7 @@ foreach ([
     'application/app/Services/UpgradeService.php',
     'application/resources/views/updater/index.php',
     'application/app/Services/InstallerService.php',
+    'application/app/Services/MailService.php',
     'application/app/Services/LicenseManagerClient.php',
     'application/resources/views/installer/index.php',
     'application/resources/views/layouts/app.php',
@@ -158,6 +161,11 @@ if (
     || !str_contains($viewSource, 'data-accept-terms')
     || !str_contains($viewSource, 'data-license-validate')
     || !str_contains($viewSource, 'data-generate-password')
+    || !str_contains($viewSource, 'Email delivery')
+    || !str_contains($viewSource, 'data-mail-test')
+    || !str_contains($viewSource, 'name="mail_driver"')
+    || !str_contains($viewSource, 'name="mail_host"')
+    || !str_contains($viewSource, 'name="mail_password"')
     || !str_contains($viewSource, 'name="license_method"')
     || !str_contains($viewSource, 'value="direct"')
     || !str_contains($viewSource, 'value="envato"')
@@ -255,6 +263,13 @@ if (
     throw new RuntimeException('Public marketplace discovery interface contract is incomplete.');
 }
 
+$mailServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/MailService.php'
+);
+$installerServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/InstallerService.php'
+);
+
 $licenseClientSource = (string) file_get_contents(
     $temporaryRoot . '/application/app/Services/LicenseManagerClient.php'
 );
@@ -286,7 +301,12 @@ $membershipServiceSource = (string) file_get_contents(
 );
 
 if (
-    !str_contains($licenseClientSource, 'function validateActive(')
+    !str_contains($mailServiceSource, 'verify_peer')
+    || !str_contains($mailServiceSource, 'verify_peer_name')
+    || !str_contains($mailServiceSource, 'allow_self_signed')
+    || !str_contains($installerServiceSource, 'function testMail(')
+    || !str_contains($installerServiceSource, 'function mailFingerprint(')
+    || !str_contains($licenseClientSource, 'function validateActive(')
     || !str_contains($licenseClientSource, 'function deactivate(')
     || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYPEER')
     || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYHOST')
@@ -342,6 +362,9 @@ if (
     || !str_contains($rootIndex, 'Cache-Control: no-store')
     || !str_contains($controllerSource, 'Csrf::validate')
     || !str_contains($controllerSource, 'agree_terms')
+    || !str_contains($controllerSource, "'test_mail'")
+    || !str_contains($controllerSource, 'MAIL_TEST_KEY')
+    || !str_contains($controllerSource, 'mailFingerprint')
     || !str_contains($upgradeControllerSource, 'Csrf::validate')
     || !str_contains($upgradeServiceSource, 'backup_confirmed')
     || !str_contains($upgradeServiceSource, 'authenticateAdministrator')
@@ -450,6 +473,9 @@ if (
     ($runtime['APP_ENV'] ?? null) !== 'production'
     || ($runtime['APP_DEBUG'] ?? true) !== false
     || ($runtime['APP_URL'] ?? '') !== 'https://barama.test/barama'
+    || ($runtime['MAIL_DRIVER'] ?? '') !== 'mail'
+    || ($runtime['MAIL_FROM_ADDRESS'] ?? '') !== 'package-qa@example.test'
+    || ($runtime['MAIL_FROM_NAME'] ?? '') !== 'Barama Package QA'
     || ($licenseState['verification_method'] ?? '') !== 'envato'
     || isset($licenseState['purchase_code'], $licenseState['license_key'])
 ) {

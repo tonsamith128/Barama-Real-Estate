@@ -333,6 +333,12 @@ final class InstallerService
             );
         }
 
+        $mail = $this->validateMail(
+            $input,
+            $adminEmail,
+            $siteName
+        );
+
         return [
             'site_name' => $siteName,
             'site_url' => $siteUrl,
@@ -341,7 +347,208 @@ final class InstallerService
             'admin_name' => $adminName,
             'admin_email' => $adminEmail,
             'admin_password' => $password,
+            'mail' => $mail,
         ];
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
+    public function validateMail(
+        array $input,
+        string $defaultFromAddress = '',
+        string $defaultFromName = 'Barama Real Estate'
+    ): array {
+        $driver = strtolower(trim((string) (
+            $input['mail_driver']
+            ?? $input['driver']
+            ?? 'mail'
+        )));
+        $fromAddress = strtolower(trim((string) (
+            $input['mail_from_address']
+            ?? $input['from_address']
+            ?? $defaultFromAddress
+        )));
+        $fromName = trim((string) (
+            $input['mail_from_name']
+            ?? $input['from_name']
+            ?? $defaultFromName
+        ));
+
+        if (!in_array($driver, ['smtp', 'mail'], true)) {
+            throw new RuntimeException('Choose a supported email delivery method.');
+        }
+
+        if (
+            !filter_var($fromAddress, FILTER_VALIDATE_EMAIL)
+            || mb_strlen($fromAddress) > 191
+        ) {
+            throw new RuntimeException('Enter a valid From email address.');
+        }
+
+        if (
+            mb_strlen($fromName) < 2
+            || mb_strlen($fromName) > 120
+            || preg_match('/[\r\n]/', $fromName) === 1
+        ) {
+            throw new RuntimeException('Enter a valid From name.');
+        }
+
+        $mail = [
+            'driver' => $driver,
+            'from_address' => $fromAddress,
+            'from_name' => $fromName,
+            'host' => '',
+            'port' => 587,
+            'encryption' => 'tls',
+            'username' => '',
+            'password' => '',
+            'timeout' => 15,
+        ];
+
+        if ($driver === 'mail') {
+            return $mail;
+        }
+
+        $host = trim((string) (
+            $input['mail_host']
+            ?? $input['host']
+            ?? ''
+        ));
+        $port = filter_var(
+            $input['mail_port'] ?? $input['port'] ?? 587,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1, 'max_range' => 65535]]
+        );
+        $encryption = strtolower(trim((string) (
+            $input['mail_encryption']
+            ?? $input['encryption']
+            ?? 'tls'
+        )));
+        $username = trim((string) (
+            $input['mail_username']
+            ?? $input['username']
+            ?? ''
+        ));
+        $password = (string) (
+            $input['mail_password']
+            ?? $input['password']
+            ?? ''
+        );
+
+        if (
+            $host === ''
+            || mb_strlen($host) > 255
+            || preg_match('/[\r\n]/', $host) === 1
+        ) {
+            throw new RuntimeException('Enter a valid SMTP host.');
+        }
+
+        if ($port === false) {
+            throw new RuntimeException('Enter a valid SMTP port.');
+        }
+
+        if (!in_array($encryption, ['tls', 'ssl', 'none'], true)) {
+            throw new RuntimeException('Choose a valid SMTP encryption method.');
+        }
+
+        if (
+            mb_strlen($username) > 191
+            || preg_match('/[\r\n]/', $username) === 1
+        ) {
+            throw new RuntimeException('Enter a valid SMTP username.');
+        }
+
+        if (
+            strlen($password) > 1024
+            || preg_match('/[\r\n]/', $password) === 1
+        ) {
+            throw new RuntimeException('Enter a valid SMTP password.');
+        }
+
+        if ($username !== '' && $password === '') {
+            throw new RuntimeException(
+                'Enter the SMTP password for the configured username.'
+            );
+        }
+
+        return array_merge($mail, [
+            'host' => $host,
+            'port' => (int) $port,
+            'encryption' => $encryption,
+            'username' => $username,
+            'password' => $password,
+        ]);
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @return array{mail:array<string,mixed>,fingerprint:string}
+     */
+    public function testMail(
+        array $input,
+        string $recipient,
+        string $defaultFromName = 'Barama Real Estate'
+    ): array {
+        $recipient = strtolower(trim($recipient));
+
+        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException(
+                'Enter a valid administrator email before testing email delivery.'
+            );
+        }
+
+        $mail = $this->validateMail(
+            $input,
+            $recipient,
+            $defaultFromName
+        );
+        $mailer = new MailService($mail);
+
+        if (!$mailer->send(
+            $recipient,
+            'Barama Real Estate email test',
+            '<p><strong>Email delivery is working.</strong></p>'
+                . '<p>You can continue the Barama Real Estate installation.</p>',
+            "Email delivery is working.\n\n"
+                . 'You can continue the Barama Real Estate installation.'
+        )) {
+            throw new RuntimeException(
+                'Test email failed: '
+                . ($mailer->lastError() ?? 'Mail transport returned false.')
+            );
+        }
+
+        return [
+            'mail' => $mail,
+            'fingerprint' => $this->mailFingerprint($mail),
+        ];
+    }
+
+    /** @param array<string,mixed> $mail */
+    public function mailFingerprint(array $mail): string
+    {
+        $ordered = [
+            'driver' => (string) ($mail['driver'] ?? ''),
+            'from_address' => (string) ($mail['from_address'] ?? ''),
+            'from_name' => (string) ($mail['from_name'] ?? ''),
+            'host' => (string) ($mail['host'] ?? ''),
+            'port' => (int) ($mail['port'] ?? 0),
+            'encryption' => (string) ($mail['encryption'] ?? ''),
+            'username' => (string) ($mail['username'] ?? ''),
+            'password' => (string) ($mail['password'] ?? ''),
+        ];
+
+        return hash(
+            'sha256',
+            json_encode(
+                $ordered,
+                JSON_UNESCAPED_SLASHES
+                    | JSON_UNESCAPED_UNICODE
+                    | JSON_THROW_ON_ERROR
+            )
+        );
     }
 
     /**
@@ -406,15 +613,15 @@ final class InstallerService
                 'DB_DATABASE' => $database['database'],
                 'DB_USERNAME' => $database['username'],
                 'DB_PASSWORD' => $database['password'],
-                'MAIL_DRIVER' => 'mail',
-                'MAIL_FROM_ADDRESS' => $website['admin_email'],
-                'MAIL_FROM_NAME' => $website['site_name'],
-                'MAIL_HOST' => '',
-                'MAIL_PORT' => 587,
-                'MAIL_ENCRYPTION' => 'tls',
-                'MAIL_USERNAME' => '',
-                'MAIL_PASSWORD' => '',
-                'MAIL_TIMEOUT' => 15,
+                'MAIL_DRIVER' => $website['mail']['driver'],
+                'MAIL_FROM_ADDRESS' => $website['mail']['from_address'],
+                'MAIL_FROM_NAME' => $website['mail']['from_name'],
+                'MAIL_HOST' => $website['mail']['host'],
+                'MAIL_PORT' => $website['mail']['port'],
+                'MAIL_ENCRYPTION' => $website['mail']['encryption'],
+                'MAIL_USERNAME' => $website['mail']['username'],
+                'MAIL_PASSWORD' => $website['mail']['password'],
+                'MAIL_TIMEOUT' => $website['mail']['timeout'],
                 'MAIL_MAX_ATTEMPTS' => 5,
                 'MAIL_RETRY_MINUTES' => 10,
                 'MAIL_PROCESSING_STALE_MINUTES' => 15,
@@ -556,6 +763,34 @@ SQL);
                 && ($runtime['APP_ENV'] ?? null) === 'production'
                 && ($runtime['APP_DEBUG'] ?? true) === false,
             'Production configuration is stored securely.'
+        );
+
+        $mailDriver = strtolower(trim((string) (
+            $runtime['MAIL_DRIVER'] ?? ''
+        )));
+        $mailHealthy = in_array($mailDriver, ['smtp', 'mail'], true)
+            && filter_var(
+                (string) ($runtime['MAIL_FROM_ADDRESS'] ?? ''),
+                FILTER_VALIDATE_EMAIL
+            ) !== false;
+
+        if ($mailDriver === 'smtp') {
+            $mailHealthy = $mailHealthy
+                && trim((string) ($runtime['MAIL_HOST'] ?? '')) !== ''
+                && (int) ($runtime['MAIL_PORT'] ?? 0) >= 1
+                && in_array(
+                    strtolower((string) ($runtime['MAIL_ENCRYPTION'] ?? '')),
+                    ['tls', 'ssl', 'none'],
+                    true
+                );
+        }
+
+        $checks[] = $this->healthCheck(
+            'Email delivery configuration',
+            $mailHealthy,
+            $mailHealthy
+                ? 'Email delivery settings are stored securely.'
+                : 'Email delivery configuration is incomplete.'
         );
 
         $checks[] = $this->healthCheck(

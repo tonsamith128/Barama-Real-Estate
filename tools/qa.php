@@ -136,6 +136,8 @@ $required = [
     'tools/license-live-smoke.php',
     'tools/http-routing-smoke.php',
     'tools/webserver-package-smoke.sh',
+    'tools/smtp-test-server.php',
+    'tools/smtp-smoke.php',
     'application/app/Services/AccountSettingsService.php',
     'application/app/Services/EmailVerificationService.php',
     'application/app/Services/SecurityAuditService.php',

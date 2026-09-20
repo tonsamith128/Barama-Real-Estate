@@ -158,3 +158,26 @@ Apache validation uses the packaged `.htaccess`, `mod_rewrite`, protected-path d
 Nginx validation uses PHP-FPM and the standard front-controller contract required by supported Nginx hosting. Nginx does not process `.htaccess`, so the hosting platform or control panel must provide this vhost capability; the application does not attempt to mutate arbitrary Nginx configuration from PHP.
 
 These automated checks do not replace the final live-server five-step installer test.
+
+
+## Step 4 email delivery
+
+Step 4 remains the single Website step and now includes email delivery configuration. No additional installer stage is introduced.
+
+The buyer configures:
+
+- SMTP (recommended) or PHP mail
+- From name and From email
+- SMTP host and port
+- TLS/SSL/none encryption
+- SMTP username and password when required
+
+Before installation can finish, the buyer must send a successful test email to the administrator address.
+
+The server validates the exact mail configuration and stores only a SHA-256 fingerprint of the successfully tested values in the installer session. The SMTP password is not stored in the installer session and is never repopulated after a validation error.
+
+If the mail configuration or administrator recipient changes after testing, the installer requires another successful test.
+
+After installation, the validated mail settings are written to protected runtime configuration under application storage. Step 5 reports an Email delivery configuration health check.
+
+Real external-provider delivery remains part of final live-server acceptance.

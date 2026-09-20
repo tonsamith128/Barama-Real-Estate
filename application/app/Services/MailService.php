@@ -10,12 +10,18 @@ final class MailService
 {
     private ?string $lastError = null;
 
+    /** @param array<string,mixed> $overrides */
+    public function __construct(
+        private readonly array $overrides = []
+    ) {
+    }
+
     public function send(string $to, string $subject, string $html, string $text): bool
     {
         $this->lastError = null;
 
-        $fromAddress = trim((string) config('mail.from_address', ''));
-        $fromName = trim((string) config('mail.from_name', 'Barama Real Estate'));
+        $fromAddress = trim((string) $this->setting('from_address', ''));
+        $fromName = trim((string) $this->setting('from_name', 'Barama Real Estate'));
 
         if (
             !filter_var($to, FILTER_VALIDATE_EMAIL)
@@ -24,7 +30,7 @@ final class MailService
             return $this->fail('Invalid mail address configuration.', $to);
         }
 
-        $driver = strtolower(trim((string) config('mail.driver', 'mail')));
+        $driver = strtolower(trim((string) $this->setting('driver', 'mail')));
 
         return match ($driver) {
             'smtp' => $this->sendSmtp($to, $subject, $html, $text, $fromAddress, $fromName),
@@ -107,12 +113,12 @@ final class MailService
         string $fromAddress,
         string $fromName
     ): bool {
-        $host = trim((string) config('mail.host', ''));
-        $port = (int) config('mail.port', 587);
-        $encryption = strtolower(trim((string) config('mail.encryption', 'tls')));
-        $username = (string) config('mail.username', '');
-        $password = (string) config('mail.password', '');
-        $timeout = max(3, (int) config('mail.timeout', 15));
+        $host = trim((string) $this->setting('host', ''));
+        $port = (int) $this->setting('port', 587);
+        $encryption = strtolower(trim((string) $this->setting('encryption', 'tls')));
+        $username = (string) $this->setting('username', '');
+        $password = (string) $this->setting('password', '');
+        $timeout = max(3, (int) $this->setting('timeout', 15));
 
         if ($host === '' || $port < 1 || $port > 65535) {
             return $this->fail('SMTP host or port is invalid.', $to);
@@ -125,13 +131,22 @@ final class MailService
         $scheme = $encryption === 'ssl' ? 'ssl://' : 'tcp://';
         $errorNumber = 0;
         $errorMessage = '';
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+                'allow_self_signed' => false,
+                'peer_name' => $host,
+            ],
+        ]);
 
         $stream = @stream_socket_client(
             $scheme . $host . ':' . $port,
             $errorNumber,
             $errorMessage,
             $timeout,
-            STREAM_CLIENT_CONNECT
+            STREAM_CLIENT_CONNECT,
+            $context
         );
 
         if (!is_resource($stream)) {
@@ -284,6 +299,13 @@ final class MailService
         $normalized = str_replace(["\r\n", "\r"], "\n", $value);
 
         return str_replace("\n", "\r\n", $normalized);
+    }
+
+    private function setting(string $key, mixed $default = null): mixed
+    {
+        return array_key_exists($key, $this->overrides)
+            ? $this->overrides[$key]
+            : config('mail.' . $key, $default);
     }
 
     private function fail(string $reason, string $to): bool

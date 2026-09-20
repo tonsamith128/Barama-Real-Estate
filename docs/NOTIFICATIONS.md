@@ -153,6 +153,12 @@ All mutations require authentication, account.access, and CSRF validation.
 
 ## CodeCanyon deployment note
 
-The installer should collect and validate SMTP configuration and should offer the customer a simple cron command to copy into their hosting control panel.
+The five-step installer collects mail delivery settings inside Step 4 Website and requires a successful test email before browser installation can complete.
 
-The current source code accepts environment/server configuration. A customer-facing installer remains a later release phase.
+SMTP credentials are persisted only in protected runtime configuration after installation. The installer session stores only a fingerprint of the tested mail configuration, not the SMTP password.
+
+The customer still receives the simple CLI command below for scheduled notification delivery:
+
+php tools/notifications.php run --limit=100
+
+Real provider delivery and hosting cron configuration are validated during final live-server acceptance.

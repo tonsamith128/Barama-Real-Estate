@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.7-dev`
+- Current development line: `0.9.8-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -197,3 +197,22 @@ The 0.9.7 development line hardens web-server routing before live-server install
 - the release still requires final installer acceptance on the intended live hosting environment before v1.0.0
 
 Nginx does not read `.htaccess`; the hosting environment or panel must already provide safe front-controller routing. Barama does not attempt to rewrite an arbitrary Nginx vhost from PHP. See `docs/HOSTING_COMPATIBILITY.md`.
+
+
+## Installer email delivery
+
+The 0.9.8 development line completes customer-facing mail configuration without adding a sixth installer step.
+
+- Step 4 Website includes SMTP (recommended) and PHP mail delivery settings
+- all mail fields use the shared installer form/icon system
+- the administrator email is the test recipient
+- installation is blocked server-side until the exact submitted mail configuration passes a test
+- only a SHA-256 fingerprint of the tested configuration is retained in installer session state
+- SMTP passwords are never repopulated after validation errors
+- production runtime configuration stores the selected mail driver and credentials under protected application storage
+- SMTP sockets require peer and hostname certificate verification for TLS/SSL
+- Step 5 reports email-delivery configuration health
+- Quality CI uses a local PHP SMTP fixture to verify AUTH LOGIN and multipart delivery without external credentials
+- exact customer ZIP QA verifies the installer mail contract while excluding internal SMTP QA scripts
+
+Real provider delivery remains a final live-server acceptance gate.

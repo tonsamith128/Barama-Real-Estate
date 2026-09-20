@@ -38,7 +38,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.7 development line has automated coverage for:
+The current 0.9.8 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -70,6 +70,13 @@ The current 0.9.7 development line has automated coverage for:
 - exact-package Apache subdirectory routing preflight
 - exact-package Nginx + PHP-FPM front-controller routing preflight
 - protected-path denial and static-asset delivery under both tested web-server contracts
+- deterministic SMTP AUTH LOGIN multipart delivery
+- installer mail configuration validation and fingerprint invalidation
+- Step 4 server-side test-email enforcement without an extra visible installer step
+- secure SMTP TLS peer/hostname verification configuration
+- protected runtime persistence of mail delivery settings
+- Step 5 email-delivery configuration health check
+- customer-package exclusion of internal SMTP QA fixtures
 
 ## Open gates before CodeCanyon v1.0.0
 
@@ -81,7 +88,7 @@ These remain intentionally open:
 - browser/device QA on desktop, tablet, and mobile
 - Light/Dark Mode visual QA
 - keyboard/focus accessibility QA
-- production email delivery using a real supported mail transport
+- final live-server production email delivery using a real supported SMTP/PHP-mail provider
 - localization QA for configured languages
 - browser compatibility QA
 - final third-party notices and CodeCanyon package review

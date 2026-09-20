@@ -32,6 +32,26 @@ $languageValue = (string) (
     $oldWebsite['default_language']
     ?? 'en'
 );
+$mailDriverValue = in_array(
+    (string) ($oldWebsite['mail_driver'] ?? 'smtp'),
+    ['smtp', 'mail'],
+    true
+) ? (string) ($oldWebsite['mail_driver'] ?? 'smtp') : 'smtp';
+$mailEncryptionValue = in_array(
+    (string) ($oldWebsite['mail_encryption'] ?? 'tls'),
+    ['tls', 'ssl', 'none'],
+    true
+) ? (string) ($oldWebsite['mail_encryption'] ?? 'tls') : 'tls';
+$mailFromAddressValue = (string) (
+    $oldWebsite['mail_from_address']
+    ?? $oldWebsite['admin_email']
+    ?? ''
+);
+$mailFromNameValue = (string) (
+    $oldWebsite['mail_from_name']
+    ?? $oldWebsite['site_name']
+    ?? 'Barama Real Estate'
+);
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -736,6 +756,195 @@ $languageValue = (string) (
                                     </button>
                                 </span>
                             </label>
+                        </div>
+
+                        <div class="installer-section-label">Email delivery</div>
+
+                        <div class="installer-form__grid">
+                            <label class="installer-field">
+                                <span class="installer-field__label">Delivery method</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('mail') ?>
+                                    </span>
+                                    <select
+                                        class="form-select"
+                                        name="mail_driver"
+                                        data-mail-driver
+                                        data-mail-setting
+                                        required
+                                    >
+                                        <option value="smtp" <?= $mailDriverValue === 'smtp' ? 'selected' : '' ?>>
+                                            SMTP (recommended)
+                                        </option>
+                                        <option value="mail" <?= $mailDriverValue === 'mail' ? 'selected' : '' ?>>
+                                            PHP mail
+                                        </option>
+                                    </select>
+                                </span>
+                            </label>
+
+                            <label class="installer-field">
+                                <span class="installer-field__label">From email</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('mail') ?>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        type="email"
+                                        name="mail_from_address"
+                                        value="<?= e($mailFromAddressValue) ?>"
+                                        maxlength="191"
+                                        autocomplete="email"
+                                        data-mail-setting
+                                        data-mail-from-address
+                                        required
+                                    >
+                                </span>
+                            </label>
+
+                            <label class="installer-field">
+                                <span class="installer-field__label">From name</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('building') ?>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        name="mail_from_name"
+                                        value="<?= e($mailFromNameValue) ?>"
+                                        maxlength="120"
+                                        data-mail-setting
+                                        data-mail-from-name
+                                        required
+                                    >
+                                </span>
+                            </label>
+
+                            <label class="installer-field" data-mail-smtp-field>
+                                <span class="installer-field__label">SMTP host</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('server') ?>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        name="mail_host"
+                                        value="<?= e((string) ($oldWebsite['mail_host'] ?? '')) ?>"
+                                        maxlength="255"
+                                        autocomplete="off"
+                                        placeholder="smtp.example.com"
+                                        data-mail-setting
+                                    >
+                                </span>
+                            </label>
+
+                            <label class="installer-field" data-mail-smtp-field>
+                                <span class="installer-field__label">SMTP port</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('server') ?>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        type="number"
+                                        name="mail_port"
+                                        min="1"
+                                        max="65535"
+                                        value="<?= e((string) ($oldWebsite['mail_port'] ?? 587)) ?>"
+                                        data-mail-setting
+                                    >
+                                </span>
+                            </label>
+
+                            <label class="installer-field" data-mail-smtp-field>
+                                <span class="installer-field__label">Encryption</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('shield') ?>
+                                    </span>
+                                    <select
+                                        class="form-select"
+                                        name="mail_encryption"
+                                        data-mail-setting
+                                    >
+                                        <option value="tls" <?= $mailEncryptionValue === 'tls' ? 'selected' : '' ?>>
+                                            TLS / STARTTLS
+                                        </option>
+                                        <option value="ssl" <?= $mailEncryptionValue === 'ssl' ? 'selected' : '' ?>>
+                                            SSL / TLS
+                                        </option>
+                                        <option value="none" <?= $mailEncryptionValue === 'none' ? 'selected' : '' ?>>
+                                            None
+                                        </option>
+                                    </select>
+                                </span>
+                            </label>
+
+                            <label class="installer-field" data-mail-smtp-field>
+                                <span class="installer-field__label">SMTP username</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('user') ?>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        name="mail_username"
+                                        value="<?= e((string) ($oldWebsite['mail_username'] ?? '')) ?>"
+                                        maxlength="191"
+                                        autocomplete="username"
+                                        data-mail-setting
+                                    >
+                                </span>
+                            </label>
+
+                            <label class="installer-field" data-mail-smtp-field>
+                                <span class="installer-field__label">SMTP password</span>
+                                <span class="installer-input">
+                                    <span class="installer-input__icon">
+                                        <?= app_icon('lock') ?>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        type="password"
+                                        name="mail_password"
+                                        autocomplete="new-password"
+                                        data-password-field
+                                        data-mail-setting
+                                    >
+                                    <button
+                                        class="installer-input__icon-button"
+                                        type="button"
+                                        data-password-toggle
+                                        aria-label="Show password"
+                                    >
+                                        <?= app_icon('eye') ?>
+                                    </button>
+                                </span>
+                                <small>The SMTP password is never restored after a validation error.</small>
+                            </label>
+                        </div>
+
+                        <div
+                            class="installer-alert"
+                            data-mail-test-status
+                            role="status"
+                            hidden
+                        ></div>
+
+                        <div class="installer-actions">
+                            <span class="installer-actions__note">
+                                Send a test email to the administrator address before installation.
+                            </span>
+                            <button
+                                class="btn btn-outline-secondary"
+                                type="button"
+                                data-mail-test
+                            >
+                                <?= app_icon('mail') ?>
+                                Send Test Email
+                            </button>
                         </div>
 
                         <div class="installer-actions">

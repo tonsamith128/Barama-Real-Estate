@@ -21,6 +21,7 @@ final class InstallerController
     private const TERMS_KEY = 'installer.terms_accepted';
     private const LICENSE_KEY = 'installer.license';
     private const DATABASE_KEY = 'installer.database';
+    private const MAIL_TEST_KEY = 'installer.mail_test';
     private const FINISHED_KEY = 'installer.finished';
 
     public function handle(): void
@@ -90,6 +91,10 @@ final class InstallerController
                     $service
                 ),
                 'test_database' => $this->testDatabase(
+                    $request,
+                    $service
+                ),
+                'test_mail' => $this->testMail(
                     $request,
                     $service
                 ),
@@ -256,6 +261,49 @@ final class InstallerController
         $this->redirect($service->installerUrl('step=4'));
     }
 
+    private function testMail(
+        Request $request,
+        InstallerService $service
+    ): never {
+        $this->requireReachedStep(4);
+        $this->requireLicense();
+
+        $database = Session::get(self::DATABASE_KEY, []);
+
+        if (!is_array($database) || $database === []) {
+            throw new RuntimeException(
+                'Test the database connection before testing email delivery.'
+            );
+        }
+
+        Session::forget(self::MAIL_TEST_KEY);
+
+        $result = $service->testMail(
+            $this->mailInput($request),
+            (string) $request->input('admin_email', ''),
+            (string) $request->input(
+                'site_name',
+                'Barama Real Estate'
+            )
+        );
+
+        Session::put(self::MAIL_TEST_KEY, [
+            'fingerprint' => (string) $result['fingerprint'],
+            'recipient' => strtolower(trim(
+                (string) $request->input('admin_email', '')
+            )),
+            'tested_at' => gmdate('c'),
+        ]);
+
+        $this->json([
+            'ok' => true,
+            'data' => [
+                'tested' => true,
+                'message' => 'Test email sent successfully.',
+            ],
+        ]);
+    }
+
     private function install(
         Request $request,
         InstallerService $service
@@ -297,6 +345,7 @@ final class InstallerController
                 'admin_password_confirmation',
                 ''
             ),
+            ...$this->mailInput($request),
         ];
 
         Session::put('installer.website_old', [
@@ -310,13 +359,62 @@ final class InstallerController
             'admin_email' => trim(
                 (string) $websiteInput['admin_email']
             ),
+            'mail_driver' => trim(
+                (string) $websiteInput['mail_driver']
+            ),
+            'mail_from_address' => trim(
+                (string) $websiteInput['mail_from_address']
+            ),
+            'mail_from_name' => trim(
+                (string) $websiteInput['mail_from_name']
+            ),
+            'mail_host' => trim(
+                (string) $websiteInput['mail_host']
+            ),
+            'mail_port' => trim(
+                (string) $websiteInput['mail_port']
+            ),
+            'mail_encryption' => trim(
+                (string) $websiteInput['mail_encryption']
+            ),
+            'mail_username' => trim(
+                (string) $websiteInput['mail_username']
+            ),
         ]);
+
+        $mail = $service->validateMail(
+            $websiteInput,
+            (string) $websiteInput['admin_email'],
+            (string) $websiteInput['site_name']
+        );
+        $mailTest = Session::get(self::MAIL_TEST_KEY, []);
+        $fingerprint = $service->mailFingerprint($mail);
+
+        if (
+            !is_array($mailTest)
+            || !isset($mailTest['fingerprint'], $mailTest['recipient'])
+            || !hash_equals(
+                (string) $mailTest['fingerprint'],
+                $fingerprint
+            )
+            || !hash_equals(
+                strtolower(trim((string) $mailTest['recipient'])),
+                strtolower(trim((string) $websiteInput['admin_email']))
+            )
+        ) {
+            throw new RuntimeException(
+                'Send a successful test email after entering the email delivery settings.'
+            );
+        }
+
+        Session::forget(self::MAIL_TEST_KEY);
 
         $service->install($database, $websiteInput, $license);
 
         Session::forget(self::DATABASE_KEY);
         Session::forget(self::LICENSE_KEY);
         Session::forget(self::TERMS_KEY);
+        Session::forget(self::MAIL_TEST_KEY);
         Session::forget('installer.database_old');
         Session::forget('installer.website_old');
         Session::put(self::STEP_KEY, 5);
@@ -391,6 +489,30 @@ final class InstallerController
                 'X-Robots-Tag' => 'noindex, nofollow, noarchive',
             ]
         ))->send();
+    }
+
+    /** @return array<string,mixed> */
+    private function mailInput(Request $request): array
+    {
+        return [
+            'mail_driver' => $request->input('mail_driver', 'mail'),
+            'mail_from_address' => $request->input(
+                'mail_from_address',
+                ''
+            ),
+            'mail_from_name' => $request->input(
+                'mail_from_name',
+                'Barama Real Estate'
+            ),
+            'mail_host' => $request->input('mail_host', ''),
+            'mail_port' => $request->input('mail_port', 587),
+            'mail_encryption' => $request->input(
+                'mail_encryption',
+                'tls'
+            ),
+            'mail_username' => $request->input('mail_username', ''),
+            'mail_password' => $request->input('mail_password', ''),
+        ];
     }
 
     /** @return array<string,mixed> */
