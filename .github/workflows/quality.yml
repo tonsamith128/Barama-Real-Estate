@@ -62,6 +62,9 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Run localization contract smoke test
+        run: php tools/localization-smoke.php
+
       - name: Run database migrations
         run: php tools/migrate.php
 

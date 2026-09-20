@@ -348,6 +348,46 @@ try {
     const page = await context.newPage();
 
     await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
+
+    const localeSelect = page.locator('[data-locale-select]');
+    await localeSelect.selectOption('km');
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle' }),
+        page.locator('[data-locale-submit]').click(),
+    ]);
+    assert(
+        await page.locator('html').getAttribute('lang') === 'km',
+        'Khmer locale did not update the document language.'
+    );
+    assert(
+        await page.locator('.main-nav').getByText('ទំព័រដើម', { exact: true }).count() === 1,
+        'Khmer locale did not render the translated Home label.'
+    );
+
+    await page.locator('[data-locale-select]').selectOption('zh');
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle' }),
+        page.locator('[data-locale-submit]').click(),
+    ]);
+    assert(
+        await page.locator('html').getAttribute('lang') === 'zh',
+        'Chinese locale did not update the document language.'
+    );
+    assert(
+        await page.locator('.main-nav').getByText('首页', { exact: true }).count() === 1,
+        'Chinese locale did not render the translated Home label.'
+    );
+
+    await page.locator('[data-locale-select]').selectOption('en');
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle' }),
+        page.locator('[data-locale-submit]').click(),
+    ]);
+    assert(
+        await page.locator('html').getAttribute('lang') === 'en',
+        'English locale was not restored after locale QA.'
+    );
+
     await page.keyboard.press('Tab');
 
     const focusState = await page.evaluate(() => {

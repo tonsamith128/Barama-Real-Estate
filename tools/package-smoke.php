@@ -92,6 +92,11 @@ foreach ([
     'application/app/Services/AccountSettingsService.php',
     'application/app/Services/CompanyOnboardingService.php',
     'application/app/Repositories/AccountSettingsRepository.php',
+    'application/app/Support/Locale.php',
+    'application/app/Http/Controllers/LocaleController.php',
+    'application/resources/lang/en.php',
+    'application/resources/lang/km.php',
+    'application/resources/lang/zh.php',
     'application/resources/views/components/inventory-card.php',
     'application/resources/views/home.php',
     'application/resources/views/marketplace/properties.php',
@@ -131,6 +136,10 @@ $zip->close();
 
 $css = glob($temporaryRoot . '/assets/css/*.css') ?: [];
 $js = glob($temporaryRoot . '/assets/js/*.js') ?: [];
+
+if (in_array('tools/localization-smoke.php', $entries, true)) {
+    throw new RuntimeException('Internal localization QA script leaked into customer package.');
+}
 
 if (
     count($css) !== 1
@@ -194,6 +203,13 @@ if (
 $layoutSource = (string) file_get_contents(
     $temporaryRoot . '/application/resources/views/layouts/app.php'
 );
+$localeSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Support/Locale.php'
+);
+$localeControllerSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Http/Controllers/LocaleController.php'
+);
+
 $loginSource = (string) file_get_contents(
     $temporaryRoot . '/application/resources/views/auth/login.php'
 );
@@ -209,6 +225,11 @@ $cardSource = (string) file_get_contents(
 
 if (
     !str_contains($layoutSource, 'data-site-menu-toggle')
+    || !str_contains($layoutSource, 'data-locale-select')
+    || !str_contains($layoutSource, 'app_locale()')
+    || !str_contains($localeSource, "'km' => 'ខ្មែរ'")
+    || !str_contains($localeSource, "'zh' => '中文'")
+    || !str_contains($localeControllerSource, 'savePreferredLanguage')
     || !str_contains($layoutSource, 'Company / Vendor')
     || !str_contains($layoutSource, 'site-footer__grid')
     || !str_contains($loginSource, 'auth-premium')
@@ -319,6 +340,7 @@ if (
     || !str_contains($emailVerificationServiceSource, 'EmailVerificationRepository')
     || !str_contains($userAdministrationServiceSource, 'final active administrator')
     || !str_contains($routesSource, '/verify-email/{token}')
+    || !str_contains($routesSource, "'/locale'")
     || !str_contains($routesSource, '/dashboard/users/{id}/status')
     || !str_contains($accountSource, 'Company access')
     || !str_contains($accountSource, '/account/company/onboard')
@@ -392,6 +414,14 @@ $_SERVER['SERVER_PORT'] = '443';
 require $temporaryRoot . '/application/bootstrap/runtime.php';
 
 $service = new InstallerService();
+
+if ($service->supportedLanguages() !== [
+    'en' => 'English',
+    'km' => 'ខ្មែរ',
+    'zh' => '中文',
+]) {
+    throw new RuntimeException('Exact package installer language options are incomplete.');
+}
 
 if (
     $service->basePath() !== '/barama'
@@ -478,6 +508,7 @@ if (
     ($runtime['APP_ENV'] ?? null) !== 'production'
     || ($runtime['APP_DEBUG'] ?? true) !== false
     || ($runtime['APP_URL'] ?? '') !== 'https://barama.test/barama'
+    || ($runtime['APP_LOCALE'] ?? '') !== 'en'
     || ($runtime['MAIL_DRIVER'] ?? '') !== 'mail'
     || ($runtime['MAIL_FROM_ADDRESS'] ?? '') !== 'package-qa@example.test'
     || ($runtime['MAIL_FROM_NAME'] ?? '') !== 'Barama Package QA'

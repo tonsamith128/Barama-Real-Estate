@@ -26,6 +26,7 @@ GitHub Actions currently runs the following against MySQL 8 and the exact genera
 18. exact-package Chromium mobile/tablet/desktop browser QA
 19. exact-package keyboard/focus and serious/critical accessibility QA
 20. exact-package Firefox and WebKit critical-flow compatibility QA
+21. English/Khmer/Chinese localization catalog, persistence, and exact-package rendering QA
 
 The automated gates also enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
@@ -41,7 +42,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.10 development line has automated coverage for:
+The current 0.9.11 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -89,6 +90,10 @@ The current 0.9.10 development line has automated coverage for:
 - short-lived browser screenshot artifacts for visual review
 - exact-package Firefox and WebKit installer/public/authenticated critical-flow compatibility
 - Firefox/WebKit mobile-navigation and Light/Dark persistence checks
+- canonical English, Khmer, and Chinese locale catalogs with English fallback
+- guest-session and authenticated preferred-language persistence
+- exact-package document-language and rendered Khmer/Chinese navigation switching
+- unsupported-locale rejection and locale catalog key-parity checks
 
 ## Open gates before CodeCanyon v1.0.0
 
@@ -100,7 +105,7 @@ These remain intentionally open:
 - final human browser/device visual review on representative desktop, tablet, and mobile browsers
 - final human Light/Dark Mode visual review
 - final live-server production email delivery using a real supported SMTP/PHP-mail provider
-- localization QA for configured languages
+- final human English/Khmer/Chinese translation and page-specific content review
 - final human Safari/iOS and Edge/Chrome compatibility review
 - final third-party notices and CodeCanyon package review
 - online documentation review against the exact v1.0.0 package

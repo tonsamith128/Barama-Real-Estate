@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.10-dev`
+- Current development line: `0.9.11-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -247,3 +247,19 @@ The 0.9.10 development line extends exact-customer-ZIP browser validation beyond
 - final Safari/iOS and Edge/Chrome visual acceptance remains a human pre-release gate
 
 See `docs/BROWSER_QA.md`.
+
+
+## Localization foundation
+
+The 0.9.11 development line introduces one canonical localization layer for English, Khmer, and Chinese without duplicating views or customer assets.
+
+- the installer default-language selector and account preferred-language setting use one shared supported-locale definition
+- guests can switch language through a CSRF-protected session preference
+- signed-in customers persist language choice in the existing `user_profiles.preferred_language` field
+- the document `lang` attribute follows the active locale
+- shared site navigation, account shell, footer, login, and registration surfaces use the canonical translation helper
+- English remains the fallback when a translation key is unavailable
+- CI verifies catalog parity, locale normalization, unsupported-locale rejection, exact-package language files, and rendered Khmer/Chinese switching
+- no locale-specific view copies, extra first-party stylesheets, or extra first-party JavaScript files are introduced
+
+Final human review of page-specific English/Khmer/Chinese copy remains a v1.0.0 release gate. See `docs/LOCALIZATION.md`.
