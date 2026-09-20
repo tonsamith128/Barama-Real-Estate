@@ -45,6 +45,17 @@ final class CatalogManagementService
             throw new InvalidArgumentException('country_code must be a two-letter ISO code.');
         }
 
+        $latitude = DomainInput::optionalSignedDecimal($input, 'latitude');
+        $longitude = DomainInput::optionalSignedDecimal($input, 'longitude');
+
+        if ($latitude !== null && ((float) $latitude < -90 || (float) $latitude > 90)) {
+            throw new InvalidArgumentException('Latitude must be between -90 and 90.');
+        }
+
+        if ($longitude !== null && ((float) $longitude < -180 || (float) $longitude > 180)) {
+            throw new InvalidArgumentException('Longitude must be between -180 and 180.');
+        }
+
         $slug = Slugger::unique(
             (string) ($input['slug'] ?? $name),
             fn (string $candidate): bool => $this->catalog->locationSlugExists($candidate)
@@ -56,8 +67,8 @@ final class CatalogManagementService
             'country_code' => $countryCode,
             'name' => $name,
             'slug' => $slug,
-            'latitude' => DomainInput::optionalDecimal($input, 'latitude'),
-            'longitude' => DomainInput::optionalDecimal($input, 'longitude'),
+            'latitude' => $latitude,
+            'longitude' => $longitude,
             'sort_order' => (int) ($input['sort_order'] ?? 0),
         ]);
     }

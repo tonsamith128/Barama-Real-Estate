@@ -61,6 +61,12 @@ The installer will create the first administrator account from customer-supplied
 The final CodeCanyon package will include installer, upgrade, licensing, documentation, and release QA layers before \`v1.0.0\`.
 
 
+## Domain write infrastructure
+
+The current development line includes service-layer mutations for company onboarding and membership, location/amenity catalogs, project/property/listing create and edit flows, controlled approval/publication transitions with history, public inquiry capture with throttling, inquiry-to-lead conversion, and secure private media storage.
+
+Management HTTP endpoints are protected by authentication, permissions, company scope, and CSRF. See `docs/WRITE_SERVICES.md`.
+
 ## Automated database QA
 
-GitHub Actions runs repository lint/structure QA and a MySQL 8 smoke installation. The workflow applies all ordered migrations, verifies the expected schema/role/permission seeds and lifecycle rules, then reruns the migration command to confirm a clean no-op replay.
+GitHub Actions runs repository lint/structure QA and a MySQL 8 smoke installation. The workflow applies all ordered migrations, verifies the expected schema/role/permission seeds and lifecycle rules, then reruns the migration command to confirm a clean no-op replay. It also executes an end-to-end domain write smoke test against MySQL.

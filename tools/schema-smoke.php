@@ -36,6 +36,8 @@ $requiredTables = [
     'media_attachments',
     'inquiries',
     'leads',
+    'entity_status_history',
+    'inquiry_rate_limits',
 ];
 
 $statement = $pdo->query(

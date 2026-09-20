@@ -42,6 +42,10 @@ final class PropertyManagementService
             throw new InvalidArgumentException('Property was not found.');
         }
 
+        if (!in_array((string) $property['status'], ['draft', 'rejected'], true)) {
+            throw new DomainException('Only draft or rejected properties can be edited in this workflow.');
+        }
+
         (new CompanyAccessService())->assertCanManage((int) $property['company_id']);
 
         $ownerUserId = $property['owner_user_id'] !== null
@@ -93,7 +97,7 @@ final class PropertyManagementService
             'property_type' => $propertyType,
             'bedrooms' => DomainInput::optionalDecimal($input, 'bedrooms'),
             'bathrooms' => DomainInput::optionalDecimal($input, 'bathrooms'),
-            'parking_spaces' => DomainInput::optionalPositiveInt($input, 'parking_spaces'),
+            'parking_spaces' => DomainInput::optionalNonNegativeInt($input, 'parking_spaces'),
             'floor_number' => ($input['floor_number'] ?? '') !== '' ? (int) $input['floor_number'] : null,
             'total_floors' => DomainInput::optionalPositiveInt($input, 'total_floors'),
             'area_value' => DomainInput::optionalDecimal($input, 'area_value'),

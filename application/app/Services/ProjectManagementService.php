@@ -39,6 +39,10 @@ final class ProjectManagementService
             throw new InvalidArgumentException('Project was not found.');
         }
 
+        if (!in_array((string) $project['status'], ['draft', 'rejected'], true)) {
+            throw new DomainException('Only draft or rejected projects can be edited in this workflow.');
+        }
+
         (new CompanyAccessService())->assertCanManage((int) $project['company_id']);
         $this->persist($projectId, (int) $project['company_id'], $input);
     }

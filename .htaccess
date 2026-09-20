@@ -4,11 +4,14 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Never expose source, runtime storage, tooling, or repository metadata.
+    RewriteRule ^(?:application|tools|docs|\.github)(?:/|$) - [F,L,NC]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-<FilesMatch "(^\.env|^\.git|composer\.(json|lock)|VERSION)$">
+<FilesMatch "(^\.|^(README|LICENSE|VERSION)(\..*)?$|composer\.(json|lock)$)">
     Require all denied
 </FilesMatch>

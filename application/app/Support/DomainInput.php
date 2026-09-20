@@ -64,6 +64,22 @@ final class DomainInput
     }
 
     /** @param array<string, mixed> $input */
+    public static function optionalNonNegativeInt(array $input, string $key): ?int
+    {
+        $raw = $input[$key] ?? null;
+
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        if (filter_var($raw, FILTER_VALIDATE_INT) === false || (int) $raw < 0) {
+            throw new InvalidArgumentException("{$key} must be zero or greater.");
+        }
+
+        return (int) $raw;
+    }
+
+    /** @param array<string, mixed> $input */
     public static function requiredPositiveInt(array $input, string $key): int
     {
         $value = self::optionalPositiveInt($input, $key);
@@ -78,6 +94,27 @@ final class DomainInput
     /** @param array<string, mixed> $input */
     public static function optionalDecimal(array $input, string $key): ?string
     {
+        return self::optionalNumber($input, $key, false);
+    }
+
+    /** @param array<string, mixed> $input */
+    public static function optionalSignedDecimal(array $input, string $key): ?string
+    {
+        return self::optionalNumber($input, $key, true);
+    }
+
+    /** @param array<string, mixed> $input */
+    public static function boolean(array $input, string $key): bool
+    {
+        return filter_var($input[$key] ?? false, FILTER_VALIDATE_BOOL);
+    }
+
+    /** @param array<string, mixed> $input */
+    private static function optionalNumber(
+        array $input,
+        string $key,
+        bool $allowNegative
+    ): ?string {
         $raw = $input[$key] ?? null;
 
         if ($raw === null || $raw === '') {
@@ -90,17 +127,15 @@ final class DomainInput
 
         $number = (float) $raw;
 
-        if (!is_finite($number) || $number < 0) {
-            throw new InvalidArgumentException("{$key} must be zero or greater.");
+        if (!is_finite($number) || (!$allowNegative && $number < 0)) {
+            throw new InvalidArgumentException(
+                $allowNegative
+                    ? "{$key} must be a finite number."
+                    : "{$key} must be zero or greater."
+            );
         }
 
-        return number_format($number, 2, '.', '');
-    }
-
-    /** @param array<string, mixed> $input */
-    public static function boolean(array $input, string $key): bool
-    {
-        return filter_var($input[$key] ?? false, FILTER_VALIDATE_BOOL);
+        return number_format($number, 7, '.', '');
     }
 
     private function __construct()

@@ -6,6 +6,7 @@ namespace Barama\Services;
 
 use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\ListingWriteRepository;
 use Barama\Repositories\WorkflowRepository;
 use DomainException;
 use InvalidArgumentException;
@@ -23,10 +24,10 @@ final class DomainWorkflowService
     ];
 
     private const DEVELOPER_TARGETS = [
-        'company' => ['pending'],
-        'project' => ['pending'],
-        'property' => ['pending'],
-        'listing' => ['pending', 'published', 'paused', 'closed'],
+        'company' => ['draft', 'pending'],
+        'project' => ['draft', 'pending'],
+        'property' => ['draft', 'pending'],
+        'listing' => ['draft', 'pending', 'published', 'paused', 'closed'],
         'inquiry' => ['read', 'replied', 'closed', 'spam'],
         'lead' => ['contacted', 'qualified', 'viewing', 'negotiation', 'won', 'lost', 'new'],
     ];
@@ -82,18 +83,22 @@ final class DomainWorkflowService
 
             if (
                 in_array($resource, ['company', 'project', 'property'], true)
-                && $toStatus !== 'pending'
+                && !in_array($toStatus, ['draft', 'pending'], true)
             ) {
                 throw new DomainException('Approval transitions require an administrator.');
             }
 
-            if ($resource === 'listing' && $toStatus === 'published' && $fromStatus !== 'paused') {
+            if (
+                $resource === 'listing'
+                && $toStatus === 'published'
+                && $fromStatus !== 'paused'
+            ) {
                 throw new DomainException('Initial listing publication requires administrator approval.');
             }
         }
 
         if ($resource === 'listing' && $toStatus === 'published') {
-            $listing = (new \Barama\Repositories\ListingWriteRepository())->findById($entityId);
+            $listing = (new ListingWriteRepository())->findById($entityId);
 
             if ($listing === null || (string) $listing['property_status'] !== 'approved') {
                 throw new DomainException('A listing cannot be published until its property is approved.');
