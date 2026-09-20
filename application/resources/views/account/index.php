@@ -494,9 +494,9 @@ $propertySearchUrl = static function (array $search): string {
                         <label><span>Preferred language</span>
                             <?php $language = (string) ($profile['preferred_language'] ?? 'en'); ?>
                             <select class="form-select" name="preferred_language">
-                                <option value="en" <?= $language === 'en' ? 'selected' : '' ?>>English</option>
-                                <option value="km" <?= $language === 'km' ? 'selected' : '' ?>>Khmer</option>
-                                <option value="zh" <?= $language === 'zh' ? 'selected' : '' ?>>Chinese</option>
+                                <?php foreach (app_locales() as $localeCode => $localeLabel): ?>
+                                    <option value="<?= e($localeCode) ?>" <?= $language === $localeCode ? 'selected' : '' ?>><?= e($localeLabel) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </label>
                     </div>

@@ -7091,3 +7091,39 @@ body.installer-modal-open {
         grid-column: auto;
     }
 }
+
+
+/* 33. Locale switcher */
+.header-locale {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid color-mix(in srgb, var(--barama-border) 82%, transparent);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--barama-surface) 82%, transparent);
+    padding: 0.2rem 0.25rem 0.2rem 0.45rem;
+}
+.header-locale__icon { display: grid; color: var(--barama-muted); }
+.header-locale__icon svg { width: 15px; height: 15px; }
+.header-locale select,
+.header-locale button {
+    border: 0;
+    background: transparent;
+    color: var(--barama-text);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+.header-locale select { max-width: 86px; cursor: pointer; }
+.header-locale button {
+    border-left: 1px solid var(--barama-border);
+    padding: 0.16rem 0.38rem;
+    color: var(--barama-primary-strong);
+    cursor: pointer;
+}
+@media (max-width: 575.98px) {
+    .header-locale { width: 100%; justify-content: flex-start; }
+    .header-locale select { width: 100%; max-width: none; }
+    .header-locale button { flex: 0 0 auto; }
+}
