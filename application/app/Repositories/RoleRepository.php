@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Barama\Repositories;
 
 use Barama\Core\Database;
+use RuntimeException;
 
 final class RoleRepository
 {
@@ -21,6 +22,10 @@ final class RoleRepository
             'user_id' => $userId,
             'role_slug' => $roleSlug,
         ]);
+
+        if ($statement->rowCount() !== 1) {
+            throw new RuntimeException("Role [{$roleSlug}] could not be assigned.");
+        }
     }
 
     public function userHasRole(int $userId, string $roleSlug): bool

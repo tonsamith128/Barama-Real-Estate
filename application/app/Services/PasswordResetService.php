@@ -33,6 +33,12 @@ final class PasswordResetService
             return;
         }
 
+        $applicationUrl = rtrim((string) config('app.url', ''), '/');
+
+        if (preg_match('#^https?://#i', $applicationUrl) !== 1) {
+            return;
+        }
+
         $token = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $token);
         $minutes = max(10, (int) config('auth.password_reset_minutes', 60));
@@ -42,7 +48,7 @@ final class PasswordResetService
 
         $this->tokens->replaceForUser((int) $user['id'], $tokenHash, $expiresAt);
 
-        $resetUrl = url('/reset-password/' . rawurlencode($token))
+        $resetUrl = $applicationUrl . '/reset-password/' . rawurlencode($token)
             . '?email=' . rawurlencode($email);
 
         $subject = 'Reset your Barama Real Estate password';

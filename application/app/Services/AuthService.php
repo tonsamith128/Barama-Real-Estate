@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Csrf;
 use Barama\Core\Database;
 use Barama\Core\Session;
 use Barama\Repositories\RoleRepository;
@@ -107,7 +108,15 @@ final class AuthService
         $user = $this->users->findByEmail($email);
 
         if ($user === null) {
-            password_verify($password, password_hash('barama-invalid-user', PASSWORD_DEFAULT));
+            static $dummyHash = null;
+
+            if (!is_string($dummyHash)) {
+                $dummyHash = password_hash('barama-invalid-user', PASSWORD_DEFAULT);
+            }
+
+            if (is_string($dummyHash)) {
+                password_verify($password, $dummyHash);
+            }
             $this->throttle->hit($email, $ip);
 
             return 'invalid';
@@ -140,6 +149,7 @@ final class AuthService
         Session::forget(self::SESSION_USER_ID);
         Session::forget('auth.intended');
         Session::regenerate();
+        Csrf::regenerate();
         $this->resolvedUser = null;
     }
 
@@ -175,6 +185,7 @@ final class AuthService
     private function loginUserId(int $userId): void
     {
         Session::regenerate();
+        Csrf::regenerate();
         Session::put(self::SESSION_USER_ID, $userId);
         $this->resolvedUser = false;
     }
