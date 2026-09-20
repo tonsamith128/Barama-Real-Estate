@@ -1,0 +1,141 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Barama\Services;
+
+use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\MediaRepository;
+use Barama\Repositories\WorkflowRepository;
+use Barama\Support\DomainInput;
+use Barama\Support\IdGenerator;
+use DomainException;
+use finfo;
+use InvalidArgumentException;
+use RuntimeException;
+
+final class MediaStorageService
+{
+    /**
+     * @param array<string, mixed> $file
+     * @param array<string, mixed> $input
+     */
+    public function storeAndAttach(array $file, array $input): int
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('media.manage')) {
+            throw new DomainException('Media management permission is required.');
+        }
+
+        $entityType = DomainInput::requiredString($input, 'entity_type', 32);
+
+        if (!in_array($entityType, DomainRules::MEDIA_ENTITY_TYPES, true)) {
+            throw new InvalidArgumentException('Invalid media entity type.');
+        }
+
+        $entityId = DomainInput::requiredPositiveInt($input, 'entity_id');
+        $context = (new WorkflowRepository())->context(
+            $entityType === 'company' ? 'company' : $entityType,
+            $entityId
+        );
+
+        if ($context === null || $context['company_id'] === null) {
+            throw new InvalidArgumentException('Media target was not found.');
+        }
+
+        (new CompanyAccessService())->assertCanManage((int) $context['company_id']);
+
+        $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+
+        if ($error !== UPLOAD_ERR_OK) {
+            throw new InvalidArgumentException('The uploaded file is incomplete or invalid.');
+        }
+
+        $temporaryPath = (string) ($file['tmp_name'] ?? '');
+
+        if (
+            $temporaryPath === ''
+            || !is_file($temporaryPath)
+            || (!defined('BARAMA_CLI') && !is_uploaded_file($temporaryPath))
+        ) {
+            throw new InvalidArgumentException('The uploaded file could not be verified.');
+        }
+
+        $size = (int) ($file['size'] ?? filesize($temporaryPath));
+        $maxBytes = (int) config('domain.media_max_upload_bytes', 10 * 1024 * 1024);
+
+        if ($size < 1 || $size > $maxBytes) {
+            throw new InvalidArgumentException('The uploaded file exceeds the allowed size.');
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = (string) $finfo->file($temporaryPath);
+        $allowed = (array) config('domain.media_allowed_mime_types', []);
+
+        if (!isset($allowed[$mime])) {
+            throw new InvalidArgumentException('This file type is not allowed.');
+        }
+
+        $extension = (string) $allowed[$mime];
+        $width = null;
+        $height = null;
+
+        if (str_starts_with($mime, 'image/')) {
+            $dimensions = @getimagesize($temporaryPath);
+
+            if (!is_array($dimensions) || !isset($dimensions[0], $dimensions[1])) {
+                throw new InvalidArgumentException('The uploaded image is invalid.');
+            }
+
+            $width = (int) $dimensions[0];
+            $height = (int) $dimensions[1];
+        }
+
+        $relativeDirectory = date('Y/m');
+        $directory = APP_PATH . '/storage/uploads/private/' . $relativeDirectory;
+
+        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+            throw new RuntimeException('Media storage directory could not be created.');
+        }
+
+        $filename = str_replace('-', '', IdGenerator::uuid()) . '.' . $extension;
+        $destination = $directory . '/' . $filename;
+
+        $moved = defined('BARAMA_CLI')
+            ? rename($temporaryPath, $destination)
+            : move_uploaded_file($temporaryPath, $destination);
+
+        if (!$moved) {
+            throw new RuntimeException('The uploaded file could not be stored.');
+        }
+
+        @chmod($destination, 0640);
+
+        $relativePath = 'private/' . $relativeDirectory . '/' . $filename;
+        $mediaId = (new MediaRepository())->create([
+            'created_by_user_id' => (int) $user['id'],
+            'path' => $relativePath,
+            'original_name' => basename((string) ($file['name'] ?? 'upload.' . $extension)),
+            'mime_type' => $mime,
+            'extension' => $extension,
+            'size_bytes' => $size,
+            'width_px' => $width,
+            'height_px' => $height,
+            'alt_text' => DomainInput::optionalString($input, 'alt_text', 255),
+            'checksum_sha256' => hash_file('sha256', $destination),
+        ]);
+
+        (new MediaRepository())->attach(
+            $mediaId,
+            $entityType,
+            $entityId,
+            DomainInput::optionalString($input, 'collection', 40) ?? 'gallery',
+            (int) ($input['position'] ?? 0),
+            DomainInput::boolean($input, 'is_primary')
+        );
+
+        return $mediaId;
+    }
+}
