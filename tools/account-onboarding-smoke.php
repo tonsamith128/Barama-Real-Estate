@@ -6,12 +6,14 @@ use Barama\Core\Database;
 use Barama\Core\Session;
 use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\CompanyMembershipRepository;
+use Barama\Repositories\EmailVerificationRepository;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
 use Barama\Services\AccountSettingsService;
 use Barama\Services\CompanyOnboardingService;
 use Barama\Services\CustomerEngagementService;
 use Barama\Services\DomainWorkflowService;
+use Barama\Services\EmailVerificationService;
 use Barama\Services\MembershipService;
 use DomainException;
 
@@ -47,6 +49,22 @@ $makeUser = static function (
 $adminId = $makeUser('Onboarding QA Admin', 'onboarding-admin@example.test', 'administrator');
 $ownerId = $makeUser('Onboarding QA Owner', 'onboarding-owner@example.test');
 $memberId = $makeUser('Onboarding QA Member', 'onboarding-member@example.test');
+
+$verificationRepository = new EmailVerificationRepository();
+$verificationService = new EmailVerificationService();
+
+foreach ([
+    [$ownerId, 'onboarding-owner@example.test', str_repeat('b', 64)],
+    [$memberId, 'onboarding-member@example.test', str_repeat('c', 64)],
+] as [$verificationUserId, $verificationEmail, $verificationToken]) {
+    $verificationRepository->replaceForUser(
+        $verificationUserId,
+        $verificationEmail,
+        hash('sha256', $verificationToken),
+        date('Y-m-d H:i:s', time() + 3600)
+    );
+    $verificationService->verify($verificationUserId, $verificationToken);
+}
 
 $locationId = (int) $pdo->query(
     'SELECT id FROM locations WHERE status = "active" ORDER BY id ASC LIMIT 1'

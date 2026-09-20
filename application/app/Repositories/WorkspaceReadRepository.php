@@ -443,6 +443,12 @@ final class WorkspaceReadRepository
                 'SELECT COUNT(*) FROM leads
                  WHERE stage NOT IN ("won", "lost") AND deleted_at IS NULL'
             ),
+            'users' => $this->count(
+                'SELECT COUNT(*) FROM users'
+            ),
+            'security_events' => $this->count(
+                'SELECT COUNT(*) FROM security_audit_events'
+            ),
         ];
     }
 
@@ -641,6 +647,41 @@ final class WorkspaceReadRepository
                  WHERE original_name LIKE :search',
                 ['search' => $search],
             ],
+            'users' => [
+                'SELECT u.id, u.name, u.email, u.status,
+                        CASE WHEN u.email_verified_at IS NULL
+                             THEN "unverified" ELSE "verified" END AS email_state,
+                        u.email_verified_at, u.last_login_at, u.updated_at,
+                        COALESCE(GROUP_CONCAT(r.slug ORDER BY r.slug SEPARATOR ", "), "user") AS roles
+                 FROM users u
+                 LEFT JOIN user_roles ur ON ur.user_id = u.id
+                 LEFT JOIN roles r ON r.id = ur.role_id
+                 WHERE CONCAT_WS(" ", u.name, u.email) LIKE :search
+                 GROUP BY u.id, u.name, u.email, u.status, u.email_verified_at,
+                          u.last_login_at, u.updated_at
+                 ORDER BY u.updated_at DESC',
+                'SELECT COUNT(*)
+                 FROM users u
+                 WHERE CONCAT_WS(" ", u.name, u.email) LIKE :search',
+                ['search' => $search],
+            ],
+            'audit' => [
+                'SELECT e.id, e.event_type,
+                        COALESCE(actor.email, "System") AS actor,
+                        COALESCE(subject.email, "—") AS subject,
+                        e.created_at
+                 FROM security_audit_events e
+                 LEFT JOIN users actor ON actor.id = e.actor_user_id
+                 LEFT JOIN users subject ON subject.id = e.subject_user_id
+                 WHERE CONCAT_WS(" ", e.event_type, actor.email, subject.email) LIKE :search
+                 ORDER BY e.created_at DESC',
+                'SELECT COUNT(*)
+                 FROM security_audit_events e
+                 LEFT JOIN users actor ON actor.id = e.actor_user_id
+                 LEFT JOIN users subject ON subject.id = e.subject_user_id
+                 WHERE CONCAT_WS(" ", e.event_type, actor.email, subject.email) LIKE :search',
+                ['search' => $search],
+            ],
             default => throw new InvalidArgumentException('Unsupported admin workspace section.'),
         };
 
@@ -797,6 +838,23 @@ final class WorkspaceReadRepository
             'admin:media' => [
                 'filters' => ['type' => 'mime_type'],
                 'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC', 'name_asc' => 'original_name ASC'],
+            ],
+            'admin:users' => [
+                'filters' => ['status' => 'status'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'name ASC',
+                    'name_desc' => 'name DESC',
+                ],
+            ],
+            'admin:audit' => [
+                'filters' => [],
+                'sorts' => [
+                    'updated_desc' => 'created_at DESC',
+                    'updated_asc' => 'created_at ASC',
+                    'name_asc' => 'event_type ASC',
+                ],
             ],
         ];
 

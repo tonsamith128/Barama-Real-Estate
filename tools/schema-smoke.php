@@ -51,6 +51,8 @@ $requiredTables = [
     'user_profiles',
     'email_change_tokens',
     'company_invitations',
+    'email_verification_tokens',
+    'security_audit_events',
 ];
 
 $statement = $pdo->query(
@@ -68,6 +70,18 @@ foreach ($requiredTables as $table) {
     if (!isset($tableLookup[$table])) {
         $failures[] = "Missing table: {$table}";
     }
+}
+
+$authVersionColumn = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'users'
+       AND COLUMN_NAME = 'auth_version'"
+)->fetchColumn();
+
+if ($authVersionColumn !== 1) {
+    $failures[] = 'users.auth_version is missing.';
 }
 
 $requiredRoles = ['user', 'developer', 'administrator'];

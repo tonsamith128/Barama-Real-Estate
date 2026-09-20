@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.3-dev`
+- Current development line: `0.9.4-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -126,3 +126,22 @@ The 0.9.3 development line completes the first production-grade account onboardi
 - invited accounts receive Developer access only after accepting an unexpired invitation matching their login email
 - pending company invitations are visible in the Company / Vendor team workspace and can be revoked
 - account/onboarding lifecycle is covered by a dedicated MySQL smoke test and exact-package contract checks
+
+
+## Release security hardening
+
+The 0.9.4 development line closes the core authentication and administrator-security gaps required before final CodeCanyon release testing.
+
+- public registration queues one-time email verification
+- verification is required before company onboarding or company invitation acceptance
+- administrator promotion requires a verified user email
+- registration, password reset, and account password change share one strong PasswordPolicy
+- server-side auth_version invalidates stale sessions after credential or administrator security changes
+- browser sessions enforce configured idle and absolute lifetimes
+- security_audit_events stores append-only security events with hashed IP/user-agent origin data
+- Admin Dashboard adds Users and Security Audit sections
+- administrators cannot remove their own admin role or disable their own account
+- the final active administrator cannot be disabled or stripped of administrator access
+- account, onboarding, notification, domain, release-security, and exact-package installer smoke tests remain mandatory CI gates
+
+See `docs/SECURITY_HARDENING.md` and `docs/RELEASE_GATES.md` for the current release contract and the remaining open v1.0.0 gates.

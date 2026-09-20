@@ -4,7 +4,7 @@
             <aside class="auth-story">
                 <span class="eyebrow">Create your account</span>
                 <h1>One account for your property journey.</h1>
-                <p>Public registration creates a secure customer account. Company/vendor and administrator access remain permission-controlled.</p>
+                <p>Public registration creates a secure customer account. Verify your email after registration; company/vendor and administrator access remain permission-controlled.</p>
 
                 <div class="auth-story__features">
                     <article><span><?= app_icon('home') ?></span><div><strong>Discover</strong><small>Save, compare, and revisit published properties.</small></div></article>
@@ -49,7 +49,7 @@
                             <input class="form-control" id="register-password" name="password" type="password" autocomplete="new-password" minlength="12" required data-auth-password data-auth-password-primary>
                             <button class="auth-input__generate" type="button" data-auth-generate-password>Generate</button>
                         </span>
-                        <small>Use at least 12 characters. The generator creates a strong password and confirms it automatically.</small>
+                        <small>Use at least 12 characters with uppercase, lowercase, number, and symbol. The generator creates a strong password and confirms it automatically.</small>
                     </label>
 
                     <label class="auth-field" for="register-confirmation">

@@ -9,6 +9,7 @@ use Barama\Core\Response;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
+use Barama\Services\UserAdministrationService;
 use DomainException;
 use InvalidArgumentException;
 
@@ -78,6 +79,49 @@ final class AdminManagementController
                 'resource' => $resource,
                 'id' => (int) $id,
                 'status' => $status,
+            ];
+        });
+    }
+
+    public function updateUserStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid user ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new UserAdministrationService())->setStatus((int) $id, $status);
+
+            return [
+                'user_id' => (int) $id,
+                'status' => $status,
+                'message' => 'User account status updated.',
+            ];
+        });
+    }
+
+    public function setAdministrator(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid user ID is required.');
+            }
+
+            $enabled = in_array(
+                (string) $request->input('enabled', ''),
+                ['1', 'true', 'on'],
+                true
+            );
+
+            (new UserAdministrationService())->setAdministrator((int) $id, $enabled);
+
+            return [
+                'user_id' => (int) $id,
+                'administrator' => $enabled,
+                'message' => $enabled
+                    ? 'Administrator role granted.'
+                    : 'Administrator role removed.',
             ];
         });
     }

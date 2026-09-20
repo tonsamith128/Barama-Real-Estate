@@ -29,6 +29,10 @@ final class CompanyOnboardingService
             throw new DomainException('Authentication is required.');
         }
 
+        if (empty($user['email_verified_at'])) {
+            throw new DomainException('Verify your email address before requesting company access.');
+        }
+
         if ($auth->can('developer.access')) {
             throw new DomainException(
                 'Your account already has company workspace access. Create companies from the Company / Vendor workspace.'

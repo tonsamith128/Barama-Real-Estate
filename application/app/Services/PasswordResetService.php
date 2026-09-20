@@ -7,6 +7,7 @@ namespace Barama\Services;
 use Barama\Core\Database;
 use Barama\Repositories\PasswordResetRepository;
 use Barama\Repositories\UserRepository;
+use Barama\Security\PasswordPolicy;
 use DateInterval;
 use DateTimeImmutable;
 use Throwable;
@@ -83,7 +84,7 @@ final class PasswordResetService
 
     public function reset(string $token, string $email, string $password): bool
     {
-        if (!$this->validTokenFormat($token)) {
+        if (!$this->validTokenFormat($token) || !PasswordPolicy::valid($password)) {
             return false;
         }
 
@@ -105,10 +106,19 @@ final class PasswordResetService
         try {
             $pdo->beginTransaction();
 
-            $this->users->updatePassword((int) $record['user_id'], $passwordHash);
+            $this->users->updatePasswordAndInvalidateSessions(
+                (int) $record['user_id'],
+                $passwordHash
+            );
             $this->tokens->markUsed((int) $record['id']);
 
             $pdo->commit();
+
+            (new SecurityAuditService())->record(
+                'auth.password_reset_completed',
+                (int) $record['user_id'],
+                (int) $record['user_id']
+            );
 
             return true;
         } catch (Throwable $exception) {

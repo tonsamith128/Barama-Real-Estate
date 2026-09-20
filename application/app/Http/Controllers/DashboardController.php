@@ -54,6 +54,14 @@ final class DashboardController
             'title' => 'Media',
             'description' => 'Inspect uploaded media metadata and storage usage across the platform.',
         ],
+        'users' => [
+            'title' => 'Users',
+            'description' => 'Manage account status and administrator access without bypassing the canonical role system.',
+        ],
+        'audit' => [
+            'title' => 'Security Audit',
+            'description' => 'Review immutable authentication and account-security events with hashed client-origin metadata.',
+        ],
     ];
 
     public function index(Request $request): Response
@@ -165,6 +173,8 @@ final class DashboardController
                 ['label' => 'Properties', 'value' => $summary['properties'], 'icon' => 'home'],
                 ['label' => 'Published', 'value' => $summary['published_listings'], 'icon' => 'tag'],
                 ['label' => 'Open inquiries', 'value' => $summary['open_inquiries'], 'icon' => 'message'],
+                ['label' => 'Users', 'value' => $summary['users'], 'icon' => 'users'],
+                ['label' => 'Security events', 'value' => $summary['security_events'], 'icon' => 'shield'],
             ],
             'records' => $records,
             'columns' => $this->columns($section),
@@ -192,6 +202,8 @@ final class DashboardController
             ['label' => 'Leads', 'path' => '/dashboard/leads', 'icon' => 'pipeline'],
             ['label' => 'Catalog', 'path' => '/dashboard/catalog', 'icon' => 'map'],
             ['label' => 'Media', 'path' => '/dashboard/media', 'icon' => 'image'],
+            ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
+            ['label' => 'Security Audit', 'path' => '/dashboard/audit', 'icon' => 'shield'],
         ];
     }
 
@@ -309,6 +321,27 @@ final class DashboardController
                     'name_asc' => 'Filename A–Z',
                 ],
             ],
+            'users' => [
+                'statuses' => ['active', 'suspended', 'deactivated'],
+                'types' => [],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Name A–Z',
+                    'name_desc' => 'Name Z–A',
+                ],
+            ],
+            'audit' => [
+                'statuses' => [],
+                'types' => [],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Newest event',
+                    'updated_asc' => 'Oldest event',
+                    'name_asc' => 'Event A–Z',
+                ],
+            ],
             default => ['statuses' => [], 'types' => [], 'location' => false, 'sorts' => []],
         };
     }
@@ -382,6 +415,20 @@ final class DashboardController
                 'mime_type' => 'Type',
                 'size_bytes' => 'Size',
                 'created_at' => 'Uploaded',
+            ],
+            'users' => [
+                'name' => 'User',
+                'email' => 'Email',
+                'roles' => 'Roles',
+                'email_state' => 'Email',
+                'status' => 'Status',
+                'last_login_at' => 'Last login',
+            ],
+            'audit' => [
+                'event_type' => 'Event',
+                'actor' => 'Actor',
+                'subject' => 'Subject',
+                'created_at' => 'Occurred',
             ],
             default => [],
         };

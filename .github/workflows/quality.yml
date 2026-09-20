@@ -77,6 +77,9 @@ jobs:
       - name: Run account and onboarding smoke test
         run: php tools/account-onboarding-smoke.php
 
+      - name: Run release security hardening smoke test
+        run: php tools/security-hardening-smoke.php
+
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 

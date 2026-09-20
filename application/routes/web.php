@@ -44,6 +44,27 @@ $router->post('/login', [AuthController::class, 'login'], $guestPost);
 $router->get('/register', [AuthController::class, 'showRegister'], $guest);
 $router->post('/register', [AuthController::class, 'register'], $guestPost);
 
+$router->get(
+    '/verify-email',
+    [AuthController::class, 'showVerifyEmail'],
+    [new AuthMiddleware()]
+);
+$router->post(
+    '/verify-email/resend',
+    [AuthController::class, 'resendVerification'],
+    [new AuthMiddleware(), new CsrfMiddleware()]
+);
+$router->get(
+    '/verify-email/{token}',
+    [AuthController::class, 'showVerifyEmailToken'],
+    [new AuthMiddleware()]
+);
+$router->post(
+    '/verify-email/{token}',
+    [AuthController::class, 'verifyEmail'],
+    [new AuthMiddleware(), new CsrfMiddleware()]
+);
+
 $router->get('/forgot-password', [AuthController::class, 'showForgotPassword'], $guest);
 $router->post('/forgot-password', [AuthController::class, 'sendResetLink'], $guestPost);
 
@@ -312,6 +333,17 @@ $router->post(
 $router->post(
     '/dashboard/workflow/{resource}/{id}',
     [AdminManagementController::class, 'workflow'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
+$router->post(
+    '/dashboard/users/{id}/status',
+    [AdminManagementController::class, 'updateUserStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/users/{id}/administrator',
+    [AdminManagementController::class, 'setAdministrator'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 

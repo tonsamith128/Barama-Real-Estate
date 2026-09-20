@@ -5,6 +5,8 @@ declare(strict_types=1);
 $humanize = static fn (mixed $value): string =>
     ucwords(str_replace('_', ' ', trim((string) $value)));
 
+$emailVerified = !empty($accountUser['email_verified_at']);
+
 $formatPrice = static function (array $item): string {
     if (($item['price'] ?? null) === null) {
         return 'Price on request';
@@ -52,6 +54,17 @@ $propertySearchUrl = static function (array $search): string {
     </div>
 
     <div data-account-notice hidden></div>
+
+    <?php if (!$emailVerified): ?>
+        <div class="account-access-ready account-access-ready--verification">
+            <?= app_icon('mail') ?>
+            <div>
+                <strong>Verify your email address.</strong>
+                <span>Verification is required before company onboarding or accepting a company invitation.</span>
+            </div>
+            <a class="btn btn-primary btn-sm" href="<?= e(url('/verify-email')) ?>">Verify email</a>
+        </div>
+    <?php endif; ?>
 
     <?php if ($activeSection === 'overview'): ?>
         <div class="account-stat-grid">
@@ -383,10 +396,14 @@ $propertySearchUrl = static function (array $search): string {
                                     <small>Invited as <?= e($humanize($invitation['member_role'])) ?> by <?= e((string) $invitation['invited_by_name']) ?></small>
                                     <small>Expires <?= e((string) $invitation['expires_at']) ?></small>
                                 </div>
-                                <form action="<?= e(url('/account/company-invitations/' . (int) $invitation['id'] . '/accept')) ?>" method="post" data-account-action>
-                                    <?= csrf_field() ?>
-                                    <button class="btn btn-primary btn-sm" type="submit">Accept invitation</button>
-                                </form>
+                                <?php if ($emailVerified): ?>
+                                    <form action="<?= e(url('/account/company-invitations/' . (int) $invitation['id'] . '/accept')) ?>" method="post" data-account-action>
+                                        <?= csrf_field() ?>
+                                        <button class="btn btn-primary btn-sm" type="submit">Accept invitation</button>
+                                    </form>
+                                <?php else: ?>
+                                    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/verify-email')) ?>">Verify email first</a>
+                                <?php endif; ?>
                             </article>
                         <?php endforeach; ?>
                     </div>
@@ -413,7 +430,12 @@ $propertySearchUrl = static function (array $search): string {
                     </div>
                 <?php endif; ?>
 
-                <?php if ($canRequestCompany && !auth_can('developer.access')): ?>
+                <?php if (!$emailVerified): ?>
+                    <div class="account-review-note">
+                        <?= app_icon('mail') ?>
+                        Verify your account email before submitting a company for review.
+                    </div>
+                <?php elseif ($canRequestCompany && !auth_can('developer.access')): ?>
                     <form action="<?= e(url('/account/company/onboard')) ?>" method="post" data-account-action class="account-form account-company-form">
                         <?= csrf_field() ?>
                         <div class="account-form__grid">

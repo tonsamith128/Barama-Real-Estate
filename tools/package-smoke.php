@@ -40,6 +40,8 @@ foreach ([
     'tools/schema-smoke.php',
     'tools/domain-write-smoke.php',
     'tools/notification-smoke.php',
+    'tools/account-onboarding-smoke.php',
+    'tools/security-hardening-smoke.php',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -60,6 +62,13 @@ foreach ([
     'application/resources/views/auth/register.php',
     'application/resources/views/auth/forgot-password.php',
     'application/resources/views/auth/reset-password.php',
+    'application/resources/views/auth/verify-email.php',
+    'application/app/Services/EmailVerificationService.php',
+    'application/app/Repositories/EmailVerificationRepository.php',
+    'application/app/Services/SecurityAuditService.php',
+    'application/app/Repositories/SecurityAuditRepository.php',
+    'application/app/Services/UserAdministrationService.php',
+    'application/app/Security/PasswordPolicy.php',
     'application/resources/views/account/index.php',
     'application/resources/views/account/email-change.php',
     'application/app/Services/AccountSettingsService.php',
@@ -233,6 +242,16 @@ if (
     throw new RuntimeException('Public marketplace discovery interface contract is incomplete.');
 }
 
+$verifyEmailSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/auth/verify-email.php'
+);
+$emailVerificationServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/EmailVerificationService.php'
+);
+$userAdministrationServiceSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/UserAdministrationService.php'
+);
+
 $accountSource = (string) file_get_contents(
     $temporaryRoot . '/application/resources/views/account/index.php'
 );
@@ -250,7 +269,12 @@ $membershipServiceSource = (string) file_get_contents(
 );
 
 if (
-    !str_contains($accountSource, 'Company access')
+    !str_contains($verifyEmailSource, 'Verify email')
+    || !str_contains($emailVerificationServiceSource, 'EmailVerificationRepository')
+    || !str_contains($userAdministrationServiceSource, 'final active administrator')
+    || !str_contains($routesSource, '/verify-email/{token}')
+    || !str_contains($routesSource, '/dashboard/users/{id}/status')
+    || !str_contains($accountSource, 'Company access')
     || !str_contains($accountSource, '/account/company/onboard')
     || !str_contains($accountSource, '/account/security/password')
     || !str_contains($accountSource, '/account/security/email')
@@ -415,6 +439,25 @@ $accountTableCount = (int) $pdo->query(
 
 if ($accountTableCount !== 3) {
     throw new RuntimeException('Account/onboarding schema is missing from the customer package installation.');
+}
+
+$securityTableCount = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME IN ('email_verification_tokens','security_audit_events')"
+)->fetchColumn();
+
+$authVersionColumn = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'users'
+       AND COLUMN_NAME = 'auth_version'"
+)->fetchColumn();
+
+if ($securityTableCount !== 2 || $authVersionColumn !== 1) {
+    throw new RuntimeException('Release security schema is missing from the customer package installation.');
 }
 
 $secondInstallBlocked = false;

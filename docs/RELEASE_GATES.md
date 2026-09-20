@@ -1,49 +1,69 @@
 # Release Gates
 
-Barama Real Estate uses explicit release gates so development does not accumulate unfinished or duplicate implementations.
+Barama Real Estate uses explicit release gates so development does not accumulate unfinished, duplicated, or unverified implementations.
 
-## Automated gate
+## Automated gates
 
-Run:
+GitHub Actions currently runs the following against MySQL 8 and the exact generated customer ZIP:
 
-    php tools/qa.php
+1. repository structure and PHP syntax QA
+2. ordered database migration install
+3. migrated schema verification
+4. clean migration replay
+5. domain write and company-scope smoke tests
+6. account and company-onboarding smoke tests
+7. release security hardening smoke tests
+8. notification delivery smoke tests
+9. exact customer ZIP build
+10. clean installation from the extracted customer ZIP
+11. production runtime state verification
+12. installer lock and migration replay verification
+13. validated artifact upload
 
-The automated gate currently verifies:
-
-- canonical foundation files exist
-- exactly one first-party CSS file exists
-- exactly one first-party JavaScript file exists
-- obvious old, backup, copy, and legacy filenames are absent
-- every PHP source file passes PHP syntax lint
-
-The same gate runs in GitHub Actions for main-branch pushes and pull requests.
+The automated gates also enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
 ## Development rules
 
 1. Extend the canonical implementation; do not create versioned source copies.
 2. Keep page styling in assets/css/app.css unless a future split has an explicit architectural reason.
 3. Keep browser behavior in assets/js/app.js unless a future split has an explicit architectural reason.
-4. Add database changes through ordered migrations rather than editing production schemas manually.
+4. Add database changes through ordered, idempotent migrations rather than editing production schemas manually.
 5. Do not commit secrets, runtime logs, cache files, uploads, generated packages, or local editor state.
-6. Do not advertise a feature as complete until its routes, permissions, validation, UI states, error states, and persistence path are implemented.
-7. Before v1.0.0, add installer, upgrade, compatibility, security, accessibility, packaging, and manual browser/device gates.
+6. Do not advertise a feature as complete until routes, permissions, validation, UI states, failure states, and persistence are implemented.
+7. Do not mark v1.0.0 ready until every remaining manual release gate below is completed.
 
-## Manual gates before CodeCanyon v1.0.0
+## Closed hardening gates
 
-Automated QA is necessary but not sufficient. The final release must also be validated for:
+The current 0.9.4 development line has automated coverage for:
 
-- installation on supported Apache and Nginx/shared-hosting environments
-- database creation and upgrade behavior
-- authentication and authorization isolation
-- upload security
-- payment and subscription flows where enabled
-- responsive behavior across desktop, tablet, and mobile
-- Light/Dark Mode
-- accessibility keyboard/focus behavior
-- production error handling
-- email delivery
-- localization
-- browser compatibility
-- clean CodeCanyon package contents
-- documentation completeness
-- license and third-party notices
+- strong shared password policy
+- email verification
+- verification-gated company onboarding and invitation acceptance
+- server-side auth-version session invalidation
+- idle and absolute browser-session lifetime enforcement
+- administrator user status management
+- administrator-role management safeguards
+- final-active-administrator protection
+- immutable security audit events with hashed origin metadata
+- installer-created verified administrator
+- exact-package security schema installation
+
+## Open gates before CodeCanyon v1.0.0
+
+These remain intentionally open:
+
+- customer-facing upgrade workflow and upgrade-from-previous-release QA
+- live Ton Samith License Manager success using a Barama-specific valid test credential
+- supported Apache shared-hosting installation validation
+- supported Nginx installation validation
+- browser/device QA on desktop, tablet, and mobile
+- Light/Dark Mode visual QA
+- keyboard/focus accessibility QA
+- production email delivery using a real supported mail transport
+- localization QA for configured languages
+- browser compatibility QA
+- final third-party notices and CodeCanyon package review
+- online documentation review against the exact v1.0.0 package
+- final demo/sample-data decision and clean-production-default verification
+
+No open gate should be represented as complete until it has been exercised on the applicable environment.

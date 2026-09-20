@@ -87,6 +87,10 @@ final class MembershipService
             throw new DomainException('Authentication is required.');
         }
 
+        if (empty($user['email_verified_at'])) {
+            throw new DomainException('Verify your email address before accepting a company invitation.');
+        }
+
         $repository = new AccountSettingsRepository();
         $invitation = $repository->pendingInvitation(
             $invitationId,

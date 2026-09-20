@@ -8,8 +8,11 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\Session;
 use Barama\Core\View;
+use Barama\Security\PasswordPolicy;
 use Barama\Services\AuthService;
+use Barama\Services\EmailVerificationService;
 use Barama\Services\PasswordResetService;
+use InvalidArgumentException;
 use RuntimeException;
 
 final class AuthController
@@ -37,9 +40,7 @@ final class AuthController
 
         if ($errors !== []) {
             return $this->authView('auth/login', 'Sign in', [
-                'email' => $email,
-                'errors' => $errors,
-                'success' => null,
+                'email' => $email, 'errors' => $errors, 'success' => null,
             ], 422);
         }
 
@@ -62,6 +63,10 @@ final class AuthController
             ], 422);
         }
 
+        if ($auth->requiresEmailVerification()) {
+            return Response::redirect(url('/verify-email'));
+        }
+
         $intended = Session::pull('auth.intended');
         $destination = is_string($intended)
             && str_starts_with($intended, '/')
@@ -75,9 +80,7 @@ final class AuthController
     public function showRegister(Request $request): Response
     {
         return $this->authView('auth/register', 'Create account', [
-            'name' => '',
-            'email' => '',
-            'errors' => [],
+            'name' => '', 'email' => '', 'errors' => [],
         ]);
     }
 
@@ -97,29 +100,20 @@ final class AuthController
             $errors[] = 'Enter a valid email address.';
         }
 
-        $minimum = max(12, (int) config('auth.password_min_length', 12));
-
-        if (strlen($password) < $minimum) {
-            $errors[] = "Use a password with at least {$minimum} characters.";
-        }
-
-        if ($password !== $confirmation) {
-            $errors[] = 'The password confirmation does not match.';
-        }
+        $errors = array_merge($errors, PasswordPolicy::errors($password, $confirmation));
 
         if ($errors !== []) {
             return $this->authView('auth/register', 'Create account', [
-                'name' => $name,
-                'email' => $email,
-                'errors' => $errors,
+                'name' => $name, 'email' => $email, 'errors' => array_values(array_unique($errors)),
             ], 422);
         }
 
         try {
             $auth = new AuthService();
-            $auth->register($name, $email, $password);
+            $userId = $auth->register($name, $email, $password);
+            (new EmailVerificationService())->send($userId, true);
 
-            return Response::redirect(url('/account'));
+            return Response::redirect(url('/verify-email?sent=1'));
         } catch (RuntimeException $exception) {
             return $this->authView('auth/register', 'Create account', [
                 'name' => $name,
@@ -129,19 +123,94 @@ final class AuthController
         }
     }
 
+    public function showVerifyEmail(Request $request): Response
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        return $this->authView('auth/verify-email', 'Verify email', [
+            'email' => (string) $user['email'],
+            'verified' => !empty($user['email_verified_at']),
+            'token' => null,
+            'valid' => true,
+            'sent' => $request->input('sent') === '1',
+            'errors' => [],
+        ]);
+    }
+
+    public function showVerifyEmailToken(Request $request, string $token): Response
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        $email = (new EmailVerificationService())->preview((int) $user['id'], $token);
+
+        return $this->authView('auth/verify-email', 'Verify email', [
+            'email' => (string) $user['email'],
+            'verified' => !empty($user['email_verified_at']),
+            'token' => $token,
+            'valid' => $email !== null,
+            'sent' => false,
+            'errors' => $email === null
+                ? ['This email verification link is invalid or has expired.']
+                : [],
+        ], $email === null ? 422 : 200);
+    }
+
+    public function resendVerification(Request $request): Response
+    {
+        $user = (new AuthService())->user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        (new EmailVerificationService())->send((int) $user['id']);
+
+        return Response::redirect(url('/verify-email?sent=1'));
+    }
+
+    public function verifyEmail(Request $request, string $token): Response
+    {
+        $user = (new AuthService())->user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        try {
+            (new EmailVerificationService())->verify((int) $user['id'], $token);
+            return Response::redirect(url('/account'));
+        } catch (InvalidArgumentException $exception) {
+            return $this->authView('auth/verify-email', 'Verify email', [
+                'email' => (string) $user['email'],
+                'verified' => false,
+                'token' => $token,
+                'valid' => false,
+                'sent' => false,
+                'errors' => [$exception->getMessage()],
+            ], 422);
+        }
+    }
+
     public function logout(Request $request): Response
     {
         (new AuthService())->logout();
-
         return Response::redirect(url('/login'));
     }
 
     public function showForgotPassword(Request $request): Response
     {
         return $this->authView('auth/forgot-password', 'Forgot password', [
-            'email' => '',
-            'errors' => [],
-            'success' => null,
+            'email' => '', 'errors' => [], 'success' => null,
         ]);
     }
 
@@ -184,27 +253,20 @@ final class AuthController
         $email = strtolower(trim((string) $request->input('email', '')));
         $password = (string) $request->input('password', '');
         $confirmation = (string) $request->input('password_confirmation', '');
-        $minimum = max(12, (int) config('auth.password_min_length', 12));
         $errors = [];
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'The password reset request is invalid.';
         }
 
-        if (strlen($password) < $minimum) {
-            $errors[] = "Use a password with at least {$minimum} characters.";
-        }
-
-        if ($password !== $confirmation) {
-            $errors[] = 'The password confirmation does not match.';
-        }
+        $errors = array_merge($errors, PasswordPolicy::errors($password, $confirmation));
 
         if ($errors !== []) {
             return $this->authView('auth/reset-password', 'Reset password', [
                 'token' => $token,
                 'email' => $email,
                 'valid' => true,
-                'errors' => $errors,
+                'errors' => array_values(array_unique($errors)),
             ], 422);
         }
 

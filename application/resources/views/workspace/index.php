@@ -51,6 +51,20 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
         return e($height ? ((int) $value . ' × ' . (int) $height . ' px') : '—');
     }
 
+    if ($key === 'email_state') {
+        $normalized = strtolower((string) $value) === 'verified' ? 'approved' : 'pending';
+        return '<span class="status-badge status-badge--' . e($normalized) . '">'
+            . e($humanize($value))
+            . '</span>';
+    }
+
+    if ($key === 'roles') {
+        return e(implode(', ', array_map(
+            $humanize,
+            array_filter(array_map('trim', explode(',', (string) $value)))
+        )));
+    }
+
     if ($key === 'status' || $key === 'stage') {
         $normalized = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $value)) ?: 'neutral';
         return '<span class="status-badge status-badge--' . e($normalized) . '">'
@@ -219,7 +233,41 @@ $renderActions = static function (array $row) use (
             }
         }
     } else {
-        if (in_array($activeSection, ['overview', 'approvals'], true)) {
+        if ($activeSection === 'users') {
+            $roles = (string) ($row['roles'] ?? '');
+            $isAdministrator = in_array(
+                'administrator',
+                array_map('trim', explode(',', strtolower($roles))),
+                true
+            );
+
+            if ($status === 'active') {
+                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="suspended">'
+                    . '<button class="table-action" type="submit">Suspend</button></form>';
+                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="deactivated">'
+                    . '<button class="table-action table-action--danger" type="submit">Deactivate</button></form>';
+            } else {
+                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="active">'
+                    . '<button class="table-action table-action--primary" type="submit">Restore</button></form>';
+            }
+
+            $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/administrator'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="enabled" value="' . ($isAdministrator ? '0' : '1') . '">'
+                . '<button class="table-action" type="submit">'
+                . ($isAdministrator ? 'Remove admin' : 'Make admin')
+                . '</button></form>';
+        } elseif (in_array($activeSection, ['overview', 'approvals'], true)) {
             $resource = (string) ($row['entity_type'] ?? '');
             $approveStatus = $resource === 'listing' ? 'published' : 'approved';
             $buttons[] = $actionButton($resource, $id, $approveStatus, 'Approve', 'primary');

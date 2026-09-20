@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Barama\Services;
 
 use Barama\Core\Database;
+use Barama\Core\Session;
 use Barama\Repositories\AccountSettingsRepository;
+use Barama\Security\PasswordPolicy;
 use Barama\Repositories\UserRepository;
 use DomainException;
 use InvalidArgumentException;
@@ -83,7 +85,11 @@ final class AccountSettingsService
         $password = (string) ($input['password'] ?? '');
         $confirmation = (string) ($input['password_confirmation'] ?? '');
 
-        $this->assertStrongPassword($password, $confirmation);
+        $passwordErrors = PasswordPolicy::errors($password, $confirmation);
+
+        if ($passwordErrors !== []) {
+            throw new InvalidArgumentException(implode(' ', $passwordErrors));
+        }
 
         if (password_verify($password, (string) $user['password_hash'])) {
             throw new InvalidArgumentException('New password must be different from the current password.');
@@ -95,7 +101,9 @@ final class AccountSettingsService
             throw new RuntimeException('The new password could not be secured.');
         }
 
-        (new UserRepository())->updatePassword($userId, $hash);
+        $newVersion = (new UserRepository())->updatePasswordAndInvalidateSessions($userId, $hash);
+        (new AuthService())->refreshSessionVersion($userId, $newVersion);
+        (new SecurityAuditService())->record('account.password_changed', $userId, $userId);
     }
 
     /** @param array<string,mixed> $input */
@@ -146,6 +154,13 @@ final class AccountSettingsService
                 . $confirmationUrl . "\n\nThis link expires in 60 minutes.",
             'dedupe_key' => 'email-change:' . $userId . ':' . hash('sha256', $newEmail . $token),
         ]);
+
+        (new SecurityAuditService())->record(
+            'account.email_change_requested',
+            $userId,
+            $userId,
+            ['new_email_hash' => hash('sha256', $newEmail)]
+        );
     }
 
     public function emailChangePreview(int $userId, string $token): ?string
@@ -181,13 +196,21 @@ final class AccountSettingsService
             $pdo->beginTransaction();
             $repository->updateUserEmail($userId, (string) $record['new_email']);
             $repository->markEmailChangeUsed((int) $record['id']);
+            $newVersion = (new UserRepository())->incrementAuthVersion($userId);
             $pdo->commit();
+            (new AuthService())->refreshSessionVersion($userId, $newVersion);
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             throw $exception;
         }
+
+        (new SecurityAuditService())->record(
+            'account.email_changed',
+            $userId,
+            $userId
+        );
     }
 
     /** @param array<string,mixed> $input */
@@ -210,26 +233,14 @@ final class AccountSettingsService
             );
         }
 
-        $repository->setUserStatus($userId, 'deactivated');
+        (new UserRepository())->setStatusAndInvalidate($userId, 'deactivated');
+        (new SecurityAuditService())->record(
+            'account.deactivated',
+            $userId,
+            $userId
+        );
         (new AuthService())->logout();
     }
 
-    private function assertStrongPassword(string $password, string $confirmation): void
-    {
-        if ($password !== $confirmation) {
-            throw new InvalidArgumentException('Password confirmation does not match.');
-        }
 
-        if (
-            strlen($password) < 12
-            || preg_match('/[A-Z]/', $password) !== 1
-            || preg_match('/[a-z]/', $password) !== 1
-            || preg_match('/\d/', $password) !== 1
-            || preg_match('/[^A-Za-z0-9]/', $password) !== 1
-        ) {
-            throw new InvalidArgumentException(
-                'Use at least 12 characters with uppercase, lowercase, number, and symbol.'
-            );
-        }
-    }
 }

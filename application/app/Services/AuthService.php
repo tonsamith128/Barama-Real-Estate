@@ -16,6 +16,10 @@ use RuntimeException;
 final class AuthService
 {
     private const SESSION_USER_ID = 'auth.user_id';
+    private const SESSION_VERSION = 'auth.version';
+    private const SESSION_LOGIN_AT = 'auth.login_at';
+    private const SESSION_LAST_ACTIVITY = 'auth.last_activity';
+    private const SESSION_CLI_USER_ID = 'auth.cli_user_id';
 
     private UserRepository $users;
     private RoleRepository $roles;
@@ -45,14 +49,44 @@ final class AuthService
             return null;
         }
 
-        $user = $this->users->findById((int) $userId);
+        $cli = defined('BARAMA_CLI') && BARAMA_CLI === true;
 
-        if ($user === null || (string) $user['status'] !== 'active') {
-            Session::forget(self::SESSION_USER_ID);
+        if (!$cli && $this->sessionExpired()) {
+            $this->clearAuthSession();
             $this->resolvedUser = null;
             return null;
         }
 
+        $user = $this->users->findById((int) $userId);
+        $sessionVersion = (int) Session::get(self::SESSION_VERSION, 0);
+
+        if (
+            $cli
+            && $user !== null
+            && (
+                $sessionVersion < 1
+                || (int) Session::get(self::SESSION_CLI_USER_ID, 0) !== (int) $userId
+            )
+        ) {
+            $sessionVersion = (int) $user['auth_version'];
+            Session::put(self::SESSION_VERSION, $sessionVersion);
+            Session::put(self::SESSION_CLI_USER_ID, (int) $userId);
+        }
+
+        if (
+            $user === null
+            || (string) $user['status'] !== 'active'
+            || $sessionVersion < 1
+            || $sessionVersion !== (int) $user['auth_version']
+        ) {
+            $this->clearAuthSession();
+            $this->resolvedUser = null;
+            return null;
+        }
+
+        if (!$cli) {
+            Session::put(self::SESSION_LAST_ACTIVITY, time());
+        }
         $this->resolvedUser = $user;
 
         return $user;
@@ -79,20 +113,23 @@ final class AuthService
 
         try {
             $pdo->beginTransaction();
-
             $userId = $this->users->create($name, $email, $passwordHash);
             $this->roles->assignRole($userId, 'user');
-
             $pdo->commit();
         } catch (PDOException|RuntimeException $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-
             throw $exception;
         }
 
         $this->loginUserId($userId);
+
+        (new SecurityAuditService())->record(
+            'auth.registered',
+            $userId,
+            $userId
+        );
 
         return $userId;
     }
@@ -102,6 +139,13 @@ final class AuthService
         $email = strtolower(trim($email));
 
         if ($this->throttle->isLocked($email, $ip)) {
+            (new SecurityAuditService())->record(
+                'auth.login_locked',
+                null,
+                null,
+                ['email_hash' => hash('sha256', $email)],
+                $ip
+            );
             return 'locked';
         }
 
@@ -117,8 +161,15 @@ final class AuthService
             if (is_string($dummyHash)) {
                 password_verify($password, $dummyHash);
             }
-            $this->throttle->hit($email, $ip);
 
+            $this->throttle->hit($email, $ip);
+            (new SecurityAuditService())->record(
+                'auth.login_failed',
+                null,
+                null,
+                ['email_hash' => hash('sha256', $email)],
+                $ip
+            );
             return 'invalid';
         }
 
@@ -126,6 +177,13 @@ final class AuthService
 
         if (!$validPassword || (string) $user['status'] !== 'active') {
             $this->throttle->hit($email, $ip);
+            (new SecurityAuditService())->record(
+                'auth.login_failed',
+                null,
+                (int) $user['id'],
+                ['reason' => $validPassword ? 'status' : 'credentials'],
+                $ip
+            );
             return 'invalid';
         }
 
@@ -141,16 +199,32 @@ final class AuthService
         $this->users->updateLastLogin((int) $user['id']);
         $this->loginUserId((int) $user['id']);
 
+        (new SecurityAuditService())->record(
+            'auth.login_success',
+            (int) $user['id'],
+            (int) $user['id'],
+            [],
+            $ip
+        );
+
         return 'success';
     }
 
     public function logout(): void
     {
-        Session::forget(self::SESSION_USER_ID);
-        Session::forget('auth.intended');
+        $userId = Session::get(self::SESSION_USER_ID);
+        $this->clearAuthSession();
         Session::regenerate();
         Csrf::regenerate();
         $this->resolvedUser = null;
+
+        if (is_int($userId) || ctype_digit((string) $userId)) {
+            (new SecurityAuditService())->record(
+                'auth.logout',
+                (int) $userId,
+                (int) $userId
+            );
+        }
     }
 
     public function can(string $permissionSlug): bool
@@ -169,8 +243,19 @@ final class AuthService
             && $this->roles->userHasRole((int) $user['id'], $roleSlug);
     }
 
+    public function requiresEmailVerification(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null && empty($user['email_verified_at']);
+    }
+
     public function homePath(): string
     {
+        if ($this->requiresEmailVerification()) {
+            return '/verify-email';
+        }
+
         if ($this->can('dashboard.access')) {
             return '/dashboard';
         }
@@ -182,11 +267,59 @@ final class AuthService
         return '/account';
     }
 
+    public function refreshSessionVersion(int $userId, int $authVersion): void
+    {
+        $sessionUserId = Session::get(self::SESSION_USER_ID);
+
+        if ((int) $sessionUserId === $userId) {
+            Session::put(self::SESSION_VERSION, max(1, $authVersion));
+            Session::put(self::SESSION_LAST_ACTIVITY, time());
+            $this->resolvedUser = false;
+        }
+    }
+
     private function loginUserId(int $userId): void
     {
+        $user = $this->users->findById($userId);
+
+        if ($user === null) {
+            throw new RuntimeException('The account could not be loaded.');
+        }
+
         Session::regenerate();
         Csrf::regenerate();
         Session::put(self::SESSION_USER_ID, $userId);
+        Session::put(self::SESSION_VERSION, (int) $user['auth_version']);
+        Session::put(self::SESSION_LOGIN_AT, time());
+        Session::put(self::SESSION_LAST_ACTIVITY, time());
         $this->resolvedUser = false;
+    }
+
+    private function sessionExpired(): bool
+    {
+        $now = time();
+        $loginAt = (int) Session::get(self::SESSION_LOGIN_AT, 0);
+        $lastActivity = (int) Session::get(self::SESSION_LAST_ACTIVITY, 0);
+        $idle = max(300, (int) config('auth.session_idle_seconds', 7200));
+        $absolute = max($idle, (int) config('auth.session_absolute_seconds', 43200));
+
+        return $loginAt < 1
+            || $lastActivity < 1
+            || ($now - $lastActivity) > $idle
+            || ($now - $loginAt) > $absolute;
+    }
+
+    private function clearAuthSession(): void
+    {
+        foreach ([
+            self::SESSION_USER_ID,
+            self::SESSION_VERSION,
+            self::SESSION_LOGIN_AT,
+            self::SESSION_LAST_ACTIVITY,
+            self::SESSION_CLI_USER_ID,
+            'auth.intended',
+        ] as $key) {
+            Session::forget($key);
+        }
     }
 }
