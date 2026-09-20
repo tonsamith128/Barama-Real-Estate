@@ -54,6 +54,24 @@ a {
     color: inherit;
 }
 
+:where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex="-1"])
+):focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--barama-primary) 74%, #ffffff 26%);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--barama-bg) 82%, transparent);
+}
+
+:where(button, input, select, textarea, summary):disabled {
+    cursor: not-allowed;
+}
+
 .app-container {
     max-width: var(--barama-container);
 }

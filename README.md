@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.8-dev`
+- Current development line: `0.9.9-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -216,3 +216,21 @@ The 0.9.8 development line completes customer-facing mail configuration without 
 - exact customer ZIP QA verifies the installer mail contract while excluding internal SMTP QA scripts
 
 Real provider delivery remains a final live-server acceptance gate.
+
+
+## Browser and accessibility release QA
+
+The 0.9.9 development line adds exact-customer-ZIP browser validation without adding a Node.js production requirement.
+
+- Chromium tests the installer and installed application at 390px, 768px, and 1440px widths
+- Light/Dark preferences are toggled and verified after reload
+- mobile global navigation and workspace drawers expose aria-expanded state and close with Escape
+- workspace focus returns to the opener after keyboard dismissal
+- auth password visibility controls are exercised
+- canonical :focus-visible styling is enforced for interactive controls
+- serious/critical axe-core WCAG A/AA violations fail CI
+- core pages are checked for horizontal overflow
+- CI stores short-lived screenshots for visual inspection
+- Playwright, axe-core, npm metadata, and browser QA scripts are excluded from the customer ZIP
+
+See `docs/BROWSER_QA.md`.

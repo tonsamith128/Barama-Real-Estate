@@ -49,12 +49,23 @@
     const workspaceBackdrop = document.querySelector('[data-workspace-backdrop]');
     const workspaceNotice = document.querySelector('[data-workspace-notice]');
 
-    const closeWorkspaceNavigation = () => {
+    const closeWorkspaceNavigation = (restoreFocus = false) => {
+        const wasOpen = document.body.classList.contains('workspace-nav-open');
+
         document.body.classList.remove('workspace-nav-open');
+        workspaceOpen?.setAttribute('aria-expanded', 'false');
+
+        if (restoreFocus && wasOpen) {
+            workspaceOpen?.focus();
+        }
     };
+
+    workspaceOpen?.setAttribute('aria-expanded', 'false');
 
     workspaceOpen?.addEventListener('click', () => {
         document.body.classList.add('workspace-nav-open');
+        workspaceOpen.setAttribute('aria-expanded', 'true');
+        workspaceClose?.focus();
     });
 
     workspaceClose?.addEventListener('click', closeWorkspaceNavigation);
@@ -62,7 +73,7 @@
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
-            closeWorkspaceNavigation();
+            closeWorkspaceNavigation(true);
         }
     });
 

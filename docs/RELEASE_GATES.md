@@ -23,6 +23,8 @@ GitHub Actions currently runs the following against MySQL 8 and the exact genera
 15. validated artifact upload
 16. exact-package Apache root/subdirectory HTTP routing QA
 17. exact-package Nginx root/subdirectory HTTP routing QA
+18. exact-package Chromium mobile/tablet/desktop browser QA
+19. exact-package keyboard/focus and serious/critical accessibility QA
 
 The automated gates also enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
@@ -38,7 +40,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.8 development line has automated coverage for:
+The current 0.9.9 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -77,6 +79,13 @@ The current 0.9.8 development line has automated coverage for:
 - protected runtime persistence of mail delivery settings
 - Step 5 email-delivery configuration health check
 - customer-package exclusion of internal SMTP QA fixtures
+- exact-package Chromium QA at mobile, tablet, and desktop widths
+- Light/Dark toggle and persistence checks
+- mobile global-navigation and workspace-drawer keyboard behavior
+- canonical visible focus indicators and focus restoration
+- serious/critical WCAG 2.0/2.1 A/AA automated accessibility checks
+- horizontal-overflow checks across core public/authenticated surfaces
+- short-lived browser screenshot artifacts for visual review
 
 ## Open gates before CodeCanyon v1.0.0
 
@@ -85,9 +94,8 @@ These remain intentionally open:
 - live Ton Samith License Manager success using Barama-specific Direct and Envato test credentials through the manual `Live License Manager QA` workflow
 - final live-server Apache/shared-hosting installer acceptance test
 - final live-server Nginx installer acceptance test
-- browser/device QA on desktop, tablet, and mobile
-- Light/Dark Mode visual QA
-- keyboard/focus accessibility QA
+- final human browser/device visual review on representative desktop, tablet, and mobile browsers
+- final human Light/Dark Mode visual review
 - final live-server production email delivery using a real supported SMTP/PHP-mail provider
 - localization QA for configured languages
 - browser compatibility QA

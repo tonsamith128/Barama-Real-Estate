@@ -142,3 +142,68 @@ jobs:
         run: |
           ZIP="validated-package/Barama-Real-Estate-$(cat VERSION).zip"
           bash tools/webserver-package-smoke.sh "$ZIP"
+
+
+  browser-compat:
+    name: Exact Package Browser & Accessibility QA
+    needs: foundation-qa
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root_test_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_test_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      PACKAGE_DB_HOST: 127.0.0.1
+      PACKAGE_DB_PORT: 3306
+      PACKAGE_DB_USERNAME: root
+      PACKAGE_DB_PASSWORD: root_test_password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, zip, curl, mbstring, fileinfo
+          coverage: none
+
+      - name: Download validated customer package
+        uses: actions/download-artifact@v4
+        with:
+          name: Barama-Real-Estate-${{ github.sha }}
+          path: validated-package
+
+      - name: Verify package checksum
+        run: |
+          cd validated-package
+          sha256sum -c Barama-Real-Estate-$(cat ../VERSION).zip.sha256
+
+      - name: Validate browser QA script syntax
+        run: bash -n tools/browser-package-smoke.sh
+
+      - name: Run exact-package browser and accessibility QA
+        run: |
+          ZIP="validated-package/Barama-Real-Estate-$(cat VERSION).zip"
+          bash tools/browser-package-smoke.sh "$ZIP"
+
+      - name: Upload browser QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Barama-Browser-QA-${{ github.sha }}
+          path: browser-qa-artifacts/*.png
+          if-no-files-found: ignore
+          retention-days: 7

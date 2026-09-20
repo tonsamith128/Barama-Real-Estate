@@ -107,7 +107,7 @@ $isAuthenticated = $headerUser !== null;
 
     <?php if (isset($workspaceNavigation) && is_array($workspaceNavigation)): ?>
         <div class="workspace-shell">
-            <aside class="workspace-sidebar" data-workspace-sidebar>
+            <aside class="workspace-sidebar" id="workspace-navigation" data-workspace-sidebar>
                 <div class="workspace-sidebar__top">
                     <div>
                         <span>Workspace</span>
@@ -155,6 +155,8 @@ $isAuthenticated = $headerUser !== null;
                     class="workspace-menu-button"
                     type="button"
                     data-workspace-open
+                    aria-controls="workspace-navigation"
+                    aria-expanded="false"
                     aria-label="Open workspace navigation"
                 >
                     <?= app_icon('menu') ?>

@@ -51,6 +51,8 @@ foreach ([
     'tools/webserver-package-smoke.sh',
     'tools/smtp-test-server.php',
     'tools/smtp-smoke.php',
+    'tools/browser-package-prepare.php',
+    'tools/browser-package-smoke.sh',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -181,7 +183,10 @@ $javascriptSource = (string) file_get_contents($temporaryRoot . '/assets/js/app.
 if (
     !str_contains($stylesheetSource, '@media (max-width: 991.98px)')
     || !str_contains($stylesheetSource, '@media (max-width: 575.98px)')
+    || !str_contains($stylesheetSource, ':focus-visible')
     || !str_contains($javascriptSource, 'window.localStorage.setItem(storageKey, next)')
+    || !str_contains($javascriptSource, "workspaceOpen?.setAttribute('aria-expanded', 'false')")
+    || !str_contains($javascriptSource, "workspaceOpen.setAttribute('aria-expanded', 'true')")
 ) {
     throw new RuntimeException('Responsive or Light/Dark installer behavior is incomplete.');
 }
