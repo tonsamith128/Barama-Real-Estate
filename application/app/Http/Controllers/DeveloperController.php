@@ -38,6 +38,10 @@ final class DeveloperController
             'title' => 'Inquiries',
             'description' => 'Review marketplace messages, record responses, and convert qualified interest into leads.',
         ],
+        'viewings' => [
+            'title' => 'Viewing Requests',
+            'description' => 'Confirm, reschedule, complete, or decline customer property viewing requests.',
+        ],
         'leads' => [
             'title' => 'Lead Pipeline',
             'description' => 'Move qualified prospects through contact, viewing, negotiation, won, and lost stages.',
@@ -66,7 +70,7 @@ final class DeveloperController
     {
         $resource = strtolower(trim($resource));
 
-        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead'], true)
+        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'viewing', 'lead'], true)
             || !ctype_digit($id)
             || (int) $id < 1
         ) {
@@ -176,6 +180,7 @@ final class DeveloperController
                 ['label' => 'Properties', 'value' => $summary['properties'], 'icon' => 'home'],
                 ['label' => 'Published', 'value' => $summary['published_listings'], 'icon' => 'tag'],
                 ['label' => 'Open inquiries', 'value' => $summary['open_inquiries'], 'icon' => 'message'],
+                ['label' => 'Viewings', 'value' => $summary['active_viewings'], 'icon' => 'calendar'],
                 ['label' => 'Active leads', 'value' => $summary['active_leads'], 'icon' => 'pipeline'],
             ],
             'records' => $records,
@@ -198,6 +203,7 @@ final class DeveloperController
             ['label' => 'Properties', 'path' => '/developer/properties', 'icon' => 'home'],
             ['label' => 'Listings', 'path' => '/developer/listings', 'icon' => 'tag'],
             ['label' => 'Inquiries', 'path' => '/developer/inquiries', 'icon' => 'message'],
+            ['label' => 'Viewings', 'path' => '/developer/viewings', 'icon' => 'calendar'],
             ['label' => 'Leads', 'path' => '/developer/leads', 'icon' => 'pipeline'],
             ['label' => 'Team', 'path' => '/developer/team', 'icon' => 'users'],
             ['label' => 'Media', 'path' => '/developer/media', 'icon' => 'image'],
@@ -212,6 +218,7 @@ final class DeveloperController
             'property' => 'properties',
             'listing' => 'listings',
             'inquiry' => 'inquiries',
+            'viewing' => 'viewings',
             'lead' => 'leads',
             default => 'overview',
         };
@@ -228,6 +235,16 @@ final class DeveloperController
                 'sorts' => [
                     'updated_desc' => 'Newest received',
                     'updated_asc' => 'Oldest received',
+                ],
+            ],
+            'viewings' => [
+                'statuses' => ['pending', 'confirmed', 'rescheduled', 'completed', 'declined', 'cancelled'],
+                'types' => [],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Customer A–Z',
                 ],
             ],
             'company' => [
@@ -321,6 +338,14 @@ final class DeveloperController
                 'property_title' => 'Property',
                 'status' => 'Status',
                 'created_at' => 'Received',
+            ],
+            'viewings' => [
+                'customer_name' => 'Customer',
+                'property_title' => 'Property',
+                'company_name' => 'Company',
+                'preferred_date' => 'Preferred date',
+                'status' => 'Status',
+                'updated_at' => 'Updated',
             ],
             'company' => [
                 'name' => 'Company',

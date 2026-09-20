@@ -73,6 +73,20 @@ final class WorkspaceRecordRepository
                           LEFT JOIN properties p ON p.id = i.property_id
                           LEFT JOIN listings l ON l.id = i.listing_id
                           WHERE i.id = :id LIMIT 1',
+            'viewing' => 'SELECT v.*, c.name AS company_name,
+                                 l.slug AS listing_slug, p.title AS property_title,
+                                 u.name AS customer_name, u.email AS customer_email,
+                                 cm.member_role AS viewer_role
+                          FROM viewing_requests v
+                          INNER JOIN companies c ON c.id = v.company_id
+                          INNER JOIN company_members cm
+                             ON cm.company_id = v.company_id
+                            AND cm.user_id = :user_id
+                            AND cm.status = "active"
+                          INNER JOIN listings l ON l.id = v.listing_id
+                          INNER JOIN properties p ON p.id = l.property_id
+                          INNER JOIN users u ON u.id = v.user_id
+                          WHERE v.id = :id LIMIT 1',
             'lead' => 'SELECT l.*, c.name AS company_name,
                               u.name AS assigned_user_name,
                               loc.name AS preferred_location_name,

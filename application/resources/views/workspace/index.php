@@ -111,6 +111,7 @@ $renderActions = static function (array $row) use (
             'projects' => 'project',
             'properties' => 'property',
             'listings' => 'listing',
+            'viewings' => 'viewing',
             'leads' => 'lead',
             default => null,
         }

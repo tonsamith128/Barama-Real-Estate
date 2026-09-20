@@ -18,6 +18,17 @@ $title = (string) (
     ?? ucfirst($recordResource)
 );
 $status = (string) ($record['status'] ?? $record['stage'] ?? '');
+$viewingTransitions = $recordResource === 'viewing'
+    ? match ($status) {
+        'pending' => ['confirmed' => 'Confirm', 'rescheduled' => 'Reschedule', 'declined' => 'Decline'],
+        'confirmed' => ['rescheduled' => 'Reschedule', 'completed' => 'Complete', 'declined' => 'Decline'],
+        'rescheduled' => ['confirmed' => 'Confirm', 'rescheduled' => 'Reschedule', 'completed' => 'Complete', 'declined' => 'Decline'],
+        default => [],
+    }
+    : [];
+$scheduledLocal = !empty($record['scheduled_for'])
+    ? date('Y-m-d\TH:i', strtotime((string) $record['scheduled_for']))
+    : '';
 $editable = $workspaceType === 'developer'
     && in_array($recordResource, ['company', 'project', 'property', 'listing'], true)
     && in_array($status, ['draft', 'rejected'], true);
@@ -36,6 +47,7 @@ $sectionPath = match ($recordResource) {
     'property' => $workspaceType === 'admin' ? '/dashboard/properties' : '/developer/properties',
     'listing' => $workspaceType === 'admin' ? '/dashboard/listings' : '/developer/listings',
     'inquiry' => $workspaceType === 'admin' ? '/dashboard/inquiries' : '/developer/inquiries',
+    'viewing' => '/developer/viewings',
     'lead' => $workspaceType === 'admin' ? '/dashboard/leads' : '/developer/leads',
     default => $workspaceType === 'admin' ? '/dashboard' : '/developer',
 };
@@ -183,6 +195,18 @@ $details = match ($recordResource) {
         'Received' => $record['created_at'] ?? null,
         'Responded' => $record['responded_at'] ?? null,
     ],
+    'viewing' => [
+        'Customer' => $record['customer_name'] ?? null,
+        'Customer email' => $record['customer_email'] ?? null,
+        'Company' => $record['company_name'] ?? null,
+        'Property' => $record['property_title'] ?? null,
+        'Preferred date' => $record['preferred_date'] ?? null,
+        'Preferred time' => $record['preferred_time_window'] ?? null,
+        'Alternate date' => $record['alternate_date'] ?? null,
+        'Alternate time' => $record['alternate_time_window'] ?? null,
+        'Scheduled for' => $record['scheduled_for'] ?? null,
+        'Requested' => $record['created_at'] ?? null,
+    ],
     'lead' => [
         'Company' => $record['company_name'] ?? null,
         'Email' => $record['contact_email'] ?? null,
@@ -239,7 +263,7 @@ $details = match ($recordResource) {
                         $humanizedLabels = [
                             'Company type', 'Project type', 'Completion', 'Type',
                             'Offer', 'Pricing period', 'Preferred contact', 'Source',
-                            'Interest', 'Property type',
+                            'Interest', 'Property type', 'Preferred time', 'Alternate time',
                         ];
                         $displayValue = in_array($label, $humanizedLabels, true)
                             ? $humanize($value)
@@ -250,11 +274,54 @@ $details = match ($recordResource) {
                 </dl>
                 <?php
                 $longText = $record['description'] ?? $record['property_description'] ?? $record['message'] ?? $record['notes'] ?? null;
+                $copyHeading = $recordResource === 'inquiry'
+                    ? 'Message'
+                    : ($recordResource === 'lead'
+                        ? 'Notes'
+                        : ($recordResource === 'viewing' ? 'Customer message' : 'Description'));
                 ?>
                 <?php if (!empty($longText)): ?>
-                    <div class="workspace-record-copy"><h3><?= $recordResource === 'inquiry' ? 'Message' : ($recordResource === 'lead' ? 'Notes' : 'Description') ?></h3><p><?= nl2br(e((string) $longText)) ?></p></div>
+                    <div class="workspace-record-copy"><h3><?= e($copyHeading) ?></h3><p><?= nl2br(e((string) $longText)) ?></p></div>
                 <?php endif; ?>
             </section>
+
+            <?php if ($workspaceType === 'developer' && $recordResource === 'viewing'): ?>
+                <section class="workspace-record-panel">
+                    <div class="workspace-record-panel__head">
+                        <h2>Viewing schedule</h2>
+                        <span>Company-managed appointment status</span>
+                    </div>
+
+                    <?php if ($viewingTransitions !== []): ?>
+                        <form action="<?= e(url('/developer/viewings/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-form">
+                            <?= csrf_field() ?>
+                            <div class="workspace-form__grid">
+                                <label>
+                                    <span>Next status</span>
+                                    <select class="form-select" name="status" required>
+                                        <?php foreach ($viewingTransitions as $target => $label): ?>
+                                            <option value="<?= e($target) ?>"><?= e($label) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>Scheduled date & time</span>
+                                    <input class="form-control" type="datetime-local" name="scheduled_for" value="<?= e($scheduledLocal) ?>">
+                                </label>
+                                <label class="workspace-form__span-2">
+                                    <span>Company note</span>
+                                    <textarea class="form-control" name="company_note" rows="4" maxlength="1000" placeholder="Appointment instructions or reason for rescheduling/declining"><?= e((string) ($record['company_note'] ?? '')) ?></textarea>
+                                </label>
+                            </div>
+                            <button class="btn btn-primary" type="submit">Update viewing</button>
+                        </form>
+                    <?php else: ?>
+                        <div class="workspace-record-empty">
+                            This viewing is in a terminal state and no further company scheduling action is available.
+                        </div>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
 
             <?php if ($editable): ?>
                 <section class="workspace-record-panel">

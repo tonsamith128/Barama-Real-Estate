@@ -101,7 +101,7 @@
                             : 'overview';
                         $isActive = ($activeSection ?? 'overview') === $sectionSlug
                             || (($activeSection ?? 'overview') === 'overview'
-                                && in_array($itemPath, ['/developer', '/dashboard'], true));
+                                && in_array($itemPath, ['/account', '/developer', '/dashboard'], true));
                         ?>
                         <a class="<?= $isActive ? 'is-active' : '' ?>" href="<?= e(url($itemPath)) ?>">
                             <span class="workspace-nav__icon"><?= app_icon($itemIcon) ?></span>

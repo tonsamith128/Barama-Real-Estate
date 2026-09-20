@@ -72,6 +72,15 @@ final class WorkspaceReadRepository
                    AND l.deleted_at IS NULL',
                 ['user_id' => $userId]
             ),
+            'active_viewings' => $this->count(
+                'SELECT COUNT(*)
+                 FROM viewing_requests v
+                 INNER JOIN company_members cm ON cm.company_id = v.company_id
+                 WHERE cm.user_id = :user_id
+                   AND cm.status = "active"
+                   AND v.status IN ("pending", "confirmed", "rescheduled")',
+                ['user_id' => $userId]
+            ),
         ];
     }
 
@@ -286,6 +295,33 @@ final class WorkspaceReadRepository
                    AND cm.status = "active"
                    AND l.deleted_at IS NULL
                    AND CONCAT_WS(" ", l.contact_name, l.contact_email, l.contact_phone) LIKE :search',
+                ['user_id' => $userId, 'search' => $search],
+            ],
+            'viewings' => [
+                'SELECT v.id, v.status, v.preferred_date, v.preferred_time_window,
+                        v.scheduled_for, v.updated_at,
+                        u.name AS customer_name, u.email AS customer_email,
+                        p.title AS property_title, c.name AS company_name
+                 FROM viewing_requests v
+                 INNER JOIN company_members cm ON cm.company_id = v.company_id
+                 INNER JOIN users u ON u.id = v.user_id
+                 INNER JOIN listings l ON l.id = v.listing_id
+                 INNER JOIN properties p ON p.id = l.property_id
+                 INNER JOIN companies c ON c.id = v.company_id
+                 WHERE cm.user_id = :user_id
+                   AND cm.status = "active"
+                   AND CONCAT_WS(" ", u.name, u.email, p.title, c.name) LIKE :search
+                 ORDER BY v.updated_at DESC',
+                'SELECT COUNT(*)
+                 FROM viewing_requests v
+                 INNER JOIN company_members cm ON cm.company_id = v.company_id
+                 INNER JOIN users u ON u.id = v.user_id
+                 INNER JOIN listings l ON l.id = v.listing_id
+                 INNER JOIN properties p ON p.id = l.property_id
+                 INNER JOIN companies c ON c.id = v.company_id
+                 WHERE cm.user_id = :user_id
+                   AND cm.status = "active"
+                   AND CONCAT_WS(" ", u.name, u.email, p.title, c.name) LIKE :search',
                 ['user_id' => $userId, 'search' => $search],
             ],
             'team' => [
@@ -667,6 +703,14 @@ final class WorkspaceReadRepository
                     'price_asc' => 'budget_max ASC',
                     'price_desc' => 'budget_max DESC',
                     'name_asc' => 'contact_name ASC',
+                ],
+            ],
+            'developer:viewings' => [
+                'filters' => ['status' => 'status'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'customer_name ASC',
                 ],
             ],
             'developer:team' => [

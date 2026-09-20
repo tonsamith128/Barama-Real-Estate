@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\CustomerEngagementRepository;
+use Barama\Repositories\WorkflowRepository;
 use Barama\Support\DomainInput;
 use DomainException;
 use InvalidArgumentException;
+use Throwable;
 
 final class CustomerEngagementService
 {
@@ -32,22 +35,37 @@ final class CustomerEngagementService
     {
         $repository = new CustomerEngagementRepository();
         $this->requirePublicListing($repository, $listingId);
+        $pdo = Database::connection();
 
-        if ($repository->isCompared($userId, $listingId)) {
-            return;
-        }
+        try {
+            $pdo->beginTransaction();
+            $repository->lockUser($userId);
 
-        if ($repository->comparisonCount($userId) >= self::COMPARISON_LIMIT) {
-            throw new DomainException(
-                'You can compare up to ' . self::COMPARISON_LIMIT . ' properties at a time.'
+            if ($repository->isCompared($userId, $listingId)) {
+                $pdo->commit();
+                return;
+            }
+
+            if ($repository->comparisonCount($userId) >= self::COMPARISON_LIMIT) {
+                throw new DomainException(
+                    'You can compare up to ' . self::COMPARISON_LIMIT . ' properties at a time.'
+                );
+            }
+
+            $repository->addComparison(
+                $userId,
+                $listingId,
+                $repository->nextComparisonPosition($userId)
             );
-        }
 
-        $repository->addComparison(
-            $userId,
-            $listingId,
-            $repository->nextComparisonPosition($userId)
-        );
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function removeComparison(int $userId, int $listingId): void
@@ -157,12 +175,6 @@ final class CustomerEngagementService
         $repository = new CustomerEngagementRepository();
         $listing = $this->requirePublicListing($repository, $listingId);
 
-        if ($repository->hasActiveViewing($userId, $listingId)) {
-            throw new DomainException(
-                'You already have an active viewing request for this property.'
-            );
-        }
-
         $preferredDate = $this->futureDate($input['preferred_date'] ?? null, 'Preferred date');
         $alternateDate = $this->optionalFutureDate($input['alternate_date'] ?? null, 'Alternate date');
         $preferredWindow = trim((string) ($input['preferred_time_window'] ?? ''));
@@ -180,21 +192,81 @@ final class CustomerEngagementService
             $alternateWindow = '';
         }
 
-        return $repository->createViewingRequest($userId, [
-            'listing_id' => $listingId,
-            'company_id' => (int) $listing['company_id'],
-            'preferred_date' => $preferredDate,
-            'preferred_time_window' => $preferredWindow,
-            'alternate_date' => $alternateDate,
-            'alternate_time_window' => $alternateWindow !== '' ? $alternateWindow : null,
-            'message' => DomainInput::optionalString($input, 'message', 2000),
-        ]);
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+            $repository->lockUser($userId);
+
+            if ($repository->hasActiveViewing($userId, $listingId)) {
+                throw new DomainException(
+                    'You already have an active viewing request for this property.'
+                );
+            }
+
+            $viewingId = $repository->createViewingRequest($userId, [
+                'listing_id' => $listingId,
+                'company_id' => (int) $listing['company_id'],
+                'preferred_date' => $preferredDate,
+                'preferred_time_window' => $preferredWindow,
+                'alternate_date' => $alternateDate,
+                'alternate_time_window' => $alternateWindow !== '' ? $alternateWindow : null,
+                'message' => DomainInput::optionalString($input, 'message', 2000),
+            ]);
+
+            $pdo->commit();
+
+            return $viewingId;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function cancelViewingRequest(int $userId, int $viewingId): void
     {
-        if (!(new CustomerEngagementRepository())->cancelViewingRequest($userId, $viewingId)) {
+        $repository = new CustomerEngagementRepository();
+        $viewing = $repository->viewingById($viewingId);
+
+        if (
+            $viewing === null
+            || (int) $viewing['user_id'] !== $userId
+            || !in_array((string) $viewing['status'], ['pending', 'confirmed', 'rescheduled'], true)
+        ) {
             throw new DomainException('This viewing request can no longer be cancelled.');
+        }
+
+        $fromStatus = (string) $viewing['status'];
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            if (!$repository->cancelViewingRequest($userId, $viewingId)) {
+                throw new DomainException(
+                    'Viewing request changed while it was being cancelled. Refresh and try again.'
+                );
+            }
+
+            (new WorkflowRepository())->record(
+                'viewing',
+                $viewingId,
+                $userId,
+                $fromStatus,
+                'cancelled',
+                'Cancelled by customer.'
+            );
+
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
         }
     }
 

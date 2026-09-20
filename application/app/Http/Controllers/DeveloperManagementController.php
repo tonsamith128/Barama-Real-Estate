@@ -15,6 +15,7 @@ use Barama\Services\MediaManagementService;
 use Barama\Services\MembershipService;
 use Barama\Services\ProjectManagementService;
 use Barama\Services\PropertyManagementService;
+use Barama\Services\ViewingManagementService;
 use DomainException;
 use InvalidArgumentException;
 use Throwable;
@@ -131,6 +132,19 @@ final class DeveloperManagementController
                 'resource' => $resource,
                 'id' => $entityId,
                 'status' => $status,
+            ];
+        });
+    }
+
+    public function updateViewing(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            $viewingId = $this->id($id);
+            (new ViewingManagementService())->update($viewingId, $request->all());
+
+            return [
+                'viewing_id' => $viewingId,
+                'message' => 'Viewing request updated.',
             ];
         });
     }

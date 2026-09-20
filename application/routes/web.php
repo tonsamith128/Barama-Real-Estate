@@ -184,6 +184,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]
 );
 $router->post(
+    '/developer/viewings/{id}',
+    [DeveloperManagementController::class, 'updateViewing'],
+    [new AuthMiddleware(), new PermissionMiddleware('inquiry.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/developer/inquiries/{id}/lead',
     [DeveloperManagementController::class, 'convertLead'],
     [new AuthMiddleware(), new PermissionMiddleware('lead.manage'), new CsrfMiddleware()]

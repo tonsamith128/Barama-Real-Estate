@@ -53,6 +53,18 @@ final class CustomerEngagementRepository
         return is_array($row) ? $row : null;
     }
 
+    public function lockUser(int $userId): void
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT id FROM users WHERE id = :id FOR UPDATE'
+        );
+        $statement->execute(['id' => $userId]);
+
+        if ($statement->fetchColumn() === false) {
+            throw new \InvalidArgumentException('Customer account was not found.');
+        }
+    }
+
     public function saveListing(int $userId, int $listingId): void
     {
         $statement = Database::connection()->prepare(
@@ -275,6 +287,60 @@ final class CustomerEngagementRepository
                AND status IN ("pending", "confirmed", "rescheduled")'
         );
         $statement->execute(['id' => $viewingId, 'user_id' => $userId]);
+
+        return $statement->rowCount() > 0;
+    }
+
+
+    /** @return array<string,mixed>|null */
+    public function viewingById(int $viewingId): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT v.*, l.slug AS listing_slug, p.title AS property_title,
+                    c.name AS company_name, u.name AS customer_name,
+                    u.email AS customer_email
+             FROM viewing_requests v
+             INNER JOIN listings l ON l.id = v.listing_id
+             INNER JOIN properties p ON p.id = l.property_id
+             INNER JOIN companies c ON c.id = v.company_id
+             INNER JOIN users u ON u.id = v.user_id
+             WHERE v.id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $viewingId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function updateViewingByCompany(
+        int $viewingId,
+        string $expectedStatus,
+        string $status,
+        ?string $scheduledFor,
+        ?string $companyNote
+    ): bool {
+        $additional = $status === 'completed'
+            ? ', completed_at = CURRENT_TIMESTAMP'
+            : '';
+
+        $statement = Database::connection()->prepare(
+            'UPDATE viewing_requests
+             SET status = :status,
+                 scheduled_for = :scheduled_for,
+                 company_note = :company_note,
+                 updated_at = CURRENT_TIMESTAMP'
+                 . $additional .
+            ' WHERE id = :id
+                AND status = :expected_status'
+        );
+        $statement->execute([
+            'status' => $status,
+            'scheduled_for' => $scheduledFor,
+            'company_note' => $companyNote,
+            'id' => $viewingId,
+            'expected_status' => $expectedStatus,
+        ]);
 
         return $statement->rowCount() > 0;
     }

@@ -22,6 +22,7 @@ use Barama\Services\MediaStorageService;
 use Barama\Services\MediaManagementService;
 use Barama\Services\ProjectManagementService;
 use Barama\Services\PropertyManagementService;
+use Barama\Services\ViewingManagementService;
 use DomainException;
 
 define('BARAMA_CLI', true);
@@ -402,6 +403,56 @@ if (
     throw new RuntimeException('Customer engagement persistence or scoped account reads failed.');
 }
 
+Session::put('auth.user_id', $developerId);
+
+$scheduledLocal = date('Y-m-d', strtotime('+1 day')) . 'T14:00';
+
+(new ViewingManagementService())->update($viewingId, [
+    'status' => 'confirmed',
+    'scheduled_for' => $scheduledLocal,
+    'company_note' => 'QA confirmed appointment.',
+]);
+
+$developerViewing = $recordReader->developerRecord($developerId, 'viewing', $viewingId);
+$developerViewingRows = $workspace->developerSection(
+    $developerId,
+    'viewings',
+    '',
+    1,
+    20,
+    ['status' => 'confirmed'],
+    'updated_desc'
+);
+
+if (
+    $developerViewing === null
+    || (string) $developerViewing['record']['status'] !== 'confirmed'
+    || empty($developerViewing['record']['scheduled_for'])
+    || (int) $developerViewingRows['total'] !== 1
+) {
+    throw new RuntimeException('Developer viewing scheduling or scoped read failed.');
+}
+
+Session::put('auth.user_id', $otherDeveloperId);
+
+$otherDeveloperViewingBlocked = false;
+
+try {
+    (new ViewingManagementService())->update($viewingId, [
+        'status' => 'rescheduled',
+        'scheduled_for' => date('Y-m-d', strtotime('+2 days')) . 'T10:00',
+    ]);
+} catch (DomainException) {
+    $otherDeveloperViewingBlocked = true;
+}
+
+if (
+    !$otherDeveloperViewingBlocked
+    || $recordReader->developerRecord($otherDeveloperId, 'viewing', $viewingId) !== null
+) {
+    throw new RuntimeException('Viewing company-scope isolation failed.');
+}
+
 Session::put('auth.user_id', $otherCustomerId);
 
 $otherCustomerCancelBlocked = false;
@@ -428,6 +479,17 @@ $customerEngagement->cancelViewingRequest($customerId, $viewingId);
 
 if ($customerRepository->summary($customerId)['viewings'] !== 0) {
     throw new RuntimeException('Customer viewing cancellation state was not reflected in account summary.');
+}
+
+$viewingHistoryCountStatement = $pdo->prepare(
+    'SELECT COUNT(*)
+     FROM entity_status_history
+     WHERE entity_type = "viewing" AND entity_id = :entity_id'
+);
+$viewingHistoryCountStatement->execute(['entity_id' => $viewingId]);
+
+if ((int) $viewingHistoryCountStatement->fetchColumn() !== 2) {
+    throw new RuntimeException('Viewing company/customer lifecycle history is incomplete.');
 }
 
 if (
@@ -510,5 +572,5 @@ if (
 
 fwrite(
     STDOUT,
-    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, filtered workspace reads, bulk moderation, customer engagement ownership, public marketplace reads, guarded media and company-scope isolation verified.\n"
+    "[PASS] Domain smoke test: writes, workflows, scoped record details, review locks, filtered workspace reads, bulk moderation, customer engagement ownership, company viewing scheduling, public marketplace reads, guarded media and company-scope isolation verified.\n"
 );
