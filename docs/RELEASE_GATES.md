@@ -25,6 +25,7 @@ GitHub Actions currently runs the following against MySQL 8 and the exact genera
 17. exact-package Nginx root/subdirectory HTTP routing QA
 18. exact-package Chromium mobile/tablet/desktop browser QA
 19. exact-package keyboard/focus and serious/critical accessibility QA
+20. exact-package Firefox and WebKit critical-flow compatibility QA
 
 The automated gates also enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
@@ -40,7 +41,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.9 development line has automated coverage for:
+The current 0.9.10 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -86,6 +87,8 @@ The current 0.9.9 development line has automated coverage for:
 - serious/critical WCAG 2.0/2.1 A/AA automated accessibility checks
 - horizontal-overflow checks across core public/authenticated surfaces
 - short-lived browser screenshot artifacts for visual review
+- exact-package Firefox and WebKit installer/public/authenticated critical-flow compatibility
+- Firefox/WebKit mobile-navigation and Light/Dark persistence checks
 
 ## Open gates before CodeCanyon v1.0.0
 
@@ -98,7 +101,7 @@ These remain intentionally open:
 - final human Light/Dark Mode visual review
 - final live-server production email delivery using a real supported SMTP/PHP-mail provider
 - localization QA for configured languages
-- browser compatibility QA
+- final human Safari/iOS and Edge/Chrome compatibility review
 - final third-party notices and CodeCanyon package review
 - online documentation review against the exact v1.0.0 package
 - final demo/sample-data decision and clean-production-default verification

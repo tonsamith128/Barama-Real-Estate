@@ -73,10 +73,10 @@ done
 cd "$NODE_DIR"
 npm init -y >/dev/null 2>&1
 npm install --silent --no-save playwright@1.55.0 @axe-core/playwright@4.10.2
-npx playwright install chromium >/dev/null
+npx playwright install --with-deps chromium firefox webkit >/dev/null
 
 cat > browser-qa.mjs <<'JS'
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 
 const freshBase = 'http://127.0.0.1:8091';
@@ -135,6 +135,132 @@ const seriousAccessibility = async (page, label) => {
         blocking.length === 0,
         label + ' accessibility violations: ' + details
     );
+};
+
+const runCrossBrowserCritical = async (browserType, browserName) => {
+    const browser = await browserType.launch({ headless: true });
+
+    try {
+        for (const viewport of [
+            { name: 'mobile', width: 390, height: 844 },
+            { name: 'desktop', width: 1440, height: 900 },
+        ]) {
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
+
+            await page.goto(freshBase + '/', { waitUntil: 'networkidle' });
+            assert(
+                page.url().includes('/installer/'),
+                browserName + ' fresh root did not redirect to /installer/ at '
+                    + viewport.name
+            );
+            await noOverflow(
+                page,
+                browserName + ' installer ' + viewport.name
+            );
+
+            for (const path of [
+                '/',
+                '/properties',
+                '/projects',
+                '/company',
+                '/login',
+                '/register',
+            ]) {
+                const response = await page.goto(installedBase + path, {
+                    waitUntil: 'networkidle',
+                });
+
+                assert(
+                    response && response.ok(),
+                    browserName + ' ' + path + ' failed at ' + viewport.name
+                );
+                await noOverflow(
+                    page,
+                    browserName + ' ' + path + ' ' + viewport.name
+                );
+            }
+
+            if (viewport.name === 'mobile') {
+                await page.goto(installedBase + '/', {
+                    waitUntil: 'networkidle',
+                });
+                const menu = page.locator('[data-site-menu-toggle]');
+                await menu.click();
+                assert(
+                    await menu.getAttribute('aria-expanded') === 'true',
+                    browserName + ' mobile navigation did not open.'
+                );
+                await page.keyboard.press('Escape');
+                assert(
+                    await menu.getAttribute('aria-expanded') === 'false',
+                    browserName + ' mobile navigation did not close with Escape.'
+                );
+            } else {
+                await page.goto(installedBase + '/', {
+                    waitUntil: 'networkidle',
+                });
+                await page.evaluate(() => {
+                    localStorage.setItem('barama-theme', 'light');
+                });
+                await page.reload({ waitUntil: 'networkidle' });
+                await page.locator('[data-theme-toggle]').click();
+
+                assert(
+                    await page.locator('html').getAttribute('data-bs-theme')
+                        === 'dark',
+                    browserName + ' theme toggle did not activate dark mode.'
+                );
+
+                await page.reload({ waitUntil: 'networkidle' });
+                assert(
+                    await page.locator('html').getAttribute('data-bs-theme')
+                        === 'dark',
+                    browserName + ' dark theme did not persist.'
+                );
+
+                await page.goto(installedBase + '/login', {
+                    waitUntil: 'networkidle',
+                });
+                await page.locator('#login-email')
+                    .fill('browser-admin@example.test');
+                await page.locator('#login-password')
+                    .fill('Barama-Browser-QA-123!');
+                await page.locator('button[type="submit"]').click();
+                await page.waitForLoadState('networkidle');
+
+                assert(
+                    !page.url().includes('/login'),
+                    browserName + ' administrator login did not complete.'
+                );
+
+                for (const path of ['/account', '/developer', '/dashboard']) {
+                    const response = await page.goto(installedBase + path, {
+                        waitUntil: 'networkidle',
+                    });
+                    assert(
+                        response && response.ok(),
+                        browserName + ' authenticated page failed: ' + path
+                    );
+                    await noOverflow(
+                        page,
+                        browserName + ' ' + path + ' desktop'
+                    );
+                }
+            }
+
+            await context.close();
+        }
+
+        console.log(
+            '[PASS] ' + browserName
+            + ' exact-package compatibility: installer, public pages, '
+            + 'mobile navigation, theme persistence and authenticated '
+            + 'account/developer/admin routes verified.'
+        );
+    } finally {
+        await browser.close();
+    }
 };
 
 const browser = await chromium.launch({ headless: true });
@@ -337,6 +463,14 @@ try {
 } finally {
     await browser.close();
 }
+
+await runCrossBrowserCritical(firefox, 'Firefox');
+await runCrossBrowserCritical(webkit, 'WebKit');
+
+console.log(
+    '[PASS] Cross-browser exact-package QA: Chromium, Firefox and WebKit '
+    + 'critical customer flows verified.'
+);
 JS
 
 BARAMA_BROWSER_ARTIFACTS="$ARTIFACTS" node browser-qa.mjs

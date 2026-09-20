@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.9-dev`
+- Current development line: `0.9.10-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -232,5 +232,18 @@ The 0.9.9 development line adds exact-customer-ZIP browser validation without ad
 - core pages are checked for horizontal overflow
 - CI stores short-lived screenshots for visual inspection
 - Playwright, axe-core, npm metadata, and browser QA scripts are excluded from the customer ZIP
+
+See `docs/BROWSER_QA.md`.
+
+
+## Cross-browser compatibility QA
+
+The 0.9.10 development line extends exact-customer-ZIP browser validation beyond Chromium.
+
+- Chromium remains the deep responsive, keyboard, axe accessibility, authenticated-workspace, and screenshot gate
+- Firefox and WebKit validate the fresh installer, core public routes, mobile menu behavior, Light/Dark persistence, administrator login, and authenticated account/developer/admin routes
+- mobile and desktop overflow checks run in all three browser engines
+- Playwright browsers and npm dependencies exist only in temporary GitHub Actions storage and are never shipped to customers
+- final Safari/iOS and Edge/Chrome visual acceptance remains a human pre-release gate
 
 See `docs/BROWSER_QA.md`.
