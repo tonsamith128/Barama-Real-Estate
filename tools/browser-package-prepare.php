@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Barama\Core\Installation;
 use Barama\Services\InstallerService;
 use Barama\Support\IdGenerator;
-use PDO;
 
 $root = rtrim((string) ($argv[1] ?? ''), '/');
 $database = trim((string) ($argv[2] ?? ''));

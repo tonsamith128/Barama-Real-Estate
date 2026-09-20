@@ -117,10 +117,23 @@ const seriousAccessibility = async (page, label) => {
         item.impact === 'critical' || item.impact === 'serious'
     );
 
+    const details = blocking.map((item) => {
+        const nodes = item.nodes.slice(0, 5).map((node) => {
+            const target = Array.isArray(node.target)
+                ? node.target.join(' ')
+                : String(node.target || '');
+            const summary = String(node.failureSummary || '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return target + (summary ? ' — ' + summary : '');
+        }).join(' | ');
+
+        return item.id + ' (' + item.nodes.length + '): ' + nodes;
+    }).join(' || ');
+
     assert(
         blocking.length === 0,
-        label + ' accessibility violations: '
-            + blocking.map((item) => item.id + ' (' + item.nodes.length + ')').join(', ')
+        label + ' accessibility violations: ' + details
     );
 };
 
