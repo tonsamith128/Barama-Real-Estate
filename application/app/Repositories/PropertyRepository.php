@@ -42,17 +42,24 @@ final class PropertyRepository
              LEFT JOIN projects
                 ON projects.id = properties.project_id
                AND projects.deleted_at IS NULL
-             LEFT JOIN companies
-                ON companies.id = properties.company_id
-               AND companies.deleted_at IS NULL
+             LEFT JOIN companies ON companies.id = properties.company_id
              WHERE properties.slug = :slug
-               AND properties.status = :status
+               AND properties.status = :property_status
                AND properties.deleted_at IS NULL
+               AND (
+                    properties.company_id IS NULL
+                    OR (
+                        companies.status = :company_status
+                        AND companies.published_at IS NOT NULL
+                        AND companies.deleted_at IS NULL
+                    )
+               )
              LIMIT 1'
         );
         $statement->execute([
             'slug' => trim($slug),
-            'status' => 'approved',
+            'property_status' => 'approved',
+            'company_status' => 'approved',
         ]);
 
         $property = $statement->fetch(PDO::FETCH_ASSOC);

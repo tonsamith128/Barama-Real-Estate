@@ -23,6 +23,7 @@ final class ListingRepository
                     properties.location_id
              FROM listings
              INNER JOIN properties ON properties.id = listings.property_id
+             LEFT JOIN companies ON companies.id = properties.company_id
              WHERE listings.slug = :slug
                AND listings.status = :listing_status
                AND listings.published_at IS NOT NULL
@@ -30,12 +31,21 @@ final class ListingRepository
                AND (listings.expires_at IS NULL OR listings.expires_at > CURRENT_TIMESTAMP)
                AND properties.status = :property_status
                AND properties.deleted_at IS NULL
+               AND (
+                    properties.company_id IS NULL
+                    OR (
+                        companies.status = :company_status
+                        AND companies.published_at IS NOT NULL
+                        AND companies.deleted_at IS NULL
+                    )
+               )
              LIMIT 1'
         );
         $statement->execute([
             'slug' => trim($slug),
             'listing_status' => 'published',
             'property_status' => 'approved',
+            'company_status' => 'approved',
         ]);
 
         $listing = $statement->fetch(PDO::FETCH_ASSOC);

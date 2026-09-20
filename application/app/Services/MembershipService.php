@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Repositories\CompanyMembershipRepository;
 use Barama\Repositories\CompanyMembershipWriteRepository;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\UserRepository;
 use DomainException;
 use InvalidArgumentException;
+use Throwable;
 
 final class MembershipService
 {
@@ -32,16 +34,24 @@ final class MembershipService
         }
 
         $roles = new RoleRepository();
+        $memberships = new CompanyMembershipWriteRepository();
+        $pdo = Database::connection();
 
-        if (!$roles->userHasRole((int) $user['id'], 'developer')) {
-            $roles->assignRole((int) $user['id'], 'developer');
+        try {
+            $pdo->beginTransaction();
+
+            if (!$roles->userHasRole((int) $user['id'], 'developer')) {
+                $roles->assignRole((int) $user['id'], 'developer');
+            }
+
+            $memberships->upsert($companyId, (int) $user['id'], $memberRole);
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
         }
-
-        (new CompanyMembershipWriteRepository())->upsert(
-            $companyId,
-            (int) $user['id'],
-            $memberRole
-        );
     }
 
     public function deactivate(int $companyId, int $userId): void
