@@ -36,7 +36,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.5 development line has automated coverage for:
+The current 0.9.6 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -57,12 +57,18 @@ The current 0.9.5 development line has automated coverage for:
 - protected installation-version metadata updates
 - upgrade security-audit events
 - source and exact-customer-ZIP `0.9.3-dev` upgrade compatibility
+- deterministic Ton Samith License Manager contract QA for Direct and Envato methods
+- product, domain, installation-ID, and active-status license binding
+- inactive/revoked contract rejection
+- canonical license deactivation support
+- exact-package presence of the hardened License Manager client
+- customer-package exclusion of internal live-license QA scripts
 
 ## Open gates before CodeCanyon v1.0.0
 
 These remain intentionally open:
 
-- live Ton Samith License Manager success using a Barama-specific valid test credential
+- live Ton Samith License Manager success using Barama-specific Direct and Envato test credentials through the manual `Live License Manager QA` workflow
 - supported Apache shared-hosting installation validation
 - supported Nginx installation validation
 - browser/device QA on desktop, tablet, and mobile

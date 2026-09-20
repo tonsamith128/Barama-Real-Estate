@@ -4,10 +4,21 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Closure;
 use RuntimeException;
 
 final class LicenseManagerClient
 {
+    /**
+     * Optional transport is used only by deterministic contract QA.
+     *
+     * @param Closure(string,array<string,mixed>): array<string,mixed>|null $transport
+     */
+    public function __construct(
+        private readonly ?Closure $transport = null
+    ) {
+    }
+
     /** @return array<string,mixed> */
     public function activate(
         string $purchaseCode,
@@ -17,11 +28,13 @@ final class LicenseManagerClient
     ): array {
         $purchaseCode = trim($purchaseCode);
         $domain = self::canonicalDomain($domain);
-        $installationId = strtolower(trim($installationId));
+        $installationId = self::normalizeInstallationId($installationId);
         $verificationMethod = strtolower(trim($verificationMethod));
 
         if (!in_array($verificationMethod, ['direct', 'envato'], true)) {
-            throw new RuntimeException('Choose a valid license verification method.');
+            throw new RuntimeException(
+                'Choose a valid license verification method.'
+            );
         }
 
         if (
@@ -29,20 +42,19 @@ final class LicenseManagerClient
             || strlen($purchaseCode) > 120
             || preg_match('/^[A-Za-z0-9-]+$/', $purchaseCode) !== 1
         ) {
-            throw new RuntimeException('Enter a valid license key or CodeCanyon purchase code.');
+            throw new RuntimeException(
+                'Enter a valid license key or CodeCanyon purchase code.'
+            );
         }
 
-        if ($domain === '') {
-            throw new RuntimeException('The installation domain could not be verified.');
-        }
-
-        if (preg_match('/^[a-f0-9]{32}$/', $installationId) !== 1) {
-            throw new RuntimeException('The installation identifier is invalid.');
-        }
+        $this->assertDomainAndInstallation($domain, $installationId);
 
         $payload = [
             'purchase_code' => $purchaseCode,
-            'product_slug' => (string) config('license.product_slug', 'barama-real-estate'),
+            'product_slug' => (string) config(
+                'license.product_slug',
+                'barama-real-estate'
+            ),
             'domain' => $domain,
             'installation_id' => $installationId,
             'verification_method' => $verificationMethod,
@@ -55,59 +67,47 @@ final class LicenseManagerClient
         }
 
         $response = $this->request(
-            (string) config('license.activate_path', '/license/v1/activate'),
-            $payload
+            (string) config(
+                'license.activate_path',
+                '/license/v1/activate'
+            ),
+            $payload,
+            'The license could not be verified for Barama Real Estate. Check the code and try again.'
         );
 
         if (($response['success'] ?? false) !== true) {
             throw new RuntimeException(
-                'The purchase code could not be verified for Barama Real Estate. Check the code and try again.'
+                'The license could not be verified for Barama Real Estate. Check the code and try again.'
             );
         }
 
         $token = trim((string) ($response['activation_token'] ?? ''));
-        $license = is_array($response['license'] ?? null) ? $response['license'] : [];
+        $license = is_array($response['license'] ?? null)
+            ? $response['license']
+            : [];
 
         if ($token === '' || $license === []) {
-            throw new RuntimeException('Purchase verification returned an incomplete response. Please try again.');
+            throw new RuntimeException(
+                'License verification returned an incomplete response. Please try again.'
+            );
         }
 
-        $expectedProduct = (string) config('license.product_slug', 'barama-real-estate');
-        $returnedProduct = trim((string) ($license['product_slug'] ?? $expectedProduct));
-
-        if ($returnedProduct !== $expectedProduct) {
-            throw new RuntimeException('This purchase code is not valid for Barama Real Estate.');
-        }
-
-        $returnedDomain = self::canonicalDomain((string) ($license['domain'] ?? $domain));
-
-        if ($returnedDomain !== '' && $returnedDomain !== $domain) {
-            throw new RuntimeException('This purchase code is not valid for the current domain.');
-        }
-
-        $status = strtolower(trim((string) ($license['status'] ?? 'active')));
-
-        if (in_array($status, ['revoked', 'suspended', 'invalid', 'deactivated', 'expired'], true)) {
-            throw new RuntimeException('This license is not active.');
-        }
-
-        if (
-            $itemId > 0
-            && isset($license['envato_item_id'])
-            && (int) $license['envato_item_id'] !== $itemId
-        ) {
-            throw new RuntimeException('This purchase code is not valid for Barama Real Estate.');
-        }
+        $normalized = $this->assertActiveLicense(
+            $license,
+            $domain,
+            $installationId
+        );
 
         return [
             'activation_token' => $token,
             'license_id' => $license['id'] ?? null,
-            'product_slug' => $expectedProduct,
-            'envato_item_id' => $license['envato_item_id'] ?? ($itemId > 0 ? $itemId : null),
+            'product_slug' => $normalized['product_slug'],
+            'envato_item_id' => $license['envato_item_id']
+                ?? ($itemId > 0 ? $itemId : null),
             'license_type' => (string) ($license['license_type'] ?? ''),
             'source' => (string) ($license['source'] ?? ''),
             'is_test' => (bool) ($license['is_test'] ?? false),
-            'status' => $status !== '' ? $status : 'active',
+            'status' => $normalized['status'],
             'domain' => $domain,
             'installation_id' => $installationId,
             'verification_method' => $verificationMethod,
@@ -122,19 +122,104 @@ final class LicenseManagerClient
         string $installationId
     ): array {
         $activationToken = trim($activationToken);
+        $domain = self::canonicalDomain($domain);
+        $installationId = self::normalizeInstallationId($installationId);
 
         if ($activationToken === '') {
-            throw new RuntimeException('License validation token is missing.');
+            throw new RuntimeException(
+                'License validation token is missing.'
+            );
         }
 
+        $this->assertDomainAndInstallation($domain, $installationId);
+
         return $this->request(
-            (string) config('license.validate_path', '/license/v1/validate'),
+            (string) config(
+                'license.validate_path',
+                '/license/v1/validate'
+            ),
             [
                 'activation_token' => $activationToken,
-                'domain' => self::canonicalDomain($domain),
-                'installation_id' => strtolower(trim($installationId)),
-            ]
+                'domain' => $domain,
+                'installation_id' => $installationId,
+            ],
+            'License validation could not be completed. Please try again.'
         );
+    }
+
+    /** @return array<string,mixed> */
+    public function validateActive(
+        string $activationToken,
+        string $domain,
+        string $installationId
+    ): array {
+        $domain = self::canonicalDomain($domain);
+        $installationId = self::normalizeInstallationId($installationId);
+        $response = $this->validate(
+            $activationToken,
+            $domain,
+            $installationId
+        );
+
+        if (($response['success'] ?? false) !== true) {
+            throw new RuntimeException('This license is not active.');
+        }
+
+        $license = is_array($response['license'] ?? null)
+            ? $response['license']
+            : [];
+
+        if ($license === []) {
+            throw new RuntimeException(
+                'License validation returned an incomplete response.'
+            );
+        }
+
+        return $this->assertActiveLicense(
+            $license,
+            $domain,
+            $installationId
+        );
+    }
+
+    /** @return array<string,mixed> */
+    public function deactivate(
+        string $activationToken,
+        string $domain,
+        string $installationId
+    ): array {
+        $activationToken = trim($activationToken);
+        $domain = self::canonicalDomain($domain);
+        $installationId = self::normalizeInstallationId($installationId);
+
+        if ($activationToken === '') {
+            throw new RuntimeException(
+                'License deactivation token is missing.'
+            );
+        }
+
+        $this->assertDomainAndInstallation($domain, $installationId);
+
+        $response = $this->request(
+            (string) config(
+                'license.deactivate_path',
+                '/license/v1/deactivate'
+            ),
+            [
+                'activation_token' => $activationToken,
+                'domain' => $domain,
+                'installation_id' => $installationId,
+            ],
+            'License deactivation could not be completed. Please try again.'
+        );
+
+        if (($response['success'] ?? false) !== true) {
+            throw new RuntimeException(
+                'License deactivation could not be completed. Please try again.'
+            );
+        }
+
+        return $response;
     }
 
     public static function canonicalDomain(string $domain): string
@@ -148,11 +233,16 @@ final class LicenseManagerClient
         if (str_contains($domain, '://')) {
             $host = parse_url($domain, PHP_URL_HOST);
             $domain = is_string($host) ? $host : '';
-        } elseif (str_starts_with($domain, '[') && str_contains($domain, ']')) {
+        } elseif (
+            str_starts_with($domain, '[')
+            && str_contains($domain, ']')
+        ) {
             $end = strpos($domain, ']');
-            $domain = $end !== false ? substr($domain, 1, $end - 1) : $domain;
+            $domain = $end !== false
+                ? substr($domain, 1, $end - 1)
+                : $domain;
         } else {
-            $domain = preg_replace('/:\\d+$/', '', $domain) ?? $domain;
+            $domain = preg_replace('/:\d+$/', '', $domain) ?? $domain;
         }
 
         $domain = rtrim($domain, '.');
@@ -164,29 +254,170 @@ final class LicenseManagerClient
         return $domain;
     }
 
-    /** @param array<string,mixed> $payload @return array<string,mixed> */
-    private function request(string $path, array $payload): array
-    {
-        if (!extension_loaded('curl')) {
-            throw new RuntimeException('Secure purchase verification requires the PHP cURL extension.');
+    /**
+     * @param array<string,mixed> $license
+     * @return array<string,mixed>
+     */
+    private function assertActiveLicense(
+        array $license,
+        string $domain,
+        string $installationId
+    ): array {
+        $expectedProduct = (string) config(
+            'license.product_slug',
+            'barama-real-estate'
+        );
+        $returnedProduct = trim(
+            (string) ($license['product_slug'] ?? $expectedProduct)
+        );
+
+        if ($returnedProduct !== $expectedProduct) {
+            throw new RuntimeException(
+                'This license is not valid for Barama Real Estate.'
+            );
         }
 
-        $base = rtrim((string) config('license.server_url', 'https://tonsamith.com'), '/');
+        $returnedDomain = self::canonicalDomain(
+            (string) ($license['domain'] ?? $domain)
+        );
+
+        if ($returnedDomain !== '' && $returnedDomain !== $domain) {
+            throw new RuntimeException(
+                'This license is not valid for the current domain.'
+            );
+        }
+
+        $returnedInstallation = self::normalizeInstallationId(
+            (string) ($license['installation_id'] ?? $installationId)
+        );
+
+        if (
+            $returnedInstallation !== ''
+            && $returnedInstallation !== $installationId
+        ) {
+            throw new RuntimeException(
+                'This license is not valid for this installation.'
+            );
+        }
+
+        $status = strtolower(trim(
+            (string) ($license['status'] ?? 'active')
+        ));
+
+        if (
+            in_array(
+                $status,
+                [
+                    'revoked',
+                    'suspended',
+                    'invalid',
+                    'deactivated',
+                    'expired',
+                ],
+                true
+            )
+        ) {
+            throw new RuntimeException('This license is not active.');
+        }
+
+        $itemId = (int) config('license.envato_item_id', 0);
+
+        if (
+            $itemId > 0
+            && isset($license['envato_item_id'])
+            && (int) $license['envato_item_id'] !== $itemId
+        ) {
+            throw new RuntimeException(
+                'This license is not valid for Barama Real Estate.'
+            );
+        }
+
+        return array_merge($license, [
+            'product_slug' => $expectedProduct,
+            'domain' => $domain,
+            'installation_id' => $installationId,
+            'status' => $status !== '' ? $status : 'active',
+        ]);
+    }
+
+    private function assertDomainAndInstallation(
+        string $domain,
+        string $installationId
+    ): void {
+        if ($domain === '') {
+            throw new RuntimeException(
+                'The installation domain could not be verified.'
+            );
+        }
+
+        if (preg_match('/^[a-f0-9]{32}$/', $installationId) !== 1) {
+            throw new RuntimeException(
+                'The installation identifier is invalid.'
+            );
+        }
+    }
+
+    private static function normalizeInstallationId(
+        string $installationId
+    ): string {
+        return strtolower(trim($installationId));
+    }
+
+    /**
+     * @param array<string,mixed> $payload
+     * @return array<string,mixed>
+     */
+    private function request(
+        string $path,
+        array $payload,
+        string $failureMessage
+    ): array {
+        if ($this->transport instanceof Closure) {
+            $response = ($this->transport)($path, $payload);
+
+            if (!is_array($response)) {
+                throw new RuntimeException(
+                    'License service returned an invalid response.'
+                );
+            }
+
+            return $response;
+        }
+
+        if (!extension_loaded('curl')) {
+            throw new RuntimeException(
+                'Secure license verification requires the PHP cURL extension.'
+            );
+        }
+
+        $base = rtrim(
+            (string) config(
+                'license.server_url',
+                'https://tonsamith.com'
+            ),
+            '/'
+        );
         $url = $base . '/' . ltrim($path, '/');
 
         if (!str_starts_with($url, 'https://')) {
-            throw new RuntimeException('Purchase verification is unavailable.');
+            throw new RuntimeException(
+                'License verification is unavailable.'
+            );
         }
 
         $encoded = json_encode(
             $payload,
-            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+            JSON_UNESCAPED_SLASHES
+                | JSON_UNESCAPED_UNICODE
+                | JSON_THROW_ON_ERROR
         );
 
         $curl = curl_init($url);
 
         if ($curl === false) {
-            throw new RuntimeException('Purchase verification is temporarily unavailable. Please try again.');
+            throw new RuntimeException(
+                'License service is temporarily unavailable. Please try again.'
+            );
         }
 
         $options = [
@@ -195,40 +426,56 @@ final class LicenseManagerClient
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_CONNECTTIMEOUT => 8,
-            CURLOPT_TIMEOUT => max(8, (int) config('license.request_timeout', 15)),
+            CURLOPT_TIMEOUT => max(
+                8,
+                (int) config('license.request_timeout', 15)
+            ),
             CURLOPT_HTTPHEADER => [
                 'Accept: application/json',
                 'Content-Type: application/json',
-                'User-Agent: Barama-Real-Estate/' . (defined('APP_VERSION') ? APP_VERSION : 'installer'),
+                'User-Agent: Barama-Real-Estate/'
+                    . (
+                        defined('APP_VERSION')
+                            ? APP_VERSION
+                            : 'installer'
+                    ),
             ],
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
         ];
 
-        if (defined('CURLOPT_PROTOCOLS') && defined('CURLPROTO_HTTPS')) {
+        if (
+            defined('CURLOPT_PROTOCOLS')
+            && defined('CURLPROTO_HTTPS')
+        ) {
             $options[CURLOPT_PROTOCOLS] = CURLPROTO_HTTPS;
         }
 
         curl_setopt_array($curl, $options);
         $body = curl_exec($curl);
-        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        $status = (int) curl_getinfo(
+            $curl,
+            CURLINFO_RESPONSE_CODE
+        );
         $error = curl_error($curl);
         curl_close($curl);
 
         if ($body === false || $error !== '') {
-            throw new RuntimeException('Purchase verification is temporarily unavailable. Please try again.');
+            throw new RuntimeException(
+                'License service is temporarily unavailable. Please try again.'
+            );
         }
 
         $decoded = json_decode((string) $body, true);
 
         if (!is_array($decoded)) {
-            throw new RuntimeException('Purchase verification is temporarily unavailable. Please try again.');
+            throw new RuntimeException(
+                'License service is temporarily unavailable. Please try again.'
+            );
         }
 
         if ($status < 200 || $status >= 300) {
-            throw new RuntimeException(
-                'The purchase code could not be verified for Barama Real Estate. Check the code and try again.'
-            );
+            throw new RuntimeException($failureMessage);
         }
 
         return $decoded;

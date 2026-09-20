@@ -1,0 +1,204 @@
+<?php
+
+declare(strict_types=1);
+
+use Barama\Services\LicenseManagerClient;
+
+define('BARAMA_CLI', true);
+
+require dirname(__DIR__) . '/application/bootstrap/runtime.php';
+
+$installationId = str_repeat('a', 32);
+$domain = 'barama-license.example.test';
+$events = [];
+
+$client = new LicenseManagerClient(
+    static function (string $path, array $payload) use (&$events): array {
+        $events[] = [
+            'path' => $path,
+            'payload' => $payload,
+        ];
+
+        if ($path === '/license/v1/activate') {
+            return [
+                'success' => true,
+                'activation_token' => 'contract-token',
+                'license' => [
+                    'id' => 'contract-license',
+                    'product_slug' => 'barama-real-estate',
+                    'status' => 'active',
+                    'domain' => $payload['domain'],
+                    'installation_id' => $payload['installation_id'],
+                    'source' => $payload['verification_method'],
+                    'is_test' => true,
+                ],
+            ];
+        }
+
+        if ($path === '/license/v1/validate') {
+            return [
+                'success' => true,
+                'license' => [
+                    'product_slug' => 'barama-real-estate',
+                    'status' => 'active',
+                    'domain' => $payload['domain'],
+                    'installation_id' => $payload['installation_id'],
+                ],
+            ];
+        }
+
+        if ($path === '/license/v1/deactivate') {
+            return ['success' => true];
+        }
+
+        throw new RuntimeException('Unexpected contract path.');
+    }
+);
+
+foreach (['direct', 'envato'] as $method) {
+    $activation = $client->activate(
+        'BARAMA-CONTRACT-TEST-123456',
+        'https://www.' . $domain . ':443/path',
+        $installationId,
+        $method
+    );
+
+    if (
+        ($activation['activation_token'] ?? '') !== 'contract-token'
+        || ($activation['verification_method'] ?? '') !== $method
+        || ($activation['domain'] ?? '') !== $domain
+    ) {
+        throw new RuntimeException(
+            'License activation normalization failed for ' . $method . '.'
+        );
+    }
+
+    $validated = $client->validateActive(
+        (string) $activation['activation_token'],
+        $domain,
+        $installationId
+    );
+
+    if (
+        ($validated['status'] ?? '') !== 'active'
+        || ($validated['product_slug'] ?? '') !== 'barama-real-estate'
+    ) {
+        throw new RuntimeException(
+            'Active license validation failed for ' . $method . '.'
+        );
+    }
+
+    $deactivated = $client->deactivate(
+        (string) $activation['activation_token'],
+        $domain,
+        $installationId
+    );
+
+    if (($deactivated['success'] ?? false) !== true) {
+        throw new RuntimeException(
+            'License deactivation failed for ' . $method . '.'
+        );
+    }
+}
+
+$invalidMethodBlocked = false;
+$inactiveBlocked = false;
+$wrongDomainBlocked = false;
+$wrongProductBlocked = false;
+$wrongInstallationBlocked = false;
+
+try {
+    $client->activate(
+        'BARAMA-CONTRACT-TEST-123456',
+        $domain,
+        $installationId,
+        'unsupported'
+    );
+} catch (RuntimeException) {
+    $invalidMethodBlocked = true;
+}
+
+foreach ([
+    'inactive' => [
+        'status' => 'revoked',
+        'product_slug' => 'barama-real-estate',
+        'domain' => $domain,
+        'installation_id' => $installationId,
+    ],
+    'domain' => [
+        'status' => 'active',
+        'product_slug' => 'barama-real-estate',
+        'domain' => 'other.example.test',
+        'installation_id' => $installationId,
+    ],
+    'product' => [
+        'status' => 'active',
+        'product_slug' => 'other-product',
+        'domain' => $domain,
+        'installation_id' => $installationId,
+    ],
+    'installation' => [
+        'status' => 'active',
+        'product_slug' => 'barama-real-estate',
+        'domain' => $domain,
+        'installation_id' => str_repeat('b', 32),
+    ],
+] as $case => $license) {
+    $caseClient = new LicenseManagerClient(
+        static fn (string $path, array $payload): array => [
+            'success' => true,
+            'license' => $license,
+        ]
+    );
+
+    try {
+        $caseClient->validateActive(
+            'contract-token',
+            $domain,
+            $installationId
+        );
+    } catch (RuntimeException) {
+        match ($case) {
+            'inactive' => $inactiveBlocked = true,
+            'domain' => $wrongDomainBlocked = true,
+            'product' => $wrongProductBlocked = true,
+            'installation' => $wrongInstallationBlocked = true,
+        };
+    }
+}
+
+if (
+    !$invalidMethodBlocked
+    || !$inactiveBlocked
+    || !$wrongDomainBlocked
+    || !$wrongProductBlocked
+    || !$wrongInstallationBlocked
+) {
+    throw new RuntimeException(
+        'License Manager contract rejection rules are incomplete.'
+    );
+}
+
+$activateEvents = array_values(array_filter(
+    $events,
+    static fn (array $event): bool =>
+        $event['path'] === '/license/v1/activate'
+));
+
+if (
+    count($activateEvents) !== 2
+    || ($activateEvents[0]['payload']['verification_method'] ?? '') !== 'direct'
+    || ($activateEvents[1]['payload']['verification_method'] ?? '') !== 'envato'
+    || ($activateEvents[0]['payload']['product_slug'] ?? '') !== 'barama-real-estate'
+) {
+    throw new RuntimeException(
+        'Direct/Envato activation payload contract is incorrect.'
+    );
+}
+
+fwrite(
+    STDOUT,
+    '[PASS] License Manager contract: direct/envato activation, active validation, '
+    . 'domain/product/installation binding, inactive rejection and deactivation verified.'
+    . PHP_EOL
+);

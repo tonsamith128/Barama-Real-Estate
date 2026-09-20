@@ -45,6 +45,8 @@ foreach ([
     'tools/upgrade-smoke.php',
     'tools/upgrade-smoke-runner.php',
     'tools/package-upgrade-smoke.php',
+    'tools/license-contract-smoke.php',
+    'tools/license-live-smoke.php',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -249,6 +251,10 @@ if (
     throw new RuntimeException('Public marketplace discovery interface contract is incomplete.');
 }
 
+$licenseClientSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/LicenseManagerClient.php'
+);
+
 $verifyEmailSource = (string) file_get_contents(
     $temporaryRoot . '/application/resources/views/auth/verify-email.php'
 );
@@ -276,7 +282,11 @@ $membershipServiceSource = (string) file_get_contents(
 );
 
 if (
-    !str_contains($verifyEmailSource, 'Verify email')
+    !str_contains($licenseClientSource, 'function validateActive(')
+    || !str_contains($licenseClientSource, 'function deactivate(')
+    || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYPEER')
+    || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYHOST')
+    || !str_contains($verifyEmailSource, 'Verify email')
     || !str_contains($emailVerificationServiceSource, 'EmailVerificationRepository')
     || !str_contains($userAdministrationServiceSource, 'final active administrator')
     || !str_contains($routesSource, '/verify-email/{token}')

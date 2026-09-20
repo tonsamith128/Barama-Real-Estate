@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.5-dev`
+- Current development line: `0.9.6-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -165,3 +165,20 @@ The 0.9.5 development line adds the canonical customer-facing updater at `/updat
 - CI reconstructs a `0.9.3-dev` database and verifies the upgrade once from source and again from the exact generated customer ZIP
 
 See `docs/UPGRADE.md` for the supported workflow and validation contract.
+
+
+## License Manager release contract
+
+The 0.9.6 development line hardens the canonical Ton Samith License Manager integration used by the installer and updater.
+
+- one `LicenseManagerClient` supports both Direct and Envato verification methods
+- activation validates Barama product, domain, installation ID, item binding when configured, and active status
+- `validateActive()` centralizes runtime/updater validation rules
+- deactivation is implemented through the configured Ton Samith License Manager endpoint
+- HTTPS certificate and host verification remain mandatory for production requests
+- normal Quality CI runs a deterministic contract smoke test without credentials or external service dependency
+- exact customer ZIP QA verifies the hardened client while excluding internal licensing QA scripts
+- a separate manual `Live License Manager QA` GitHub Actions workflow consumes Barama-specific repository secrets without printing credentials or activation tokens
+- live QA tests Direct and Envato activation, validation, wrong-domain/wrong-installation rejection, deactivation, deactivated-token rejection, and invalid credentials
+
+The live production-service release gate remains open until that manual workflow passes with Barama-specific test credentials. See `docs/LICENSE_MANAGER_QA.md`.

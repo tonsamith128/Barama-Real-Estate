@@ -83,6 +83,9 @@ jobs:
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 
+      - name: Run License Manager contract smoke test
+        run: php tools/license-contract-smoke.php
+
       - name: Run source upgrade compatibility smoke test
         run: php tools/upgrade-smoke.php
 

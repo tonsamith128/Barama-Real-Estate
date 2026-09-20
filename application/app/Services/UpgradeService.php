@@ -291,41 +291,14 @@ final class UpgradeService
         $installationId = (string) ($license['installation_id'] ?? '');
 
         try {
-            $response = (new LicenseManagerClient())->validate(
+            $remote = (new LicenseManagerClient())->validateActive(
                 $token,
                 $domain,
                 $installationId
             );
 
-            if (($response['success'] ?? false) !== true) {
-                throw new RuntimeException('The installed license is not active.');
-            }
-
-            $remote = is_array($response['license'] ?? null)
-                ? $response['license']
-                : [];
-            $status = strtolower(trim((string) ($remote['status'] ?? 'active')));
-            $product = trim((string) ($remote['product_slug'] ?? ''));
-
-            if (
-                in_array(
-                    $status,
-                    ['revoked', 'suspended', 'invalid', 'deactivated', 'expired'],
-                    true
-                )
-                || (
-                    $product !== ''
-                    && $product !== (string) config(
-                        'license.product_slug',
-                        'barama-real-estate'
-                    )
-                )
-            ) {
-                throw new RuntimeException('The installed license is not active.');
-            }
-
             Installation::refreshLicenseState([
-                'status' => $status !== '' ? $status : 'active',
+                'status' => (string) ($remote['status'] ?? 'active'),
                 'last_validated_at' => gmdate('c'),
             ]);
         } catch (RuntimeException $exception) {
