@@ -29,6 +29,7 @@ $propertySearchUrl = static function (array $search): string {
         'bedrooms' => $search['bedrooms_min'] ?? '',
         'min_price' => $search['price_min'] ?? '',
         'max_price' => $search['price_max'] ?? '',
+        'currency' => $search['currency'] ?? '',
     ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
     return url('/properties' . ($query !== [] ? '?' . http_build_query($query) : ''));
@@ -59,6 +60,7 @@ $propertySearchUrl = static function (array $search): string {
             <a href="<?= e(url('/account/inquiries')) ?>"><span><?= app_icon('message') ?></span><strong><?= e((string) $summary['inquiries']) ?></strong><small>Inquiries</small></a>
             <a href="<?= e(url('/account/viewings')) ?>"><span><?= app_icon('calendar') ?></span><strong><?= e((string) $summary['viewings']) ?></strong><small>Active viewings</small></a>
             <a href="<?= e(url('/account/alerts')) ?>"><span><?= app_icon('bell') ?></span><strong><?= e((string) $summary['alerts']) ?></strong><small>Active alerts</small></a>
+            <a href="<?= e(url('/account/notifications')) ?>"><span><?= app_icon('bell') ?></span><strong><?= e((string) $summary['notifications']) ?></strong><small>Unread notifications</small></a>
         </div>
 
         <?php if ($savedListings !== []): ?>
@@ -201,7 +203,7 @@ $propertySearchUrl = static function (array $search): string {
     <?php elseif ($activeSection === 'alerts'): ?>
         <div class="account-alert-layout">
             <section class="account-panel">
-                <div class="account-panel__head"><h2>Create saved search</h2><span>Alert delivery preferences are stored now; scheduled mail delivery will use the final mail/cron configuration.</span></div>
+                <div class="account-panel__head"><h2>Create saved search</h2><span>Daily and weekly matches use Barama's configured notification delivery job and your notification preferences.</span></div>
                 <form action="<?= e(url('/account/alerts')) ?>" method="post" data-account-action class="account-form">
                     <?= csrf_field() ?>
                     <label><span>Name</span><input class="form-control" name="name" required maxlength="120" placeholder="e.g. Phnom Penh 2-bedroom condos"></label>
@@ -247,6 +249,96 @@ $propertySearchUrl = static function (array $search): string {
                         </div>
                     </article>
                 <?php endforeach; ?>
+            </section>
+        </div>
+    <?php elseif ($activeSection === 'notifications'): ?>
+        <div class="account-notification-layout">
+            <section class="account-panel">
+                <div class="account-panel__head">
+                    <h2>Notification preferences</h2>
+                    <span>Choose which marketplace events can reach you and which delivery channels Barama may use.</span>
+                </div>
+                <form action="<?= e(url('/account/notification-preferences')) ?>" method="post" data-account-action class="account-form account-notification-preferences">
+                    <?= csrf_field() ?>
+                    <label class="workspace-check">
+                        <input type="checkbox" name="in_app_enabled" value="1" <?= !empty($notificationPreferences['in_app_enabled']) ? 'checked' : '' ?>>
+                        <span>In-app notifications</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input type="checkbox" name="email_enabled" value="1" <?= !empty($notificationPreferences['email_enabled']) ? 'checked' : '' ?>>
+                        <span>Email notifications</span>
+                    </label>
+                    <div class="account-preference-divider"></div>
+                    <label class="workspace-check">
+                        <input type="checkbox" name="saved_search_alerts" value="1" <?= !empty($notificationPreferences['saved_search_alerts']) ? 'checked' : '' ?>>
+                        <span>Saved-search property matches</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input type="checkbox" name="viewing_updates" value="1" <?= !empty($notificationPreferences['viewing_updates']) ? 'checked' : '' ?>>
+                        <span>Viewing request updates</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input type="checkbox" name="inquiry_updates" value="1" <?= !empty($notificationPreferences['inquiry_updates']) ? 'checked' : '' ?>>
+                        <span>Inquiry updates</span>
+                    </label>
+                    <button class="btn btn-primary" type="submit">Save preferences</button>
+                </form>
+            </section>
+
+            <section class="account-panel">
+                <div class="account-panel__head account-panel__head--actions">
+                    <div>
+                        <h2>Notification inbox</h2>
+                        <span><?= e((string) $summary['notifications']) ?> unread</span>
+                    </div>
+                    <?php if ($summary['notifications'] > 0): ?>
+                        <form action="<?= e(url('/account/notifications/read-all')) ?>" method="post" data-account-action>
+                            <?= csrf_field() ?>
+                            <button class="btn btn-outline-secondary btn-sm" type="submit">Mark all read</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($notifications === []): ?>
+                    <div class="account-empty account-empty--compact">
+                        <?= app_icon('bell') ?>
+                        <strong>No notifications yet.</strong>
+                        <span>Saved-search matches, inquiry updates, and viewing activity will appear here.</span>
+                    </div>
+                <?php else: ?>
+                    <div class="account-notification-list">
+                        <?php foreach ($notifications as $notification): ?>
+                            <article class="account-notification-item <?= empty($notification['read_at']) ? 'is-unread' : '' ?>">
+                                <div class="account-notification-item__icon">
+                                    <?= app_icon(match ((string) $notification['category']) {
+                                        'viewing_updates' => 'calendar',
+                                        'inquiry_updates' => 'message',
+                                        default => 'bell',
+                                    }) ?>
+                                </div>
+                                <div class="account-notification-item__body">
+                                    <div class="account-notification-item__meta">
+                                        <span><?= e($humanize($notification['category'])) ?></span>
+                                        <time><?= e((string) $notification['created_at']) ?></time>
+                                    </div>
+                                    <h3><?= e((string) $notification['title']) ?></h3>
+                                    <p><?= e((string) $notification['message']) ?></p>
+                                    <div class="account-notification-item__actions">
+                                        <?php if (!empty($notification['action_url'])): ?>
+                                            <a href="<?= e(url((string) $notification['action_url'])) ?>">Open</a>
+                                        <?php endif; ?>
+                                        <?php if (empty($notification['read_at'])): ?>
+                                            <form action="<?= e(url('/account/notifications/' . (int) $notification['id'] . '/read')) ?>" method="post" data-account-action>
+                                                <?= csrf_field() ?>
+                                                <button type="submit">Mark read</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </section>
         </div>
     <?php elseif ($activeSection === 'recent'): ?>

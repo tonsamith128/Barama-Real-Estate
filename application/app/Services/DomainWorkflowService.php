@@ -6,6 +6,7 @@ namespace Barama\Services;
 
 use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\InquiryRepository;
 use Barama\Repositories\ListingWriteRepository;
 use Barama\Repositories\WorkflowRepository;
 use DomainException;
@@ -119,6 +120,48 @@ final class DomainWorkflowService
                 $toStatus,
                 $note
             );
+
+            if ($resource === 'inquiry' && in_array($toStatus, ['replied', 'closed'], true)) {
+                $inquiry = (new InquiryRepository())->findById($entityId);
+
+                if ($inquiry !== null) {
+                    $notificationData = [
+                        'type' => 'inquiry_' . $toStatus,
+                        'title' => $toStatus === 'replied'
+                            ? 'Your inquiry was replied to'
+                            : 'Your inquiry was closed',
+                        'message' => $toStatus === 'replied'
+                            ? 'The company has updated your property inquiry.'
+                            : 'Your property inquiry has been closed.',
+                        'action_url' => '/account/inquiries',
+                        'entity_type' => 'inquiry',
+                        'entity_id' => $entityId,
+                        'dedupe_key' => 'inquiry:' . $entityId . ':' . $toStatus,
+                    ];
+
+                    if (!empty($inquiry['user_id'])) {
+                        (new NotificationService())->notifyUser(
+                            (int) $inquiry['user_id'],
+                            'inquiry_updates',
+                            $notificationData
+                        );
+                    } elseif (!empty($inquiry['contact_email'])) {
+                        $subject = (string) $notificationData['title'] . ' · Barama Real Estate';
+                        $message = (string) $notificationData['message'];
+
+                        (new NotificationService())->notifyAddress(
+                            (string) $inquiry['contact_email'],
+                            [
+                                'subject' => $subject,
+                                'html' => '<p><strong>' . e((string) $notificationData['title'])
+                                    . '</strong></p><p>' . e($message) . '</p>',
+                                'text' => (string) $notificationData['title'] . "\n\n" . $message,
+                                'dedupe_key' => (string) $notificationData['dedupe_key'],
+                            ]
+                        );
+                    }
+                }
+            }
 
             $pdo->commit();
         } catch (Throwable $exception) {

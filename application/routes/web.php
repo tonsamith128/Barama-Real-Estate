@@ -106,6 +106,21 @@ $router->post(
     [AccountManagementController::class, 'cancelViewing'],
     [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
 );
+$router->post(
+    '/account/notifications/{id}/read',
+    [AccountManagementController::class, 'markNotificationRead'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/notifications/read-all',
+    [AccountManagementController::class, 'markAllNotificationsRead'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/account/notification-preferences',
+    [AccountManagementController::class, 'updateNotificationPreferences'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
+);
 $router->get(
     '/account/{section}',
     [AccountController::class, 'section'],

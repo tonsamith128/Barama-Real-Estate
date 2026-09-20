@@ -2834,7 +2834,7 @@ html[data-bs-theme="dark"] {
 
 .account-stat-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.75rem;
 }
 
@@ -3393,5 +3393,170 @@ html[data-bs-theme="dark"] {
         position: static;
         width: 100%;
         margin-top: 0.5rem;
+    }
+}
+
+
+/* 15. Notification center */
+.account-notification-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+    align-items: start;
+    gap: 1rem;
+}
+
+.account-notification-preferences {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.account-notification-preferences .workspace-check {
+    min-height: 42px;
+    margin: 0;
+    border: 1px solid var(--barama-border);
+    border-radius: 11px;
+    background: var(--barama-bg);
+    padding: 0.65rem 0.75rem;
+}
+
+.account-preference-divider {
+    height: 1px;
+    margin: 0.35rem 0;
+    background: var(--barama-border);
+}
+
+.account-panel__head--actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.account-panel__head--actions form {
+    margin: 0;
+}
+
+.account-notification-list {
+    display: grid;
+}
+
+.account-notification-item {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 0.8rem;
+    border-bottom: 1px solid var(--barama-border);
+    padding: 0.9rem 1rem;
+}
+
+.account-notification-item:last-child {
+    border-bottom: 0;
+}
+
+.account-notification-item.is-unread {
+    background: color-mix(in srgb, var(--barama-primary) 5%, var(--barama-surface));
+}
+
+.account-notification-item__icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 11px;
+    background: var(--barama-surface-soft);
+    color: var(--barama-primary);
+}
+
+.account-notification-item__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.account-notification-item__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+}
+
+.account-notification-item__meta span {
+    font-weight: 780;
+}
+
+.account-notification-item h3 {
+    margin: 0.35rem 0 0;
+    font-size: 0.8rem;
+    font-weight: 840;
+}
+
+.account-notification-item p {
+    margin: 0.35rem 0 0;
+    color: var(--barama-muted);
+    font-size: 0.72rem;
+    line-height: 1.6;
+}
+
+.account-notification-item__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+}
+
+.account-notification-item__actions form {
+    margin: 0;
+}
+
+.account-notification-item__actions a,
+.account-notification-item__actions button {
+    display: inline-flex;
+    min-height: 32px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--barama-border);
+    border-radius: 8px;
+    background: var(--barama-surface);
+    color: var(--barama-text);
+    padding: 0 0.55rem;
+    font-size: 0.64rem;
+    font-weight: 780;
+    text-decoration: none;
+}
+
+.account-empty--compact {
+    min-height: 220px;
+    border: 0;
+    border-radius: 0;
+}
+
+@media (max-width: 1199.98px) {
+    .account-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .account-notification-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .account-panel__head--actions,
+    .account-notification-item__meta {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .account-notification-item {
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 0.65rem;
+        padding: 0.8rem;
+    }
+
+    .account-notification-item__icon {
+        width: 34px;
+        height: 34px;
     }
 }

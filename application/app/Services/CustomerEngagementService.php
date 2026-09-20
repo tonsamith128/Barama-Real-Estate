@@ -214,6 +214,21 @@ final class CustomerEngagementService
                 'message' => DomainInput::optionalString($input, 'message', 2000),
             ]);
 
+            (new NotificationService())->notifyCompany(
+                (int) $listing['company_id'],
+                'viewing_updates',
+                [
+                    'type' => 'viewing_requested',
+                    'title' => 'New viewing request',
+                    'message' => 'A customer requested a viewing for ' . (string) $listing['title']
+                        . ' on ' . $preferredDate . ' (' . $preferredWindow . ').',
+                    'action_url' => '/developer/manage/viewing/' . $viewingId,
+                    'entity_type' => 'viewing',
+                    'entity_id' => $viewingId,
+                    'dedupe_key' => 'viewing:' . $viewingId . ':new',
+                ]
+            );
+
             $pdo->commit();
 
             return $viewingId;
@@ -258,6 +273,22 @@ final class CustomerEngagementService
                 $fromStatus,
                 'cancelled',
                 'Cancelled by customer.'
+            );
+
+            (new NotificationService())->notifyCompany(
+                (int) $viewing['company_id'],
+                'viewing_updates',
+                [
+                    'type' => 'viewing_cancelled',
+                    'title' => 'Viewing request cancelled',
+                    'message' => (string) $viewing['customer_name']
+                        . ' cancelled the viewing request for '
+                        . (string) $viewing['property_title'] . '.',
+                    'action_url' => '/developer/manage/viewing/' . $viewingId,
+                    'entity_type' => 'viewing',
+                    'entity_id' => $viewingId,
+                    'dedupe_key' => 'viewing:' . $viewingId . ':cancelled',
+                ]
             );
 
             $pdo->commit();

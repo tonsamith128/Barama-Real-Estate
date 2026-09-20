@@ -77,6 +77,12 @@ final class MarketplaceRepository
             $params['max_price'] = (float) $maxPrice;
         }
 
+        $currency = strtoupper(trim((string) ($filters['currency'] ?? '')));
+        if (preg_match('/^[A-Z]{3}$/', $currency) === 1) {
+            $where[] = 'l.currency = :currency';
+            $params['currency'] = $currency;
+        }
+
         $sort = trim((string) ($filters['sort'] ?? 'newest'));
         $orderBy = match ($sort) {
             'price_asc' => 'l.price ASC, l.published_at DESC',

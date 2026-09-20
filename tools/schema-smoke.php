@@ -43,6 +43,10 @@ $requiredTables = [
     'recent_listing_views',
     'saved_searches',
     'viewing_requests',
+    'notification_preferences',
+    'notifications',
+    'email_outbox',
+    'saved_search_matches',
 ];
 
 $statement = $pdo->query(

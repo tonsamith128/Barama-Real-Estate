@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Repositories\InquiryRepository;
 use Barama\Security\InquiryThrottle;
 use Barama\Support\DomainInput;
 use DomainException;
 use InvalidArgumentException;
+use Throwable;
 
 final class InquiryService
 {
@@ -48,18 +50,51 @@ final class InquiryService
             throw new InvalidArgumentException('Contact email address is invalid.');
         }
 
-        return $repository->create([
-            'company_id' => (int) $target['company_id'],
-            'project_id' => $target['project_id'] !== null ? (int) $target['project_id'] : null,
-            'property_id' => $target['property_id'] !== null ? (int) $target['property_id'] : null,
-            'listing_id' => $target['listing_id'] !== null ? (int) $target['listing_id'] : null,
-            'user_id' => $userId,
-            'contact_name' => DomainInput::requiredString($input, 'contact_name', 160, 2),
-            'contact_email' => $email,
-            'contact_phone' => $phone,
-            'preferred_contact' => DomainInput::optionalString($input, 'preferred_contact', 24),
-            'subject' => DomainInput::optionalString($input, 'subject', 191),
-            'message' => DomainInput::requiredString($input, 'message', 5000, 10),
-        ]);
+        $contactName = DomainInput::requiredString($input, 'contact_name', 160, 2);
+        $message = DomainInput::requiredString($input, 'message', 5000, 10);
+        $companyId = (int) $target['company_id'];
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            $inquiryId = $repository->create([
+                'company_id' => $companyId,
+                'project_id' => $target['project_id'] !== null ? (int) $target['project_id'] : null,
+                'property_id' => $target['property_id'] !== null ? (int) $target['property_id'] : null,
+                'listing_id' => $target['listing_id'] !== null ? (int) $target['listing_id'] : null,
+                'user_id' => $userId,
+                'contact_name' => $contactName,
+                'contact_email' => $email,
+                'contact_phone' => $phone,
+                'preferred_contact' => DomainInput::optionalString($input, 'preferred_contact', 24),
+                'subject' => DomainInput::optionalString($input, 'subject', 191),
+                'message' => $message,
+            ]);
+
+            (new NotificationService())->notifyCompany(
+                $companyId,
+                'inquiry_updates',
+                [
+                    'type' => 'inquiry_received',
+                    'title' => 'New marketplace inquiry',
+                    'message' => $contactName . ' sent a new property inquiry.',
+                    'action_url' => '/developer/manage/inquiry/' . $inquiryId,
+                    'entity_type' => 'inquiry',
+                    'entity_id' => $inquiryId,
+                    'dedupe_key' => 'inquiry:' . $inquiryId . ':new',
+                ]
+            );
+
+            $pdo->commit();
+
+            return $inquiryId;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 }

@@ -6,7 +6,9 @@ namespace Barama\Http\Controllers;
 
 use Barama\Core\Request;
 use Barama\Core\Response;
+use Barama\Repositories\NotificationRepository;
 use Barama\Services\CustomerEngagementService;
+use Barama\Services\NotificationService;
 use DomainException;
 use InvalidArgumentException;
 
@@ -113,6 +115,37 @@ final class AccountManagementController
 
             return ['viewing_id' => $viewingId, 'message' => 'Viewing request cancelled.'];
         }, '/account/viewings');
+    }
+
+    public function markNotificationRead(Request $request, string $id): Response
+    {
+        return $this->execute($request, function () use ($id): array {
+            $notificationId = $this->id($id);
+            (new NotificationRepository())->markRead($this->userId(), $notificationId);
+
+            return ['notification_id' => $notificationId, 'message' => 'Notification marked read.'];
+        }, '/account/notifications');
+    }
+
+    public function markAllNotificationsRead(Request $request): Response
+    {
+        return $this->execute($request, function (): array {
+            (new NotificationRepository())->markAllRead($this->userId());
+
+            return ['message' => 'All notifications marked read.'];
+        }, '/account/notifications');
+    }
+
+    public function updateNotificationPreferences(Request $request): Response
+    {
+        return $this->execute($request, function () use ($request): array {
+            (new NotificationService())->updatePreferences(
+                $this->userId(),
+                $request->all()
+            );
+
+            return ['message' => 'Notification preferences updated.'];
+        }, '/account/notifications');
     }
 
     /**

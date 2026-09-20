@@ -78,6 +78,37 @@ final class ViewingManagementService
                 $note
             );
 
+            $statusLabel = ucwords(str_replace('_', ' ', $targetStatus));
+            $scheduleText = $scheduledFor !== null
+                ? ' Scheduled for ' . date('M j, Y H:i', strtotime($scheduledFor)) . '.'
+                : '';
+            $message = match ($targetStatus) {
+                'confirmed' => 'Your viewing request for ' . (string) $viewing['property_title']
+                    . ' has been confirmed.' . $scheduleText,
+                'rescheduled' => 'Your viewing request for ' . (string) $viewing['property_title']
+                    . ' has been rescheduled.' . $scheduleText,
+                'completed' => 'Your viewing for ' . (string) $viewing['property_title']
+                    . ' has been marked completed.',
+                'declined' => 'Your viewing request for ' . (string) $viewing['property_title']
+                    . ' was declined by the company.',
+                default => 'Your viewing request status changed to ' . $statusLabel . '.',
+            };
+
+            (new NotificationService())->notifyUser(
+                (int) $viewing['user_id'],
+                'viewing_updates',
+                [
+                    'type' => 'viewing_' . $targetStatus,
+                    'title' => 'Viewing request ' . strtolower($statusLabel),
+                    'message' => $message,
+                    'action_url' => '/account/viewings',
+                    'entity_type' => 'viewing',
+                    'entity_id' => $viewingId,
+                    'dedupe_key' => 'viewing:' . $viewingId . ':' . $targetStatus . ':'
+                        . hash('sha256', (string) $scheduledFor),
+                ]
+            );
+
             $pdo->commit();
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {

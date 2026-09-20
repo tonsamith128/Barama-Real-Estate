@@ -120,6 +120,7 @@ final class MarketplaceController
             'bedrooms' => trim((string) $request->input('bedrooms', '')),
             'min_price' => trim((string) $request->input('min_price', '')),
             'max_price' => trim((string) $request->input('max_price', '')),
+            'currency' => strtoupper(mb_substr(trim((string) $request->input('currency', '')), 0, 3)),
             'sort' => trim((string) $request->input('sort', 'newest')),
         ];
     }

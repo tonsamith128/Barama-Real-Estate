@@ -10,6 +10,7 @@ use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\CustomerEngagementRepository;
 use Barama\Repositories\MarketplaceRepository;
+use Barama\Repositories\NotificationRepository;
 
 final class AccountController
 {
@@ -20,6 +21,7 @@ final class AccountController
         'inquiries' => ['title' => 'Inquiry History', 'description' => 'Review inquiries submitted from your signed-in Barama account.'],
         'viewings' => ['title' => 'Viewing Requests', 'description' => 'Track property viewing requests and their scheduling status.'],
         'alerts' => ['title' => 'Saved Searches & Alerts', 'description' => 'Save property criteria and control alert preferences for matching inventory.'],
+        'notifications' => ['title' => 'Notifications', 'description' => 'Review marketplace updates and control in-app and email notification preferences.'],
         'recent' => ['title' => 'Recently Viewed', 'description' => 'Return to published properties you recently opened while signed in.'],
     ];
 
@@ -51,6 +53,9 @@ final class AccountController
         $userId = (int) $user['id'];
         $engagement = new CustomerEngagementRepository();
         $marketplace = new MarketplaceRepository();
+        $notifications = new NotificationRepository();
+        $summary = $engagement->summary($userId);
+        $summary['notifications'] = $notifications->unreadCount($userId);
 
         return Response::html(View::render('account/index', [
             'pageTitle' => self::SECTIONS[$section]['title'] . ' · Account',
@@ -61,7 +66,7 @@ final class AccountController
             'sectionTitle' => self::SECTIONS[$section]['title'],
             'sectionDescription' => self::SECTIONS[$section]['description'],
             'accountUser' => $user,
-            'summary' => $engagement->summary($userId),
+            'summary' => $summary,
             'savedListings' => in_array($section, ['overview', 'saved'], true)
                 ? $engagement->savedListings($userId, $section === 'overview' ? 3 : 50)
                 : [],
@@ -80,6 +85,12 @@ final class AccountController
             'recentViews' => in_array($section, ['overview', 'recent'], true)
                 ? $engagement->recentViews($userId, $section === 'overview' ? 3 : 24)
                 : [],
+            'notifications' => $section === 'notifications'
+                ? $notifications->notifications($userId)
+                : [],
+            'notificationPreferences' => $section === 'notifications'
+                ? $notifications->preferences($userId)
+                : [],
             'locations' => $section === 'alerts' ? $marketplace->activeLocations() : [],
             'propertyTypes' => DomainRules::PROPERTY_TYPES,
         ]));
@@ -95,6 +106,7 @@ final class AccountController
             ['label' => 'Inquiries', 'path' => '/account/inquiries', 'icon' => 'message'],
             ['label' => 'Viewings', 'path' => '/account/viewings', 'icon' => 'calendar'],
             ['label' => 'Alerts', 'path' => '/account/alerts', 'icon' => 'bell'],
+            ['label' => 'Notifications', 'path' => '/account/notifications', 'icon' => 'bell'],
             ['label' => 'Recent', 'path' => '/account/recent', 'icon' => 'clock'],
         ];
     }

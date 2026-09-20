@@ -79,6 +79,10 @@ $total = (int) ($inventory['total'] ?? 0);
                 <input class="form-control" type="number" min="0" step="100" name="max_price" value="<?= e((string) ($filters['max_price'] ?? '')) ?>" placeholder="Any">
             </label>
             <label>
+                <span>Currency</span>
+                <input class="form-control" name="currency" maxlength="3" value="<?= e((string) ($filters['currency'] ?? '')) ?>" placeholder="Any">
+            </label>
+            <label>
                 <span>Sort</span>
                 <select class="form-select" name="sort">
                     <option value="newest" <?= ($filters['sort'] ?? '') === 'newest' ? 'selected' : '' ?>>Newest</option>
