@@ -21,6 +21,8 @@ GitHub Actions currently runs the following against MySQL 8 and the exact genera
 13. installer lock and migration replay verification
 14. exact customer ZIP upgrade-from-previous-release smoke test
 15. validated artifact upload
+16. exact-package Apache root/subdirectory HTTP routing QA
+17. exact-package Nginx root/subdirectory HTTP routing QA
 
 The automated gates also enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
@@ -36,7 +38,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.6 development line has automated coverage for:
+The current 0.9.7 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -63,14 +65,19 @@ The current 0.9.6 development line has automated coverage for:
 - canonical license deactivation support
 - exact-package presence of the hardened License Manager client
 - customer-package exclusion of internal live-license QA scripts
+- canonical root and subdirectory request-path normalization
+- exact-package Apache 2.4 + mod_rewrite routing preflight
+- exact-package Apache subdirectory routing preflight
+- exact-package Nginx + PHP-FPM front-controller routing preflight
+- protected-path denial and static-asset delivery under both tested web-server contracts
 
 ## Open gates before CodeCanyon v1.0.0
 
 These remain intentionally open:
 
 - live Ton Samith License Manager success using Barama-specific Direct and Envato test credentials through the manual `Live License Manager QA` workflow
-- supported Apache shared-hosting installation validation
-- supported Nginx installation validation
+- final live-server Apache/shared-hosting installer acceptance test
+- final live-server Nginx installer acceptance test
 - browser/device QA on desktop, tablet, and mobile
 - Light/Dark Mode visual QA
 - keyboard/focus accessibility QA

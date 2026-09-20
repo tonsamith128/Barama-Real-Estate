@@ -86,6 +86,9 @@ jobs:
       - name: Run License Manager contract smoke test
         run: php tools/license-contract-smoke.php
 
+      - name: Run HTTP routing normalization smoke test
+        run: php tools/http-routing-smoke.php
+
       - name: Run source upgrade compatibility smoke test
         run: php tools/upgrade-smoke.php
 
@@ -107,3 +110,32 @@ jobs:
             build/*.sha256
           if-no-files-found: error
           retention-days: 7
+
+
+  webserver-compat:
+    name: Exact Package Web Server QA
+    needs: foundation-qa
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download validated customer package
+        uses: actions/download-artifact@v4
+        with:
+          name: Barama-Real-Estate-${{ github.sha }}
+          path: validated-package
+
+      - name: Verify package checksum
+        run: |
+          cd validated-package
+          sha256sum -c Barama-Real-Estate-$(cat ../VERSION).zip.sha256
+
+      - name: Validate web-server QA script syntax
+        run: bash -n tools/webserver-package-smoke.sh
+
+      - name: Run Apache and Nginx exact-package routing QA
+        run: |
+          ZIP="validated-package/Barama-Real-Estate-$(cat VERSION).zip"
+          bash tools/webserver-package-smoke.sh "$ZIP"

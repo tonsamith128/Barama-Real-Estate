@@ -147,3 +147,14 @@ The one-click installer is only for fresh installations. After installation is l
 When an installed package version differs from the uploaded `VERSION`, the main front controller redirects to `/updater/` before normal application boot. The updater reuses protected runtime/license state, requires administrator re-authentication and backup confirmation, validates the installed activation state, applies only pending ordered migrations, advances protected version metadata, and then returns the customer to the website.
 
 See `docs/UPGRADE.md` for the upgrade contract.
+
+
+## Hosting compatibility preflight
+
+Release QA runs the exact generated customer ZIP behind Apache and Nginx before artifact delivery.
+
+Apache validation uses the packaged `.htaccess`, `mod_rewrite`, protected-path denial, canonical installer redirects, static assets, and both domain-root and subdirectory URLs.
+
+Nginx validation uses PHP-FPM and the standard front-controller contract required by supported Nginx hosting. Nginx does not process `.htaccess`, so the hosting platform or control panel must provide this vhost capability; the application does not attempt to mutate arbitrary Nginx configuration from PHP.
+
+These automated checks do not replace the final live-server five-step installer test.

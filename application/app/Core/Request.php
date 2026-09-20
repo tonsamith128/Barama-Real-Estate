@@ -33,6 +33,26 @@ final class Request
             $path = '/';
         }
 
+        $scriptName = str_replace(
+            '\\',
+            '/',
+            (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php')
+        );
+        $basePath = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+
+        if ($basePath === '.' || $basePath === '/') {
+            $basePath = '';
+        }
+
+        if ($basePath !== '') {
+            if ($path === $basePath) {
+                $path = '/';
+            } elseif (str_starts_with($path, $basePath . '/')) {
+                $path = substr($path, strlen($basePath));
+                $path = $path !== '' ? $path : '/';
+            }
+        }
+
         $body = $_POST;
 
         $contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));

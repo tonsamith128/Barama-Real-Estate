@@ -47,6 +47,8 @@ foreach ([
     'tools/package-upgrade-smoke.php',
     'tools/license-contract-smoke.php',
     'tools/license-live-smoke.php',
+    'tools/http-routing-smoke.php',
+    'tools/webserver-package-smoke.sh',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -57,9 +59,11 @@ foreach ([
 
 foreach ([
     'index.php',
+    '.htaccess',
     'installer/index.php',
     'updater/index.php',
     'application/bootstrap/runtime.php',
+    'application/app/Core/Request.php',
     'application/app/Http/Controllers/UpgradeController.php',
     'application/app/Services/UpgradeService.php',
     'application/resources/views/updater/index.php',
@@ -308,6 +312,10 @@ if (
     throw new RuntimeException('Account settings or company onboarding package contract is incomplete.');
 }
 
+$htaccessSource = (string) file_get_contents($temporaryRoot . '/.htaccess');
+$requestSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Core/Request.php'
+);
 $rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
 $controllerSource = (string) file_get_contents(
     $temporaryRoot . '/application/app/Http/Controllers/InstallerController.php'
@@ -323,7 +331,12 @@ $updaterViewSource = (string) file_get_contents(
 );
 
 if (
-    !str_contains($rootIndex, '/installer/')
+    !str_contains($htaccessSource, 'RewriteEngine On')
+    || !str_contains($htaccessSource, 'RewriteRule ^ index.php [QSA,L]')
+    || !str_contains($htaccessSource, 'application|tools|docs|\\.github')
+    || !str_contains($requestSource, "SCRIPT_NAME")
+    || !str_contains($requestSource, "str_starts_with(\$path, \$basePath . '/')")
+    || !str_contains($rootIndex, '/installer/')
     || !str_contains($rootIndex, '/updater/')
     || !str_contains($rootIndex, 'APP_VERSION')
     || !str_contains($rootIndex, 'Cache-Control: no-store')

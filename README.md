@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.6-dev`
+- Current development line: `0.9.7-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -182,3 +182,18 @@ The 0.9.6 development line hardens the canonical Ton Samith License Manager inte
 - live QA tests Direct and Envato activation, validation, wrong-domain/wrong-installation rejection, deactivation, deactivated-token rejection, and invalid credentials
 
 The live production-service release gate remains open until that manual workflow passes with Barama-specific test credentials. See `docs/LICENSE_MANAGER_QA.md`.
+
+
+## Hosting compatibility preflight
+
+The 0.9.7 development line hardens web-server routing before live-server installer acceptance.
+
+- request paths are normalized against the active application base path, so canonical routes work at the domain root and in supported subdirectories
+- the exact generated customer ZIP is tested behind Apache 2.4 with `mod_rewrite`
+- Apache QA covers both domain-root and subdirectory installation paths
+- the exact generated customer ZIP is also tested behind Nginx + PHP-FPM using the standard front-controller contract
+- protected application paths are denied while public assets remain accessible
+- internal hosting QA scripts remain excluded from the customer package
+- the release still requires final installer acceptance on the intended live hosting environment before v1.0.0
+
+Nginx does not read `.htaccess`; the hosting environment or panel must already provide safe front-controller routing. Barama does not attempt to rewrite an arbitrary Nginx vhost from PHP. See `docs/HOSTING_COMPATIBILITY.md`.
