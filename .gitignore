@@ -1,0 +1,27 @@
+# Runtime configuration
+.env
+.env.*
+
+# Runtime data
+/application/storage/cache/*
+!/application/storage/cache/.gitignore
+/application/storage/logs/*
+!/application/storage/logs/.gitignore
+/application/storage/uploads/*
+!/application/storage/uploads/.gitignore
+
+# Local tooling
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+
+# Dependencies/build artifacts
+/vendor/
+/node_modules/
+/dist/
+/build/
+
+# Test output
+/.phpunit.cache/
+/coverage/

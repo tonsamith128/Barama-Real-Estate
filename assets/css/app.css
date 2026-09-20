@@ -1,0 +1,454 @@
+/*
+ * Barama Real Estate — canonical application stylesheet
+ * Keep all first-party application styling in this file.
+ */
+
+/* 1. Design tokens */
+:root {
+    --barama-bg: #f6f8fb;
+    --barama-surface: #ffffff;
+    --barama-surface-soft: #f0f4f8;
+    --barama-text: #172033;
+    --barama-muted: #657086;
+    --barama-border: #dde3ea;
+    --barama-primary: #165dff;
+    --barama-primary-strong: #0f4bd4;
+    --barama-success: #0c9b72;
+    --barama-shadow: 0 18px 50px rgba(25, 43, 74, 0.08);
+    --barama-radius-sm: 12px;
+    --barama-radius-md: 18px;
+    --barama-radius-lg: 28px;
+    --barama-container: 1220px;
+}
+
+html[data-bs-theme="dark"] {
+    --barama-bg: #0d1420;
+    --barama-surface: #131d2b;
+    --barama-surface-soft: #182537;
+    --barama-text: #edf4ff;
+    --barama-muted: #9eacc0;
+    --barama-border: #26364b;
+    --barama-primary: #6d98ff;
+    --barama-primary-strong: #8aabff;
+    --barama-success: #4ecba4;
+    --barama-shadow: 0 20px 55px rgba(0, 0, 0, 0.24);
+}
+
+/* 2. Base */
+html {
+    min-height: 100%;
+    background: var(--barama-bg);
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--barama-bg);
+    color: var(--barama-text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+}
+
+.app-container {
+    max-width: var(--barama-container);
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--barama-primary);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* 3. Header */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid color-mix(in srgb, var(--barama-border) 86%, transparent);
+    background: color-mix(in srgb, var(--barama-bg) 88%, transparent);
+    backdrop-filter: blur(16px);
+}
+
+.site-header__inner {
+    display: flex;
+    min-height: 76px;
+    align-items: center;
+    gap: 2rem;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-right: auto;
+    color: var(--barama-text);
+    text-decoration: none;
+}
+
+.brand__mark {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--barama-primary);
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 900;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--barama-primary) 24%, transparent);
+}
+
+.brand strong,
+.brand small {
+    display: block;
+    line-height: 1.05;
+}
+
+.brand strong {
+    font-size: 1rem;
+}
+
+.brand small {
+    margin-top: 0.2rem;
+    color: var(--barama-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.main-nav a {
+    border-radius: 10px;
+    color: var(--barama-muted);
+    padding: 0.65rem 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 160ms ease, color 160ms ease;
+}
+
+.main-nav a:hover,
+.main-nav a.is-active {
+    background: var(--barama-surface-soft);
+    color: var(--barama-text);
+}
+
+.theme-toggle {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid var(--barama-border);
+    border-radius: 12px;
+    background: var(--barama-surface);
+    color: var(--barama-text);
+}
+
+.theme-toggle svg {
+    width: 19px;
+    height: 19px;
+    fill: currentColor;
+}
+
+/* 4. Buttons */
+.btn-primary {
+    --bs-btn-bg: var(--barama-primary);
+    --bs-btn-border-color: var(--barama-primary);
+    --bs-btn-hover-bg: var(--barama-primary-strong);
+    --bs-btn-hover-border-color: var(--barama-primary-strong);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--barama-text);
+    --bs-btn-border-color: var(--barama-border);
+    --bs-btn-hover-bg: var(--barama-surface-soft);
+    --bs-btn-hover-border-color: var(--barama-border);
+    --bs-btn-hover-color: var(--barama-text);
+}
+
+/* 5. Public foundation */
+.hero-section {
+    padding: clamp(4rem, 9vw, 8rem) 0;
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+    align-items: center;
+    gap: clamp(2.5rem, 6vw, 6rem);
+}
+
+.hero-section h1,
+.workspace-hero h1 {
+    max-width: 850px;
+    margin: 0;
+    color: var(--barama-text);
+    font-size: clamp(2.4rem, 5.8vw, 5.4rem);
+    font-weight: 850;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+}
+
+.hero-copy,
+.workspace-hero > .container > p,
+.section-heading p {
+    max-width: 760px;
+    margin: 1.5rem 0 0;
+    color: var(--barama-muted);
+    font-size: clamp(1rem, 1.5vw, 1.18rem);
+    line-height: 1.75;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 2rem;
+}
+
+.foundation-panel {
+    border: 1px solid var(--barama-border);
+    border-radius: var(--barama-radius-lg);
+    background: var(--barama-surface);
+    padding: 1.35rem;
+    box-shadow: var(--barama-shadow);
+}
+
+.foundation-panel__top {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    border-bottom: 1px solid var(--barama-border);
+    padding: 0.2rem 0.15rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+.status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--barama-success);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--barama-success) 12%, transparent);
+}
+
+.foundation-list {
+    margin: 0;
+}
+
+.foundation-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--barama-border);
+    padding: 1rem 0.15rem;
+}
+
+.foundation-list > div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0.15rem;
+}
+
+.foundation-list dt {
+    color: var(--barama-text);
+    font-size: 0.88rem;
+}
+
+.foundation-list dd {
+    margin: 0;
+    color: var(--barama-muted);
+    font-size: 0.82rem;
+    text-align: right;
+}
+
+.section-space {
+    padding: 1rem 0 clamp(4rem, 8vw, 7rem);
+}
+
+.section-heading {
+    max-width: 780px;
+    margin-bottom: 2rem;
+}
+
+.section-heading h2 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 820;
+    letter-spacing: -0.045em;
+}
+
+.feature-grid,
+.workspace-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.feature-card,
+.workspace-card,
+.empty-surface {
+    border: 1px solid var(--barama-border);
+    border-radius: var(--barama-radius-md);
+    background: var(--barama-surface);
+}
+
+.feature-card {
+    min-height: 210px;
+    padding: 1.35rem;
+}
+
+.feature-card__number {
+    color: var(--barama-primary);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.feature-card h3 {
+    margin: 2.8rem 0 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.feature-card p {
+    margin: 0;
+    color: var(--barama-muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+/* 6. Account/admin route foundations */
+.workspace-hero {
+    min-height: calc(100vh - 150px);
+    padding: clamp(3.5rem, 7vw, 6.5rem) 0;
+}
+
+.workspace-hero h1 {
+    max-width: 920px;
+    font-size: clamp(2.35rem, 5vw, 4.7rem);
+}
+
+.workspace-grid {
+    margin-top: 2.5rem;
+}
+
+.workspace-card {
+    display: flex;
+    min-height: 150px;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem;
+}
+
+.workspace-card strong,
+.empty-surface strong {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.workspace-card span,
+.empty-surface span {
+    margin-top: 0.55rem;
+    color: var(--barama-muted);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.empty-surface {
+    display: flex;
+    max-width: 780px;
+    flex-direction: column;
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+}
+
+/* 7. Footer */
+.site-footer {
+    border-top: 1px solid var(--barama-border);
+    color: var(--barama-muted);
+}
+
+.site-footer__inner {
+    display: flex;
+    min-height: 74px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.8rem;
+}
+
+/* 8. Responsive */
+@media (max-width: 991.98px) {
+    .site-header__inner {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.8rem 0;
+    }
+
+    .main-nav {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 0.15rem;
+        scrollbar-width: none;
+    }
+
+    .main-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hero-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-grid,
+    .workspace-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .hero-section,
+    .workspace-hero {
+        padding-top: 3rem;
+    }
+
+    .feature-grid,
+    .workspace-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .site-footer__inner {
+        min-height: 90px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
