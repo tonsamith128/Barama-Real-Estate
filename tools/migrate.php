@@ -63,7 +63,11 @@ foreach ($migrations as $file) {
     }
 
     try {
-        $pdo->beginTransaction();
+        /*
+         * MySQL/MariaDB DDL may implicitly commit transactions.
+         * Barama migrations are therefore required to be idempotent instead
+         * of relying on a transaction that cannot safely cover CREATE/ALTER.
+         */
         $migration($pdo);
 
         $statement = $pdo->prepare(
@@ -74,16 +78,14 @@ foreach ($migrations as $file) {
             'batch' => $batch,
         ]);
 
-        $pdo->commit();
         $ran++;
-
         fwrite(STDOUT, "[MIGRATED] {$name}\n");
     } catch (Throwable $exception) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-
         fwrite(STDERR, "[FAILED] {$name}: {$exception->getMessage()}\n");
+        fwrite(
+            STDERR,
+            "Migration was not recorded. Fix the error and rerun; migrations must be idempotent.\n"
+        );
         exit(1);
     }
 }

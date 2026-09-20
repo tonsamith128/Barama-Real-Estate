@@ -38,6 +38,10 @@ $required = [
     'application/app/Http/Middleware/PermissionMiddleware.php',
     'application/database/migrations/0001_create_auth_core.php',
     'application/database/migrations/0002_seed_auth_roles_permissions.php',
+    'application/database/migrations/0003_create_real_estate_domain.php',
+    'application/database/migrations/0004_seed_real_estate_permissions.php',
+    'application/app/Domain/RealEstate/DomainRules.php',
+    'docs/DOMAIN_MODEL.md',
     'tools/migrate.php',
 ];
 

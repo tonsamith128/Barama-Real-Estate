@@ -10,6 +10,9 @@ Keep the product understandable to a buyer, maintainable by the author, and revi
 - application/bootstrap/app.php: boot sequence, autoloading, configuration, sessions, and exception handling.
 - application/app/Core: framework primitives only.
 - application/app/Http/Controllers: request orchestration by product area.
+- application/app/Domain: canonical business rules, status catalogs, and lifecycle rules.
+- application/app/Repositories: persistence boundaries; controllers must not query directly.
+- application/app/Services: application workflows that coordinate repositories and domain rules.
 - application/config: runtime configuration definitions.
 - application/routes: route declarations.
 - application/resources/views: server-rendered views.
@@ -58,4 +61,4 @@ Git history is the source-history mechanism. The repository tree should contain 
 - production-safe exception output
 - no credentials committed to source
 
-Authentication, authorization, validation, upload security, installer hardening, rate limiting, and audit logging will be implemented as their respective modules are added.
+Authentication, authorization, login throttling, and CSRF enforcement are implemented in the current foundation. Domain validation is centralized as modules are added. Upload security, installer hardening, broader rate limiting, and audit logging remain required before the final v1.0.0 release.

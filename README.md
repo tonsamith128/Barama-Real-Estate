@@ -44,6 +44,14 @@ This repository intentionally starts with a small canonical foundation.
 - Apache or Nginx
 - Bootstrap 5 is currently loaded from the official CDN during the foundation phase
 
+## Real estate domain foundation
+
+The current development line defines the canonical Location, Amenity, Company/Developer, Project, Property, Listing, Media, Inquiry, and Lead database model.
+
+A Property is the physical asset. A Listing is a sale/rent market offer for that property, so pricing and publication history do not overwrite the underlying asset.
+
+Lifecycle rules and allowed status transitions are centralized in `application/app/Domain/RealEstate/DomainRules.php`. See `docs/DOMAIN_MODEL.md` for the relationship and delete policies.
+
 ## Authentication foundation
 
 The current development line includes ordered database migrations, customer registration, secure login/logout, password reset links, login throttling, role/permission records, CSRF protection, and middleware-enforced access boundaries for \`/account\`, \`/developer\`, and \`/dashboard\`.
