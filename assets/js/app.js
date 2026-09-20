@@ -839,3 +839,91 @@
         });
     });
 })();
+
+
+/* Public marketplace discovery interactions */
+(() => {
+    'use strict';
+
+    document.querySelectorAll('[data-marketplace-filter]').forEach((form) => {
+        form.addEventListener('submit', () => {
+            if (!form.checkValidity()) {
+                return;
+            }
+
+            form.classList.add('marketplace-is-loading');
+            form.querySelectorAll('button[type="submit"]').forEach((button) => {
+                button.disabled = true;
+                const label = button.querySelector('span');
+
+                if (label) {
+                    label.textContent = 'Searching…';
+                }
+            });
+        });
+    });
+
+    const galleryButtons = document.querySelectorAll('[data-gallery-image]');
+
+    if (galleryButtons.length < 1) {
+        return;
+    }
+
+    const lightbox = document.createElement('div');
+    lightbox.className = 'marketplace-lightbox';
+    lightbox.hidden = true;
+    lightbox.setAttribute('role', 'dialog');
+    lightbox.setAttribute('aria-modal', 'true');
+    lightbox.setAttribute('aria-label', 'Image preview');
+    lightbox.innerHTML = [
+        '<div class="marketplace-lightbox__frame">',
+        '<img alt="">',
+        '<button class="marketplace-lightbox__close" type="button" aria-label="Close image preview">×</button>',
+        '</div>'
+    ].join('');
+
+    document.body.appendChild(lightbox);
+
+    const image = lightbox.querySelector('img');
+    const closeButton = lightbox.querySelector('.marketplace-lightbox__close');
+    let previousFocus = null;
+
+    const close = () => {
+        lightbox.hidden = true;
+        document.body.style.overflow = '';
+
+        if (previousFocus instanceof HTMLElement) {
+            previousFocus.focus();
+        }
+    };
+
+    galleryButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const source = button.getAttribute('data-gallery-src');
+
+            if (!source || !image) {
+                return;
+            }
+
+            previousFocus = button;
+            image.src = source;
+            image.alt = button.getAttribute('data-gallery-alt') || 'Marketplace image';
+            lightbox.hidden = false;
+            document.body.style.overflow = 'hidden';
+            closeButton?.focus();
+        });
+    });
+
+    closeButton?.addEventListener('click', close);
+    lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+            close();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !lightbox.hidden) {
+            close();
+        }
+    });
+})();

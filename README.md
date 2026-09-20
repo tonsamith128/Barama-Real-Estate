@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.1-dev`
+- Current development line: `0.9.2-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -92,3 +92,19 @@ The 0.9.1 development line consolidates the public marketplace, customer account
 - premium authentication with SVG field icons, password visibility controls, secure password generation for registration/reset, and existing CSRF/login-throttle/reset protections
 - modern translucent featured cards using the existing property/project/company data
 - one first-party stylesheet and one first-party JavaScript file remain canonical
+
+
+## Public marketplace experience
+
+The 0.9.2 development line upgrades the public discovery experience while preserving the existing marketplace and account service layer.
+
+- search-first homepage with live sale, rent, project, and company counts
+- concise buy, rent, development, and company discovery cards
+- advanced property filters with active filter context and cleaner empty states
+- focused project and company directory search
+- property details retain functional save, compare, viewing request, and inquiry actions
+- related approved properties are suggested without exposing unpublished inventory
+- project and company inquiry forms prefill signed-in customer identity
+- shared interactive image preview for property, project, and company media
+- search submission/loading behavior remains inside the canonical JavaScript entry point
+- all marketplace styling remains inside the canonical stylesheet

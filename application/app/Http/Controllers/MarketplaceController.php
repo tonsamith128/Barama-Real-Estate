@@ -57,6 +57,17 @@ final class MarketplaceController
             $engagementState['compared'] = $engagement->isCompared($userId, $listingId);
         }
 
+        $related = $repository->listings(array_filter([
+            'type' => (string) ($listing['property_type'] ?? ''),
+            'location' => (string) ($listing['location_id'] ?? ''),
+        ], static fn (string $value): bool => $value !== ''), 1, 6)['rows'];
+
+        $related = array_values(array_filter(
+            $related,
+            static fn (array $item): bool => (int) ($item['id'] ?? 0) !== (int) $listing['id']
+        ));
+        $related = array_slice($related, 0, 3);
+
         return Response::html(View::render('marketplace/property', [
             'pageTitle' => (string) $listing['title'],
             'activeArea' => 'properties',
@@ -64,6 +75,7 @@ final class MarketplaceController
             'gallery' => $repository->gallery('listing', (int) $listing['id']),
             'viewer' => $user,
             'engagementState' => $engagementState,
+            'relatedListings' => $related,
         ]));
     }
 
@@ -106,6 +118,7 @@ final class MarketplaceController
             'project' => $project,
             'gallery' => $repository->gallery('project', (int) $project['id']),
             'listings' => $repository->projectListings((int) $project['id'], 6),
+            'viewer' => auth_user(),
         ]));
     }
 

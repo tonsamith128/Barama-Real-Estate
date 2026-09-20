@@ -59,6 +59,7 @@ final class CompanyController
             'gallery' => $repository->gallery('company', (int) $company['id']),
             'projects' => $repository->companyProjects((int) $company['id'], 6),
             'listings' => $repository->companyListings((int) $company['id'], 6),
+            'viewer' => auth_user(),
         ]));
     }
 }

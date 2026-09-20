@@ -61,6 +61,13 @@ foreach ([
     'application/resources/views/auth/forgot-password.php',
     'application/resources/views/auth/reset-password.php',
     'application/resources/views/components/inventory-card.php',
+    'application/resources/views/home.php',
+    'application/resources/views/marketplace/properties.php',
+    'application/resources/views/marketplace/property.php',
+    'application/resources/views/marketplace/projects.php',
+    'application/resources/views/marketplace/project.php',
+    'application/resources/views/company/index.php',
+    'application/resources/views/company/show.php',
     'assets/css/app.css',
     'assets/js/app.js',
     'tools/notifications.php',
@@ -175,6 +182,50 @@ if (
     || !str_contains($javascriptSource, '[data-auth-generate-password]')
 ) {
     throw new RuntimeException('Global shell, account, auth, or featured-card interface contract is incomplete.');
+}
+
+$homeSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/home.php'
+);
+$propertiesSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/marketplace/properties.php'
+);
+$propertySource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/marketplace/property.php'
+);
+$projectsSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/marketplace/projects.php'
+);
+$projectSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/marketplace/project.php'
+);
+$companyIndexSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/company/index.php'
+);
+$companyShowSource = (string) file_get_contents(
+    $temporaryRoot . '/application/resources/views/company/show.php'
+);
+
+if (
+    !str_contains($homeSource, 'market-searchbar')
+    || !str_contains($homeSource, 'market-intent-grid')
+    || !str_contains($propertiesSource, 'discovery-filter__more')
+    || !str_contains($propertiesSource, 'filter-chips')
+    || !str_contains($propertySource, 'relatedListings')
+    || !str_contains($propertySource, 'data-gallery-image')
+    || !str_contains($propertySource, '/account/viewings/')
+    || !str_contains($projectsSource, 'data-marketplace-filter')
+    || !str_contains($projectSource, 'data-gallery-image')
+    || !str_contains($projectSource, "viewer['name']")
+    || !str_contains($companyIndexSource, 'Company Directory')
+    || !str_contains($companyShowSource, "viewer['email']")
+    || !str_contains($stylesheetSource, '.market-intent-grid')
+    || !str_contains($stylesheetSource, '.discovery-filter')
+    || !str_contains($stylesheetSource, '.marketplace-lightbox')
+    || !str_contains($javascriptSource, '[data-marketplace-filter]')
+    || !str_contains($javascriptSource, '[data-gallery-image]')
+) {
+    throw new RuntimeException('Public marketplace discovery interface contract is incomplete.');
 }
 
 $rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
