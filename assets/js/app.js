@@ -373,6 +373,7 @@
     const licenseStatus = document.querySelector('[data-license-status]');
     const termsModal = document.querySelector('[data-installer-terms-modal]');
     let licenseValidated = installer.getAttribute('data-license-validated') === '1';
+    let termsReviewed = installer.getAttribute('data-terms-reviewed') === '1';
 
     const showNotice = (message, type = 'error') => {
         if (!notice) {
@@ -405,11 +406,15 @@
         const accepted = agreement?.checked === true;
 
         if (validateButton) {
-            validateButton.disabled = !(hasCode && accepted);
+            validateButton.disabled = !hasCode;
         }
 
         if (continueButton) {
-            continueButton.disabled = !(licenseValidated && accepted);
+            continueButton.disabled = !(
+                licenseValidated
+                && termsReviewed
+                && accepted
+            );
         }
     };
 
@@ -450,10 +455,17 @@
         termsModal.hidden = true;
         termsModal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('installer-modal-open');
-        document.querySelector('[data-open-terms]')?.focus();
+        agreement?.focus();
     };
 
-    document.querySelector('[data-open-terms]')?.addEventListener('click', openTerms);
+    agreement?.addEventListener('click', (event) => {
+        if (!termsReviewed && agreement.checked) {
+            event.preventDefault();
+            agreement.checked = false;
+            openTerms();
+            updateLicenseButtons();
+        }
+    });
     document.querySelectorAll('[data-close-terms]').forEach((button) => {
         button.addEventListener('click', closeTerms);
     });
@@ -498,16 +510,17 @@
                 throw new Error(payload?.message || 'Terms could not be accepted.');
             }
 
+            termsReviewed = true;
             installer.setAttribute('data-terms-reviewed', '1');
 
             if (agreement) {
-                agreement.disabled = false;
-                agreement.focus();
+                agreement.checked = true;
             }
 
             closeTerms();
             showNotice(
-                payload?.data?.message || 'Terms reviewed. You may now accept the agreement.',
+                payload?.data?.message
+                    || 'Terms accepted. You may continue after the license is validated.',
                 'success'
             );
             updateLicenseButtons();
