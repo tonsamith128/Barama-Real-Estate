@@ -35,17 +35,18 @@ Foundation QA must include:
 - MySQL migrations and clean replay
 - domain/account/security/notification smoke tests
 - SMTP contract
-- License Manager deterministic contract
+- License Manager deterministic contract, including temporary-vs-permanent failure classification
 - HTTP root/subdirectory normalization
 - route/controller contract
-- source upgrade compatibility
+- source upgrade compatibility, including revoked-license rejection versus temporary-outage grace
 - exact customer ZIP build
+- exact-package metadata/checksum consistency
 - exact-package compliance
 - CodeCanyon preparation scan
 - exact-package fresh installer
 - exact-package upgrade
 
-The web-server job must validate the exact ZIP behind Apache and Nginx.
+The web-server job must validate the exact ZIP behind Apache and Nginx, including root/subdirectory routing, protected paths, installer no-cache/noindex behavior, security headers, and secure session-cookie attributes.
 
 The browser job must validate the exact ZIP with the configured Chromium/Firefox/WebKit compatibility and accessibility coverage.
 
