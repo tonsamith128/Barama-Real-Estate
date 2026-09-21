@@ -282,32 +282,32 @@ final class LicenseManagerClient
             'barama-real-estate'
         );
         $returnedProduct = trim(
-            (string) ($license['product_slug'] ?? $expectedProduct)
+            (string) ($license['product_slug'] ?? '')
         );
 
-        if ($returnedProduct !== $expectedProduct) {
+        if ($returnedProduct === '' || $returnedProduct !== $expectedProduct) {
             throw new RuntimeException(
                 'This license is not valid for Barama Real Estate.'
             );
         }
 
         $returnedDomain = self::canonicalDomain(
-            (string) ($license['domain'] ?? $domain)
+            (string) ($license['domain'] ?? '')
         );
 
-        if ($returnedDomain !== '' && $returnedDomain !== $domain) {
+        if ($returnedDomain === '' || $returnedDomain !== $domain) {
             throw new RuntimeException(
                 'This license is not valid for the current domain.'
             );
         }
 
         $returnedInstallation = self::normalizeInstallationId(
-            (string) ($license['installation_id'] ?? $installationId)
+            (string) ($license['installation_id'] ?? '')
         );
 
         if (
-            $returnedInstallation !== ''
-            && $returnedInstallation !== $installationId
+            preg_match('/^[a-f0-9]{32}$/', $returnedInstallation) !== 1
+            || $returnedInstallation !== $installationId
         ) {
             throw new RuntimeException(
                 'This license is not valid for this installation.'
@@ -315,7 +315,7 @@ final class LicenseManagerClient
         }
 
         $status = strtolower(trim(
-            (string) ($license['status'] ?? 'active')
+            (string) ($license['status'] ?? '')
         ));
 
         if ($status !== 'active') {
