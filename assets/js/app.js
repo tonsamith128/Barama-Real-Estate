@@ -459,9 +459,11 @@
     };
 
     agreement?.addEventListener('click', (event) => {
-        if (!termsReviewed && agreement.checked) {
+        if (agreement.checked) {
             event.preventDefault();
             agreement.checked = false;
+            termsReviewed = false;
+            installer.setAttribute('data-terms-reviewed', '0');
             openTerms();
             updateLicenseButtons();
         }
