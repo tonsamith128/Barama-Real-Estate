@@ -189,31 +189,28 @@ See `docs/UPGRADE.md` for the upgrade contract.
 
 Release QA runs the exact generated customer ZIP behind Apache and Nginx before artifact delivery.
 
-Apache validation uses the packaged `.htaccess`, `mod_rewrite`, protected-path denial, canonical installer redirects, static assets, and both domain-root and subdirectory URLs.
+Apache uses the packaged `.htaccess` front-controller rules.
 
-Nginx validation uses PHP-FPM and the standard front-controller contract required by supported Nginx hosting. Nginx does not process `.htaccess`, so the hosting platform or control panel must provide this vhost capability; the application does not attempt to mutate arbitrary Nginx configuration from PHP.
+For Nginx, Step 2 performs a clean-route probe. When the host already provides front-controller routing, Barama stores `APP_ROUTING_MODE=clean`. When clean rewrites are unavailable, Barama stores `APP_ROUTING_MODE=query` and automatically generates functional `index.php?_route=...` application URLs. Customers are not required to edit Nginx configuration or create rewrite rules manually.
+
+Control-panel or server owners may still add a normal Nginx front-controller rewrite later to obtain clean URLs; the application remains functional without that server change.
 
 These automated checks do not replace the final live-server five-step installer test.
 
 
-## Step 4 email delivery
+## Step 4 website and administrator
 
-Step 4 remains the single Website step and now includes email delivery configuration. No additional installer stage is introduced.
+Step 4 contains only website configuration and the first administrator account.
 
 The buyer configures:
 
-- SMTP (recommended) or PHP mail
-- From name and From email
-- SMTP host and port
-- TLS/SSL/none encryption
-- SMTP username and password when required
+- website name and URL
+- timezone and default language
+- administrator name and email
+- administrator password and confirmation
 
-Before installation can finish, the buyer must send a successful test email to the administrator address.
+Email delivery is not exposed in the installer. Barama initializes email delivery with PHP mail using the administrator email as the From address and website name as the From name. SMTP can be configured later from the application settings by users who need it.
 
-The server validates the exact mail configuration and stores only a SHA-256 fingerprint of the successfully tested values in the installer session. The SMTP password is not stored in the installer session and is never repopulated after a validation error.
+There is no test-email gate before installation.
 
-If the mail configuration or administrator recipient changes after testing, the installer requires another successful test.
-
-After installation, the validated mail settings are written to protected runtime configuration under application storage. Step 5 reports an Email delivery configuration health check.
-
-Real external-provider delivery remains part of final live-server acceptance.
+Step 5 continues to report the stored email-delivery configuration as part of system health.
