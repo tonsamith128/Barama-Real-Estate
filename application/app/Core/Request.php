@@ -27,7 +27,20 @@ final class Request
         $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-        $path = '/' . trim(rawurldecode($path), '/');
+
+        $queryRoute = $_GET['_route'] ?? null;
+
+        if (
+            is_string($queryRoute)
+            && $queryRoute !== ''
+            && str_starts_with($queryRoute, '/')
+            && !str_starts_with($queryRoute, '//')
+        ) {
+            $path = $queryRoute;
+            unset($_GET['_route']);
+        }
+
+        $path = '/' . trim(rawurldecode((string) $path), '/');
 
         if ($path === '//') {
             $path = '/';
