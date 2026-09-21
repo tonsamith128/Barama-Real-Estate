@@ -8,4 +8,4 @@ Customer usage of the marketplace release is governed by the applicable Envato M
 
 This repository is not released under an open-source license. No permission is granted to redistribute, resell, publish, sublicense, or create competing distributed copies outside the rights granted by the applicable marketplace license.
 
-Third-party notices will be maintained separately for the final v1.0.0 package.
+Third-party software and external runtime dependencies used by the customer-facing product are disclosed in `THIRD_PARTY_NOTICES.md`.

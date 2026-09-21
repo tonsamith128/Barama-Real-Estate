@@ -101,6 +101,9 @@ jobs:
       - name: Build exact customer package
         run: php tools/build-package.php
 
+      - name: Validate exact customer package compliance
+        run: php tools/package-compliance-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
+
       - name: Validate exact customer package installer
         run: php tools/package-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
 

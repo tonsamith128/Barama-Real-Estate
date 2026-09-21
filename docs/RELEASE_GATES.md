@@ -42,7 +42,7 @@ The automated gates also enforce one canonical first-party stylesheet and one ca
 
 ## Closed hardening gates
 
-The current 0.9.11 development line has automated coverage for:
+The current 0.9.12 development line has automated coverage for:
 
 - strong shared password policy
 - email verification
@@ -94,6 +94,11 @@ The current 0.9.11 development line has automated coverage for:
 - guest-session and authenticated preferred-language persistence
 - exact-package document-language and rendered Khmer/Chinese navigation switching
 - unsupported-locale rejection and locale catalog key-parity checks
+- customer-package third-party notices for Bootstrap 5.3.3 / MIT
+- exact-package dependency and external-host allowlist inspection
+- clean production default with no demo companies, projects, properties, listings, inquiries, leads, or customer accounts
+- exact-package rejection of development manifests, dependency directories, internal QA fixtures, logs, dumps, backups, and test credentials
+- customer package manifest documenting installation, runtime contents, external services, and upgrade behavior
 
 ## Open gates before CodeCanyon v1.0.0
 
@@ -107,8 +112,7 @@ These remain intentionally open:
 - final live-server production email delivery using a real supported SMTP/PHP-mail provider
 - final human English/Khmer/Chinese translation and page-specific content review
 - final human Safari/iOS and Edge/Chrome compatibility review
-- final third-party notices and CodeCanyon package review
+- final human CodeCanyon package/submission review
 - online documentation review against the exact v1.0.0 package
-- final demo/sample-data decision and clean-production-default verification
 
 No open gate should be represented as complete until it has been exercised on the applicable environment.

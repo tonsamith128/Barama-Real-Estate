@@ -25,7 +25,15 @@ if ($zip->open($output, ZipArchive::CREATE | ZipArchive::EXCL) !== true) {
     throw new RuntimeException('Customer package could not be created.');
 }
 
-foreach (['.htaccess', 'index.php', 'LICENSE.md', 'README.md', 'VERSION'] as $relative) {
+foreach ([
+    '.htaccess',
+    'index.php',
+    'LICENSE.md',
+    'THIRD_PARTY_NOTICES.md',
+    'CUSTOMER_PACKAGE.md',
+    'README.md',
+    'VERSION',
+] as $relative) {
     $path = $root . '/' . $relative;
 
     if (!is_file($path) || !$zip->addFile($path, $relative)) {

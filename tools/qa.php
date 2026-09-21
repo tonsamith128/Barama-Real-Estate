@@ -19,6 +19,9 @@ $fail = static function (string $message) use (&$checks, &$failures): void {
 
 $required = [
     'index.php',
+    'LICENSE.md',
+    'THIRD_PARTY_NOTICES.md',
+    'CUSTOMER_PACKAGE.md',
     'installer/index.php',
     'updater/index.php',
     'VERSION',
@@ -120,6 +123,7 @@ $required = [
     'docs/LICENSE_MANAGER_QA.md',
     'docs/BROWSER_QA.md',
     'docs/HOSTING_COMPATIBILITY.md',
+    'docs/PACKAGE_COMPLIANCE.md',
     '.github/workflows/license-live.yml',
     'tools/migrate.php',
     'tools/schema-smoke.php',
@@ -141,6 +145,7 @@ $required = [
     'tools/smtp-smoke.php',
     'tools/browser-package-prepare.php',
     'tools/browser-package-smoke.sh',
+    'tools/package-compliance-smoke.php',
     'application/app/Services/AccountSettingsService.php',
     'application/app/Services/EmailVerificationService.php',
     'application/app/Services/SecurityAuditService.php',

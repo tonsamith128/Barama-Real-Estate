@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.11-dev`
+- Current development line: `0.9.12-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -42,7 +42,7 @@ This repository intentionally starts with a small canonical foundation.
 - PHP 8.2+
 - PDO with a MySQL/MariaDB driver
 - Apache or Nginx
-- Bootstrap 5 is currently loaded from the official CDN during the foundation phase
+- Bootstrap 5.3.3 is loaded from jsDelivr and disclosed in `THIRD_PARTY_NOTICES.md`
 
 ## Real estate domain foundation
 
@@ -263,3 +263,19 @@ The 0.9.11 development line introduces one canonical localization layer for Engl
 - no locale-specific view copies, extra first-party stylesheets, or extra first-party JavaScript files are introduced
 
 Final human review of page-specific English/Khmer/Chinese copy remains a v1.0.0 release gate. See `docs/LOCALIZATION.md`.
+
+
+## CodeCanyon package compliance
+
+The 0.9.12 development line closes the automated customer-package compliance and clean-production-default gate.
+
+- `THIRD_PARTY_NOTICES.md` discloses Bootstrap 5.3.3 under the MIT License and its jsDelivr runtime delivery
+- `CUSTOMER_PACKAGE.md` documents exactly what customers receive, what is intentionally excluded, external runtime services, and the upgrade path
+- production migrations seed only required system records such as roles, permissions, and settings
+- no demo companies, projects, properties, listings, inquiries, leads, or customer accounts are seeded into buyer databases
+- demo-site marketplace content remains separate from the customer package
+- exact-ZIP compliance QA rejects Node/Composer dependency manifests, vendor/node_modules directories, internal QA files, runtime state, logs, SQL dumps, backups, and known test credentials
+- exact-ZIP compliance QA scans HTTPS hosts and rejects undeclared external service dependencies
+- one first-party stylesheet and one first-party JavaScript file remain canonical
+
+The final human CodeCanyon submission/package review remains a v1.0.0 gate. See `docs/PACKAGE_COMPLIANCE.md`.
