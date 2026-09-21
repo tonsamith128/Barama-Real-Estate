@@ -377,6 +377,9 @@ if (
     || !str_contains($installerServiceSource, 'GRANT ALL PRIVILEGES ON')
     || !str_contains($licenseClientSource, 'function validateActive(')
     || !str_contains($licenseClientSource, 'function deactivate(')
+    || !str_contains($licenseClientSource, 'function credentialFingerprint(')
+    || !str_contains($licenseClientSource, 'function isReusableSameDomainActivation(')
+    || !str_contains($licenseClientSource, 'function activationFailureMessage(')
     || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYPEER')
     || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYHOST')
     || !str_contains($verifyEmailSource, 'Verify email')
@@ -438,6 +441,11 @@ if (
     || !str_contains($controllerSource, 'mailFingerprint')
     || !str_contains($controllerSource, 'revalidateLicenseForInstall')
     || !str_contains($controllerSource, 'validateActive(')
+    || !str_contains($controllerSource, 'credential_fingerprint')
+    || !str_contains(
+        $controllerSource,
+        'License is already active on this domain and was revalidated successfully.'
+    )
     || !str_contains($upgradeControllerSource, 'Csrf::validate')
     || !str_contains($upgradeServiceSource, 'backup_confirmed')
     || !str_contains($upgradeServiceSource, 'authenticateAdministrator')
