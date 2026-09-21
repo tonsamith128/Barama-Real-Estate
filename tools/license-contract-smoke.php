@@ -123,6 +123,145 @@ if (
     );
 }
 
+if (
+    !isset($autoDirect['credential_fingerprint'])
+    || !hash_equals(
+        LicenseManagerClient::credentialFingerprint(
+            'BARAMA-AUTHOR-KEY-123456',
+            $installationId
+        ),
+        (string) $autoDirect['credential_fingerprint']
+    )
+) {
+    throw new RuntimeException(
+        'Installer license credential fingerprinting is incorrect.'
+    );
+}
+
+$sameDomainDuplicateClient = new LicenseManagerClient(
+    static fn (string $path, array $payload): array => [
+        'success' => false,
+        'code' => 'already_activated',
+        'message' => 'License already activated.',
+        'activation_token' => 'existing-contract-token',
+        'license' => [
+            'id' => 'existing-contract-license',
+            'product_slug' => 'barama-real-estate',
+            'status' => 'active',
+            'domain' => $payload['domain'],
+            'installation_id' => $payload['installation_id'],
+            'source' => $payload['verification_method'],
+            'is_test' => true,
+        ],
+    ]
+);
+
+$sameDomainDuplicate = $sameDomainDuplicateClient->activate(
+    'BARAMA-AUTHOR-KEY-123456',
+    $domain,
+    $installationId,
+    'direct'
+);
+
+if (
+    ($sameDomainDuplicate['activation_token'] ?? '')
+        !== 'existing-contract-token'
+    || ($sameDomainDuplicate['status'] ?? '') !== 'active'
+    || ($sameDomainDuplicate['domain'] ?? '') !== $domain
+) {
+    throw new RuntimeException(
+        'Same-domain duplicate activation was not reused idempotently.'
+    );
+}
+
+$differentDomainConflictClient = new LicenseManagerClient(
+    static fn (string $path, array $payload): array => [
+        'success' => false,
+        'code' => 'domain_conflict',
+        'message' => 'License is already activated.',
+        'existing_domain' => 'other.example.test',
+    ]
+);
+
+$differentDomainConflictMessage = '';
+
+try {
+    $differentDomainConflictClient->activate(
+        'BARAMA-AUTHOR-KEY-123456',
+        $domain,
+        $installationId,
+        'direct'
+    );
+} catch (RuntimeException $exception) {
+    $differentDomainConflictMessage = $exception->getMessage();
+}
+
+if (
+    $differentDomainConflictMessage
+    !== 'This license is already activated on other.example.test. Deactivate it there before using it on this domain.'
+) {
+    throw new RuntimeException(
+        'Different-domain activation conflict message is incorrect.'
+    );
+}
+
+$expiredLicenseClient = new LicenseManagerClient(
+    static fn (string $path, array $payload): array => [
+        'success' => false,
+        'code' => 'license_expired',
+        'message' => 'License expired.',
+    ]
+);
+
+$expiredMessage = '';
+
+try {
+    $expiredLicenseClient->activate(
+        'BARAMA-AUTHOR-KEY-123456',
+        $domain,
+        $installationId,
+        'direct'
+    );
+} catch (RuntimeException $exception) {
+    $expiredMessage = $exception->getMessage();
+}
+
+if ($expiredMessage !== 'This license has expired.') {
+    throw new RuntimeException(
+        'Expired-license customer message is incorrect.'
+    );
+}
+
+$invalidCredentialClient = new LicenseManagerClient(
+    static fn (string $path, array $payload): array => [
+        'success' => false,
+        'code' => 'invalid_license',
+        'message' => 'Unknown license.',
+    ]
+);
+
+$invalidCredentialMessage = '';
+
+try {
+    $invalidCredentialClient->activate(
+        'BARAMA-AUTHOR-KEY-123456',
+        $domain,
+        $installationId,
+        'direct'
+    );
+} catch (RuntimeException $exception) {
+    $invalidCredentialMessage = $exception->getMessage();
+}
+
+if (
+    $invalidCredentialMessage
+    !== 'The purchase code or license key is invalid.'
+) {
+    throw new RuntimeException(
+        'Invalid-license customer message is incorrect.'
+    );
+}
+
 $invalidMethodBlocked = false;
 $nonActiveStatusesBlocked = true;
 $missingCriticalFieldsBlocked = true;
@@ -345,6 +484,7 @@ fwrite(
     STDOUT,
     '[PASS] License Manager contract: automatic/direct/envato activation, active validation, '
     . 'explicit domain/product/status binding, optional installation-id echo normalization, '
+    . 'same-domain idempotent activation reuse, specific permanent error messages, '
     . 'mismatched installation rejection, all non-active status rejection, '
     . 'incomplete critical-response rejection, deactivation and '
     . 'temporary-vs-permanent outage classification verified.'
