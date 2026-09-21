@@ -86,16 +86,26 @@ final class LicenseManagerClient
             'The license could not be verified for Barama Real Estate. Check the code and try again.'
         );
 
-        if (($response['success'] ?? false) !== true) {
-            throw new RuntimeException(
-                'The license could not be verified for Barama Real Estate. Check the code and try again.'
-            );
-        }
-
         $token = trim((string) ($response['activation_token'] ?? ''));
         $license = is_array($response['license'] ?? null)
             ? $response['license']
             : [];
+
+        if (($response['success'] ?? false) !== true) {
+            if (
+                $token === ''
+                || $license === []
+                || !$this->isReusableSameDomainActivation(
+                    $license,
+                    $domain,
+                    $installationId
+                )
+            ) {
+                throw new RuntimeException(
+                    $this->activationFailureMessage($response, $domain)
+                );
+            }
+        }
 
         if ($token === '' || $license === []) {
             throw new RuntimeException(
@@ -173,7 +183,9 @@ final class LicenseManagerClient
         );
 
         if (($response['success'] ?? false) !== true) {
-            throw new RuntimeException('This license is not active.');
+            throw new RuntimeException(
+                $this->validationFailureMessage($response, $domain)
+            );
         }
 
         $license = is_array($response['license'] ?? null)
@@ -226,7 +238,7 @@ final class LicenseManagerClient
 
         if (($response['success'] ?? false) !== true) {
             throw new RuntimeException(
-                'License deactivation could not be completed. Please try again.'
+                $this->deactivationFailureMessage($response)
             );
         }
 
@@ -343,6 +355,235 @@ final class LicenseManagerClient
             'installation_id' => $installationId,
             'status' => $status !== '' ? $status : 'active',
         ]);
+    }
+
+    /**
+     * A duplicate activation is idempotent only when the License Manager
+     * returns the existing token and an explicitly active license bound to
+     * this exact product/domain/installation contract.
+     *
+     * @param array<string,mixed> $license
+     */
+    private function isReusableSameDomainActivation(
+        array $license,
+        string $domain,
+        string $installationId
+    ): bool {
+        try {
+            $this->assertActiveLicense(
+                $license,
+                $domain,
+                $installationId
+            );
+
+            return true;
+        } catch (RuntimeException) {
+            return false;
+        }
+    }
+
+    /** @param array<string,mixed> $response */
+    private function activationFailureMessage(
+        array $response,
+        string $domain
+    ): string {
+        $signal = $this->responseSignal($response);
+        $existingDomain = $this->responseDomain($response);
+
+        if (
+            str_contains($signal, 'already')
+            || str_contains($signal, 'domain_conflict')
+            || str_contains($signal, 'activation_conflict')
+            || str_contains($signal, 'already_activated')
+            || str_contains($signal, 'already_used')
+        ) {
+            if ($existingDomain !== '') {
+                if ($existingDomain === self::canonicalDomain($domain)) {
+                    return 'This license is already active on this domain, but the existing activation could not be reused automatically. Retry validation or deactivate the existing activation first.';
+                }
+
+                return 'This license is already activated on '
+                    . $existingDomain
+                    . '. Deactivate it there before using it on this domain.';
+            }
+
+            return 'This license is already activated on another domain. Deactivate the existing activation before using it here.';
+        }
+
+        if (
+            str_contains($signal, 'activation_limit')
+            || str_contains($signal, 'limit reached')
+            || str_contains($signal, 'maximum activ')
+            || str_contains($signal, 'too many activ')
+        ) {
+            return 'This license has reached its activation limit. Deactivate an existing domain before continuing.';
+        }
+
+        if (str_contains($signal, 'expired')) {
+            return 'This license has expired.';
+        }
+
+        if (str_contains($signal, 'revoked')) {
+            return 'This license has been revoked.';
+        }
+
+        if (
+            str_contains($signal, 'suspend')
+            || str_contains($signal, 'disabled')
+        ) {
+            return 'This license is suspended and cannot be activated.';
+        }
+
+        if (
+            str_contains($signal, 'product')
+            && (
+                str_contains($signal, 'invalid')
+                || str_contains($signal, 'mismatch')
+                || str_contains($signal, 'not valid')
+            )
+        ) {
+            return 'This license is not valid for Barama Real Estate.';
+        }
+
+        if (
+            str_contains($signal, 'invalid')
+            || str_contains($signal, 'not found')
+            || str_contains($signal, 'unknown')
+            || str_contains($signal, 'purchase code')
+        ) {
+            return 'The purchase code or license key is invalid.';
+        }
+
+        return 'The license could not be verified for Barama Real Estate. Check the code and try again.';
+    }
+
+    /** @param array<string,mixed> $response */
+    private function validationFailureMessage(
+        array $response,
+        string $domain
+    ): string {
+        $signal = $this->responseSignal($response);
+        $existingDomain = $this->responseDomain($response);
+
+        if (
+            $existingDomain !== ''
+            && $existingDomain !== self::canonicalDomain($domain)
+        ) {
+            return 'This license is active on '
+                . $existingDomain
+                . ', not on the current domain.';
+        }
+
+        if (str_contains($signal, 'expired')) {
+            return 'This license has expired.';
+        }
+
+        if (str_contains($signal, 'revoked')) {
+            return 'This license has been revoked.';
+        }
+
+        if (
+            str_contains($signal, 'suspend')
+            || str_contains($signal, 'disabled')
+        ) {
+            return 'This license is suspended.';
+        }
+
+        if (
+            str_contains($signal, 'deactiv')
+            || str_contains($signal, 'inactive')
+        ) {
+            return 'This license is not active.';
+        }
+
+        return 'This license could not be validated. Please validate it again.';
+    }
+
+    /** @param array<string,mixed> $response */
+    private function deactivationFailureMessage(array $response): string
+    {
+        $signal = $this->responseSignal($response);
+
+        if (
+            str_contains($signal, 'already')
+            && str_contains($signal, 'deactiv')
+        ) {
+            return 'This license activation is already deactivated.';
+        }
+
+        if (
+            str_contains($signal, 'not found')
+            || str_contains($signal, 'invalid token')
+        ) {
+            return 'The license activation could not be found.';
+        }
+
+        return 'License deactivation could not be completed. Please try again.';
+    }
+
+    /** @param array<string,mixed> $response */
+    private function responseSignal(array $response): string
+    {
+        $parts = [];
+
+        foreach (['code', 'error_code', 'error', 'message', 'detail', 'reason'] as $key) {
+            $value = $response[$key] ?? null;
+
+            if (is_scalar($value)) {
+                $parts[] = (string) $value;
+            } elseif (is_array($value)) {
+                foreach (['code', 'message', 'detail', 'reason'] as $nestedKey) {
+                    if (is_scalar($value[$nestedKey] ?? null)) {
+                        $parts[] = (string) $value[$nestedKey];
+                    }
+                }
+            }
+        }
+
+        $license = is_array($response['license'] ?? null)
+            ? $response['license']
+            : [];
+
+        foreach (['status', 'reason'] as $key) {
+            if (is_scalar($license[$key] ?? null)) {
+                $parts[] = (string) $license[$key];
+            }
+        }
+
+        return strtolower(implode(' ', $parts));
+    }
+
+    /** @param array<string,mixed> $response */
+    private function responseDomain(array $response): string
+    {
+        $candidates = [
+            $response['existing_domain'] ?? null,
+            $response['activated_domain'] ?? null,
+            $response['domain'] ?? null,
+        ];
+
+        $license = is_array($response['license'] ?? null)
+            ? $response['license']
+            : [];
+
+        $candidates[] = $license['domain'] ?? null;
+
+        foreach ($candidates as $candidate) {
+            if (!is_scalar($candidate)) {
+                continue;
+            }
+
+            $canonical = self::canonicalDomain((string) $candidate);
+
+            if (
+                $canonical !== ''
+                && preg_match('/^[a-z0-9.-]+$/', $canonical) === 1
+            ) {
+                return $canonical;
+            }
+        }
+
+        return '';
     }
 
     private function resolveVerificationMethod(
@@ -514,7 +755,13 @@ final class LicenseManagerClient
                 );
             }
 
-            throw new RuntimeException($failureMessage);
+            $decoded['_http_status'] = $status;
+
+            if (!array_key_exists('success', $decoded)) {
+                $decoded['success'] = false;
+            }
+
+            return $decoded;
         }
 
         return $decoded;
