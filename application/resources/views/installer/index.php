@@ -14,9 +14,6 @@ $current = $steps[$step] ?? $steps[1];
 $assetBase = rtrim((string) $basePath, '/');
 $termsReviewed = (bool) $termsReviewed;
 $licenseValidated = (bool) $licenseValidated;
-$licenseMethod = in_array((string) ($licenseMethod ?? 'envato'), ['direct', 'envato'], true)
-    ? (string) $licenseMethod
-    : 'envato';
 $healthChecks = is_array($health['checks'] ?? null)
     ? $health['checks']
     : [];
@@ -175,7 +172,7 @@ $mailFromNameValue = (string) (
                             <span><?= app_icon('key') ?></span>
                             <div>
                                 <h2>Purchase verification</h2>
-                                <p>Enter your CodeCanyon purchase code or provided license key.</p>
+                                <p>Enter your purchase code to verify this Barama Real Estate installation.</p>
                             </div>
                         </div>
                     </div>
@@ -187,40 +184,8 @@ $mailFromNameValue = (string) (
                     >
                         <?= csrf_field() ?>
 
-                        <fieldset class="installer-license-methods">
-                            <legend class="installer-field__label">Verification method</legend>
-                            <label class="installer-license-method <?= $licenseMethod === 'envato' ? 'is-selected' : '' ?>">
-                                <input
-                                    type="radio"
-                                    name="license_method"
-                                    value="envato"
-                                    <?= $licenseMethod === 'envato' ? 'checked' : '' ?>
-                                    data-license-method
-                                >
-                                <span class="installer-license-method__icon"><?= app_icon('tag') ?></span>
-                                <span>
-                                    <strong>CodeCanyon / Envato</strong>
-                                    <small>Use your CodeCanyon purchase code.</small>
-                                </span>
-                            </label>
-                            <label class="installer-license-method <?= $licenseMethod === 'direct' ? 'is-selected' : '' ?>">
-                                <input
-                                    type="radio"
-                                    name="license_method"
-                                    value="direct"
-                                    <?= $licenseMethod === 'direct' ? 'checked' : '' ?>
-                                    data-license-method
-                                >
-                                <span class="installer-license-method__icon"><?= app_icon('key') ?></span>
-                                <span>
-                                    <strong>Ton Samith License</strong>
-                                    <small>Use a license key provided by Ton Samith.</small>
-                                </span>
-                            </label>
-                        </fieldset>
-
                         <label class="installer-field">
-                            <span class="installer-field__label">License key / purchase code</span>
+                            <span class="installer-field__label">Purchase code / license key</span>
                             <span class="installer-input installer-input--action">
                                 <span class="installer-input__icon">
                                     <?= app_icon('key') ?>
@@ -233,7 +198,7 @@ $mailFromNameValue = (string) (
                                     autocapitalize="off"
                                     spellcheck="false"
                                     maxlength="120"
-                                    placeholder="Enter your license key or purchase code"
+                                    placeholder="Enter your purchase code or license key"
                                     data-purchase-code
                                 >
                                 <button
@@ -280,13 +245,13 @@ $mailFromNameValue = (string) (
                                     data-terms-agreement
                                     <?= $termsReviewed ? '' : 'disabled' ?>
                                 >
-                                <span>I have reviewed and accept the terms.</span>
+                                <span>I have reviewed the Envato terms, license and author disclaimer.</span>
                             </label>
                         </div>
 
                         <div class="installer-actions">
                             <span class="installer-actions__note">
-                                The entered code is used only for license verification.
+                                Your code is used only to verify this licensed installation.
                             </span>
                             <button
                                 class="btn btn-primary"
@@ -329,19 +294,20 @@ $mailFromNameValue = (string) (
                         <div class="installer-modal__body">
                             <section>
                                 <h3>Terms of Use</h3>
-                                <p>Use Barama Real Estate only within the rights granted by your applicable product license. Do not redistribute, resell, publish, or sublicense the product source outside those rights.</p>
+                                <p>Use Barama Real Estate only within the rights granted by your applicable purchase license. Do not redistribute, resell, publish, share, or sublicense the product source except where the applicable license expressly allows it.</p>
                             </section>
                             <section>
-                                <h3>Envato License</h3>
-                                <p>CodeCanyon purchases remain subject to the applicable Envato Market license and terms. Purchase verification confirms eligibility to activate this installation and does not replace those terms.</p>
+                                <h3>Envato Market License &amp; Terms</h3>
+                                <p>CodeCanyon purchases are governed by the current Envato Market license and terms that apply to your purchase. You should read those terms in full on Envato before accepting this installer agreement. Purchase verification only confirms eligibility to activate this installation; it does not replace, amend, or override Envato's terms.</p>
+                                <p><a href="https://codecanyon.net/licenses/standard" target="_blank" rel="noopener noreferrer">Read the Envato Standard License</a> and review the current Envato Market terms applicable to your account and purchase.</p>
                             </section>
                             <section>
                                 <h3>Author Disclaimer</h3>
-                                <p>The product is provided for use on a compatible hosting environment. To the extent permitted by law, the author is not responsible for hosting outages, third-party service failures, customer content, or unauthorized modifications.</p>
+                                <p>The product is provided for use on a compatible hosting environment. To the extent permitted by applicable law, the author is not responsible for hosting outages, third-party service failures, customer content, data loss caused by unsupported server changes, or problems introduced by unauthorized modifications. Keep appropriate backups before installation, updates, or custom changes.</p>
                             </section>
                             <section>
-                                <h3>Support</h3>
-                                <p>Product documentation and standard support are available from the official Ton Samith documentation and support channels.</p>
+                                <h3>Support from the Author</h3>
+                                <p>Product documentation and eligible support are provided by the author through the official documentation and support channels listed with the product. Support is subject to the applicable Envato support terms and the scope of the purchased item.</p>
                             </section>
                         </div>
 
