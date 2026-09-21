@@ -234,7 +234,6 @@ $mailFromNameValue = (string) (
                                     name="agree_terms"
                                     value="1"
                                     data-terms-agreement
-                                    <?= $termsReviewed ? 'checked' : '' ?>
                                 >
                                 <span>I agree to the Envato license terms, author disclaimer and support terms.</span>
                             </label>
