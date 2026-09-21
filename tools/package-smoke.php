@@ -195,6 +195,7 @@ if (
         $viewSource,
         'I agree to the Envato license terms, author disclaimer and support terms.'
     )
+    || str_contains($viewSource, "<?= \$termsReviewed ? 'checked' : '' ?>")
     || !str_contains($viewSource, 'action="<?= e($installerUrl) ?>"')
     || !str_contains($viewSource, 'data-theme-toggle')
 ) {
@@ -258,6 +259,8 @@ if (
     || !str_contains($javascriptSource, '[data-auth-generate-password]')
     || !str_contains($javascriptSource, 'validateButton.disabled = !hasCode')
     || !str_contains($javascriptSource, "agreement?.addEventListener('click'")
+    || !str_contains($javascriptSource, 'if (agreement.checked)')
+    || !str_contains($javascriptSource, "installer.setAttribute('data-terms-reviewed', '0')")
     || !str_contains($javascriptSource, 'licenseValidated')
     || !str_contains($javascriptSource, 'termsReviewed')
 ) {
@@ -407,6 +410,7 @@ if (
     || !str_contains($rootIndex, 'APP_VERSION')
     || !str_contains($rootIndex, 'Cache-Control: no-store')
     || !str_contains($controllerSource, 'Csrf::validate')
+    || !str_contains($controllerSource, 'Session::forget(self::TERMS_KEY)')
     || !str_contains($controllerSource, 'agree_terms')
     || !str_contains($controllerSource, "'test_mail'")
     || !str_contains($controllerSource, 'MAIL_TEST_KEY')
