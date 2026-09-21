@@ -399,6 +399,8 @@ if (
     || !str_contains($controllerSource, "'test_mail'")
     || !str_contains($controllerSource, 'MAIL_TEST_KEY')
     || !str_contains($controllerSource, 'mailFingerprint')
+    || !str_contains($controllerSource, 'revalidateLicenseForInstall')
+    || !str_contains($controllerSource, 'validateActive(')
     || !str_contains($upgradeControllerSource, 'Csrf::validate')
     || !str_contains($upgradeServiceSource, 'backup_confirmed')
     || !str_contains($upgradeServiceSource, 'authenticateAdministrator')
