@@ -175,7 +175,8 @@ foreach ([
 
 if (
     preg_match_all('/^\s*[1-5]\s*=>\s*\[/m', $viewSource) !== 5
-    || !str_contains($viewSource, 'data-open-terms')
+    || str_contains($viewSource, 'data-open-terms')
+    || !str_contains($viewSource, 'data-terms-agreement')
     || !str_contains($viewSource, 'data-accept-terms')
     || !str_contains($viewSource, 'data-license-validate')
     || !str_contains($viewSource, 'data-generate-password')
@@ -190,6 +191,10 @@ if (
     || !str_contains($viewSource, 'Purchase code / license key')
     || !str_contains($viewSource, 'Envato Market License &amp; Terms')
     || !str_contains($viewSource, 'Support from the Author')
+    || !str_contains(
+        $viewSource,
+        'I agree to the Envato license terms, author disclaimer and support terms.'
+    )
     || !str_contains($viewSource, 'action="<?= e($installerUrl) ?>"')
     || !str_contains($viewSource, 'data-theme-toggle')
 ) {
@@ -251,6 +256,10 @@ if (
     || !str_contains($stylesheetSource, '.account-quick-actions')
     || !str_contains($javascriptSource, '[data-site-menu-toggle]')
     || !str_contains($javascriptSource, '[data-auth-generate-password]')
+    || !str_contains($javascriptSource, 'validateButton.disabled = !hasCode')
+    || !str_contains($javascriptSource, "agreement?.addEventListener('click'")
+    || !str_contains($javascriptSource, 'licenseValidated')
+    || !str_contains($javascriptSource, 'termsReviewed')
 ) {
     throw new RuntimeException('Global shell, account, auth, or featured-card interface contract is incomplete.');
 }
