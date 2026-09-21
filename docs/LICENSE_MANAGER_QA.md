@@ -20,6 +20,9 @@ It verifies:
 - active-status validation with only explicit `active` accepted
 - rejection of every non-active status and incomplete critical binding response
 - acceptance of a successful response that omits only the installation ID echo, with local normalization to the requested installation ID
+- idempotent reuse when a duplicate activation response contains the existing activation token and an explicitly active license bound to the same domain
+- session-side revalidation of the same credential fingerprint before requesting another activation
+- differentiated permanent customer messages for invalid, expired, revoked, suspended, activation-limit, and domain-conflict responses
 - temporary-vs-permanent HTTP failure classification for updater grace
 - wrong-product rejection
 - wrong-domain rejection
@@ -54,6 +57,8 @@ The live workflow:
 - confirms the deactivated token can no longer validate
 - repeats the same lifecycle for Envato
 - confirms syntactically valid but unknown Direct and Envato credentials are explicitly rejected
+- confirms a license already active on another domain reports that domain when the API supplies it
+- confirms a same-domain duplicate activation is reused when the License Manager returns the existing token
 - fails instead of counting a temporary License Manager outage as a successful rejection
 - serializes live-license runs so the same test credentials are not activated/deactivated concurrently
 
