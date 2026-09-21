@@ -17,8 +17,8 @@ It verifies:
 - Barama product binding
 - domain normalization and binding
 - installation-ID binding
-- active-status validation
-- revoked/inactive rejection
+- active-status validation with only explicit `active` accepted
+- rejection of every non-active status and incomplete binding response
 - temporary-vs-permanent HTTP failure classification for updater grace
 - wrong-product rejection
 - wrong-domain rejection
@@ -44,9 +44,10 @@ The secrets must belong to Barama-specific test licenses. Do not reuse another p
 The live workflow:
 
 - activates a disposable Direct installation
-- validates the returned activation token
+- validates the returned activation token and explicit product/domain/installation/status binding
 - confirms wrong-domain validation is explicitly rejected
 - confirms wrong-installation validation is explicitly rejected
+- revalidates the active token immediately before final installation in the browser installer
 - deactivates the disposable activation
 - confirms the deactivated token can no longer validate
 - repeats the same lifecycle for Envato
