@@ -37,6 +37,10 @@ The following gates are implemented in the repository but must be rerun before t
 - clean production default with no demo companies, projects, properties, listings, inquiries, leads, or customer accounts
 - exact-package rejection of development manifests, dependency directories, internal QA fixtures, logs, dumps, backups, and known test credentials
 - route/controller contract validation for duplicate routes, missing controller actions, invalid middleware contracts, and critical route presence
+- exact-package release metadata/checksum consistency across source VERSION, ZIP filename, packaged VERSION, README marker, archive comment, and SHA-256 sidecar
+- installer security-header assertions on exact-package Apache/Nginx root and subdirectory hosting
+- updater offline grace restricted to classified transport/service outages, never explicit license rejection
+- live-license rejection QA hardened against outage false positives and concurrent test runs
 - packaged customer manifest documenting installation, runtime contents, external services, checksum integrity, and upgrade behavior
 - packaged HTML customer help file at `documentation/index.html`
 - CodeCanyon preparation scan for inline CSS attributes, inline JavaScript event handlers, runtime `eval()`, unsafe PHP short tags, and runtime debug dumps
@@ -71,8 +75,6 @@ These gates remain pending until a Quality run receives a real runner and comple
 - ordered pending-migration execution with clean replay
 - source and exact-customer-ZIP upgrade compatibility
 - deterministic Ton Samith License Manager contract QA for Direct and Envato methods
-- updater offline grace restricted to classified transport/service outages, never explicit license rejection
-- live-license rejection QA hardened against outage false positives and concurrent test runs
 - canonical license deactivation support
 - root/subdirectory request-path normalization
 - exact-package Apache and Nginx routing preflight
