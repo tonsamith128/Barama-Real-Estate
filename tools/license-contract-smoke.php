@@ -107,6 +107,42 @@ $wrongDomainBlocked = false;
 $wrongProductBlocked = false;
 $wrongInstallationBlocked = false;
 
+$temporaryStatuses = [0, 408, 425, 429, 500, 502, 503, 504];
+$permanentStatuses = [400, 401, 403, 404, 409, 410, 422];
+
+foreach ($temporaryStatuses as $status) {
+    if (!LicenseManagerClient::isTemporaryHttpStatus($status)) {
+        throw new RuntimeException(
+            'Temporary License Manager HTTP status was not classified as transient: '
+            . $status
+        );
+    }
+}
+
+foreach ($permanentStatuses as $status) {
+    if (LicenseManagerClient::isTemporaryHttpStatus($status)) {
+        throw new RuntimeException(
+            'Permanent License Manager HTTP rejection was incorrectly classified as transient: '
+            . $status
+        );
+    }
+}
+
+$temporaryException = new RuntimeException(
+    'temporary',
+    LicenseManagerClient::ERROR_TEMPORARY_UNAVAILABLE
+);
+$permanentException = new RuntimeException('permanent');
+
+if (
+    !LicenseManagerClient::isTemporaryFailure($temporaryException)
+    || LicenseManagerClient::isTemporaryFailure($permanentException)
+) {
+    throw new RuntimeException(
+        'License Manager transient exception classification is incorrect.'
+    );
+}
+
 try {
     $client->activate(
         'BARAMA-CONTRACT-TEST-123456',
@@ -199,6 +235,7 @@ if (
 fwrite(
     STDOUT,
     '[PASS] License Manager contract: direct/envato activation, active validation, '
-    . 'domain/product/installation binding, inactive rejection and deactivation verified.'
+    . 'domain/product/installation binding, inactive rejection, deactivation and '
+    . 'temporary-vs-permanent outage classification verified.'
     . PHP_EOL
 );
