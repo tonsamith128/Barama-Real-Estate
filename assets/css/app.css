@@ -3988,6 +3988,10 @@ html[data-bs-theme="dark"] {
     gap: 1rem;
 }
 
+.installer-form__grid--pair + .installer-form__grid--pair {
+    margin-top: 1rem;
+}
+
 .installer-field--wide {
     grid-column: 1 / -1;
 }
@@ -4113,9 +4117,9 @@ html[data-bs-theme="dark"] {
 }
 
 .installer-alert.is-error {
-    border-color: color-mix(in srgb, #d43b4f 32%, var(--barama-border));
-    background: color-mix(in srgb, #d43b4f 7%, var(--barama-surface));
-    color: #b62b3d;
+    border-color: color-mix(in srgb, #e35d6a 42%, var(--barama-border));
+    background: color-mix(in srgb, #e35d6a 9%, var(--barama-surface));
+    color: color-mix(in srgb, #ff6f7d 88%, var(--barama-text));
 }
 
 .installer-alert.is-success {
