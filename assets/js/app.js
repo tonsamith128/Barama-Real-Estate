@@ -372,8 +372,93 @@
     const continueButton = document.querySelector('[data-license-continue]');
     const licenseStatus = document.querySelector('[data-license-status]');
     const termsModal = document.querySelector('[data-installer-terms-modal]');
+    const installerLanguage = document.querySelector('[data-installer-language]');
+    const databaseForm = document.querySelector('[data-installer-database-form]');
+    const databaseMode = databaseForm?.querySelector('[data-database-mode]');
+    const databaseModePanels = Array.from(
+        databaseForm?.querySelectorAll('[data-database-mode-panel]') || []
+    );
+    const databaseSubmit = databaseForm?.querySelector('[data-database-submit]');
     let licenseValidated = installer.getAttribute('data-license-validated') === '1';
     let termsReviewed = installer.getAttribute('data-terms-reviewed') === '1';
+
+    const languageStorageKey = 'barama-installer-language';
+
+    const applyInstallerLanguage = (language) => {
+        if (!installerLanguage) {
+            return;
+        }
+
+        const supported = Array.from(installerLanguage.options)
+            .map((option) => option.value);
+
+        if (!supported.includes(language)) {
+            return;
+        }
+
+        installerLanguage.value = language;
+        document.documentElement.lang = language;
+        window.localStorage.setItem(languageStorageKey, language);
+
+        const websiteLanguage = document.querySelector(
+            '[name="default_language"]'
+        );
+
+        if (websiteLanguage instanceof HTMLSelectElement) {
+            const hasOption = Array.from(websiteLanguage.options)
+                .some((option) => option.value === language);
+
+            if (hasOption) {
+                websiteLanguage.value = language;
+            }
+        }
+    };
+
+    if (installerLanguage) {
+        const storedLanguage = window.localStorage.getItem(languageStorageKey);
+        applyInstallerLanguage(
+            storedLanguage || installerLanguage.value || 'en'
+        );
+
+        installerLanguage.addEventListener('change', () => {
+            applyInstallerLanguage(installerLanguage.value);
+        });
+    }
+
+    const updateDatabaseMode = () => {
+        if (!databaseForm || !databaseMode) {
+            return;
+        }
+
+        const mode = databaseMode.value === 'create'
+            ? 'create'
+            : 'existing';
+
+        databaseModePanels.forEach((panel) => {
+            const active = panel.getAttribute('data-database-mode-panel')
+                === mode;
+
+            panel.hidden = !active;
+
+            panel.querySelectorAll('input, select').forEach((field) => {
+                field.disabled = !active;
+
+                if (!active && field instanceof HTMLInputElement
+                    && field.type === 'password') {
+                    field.value = '';
+                }
+            });
+        });
+
+        if (databaseSubmit) {
+            databaseSubmit.textContent = mode === 'create'
+                ? 'Create Database & Continue'
+                : 'Test Connection & Continue';
+        }
+    };
+
+    databaseMode?.addEventListener('change', updateDatabaseMode);
+    updateDatabaseMode();
 
     const showNotice = (message, type = 'error') => {
         if (!notice) {
