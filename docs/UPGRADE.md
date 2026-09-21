@@ -31,7 +31,8 @@ The updater never asks the customer to re-enter the original purchase code.
 - downgrades are rejected
 - the existing activation token, installation ID, product slug, and domain binding must be valid
 - live web upgrades validate the installed activation state with Ton Samith License Manager
-- temporary License Manager outages may use the configured offline grace period only when the previously validated local state is still recent
+- temporary License Manager transport/service outages may use the configured offline grace period only when the previously validated local state is still recent
+- offline grace never overrides an explicit revoked, suspended, invalid, deactivated, expired, wrong-product, wrong-domain, or wrong-installation license result
 - original purchase codes are never read or stored by the updater
 - only pending migration files are executed
 - migration replay must be a clean no-op
@@ -48,6 +49,8 @@ The automated upgrade gate verifies:
 - only `0010_release_security_hardening.php` is pending
 - missing backup confirmation is rejected
 - incorrect administrator credentials are rejected
+- an explicitly revoked license is rejected even when the local last-validation timestamp is inside the offline grace window
+- a classified temporary License Manager outage can use the configured grace window when the previously validated local state is still recent
 - the pending migration runs successfully
 - `users.auth_version` is created
 - `installation.version` advances to the package version
