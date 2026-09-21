@@ -36,7 +36,16 @@ $expectRejected = static function (callable $action, string $label): void {
 
     try {
         $action();
-    } catch (RuntimeException) {
+    } catch (RuntimeException $exception) {
+        if (LicenseManagerClient::isTemporaryFailure($exception)) {
+            throw new RuntimeException(
+                'Live License Manager was temporarily unavailable while verifying: '
+                . $label,
+                0,
+                $exception
+            );
+        }
+
         $rejected = true;
     }
 
@@ -143,7 +152,7 @@ $exercise = static function (
         STDOUT,
         '[PASS] Live License Manager '
         . $method
-        . ': activation, validation, binding rejection and deactivation verified.'
+        . ': activation, validation, explicit binding rejection and deactivation verified.'
         . PHP_EOL
     );
 };
