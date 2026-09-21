@@ -49,9 +49,9 @@ The Step 1 order is:
 
 1. enter the purchase code or license key
 2. click Validate and confirm the license is valid
-3. click the agreement checkbox; the Terms modal opens automatically on the first agreement attempt
+3. click the agreement checkbox; the Terms modal always opens before the agreement can be checked
 4. review the Envato license terms, author disclaimer, and support terms
-5. click Accept Terms; the agreement checkbox becomes accepted
+5. click Accept Terms; only then does the agreement checkbox become checked
 6. click Verify & Continue
 
 License validation is independent of terms acceptance. Terms acceptance is enforced only before continuation to Step 2.
