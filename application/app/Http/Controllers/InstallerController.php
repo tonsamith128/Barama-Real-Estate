@@ -436,14 +436,6 @@ final class InstallerController
                     && trim(
                         (string) ($license['activation_token'] ?? '')
                     ) !== '',
-                'licenseMethod' => is_array($license)
-                    && in_array(
-                        (string) ($license['verification_method'] ?? ''),
-                        ['direct', 'envato'],
-                        true
-                    )
-                        ? (string) $license['verification_method']
-                        : 'envato',
                 'requirements' => $service->requirements(),
                 'requirementsReady' => $service->requirementsReady(),
                 'oldDatabase' => is_array($oldDatabase)
