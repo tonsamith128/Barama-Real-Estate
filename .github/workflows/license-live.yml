@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: barama-live-license-qa
+  cancel-in-progress: false
+
 jobs:
   live-license:
     name: Barama live license contract
