@@ -180,11 +180,15 @@ if (
     || !str_contains($viewSource, 'data-accept-terms')
     || !str_contains($viewSource, 'data-license-validate')
     || !str_contains($viewSource, 'data-generate-password')
-    || !str_contains($viewSource, 'Email delivery')
-    || !str_contains($viewSource, 'data-mail-test')
-    || !str_contains($viewSource, 'name="mail_driver"')
-    || !str_contains($viewSource, 'name="mail_host"')
-    || !str_contains($viewSource, 'name="mail_password"')
+    || str_contains($viewSource, 'Email delivery')
+    || str_contains($viewSource, 'data-mail-test')
+    || str_contains($viewSource, 'name="mail_driver"')
+    || str_contains($viewSource, 'name="mail_host"')
+    || str_contains($viewSource, 'name="mail_password"')
+    || !str_contains(
+        $viewSource,
+        'Email delivery defaults to PHP mail and can be configured later from the application settings.'
+    )
     || str_contains($viewSource, 'name="license_method"')
     || str_contains($viewSource, 'data-license-method')
     || str_contains($viewSource, 'Ton Samith License')
@@ -208,6 +212,8 @@ if (
     || !str_contains($viewSource, 'name="db_admin_username"')
     || !str_contains($viewSource, 'name="db_new_database"')
     || !str_contains($viewSource, 'name="db_new_password_confirmation"')
+    || !str_contains($viewSource, 'installer-form__grid--pair')
+    || !str_contains($viewSource, 'data-1p-ignore')
     || str_contains($viewSource, 'name="create_database"')
 ) {
     throw new RuntimeException('Five-step installer controls are incomplete.');
@@ -225,10 +231,13 @@ if (
     || !str_contains($javascriptSource, "workspaceOpen.setAttribute('aria-expanded', 'true')")
     || !str_contains($stylesheetSource, '.installer-requirements-table')
     || !str_contains($stylesheetSource, '.installer-database-mode')
+    || !str_contains($stylesheetSource, '.installer-form__grid--pair')
     || !str_contains($stylesheetSource, 'background: transparent')
     || !str_contains($javascriptSource, '[data-database-mode]')
     || !str_contains($javascriptSource, 'Create Database & Continue')
     || !str_contains($javascriptSource, 'barama-installer-language')
+    || str_contains($javascriptSource, 'Send a successful test email before installation.')
+    || str_contains($javascriptSource, '[data-mail-test]')
 ) {
     throw new RuntimeException('Responsive or Light/Dark installer behavior is incomplete.');
 }
@@ -409,6 +418,12 @@ $htaccessSource = (string) file_get_contents($temporaryRoot . '/.htaccess');
 $requestSource = (string) file_get_contents(
     $temporaryRoot . '/application/app/Core/Request.php'
 );
+$helperSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Support/helpers.php'
+);
+$appConfigSource = (string) file_get_contents(
+    $temporaryRoot . '/application/config/app.php'
+);
 $rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
 $controllerSource = (string) file_get_contents(
     $temporaryRoot . '/application/app/Http/Controllers/InstallerController.php'
@@ -429,6 +444,12 @@ if (
     || !str_contains($htaccessSource, 'application|tools|docs|\\.github')
     || !str_contains($requestSource, "SCRIPT_NAME")
     || !str_contains($requestSource, "str_starts_with(\$path, \$basePath . '/')")
+    || !str_contains($requestSource, "\$_GET['_route']")
+    || !str_contains($helperSource, "config('app.routing_mode', 'clean')")
+    || !str_contains($helperSource, "/index.php?_route=")
+    || !str_contains($appConfigSource, "'routing_mode'")
+    || !str_contains($installerServiceSource, 'function routingMode(')
+    || !str_contains($installerServiceSource, "'APP_ROUTING_MODE' => \$routingMode")
     || !str_contains($rootIndex, '/installer/')
     || !str_contains($rootIndex, '/updater/')
     || !str_contains($rootIndex, 'APP_VERSION')
@@ -436,9 +457,10 @@ if (
     || !str_contains($controllerSource, 'Csrf::validate')
     || !str_contains($controllerSource, 'Session::forget(self::TERMS_KEY)')
     || !str_contains($controllerSource, 'agree_terms')
-    || !str_contains($controllerSource, "'test_mail'")
-    || !str_contains($controllerSource, 'MAIL_TEST_KEY')
-    || !str_contains($controllerSource, 'mailFingerprint')
+    || str_contains($controllerSource, "'test_mail'")
+    || str_contains($controllerSource, 'MAIL_TEST_KEY')
+    || str_contains($controllerSource, 'Send a successful test email')
+    || !str_contains($controllerSource, "'mail_driver' => 'mail'")
     || !str_contains($controllerSource, 'revalidateLicenseForInstall')
     || !str_contains($controllerSource, 'validateActive(')
     || !str_contains($controllerSource, 'credential_fingerprint')
