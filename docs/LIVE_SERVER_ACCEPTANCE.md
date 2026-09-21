@@ -59,35 +59,29 @@ Expected result: opening the main domain redirects to the canonical trailing-sla
 
 ## 2. Installer Step 1 — License & Terms
 
-Verify both customer license methods separately.
+The customer sees one purchase-code/license field. No verification-method selector is shown.
 
-### Terms
+### Validate-first flow
 
-- Read Terms opens the modal
-- agreement checkbox is disabled before review
-- Accept Terms enables agreement
-- server rejects continuation if agreement is bypassed client-side
-- invalid credential produces a clear inline error
-- purchase/license field is not echoed into logs or persistent runtime files
-
-### Ton Samith Direct
-
-Using the Barama-specific Direct test license:
-
-- activation succeeds
+- entering a non-empty code enables Validate before terms are accepted
+- an invalid credential produces a clear inline error
+- a valid internal test key is routed automatically and activates successfully
+- a valid CodeCanyon/Envato purchase code is routed automatically and activates successfully
 - product binding is Barama Real Estate
 - domain binding matches the current test domain
 - installation ID is created and remains stable
-- original license key is not stored after activation
+- the original purchase/license value is not stored after activation
+- purchase/license input is not echoed into logs or persistent runtime files
 
-### CodeCanyon / Envato
+### Terms gate
 
-Using the Barama-specific purchase code:
-
-- activation succeeds
-- CodeCanyon/Envato method remains selected
-- domain and installation ID bind correctly
-- original purchase code is not stored after activation
+- license validation does not require prior terms acceptance
+- the agreement checkbox is shown on the left
+- the first attempt to check the agreement opens the Terms modal automatically
+- the customer reviews the Envato license terms, author disclaimer, and support terms
+- Accept Terms records acceptance and checks the agreement
+- Verify & Continue remains disabled until both license validation and terms acceptance are complete
+- server-side continuation rejects a bypassed or missing agreement
 
 Where practical, also test a revoked/deactivated or deliberately invalid credential and confirm access is rejected without exposing License Manager internals.
 
