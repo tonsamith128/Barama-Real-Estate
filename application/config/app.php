@@ -11,6 +11,11 @@ return [
     'environment' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => (string) env('APP_URL', ''),
+    'routing_mode' => in_array(
+        (string) env('APP_ROUTING_MODE', 'clean'),
+        ['clean', 'query'],
+        true
+    ) ? (string) env('APP_ROUTING_MODE', 'clean') : 'clean',
     'timezone' => (string) env(
         'APP_TIMEZONE',
         'Asia/Phnom_Penh'
