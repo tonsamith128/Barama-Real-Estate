@@ -49,6 +49,16 @@ $mailFromNameValue = (string) (
     ?? $oldWebsite['site_name']
     ?? 'Barama Real Estate'
 );
+$languageFlags = [
+    'en' => '🇬🇧',
+    'km' => '🇰🇭',
+    'zh' => '🇨🇳',
+];
+$databaseModeValue = in_array(
+    (string) ($oldDatabase['db_mode'] ?? 'existing'),
+    ['existing', 'create'],
+    true
+) ? (string) ($oldDatabase['db_mode'] ?? 'existing') : 'existing';
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -123,10 +133,19 @@ $mailFromNameValue = (string) (
 
             <div class="installer-utilities">
                 <label class="installer-language">
+                    <span class="installer-language__icon" aria-hidden="true">
+                        <?= app_icon('language') ?>
+                    </span>
                     <span class="visually-hidden">Installer language</span>
-                    <?= app_icon('language') ?>
-                    <select aria-label="Installer language">
-                        <option value="en">English</option>
+                    <select
+                        aria-label="Installer language"
+                        data-installer-language
+                    >
+                        <?php foreach ($languages as $code => $name): ?>
+                            <option value="<?= e((string) $code) ?>">
+                                <?= e(($languageFlags[$code] ?? '🌐') . ' ' . (string) $name) ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </label>
 
@@ -321,18 +340,27 @@ $mailFromNameValue = (string) (
                 </div>
 
             <?php elseif ($step === 2): ?>
-                <section class="installer-card">
+                <section class="installer-card installer-card--plain">
                     <div class="installer-card__head">
                         <div>
                             <span><?= app_icon('server') ?></span>
                             <div>
                                 <h2>Server requirements</h2>
-                                <p>Barama checks your server automatically. Fix only items marked Fix Required.</p>
+                                <p>Barama checks your server automatically. Resolve only items marked Fix Required.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="installer-check-list">
+                    <div
+                        class="installer-requirements-table"
+                        role="table"
+                        aria-label="Server requirements"
+                    >
+                        <div class="installer-requirements-table__head" role="row">
+                            <span role="columnheader">Requirement</span>
+                            <span role="columnheader">Detected / Details</span>
+                            <span role="columnheader">Status</span>
+                        </div>
                         <?php foreach ($requirements as $check): ?>
                             <?php
                             $status = (string) ($check['status'] ?? 'fix');
@@ -342,22 +370,24 @@ $mailFromNameValue = (string) (
                                 default => 'Fix Required',
                             };
                             ?>
-                            <article class="installer-check">
-                                <span class="installer-check__icon installer-check__icon--<?= e($status) ?>">
-                                    <?= app_icon(
-                                        $status === 'pass'
-                                            ? 'check'
-                                            : 'alert'
-                                    ) ?>
-                                </span>
-                                <div>
+                            <div class="installer-requirements-table__row" role="row">
+                                <div role="cell">
+                                    <span class="installer-requirement-icon installer-requirement-icon--<?= e($status) ?>">
+                                        <?= app_icon(
+                                            $status === 'pass'
+                                                ? 'check'
+                                                : 'alert'
+                                        ) ?>
+                                    </span>
                                     <strong><?= e((string) $check['label']) ?></strong>
-                                    <small><?= e((string) $check['detail']) ?></small>
                                 </div>
-                                <span class="installer-status installer-status--<?= e($status) ?>">
-                                    <?= e($label) ?>
+                                <span role="cell"><?= e((string) $check['detail']) ?></span>
+                                <span role="cell">
+                                    <span class="installer-status installer-status--<?= e($status) ?>">
+                                        <?= e($label) ?>
+                                    </span>
                                 </span>
-                            </article>
+                            </div>
                         <?php endforeach; ?>
                     </div>
 
@@ -381,13 +411,13 @@ $mailFromNameValue = (string) (
                 </section>
 
             <?php elseif ($step === 3): ?>
-                <section class="installer-card">
+                <section class="installer-card installer-card--plain">
                     <div class="installer-card__head">
                         <div>
                             <span><?= app_icon('database') ?></span>
                             <div>
-                                <h2>Database connection</h2>
-                                <p>Enter the database details provided by your hosting provider.</p>
+                                <h2>Database setup</h2>
+                                <p>Connect an existing database or let Barama create a dedicated database and user.</p>
                             </div>
                         </div>
                     </div>
@@ -396,123 +426,304 @@ $mailFromNameValue = (string) (
                         action="<?= e($installerUrl) ?>"
                         method="post"
                         class="installer-form"
+                        data-installer-database-form
                     >
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="test_database">
 
-                        <div class="installer-form__grid">
-                            <label class="installer-field">
-                                <span class="installer-field__label">Database host</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('server') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        name="db_host"
-                                        value="<?= e((string) ($oldDatabase['db_host'] ?? '127.0.0.1')) ?>"
-                                        required
-                                        maxlength="255"
-                                    >
+                        <label class="installer-field installer-field--wide">
+                            <span class="installer-field__label">Database setup option</span>
+                            <span class="installer-input">
+                                <span class="installer-input__icon">
+                                    <?= app_icon('database') ?>
                                 </span>
-                            </label>
+                                <select
+                                    class="form-select"
+                                    name="db_mode"
+                                    data-database-mode
+                                >
+                                    <option
+                                        value="existing"
+                                        <?= $databaseModeValue === 'existing' ? 'selected' : '' ?>
+                                    >
+                                        Existing Database
+                                    </option>
+                                    <option
+                                        value="create"
+                                        <?= $databaseModeValue === 'create' ? 'selected' : '' ?>
+                                    >
+                                        Create Database
+                                    </option>
+                                </select>
+                            </span>
+                            <small>
+                                Choose Existing Database when your hosting panel already provides database credentials. Choose Create Database only when you have MySQL/MariaDB administrative access.
+                            </small>
+                        </label>
 
-                            <label class="installer-field">
-                                <span class="installer-field__label">Port</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('server') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        type="number"
-                                        name="db_port"
-                                        min="1"
-                                        max="65535"
-                                        value="<?= e((string) ($oldDatabase['db_port'] ?? 3306)) ?>"
-                                        required
-                                    >
-                                </span>
-                            </label>
+                        <div
+                            class="installer-database-mode"
+                            data-database-mode-panel="existing"
+                            <?= $databaseModeValue === 'existing' ? '' : 'hidden' ?>
+                        >
+                            <div class="installer-section-label">Existing Database</div>
+                            <p class="installer-section-copy">
+                                Enter the database credentials provided by your hosting provider.
+                            </p>
 
-                            <label class="installer-field">
-                                <span class="installer-field__label">Database name</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('database') ?>
+                            <div class="installer-form__grid">
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Database host</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('server') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_host"
+                                            value="<?= e((string) ($oldDatabase['db_host'] ?? '127.0.0.1')) ?>"
+                                            maxlength="255"
+                                            autocomplete="off"
+                                        >
                                     </span>
-                                    <input
-                                        class="form-control"
-                                        name="db_database"
-                                        value="<?= e((string) ($oldDatabase['db_database'] ?? '')) ?>"
-                                        required
-                                        maxlength="64"
-                                        autocomplete="off"
-                                    >
-                                </span>
-                            </label>
+                                </label>
 
-                            <label class="installer-field">
-                                <span class="installer-field__label">Database username</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('user') ?>
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Port</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('server') ?></span>
+                                        <input
+                                            class="form-control"
+                                            type="number"
+                                            name="db_port"
+                                            min="1"
+                                            max="65535"
+                                            value="<?= e((string) ($oldDatabase['db_port'] ?? 3306)) ?>"
+                                        >
                                     </span>
-                                    <input
-                                        class="form-control"
-                                        name="db_username"
-                                        value="<?= e((string) ($oldDatabase['db_username'] ?? '')) ?>"
-                                        required
-                                        maxlength="191"
-                                        autocomplete="username"
-                                    >
-                                </span>
-                            </label>
+                                </label>
 
-                            <label class="installer-field installer-field--wide">
-                                <span class="installer-field__label">Database password</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('lock') ?>
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Database name</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('database') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_database"
+                                            value="<?= e((string) ($oldDatabase['db_database'] ?? '')) ?>"
+                                            maxlength="64"
+                                            autocomplete="off"
+                                        >
                                     </span>
-                                    <input
-                                        class="form-control"
-                                        type="password"
-                                        name="db_password"
-                                        autocomplete="new-password"
-                                        data-password-field
-                                    >
-                                    <button
-                                        class="installer-input__icon-button"
-                                        type="button"
-                                        data-password-toggle
-                                        aria-label="Show password"
-                                    >
-                                        <?= app_icon('eye') ?>
-                                    </button>
-                                </span>
-                            </label>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Database username</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('user') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_username"
+                                            value="<?= e((string) ($oldDatabase['db_username'] ?? '')) ?>"
+                                            maxlength="191"
+                                            autocomplete="username"
+                                        >
+                                    </span>
+                                </label>
+
+                                <label class="installer-field installer-field--wide">
+                                    <span class="installer-field__label">Database password</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('lock') ?></span>
+                                        <input
+                                            class="form-control"
+                                            type="password"
+                                            name="db_password"
+                                            autocomplete="new-password"
+                                            data-password-field
+                                        >
+                                        <button
+                                            class="installer-input__icon-button"
+                                            type="button"
+                                            data-password-toggle
+                                            aria-label="Show password"
+                                        >
+                                            <?= app_icon('eye') ?>
+                                        </button>
+                                    </span>
+                                </label>
+                            </div>
                         </div>
 
-                        <label class="installer-option">
-                            <input
-                                type="checkbox"
-                                name="create_database"
-                                value="1"
-                                <?= !empty($oldDatabase['create_database']) ? 'checked' : '' ?>
-                            >
-                            <span>
-                                <strong>Create database if permitted</strong>
-                                <small>Use this only if your database user can create databases.</small>
-                            </span>
-                        </label>
+                        <div
+                            class="installer-database-mode"
+                            data-database-mode-panel="create"
+                            <?= $databaseModeValue === 'create' ? '' : 'hidden' ?>
+                        >
+                            <div class="installer-section-label">Database Server Admin Access</div>
+                            <p class="installer-section-copy">
+                                These privileged credentials are used only to create the database and dedicated database user. They are never stored in Barama.
+                            </p>
+
+                            <div class="installer-form__grid">
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Admin host</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('server') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_admin_host"
+                                            value="<?= e((string) ($oldDatabase['db_admin_host'] ?? '127.0.0.1')) ?>"
+                                            maxlength="255"
+                                            autocomplete="off"
+                                        >
+                                    </span>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Admin port</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('server') ?></span>
+                                        <input
+                                            class="form-control"
+                                            type="number"
+                                            name="db_admin_port"
+                                            min="1"
+                                            max="65535"
+                                            value="<?= e((string) ($oldDatabase['db_admin_port'] ?? 3306)) ?>"
+                                        >
+                                    </span>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Admin username</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('user') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_admin_username"
+                                            value="<?= e((string) ($oldDatabase['db_admin_username'] ?? '')) ?>"
+                                            maxlength="191"
+                                            autocomplete="username"
+                                        >
+                                    </span>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Admin password</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('lock') ?></span>
+                                        <input
+                                            class="form-control"
+                                            type="password"
+                                            name="db_admin_password"
+                                            autocomplete="new-password"
+                                            data-password-field
+                                        >
+                                        <button
+                                            class="installer-input__icon-button"
+                                            type="button"
+                                            data-password-toggle
+                                            aria-label="Show password"
+                                        >
+                                            <?= app_icon('eye') ?>
+                                        </button>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="installer-section-label">New Database Details</div>
+                            <p class="installer-section-copy">
+                                Barama creates this database and a dedicated user with privileges limited to the new database.
+                            </p>
+
+                            <div class="installer-form__grid">
+                                <label class="installer-field">
+                                    <span class="installer-field__label">New database name</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('database') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_new_database"
+                                            value="<?= e((string) ($oldDatabase['db_new_database'] ?? '')) ?>"
+                                            maxlength="64"
+                                            autocomplete="off"
+                                        >
+                                    </span>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">New database username</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('user') ?></span>
+                                        <input
+                                            class="form-control"
+                                            name="db_new_username"
+                                            value="<?= e((string) ($oldDatabase['db_new_username'] ?? '')) ?>"
+                                            maxlength="32"
+                                            autocomplete="off"
+                                        >
+                                    </span>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">New database password</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('lock') ?></span>
+                                        <input
+                                            class="form-control"
+                                            type="password"
+                                            name="db_new_password"
+                                            minlength="12"
+                                            autocomplete="new-password"
+                                            data-password-field
+                                        >
+                                        <button
+                                            class="installer-input__icon-button"
+                                            type="button"
+                                            data-password-toggle
+                                            aria-label="Show password"
+                                        >
+                                            <?= app_icon('eye') ?>
+                                        </button>
+                                    </span>
+                                </label>
+
+                                <label class="installer-field">
+                                    <span class="installer-field__label">Confirm database password</span>
+                                    <span class="installer-input">
+                                        <span class="installer-input__icon"><?= app_icon('lock') ?></span>
+                                        <input
+                                            class="form-control"
+                                            type="password"
+                                            name="db_new_password_confirmation"
+                                            minlength="12"
+                                            autocomplete="new-password"
+                                            data-password-field
+                                        >
+                                        <button
+                                            class="installer-input__icon-button"
+                                            type="button"
+                                            data-password-toggle
+                                            aria-label="Show password"
+                                        >
+                                            <?= app_icon('eye') ?>
+                                        </button>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
 
                         <div class="installer-actions">
                             <span class="installer-actions__note">
-                                The password is not shown again after validation errors.
+                                Passwords are never repopulated after validation errors.
                             </span>
-                            <button class="btn btn-primary" type="submit">
-                                Test Connection &amp; Continue
+                            <button
+                                class="btn btn-primary"
+                                type="submit"
+                                data-database-submit
+                            >
+                                <?= $databaseModeValue === 'create'
+                                    ? 'Create Database & Continue'
+                                    : 'Test Connection & Continue' ?>
                             </button>
                         </div>
                     </form>
