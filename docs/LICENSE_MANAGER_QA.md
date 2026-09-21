@@ -18,7 +18,8 @@ It verifies:
 - domain normalization and binding
 - installation-ID binding
 - active-status validation with only explicit `active` accepted
-- rejection of every non-active status and incomplete binding response
+- rejection of every non-active status and incomplete critical binding response
+- acceptance of a successful response that omits only the installation ID echo, with local normalization to the requested installation ID
 - temporary-vs-permanent HTTP failure classification for updater grace
 - wrong-product rejection
 - wrong-domain rejection
@@ -44,7 +45,8 @@ The secrets must belong to Barama-specific test licenses. Do not reuse another p
 The live workflow:
 
 - activates a disposable Direct installation
-- validates the returned activation token and explicit product/domain/installation/status binding
+- validates the returned activation token and explicit product/domain/status binding
+- always sends the installation ID as a binding input; if the License Manager echoes it, Barama requires an exact match
 - confirms wrong-domain validation is explicitly rejected
 - confirms wrong-installation validation is explicitly rejected
 - revalidates the active token immediately before final installation in the browser installer
