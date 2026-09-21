@@ -19,6 +19,7 @@ It verifies:
 - installation-ID binding
 - active-status validation
 - revoked/inactive rejection
+- temporary-vs-permanent HTTP failure classification for updater grace
 - wrong-product rejection
 - wrong-domain rejection
 - wrong-installation rejection
@@ -44,12 +45,14 @@ The live workflow:
 
 - activates a disposable Direct installation
 - validates the returned activation token
-- confirms wrong-domain validation is rejected
-- confirms wrong-installation validation is rejected
+- confirms wrong-domain validation is explicitly rejected
+- confirms wrong-installation validation is explicitly rejected
 - deactivates the disposable activation
 - confirms the deactivated token can no longer validate
 - repeats the same lifecycle for Envato
-- confirms syntactically valid but unknown Direct and Envato credentials are rejected
+- confirms syntactically valid but unknown Direct and Envato credentials are explicitly rejected
+- fails instead of counting a temporary License Manager outage as a successful rejection
+- serializes live-license runs so the same test credentials are not activated/deactivated concurrently
 
 The workflow does not print the original credentials or activation tokens.
 
