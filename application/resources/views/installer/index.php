@@ -228,24 +228,15 @@ $mailFromNameValue = (string) (
                         </div>
 
                         <div class="installer-terms-row">
-                            <button
-                                class="btn btn-outline-secondary"
-                                type="button"
-                                data-open-terms
-                            >
-                                <?= app_icon('eye') ?>
-                                Read Terms
-                            </button>
-
                             <label class="installer-agreement">
                                 <input
                                     type="checkbox"
                                     name="agree_terms"
                                     value="1"
                                     data-terms-agreement
-                                    <?= $termsReviewed ? '' : 'disabled' ?>
+                                    <?= $termsReviewed ? 'checked' : '' ?>
                                 >
-                                <span>I have reviewed the Envato terms, license and author disclaimer.</span>
+                                <span>I agree to the Envato license terms, author disclaimer and support terms.</span>
                             </label>
                         </div>
 
@@ -259,7 +250,7 @@ $mailFromNameValue = (string) (
                                 name="action"
                                 value="continue_license"
                                 data-license-continue
-                                <?= $licenseValidated ? '' : 'disabled' ?>
+                                <?= ($licenseValidated && $termsReviewed) ? '' : 'disabled' ?>
                             >
                                 Verify &amp; Continue
                             </button>
