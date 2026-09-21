@@ -298,17 +298,23 @@ final class LicenseManagerClient
             );
         }
 
-        $returnedInstallation = self::normalizeInstallationId(
+        $returnedInstallation = trim(
             (string) ($license['installation_id'] ?? '')
         );
 
-        if (
-            preg_match('/^[a-f0-9]{32}$/', $returnedInstallation) !== 1
-            || $returnedInstallation !== $installationId
-        ) {
-            throw new RuntimeException(
-                'This license is not valid for this installation.'
+        if ($returnedInstallation !== '') {
+            $returnedInstallation = self::normalizeInstallationId(
+                $returnedInstallation
             );
+
+            if (
+                preg_match('/^[a-f0-9]{32}$/', $returnedInstallation) !== 1
+                || $returnedInstallation !== $installationId
+            ) {
+                throw new RuntimeException(
+                    'This license is not valid for this installation.'
+                );
+            }
         }
 
         $status = strtolower(trim(
