@@ -41,21 +41,27 @@ Permanent product slug:
 
 barama-real-estate
 
-Step 1 offers two verification methods while keeping one shared credential field and one Validate button:
+Step 1 exposes one purchase-code/license field and one Validate button. The customer interface does not ask the buyer to choose a verification method.
 
-- Ton Samith License — a license key provided directly by Ton Samith
-- CodeCanyon / Envato — a CodeCanyon purchase code
+The installer automatically routes a standard Envato purchase code or an authorized author-issued key through the existing License Manager. For Envato purchases, the License Manager may verify the purchase with Envato Market. Barama does not contact Envato directly and does not expose License Manager routing details in the customer interface.
 
-Both methods are resolved through the Ton Samith License Manager. For the CodeCanyon / Envato method, the License Manager may verify the purchase with Envato Market. Barama does not contact Envato directly and does not expose license-service implementation details in the customer interface.
+The Step 1 order is:
 
-The selected method is bound to the validated installer session. Changing the method requires validation again.
+1. enter the purchase code or license key
+2. click Validate and confirm the license is valid
+3. click the agreement checkbox; the Terms modal opens automatically on the first agreement attempt
+4. review the Envato license terms, author disclaimer, and support terms
+5. click Accept Terms; the agreement checkbox becomes accepted
+6. click Verify & Continue
+
+License validation is independent of terms acceptance. Terms acceptance is enforced only before continuation to Step 2.
 
 The activation request binds:
 
 - product slug
 - canonical domain
 - persistent installation ID
-- selected verification method
+- internally resolved verification route
 
 The original purchase code or license key is not stored in persistent runtime state. Successful activation stores only normalized license metadata and the activation token.
 
