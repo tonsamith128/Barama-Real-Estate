@@ -28,6 +28,7 @@ foreach ([
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
+    'CHANGELOG.md',
     'documentation/index.html',
     'README.md',
     'VERSION',

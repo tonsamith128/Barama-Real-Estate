@@ -286,6 +286,7 @@ The final human CodeCanyon submission/package review remains a v1.0.0 gate. See 
 The 0.9.13 development line adds a packaged customer help file and an exact-ZIP CodeCanyon preparation scan.
 
 - `documentation/index.html` is shipped inside the customer ZIP as a self-contained HTML help file
+- one canonical `CHANGELOG.md` records customer-facing release history without shipping duplicate source-version trees
 - the help file covers requirements, the five-step installer, license verification, account/workspace URLs, mail delivery, scheduled notification jobs, upgrades, third-party credits, online documentation, and support
 - exact-ZIP QA requires the HTML help file plus `LICENSE.md`, `THIRD_PARTY_NOTICES.md`, and `CUSTOMER_PACKAGE.md`
 - CodeCanyon package QA rejects inline CSS style attributes in shipped markup

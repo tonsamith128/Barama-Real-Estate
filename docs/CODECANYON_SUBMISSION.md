@@ -8,6 +8,7 @@ The exact customer ZIP must:
 
 - contain the complete runtime PHP source
 - contain `documentation/index.html`
+- contain one customer-facing `CHANGELOG.md` without duplicate source-version trees
 - contain `LICENSE.md`, `THIRD_PARTY_NOTICES.md`, and `CUSTOMER_PACKAGE.md`
 - keep one canonical first-party stylesheet and one canonical first-party JavaScript file
 - exclude internal GitHub workflows, development docs, test fixtures, browser automation packages, logs, caches, dumps, backups, runtime license state, and test credentials
@@ -30,6 +31,7 @@ The packaged HTML documentation must cover:
 - scheduled notification/outbox jobs
 - upgrade workflow and backup requirement
 - third-party asset credits
+- customer version history / changelog reference
 - online documentation and support links
 
 ## Final manual gates

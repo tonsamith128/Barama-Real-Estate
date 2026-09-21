@@ -29,6 +29,7 @@ foreach ([
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
+    'CHANGELOG.md',
 ] as $required) {
     if (!in_array($required, $entries, true)) {
         throw new RuntimeException(
@@ -48,6 +49,7 @@ foreach ([
     'Scheduled notification jobs',
     'Upgrade',
     'Third-party assets',
+    'Version history',
     'Documentation and support',
 ] as $marker) {
     if (!str_contains($documentation, $marker)) {

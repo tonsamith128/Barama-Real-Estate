@@ -27,6 +27,7 @@ The customer ZIP contains only the runtime product and customer-facing support f
 - product license notice
 - third-party notices
 - packaged HTML help file: `documentation/index.html`
+- customer-facing `CHANGELOG.md`
 - package README and version metadata
 
 ## Not included

@@ -31,6 +31,7 @@ foreach ([
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
+    'CHANGELOG.md',
     'README.md',
     'VERSION',
 ] as $relative) {

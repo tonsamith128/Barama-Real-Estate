@@ -22,6 +22,7 @@ $required = [
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
+    'CHANGELOG.md',
     'documentation/index.html',
     'installer/index.php',
     'updater/index.php',

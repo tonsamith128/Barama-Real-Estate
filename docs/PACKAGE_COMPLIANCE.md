@@ -8,7 +8,7 @@ The customer-facing runtime currently has one declared third-party UI dependency
 
 - Bootstrap 5.3.3, MIT License, loaded from jsDelivr
 
-The release package ships `THIRD_PARTY_NOTICES.md` and `CUSTOMER_PACKAGE.md`.
+The release package ships `THIRD_PARTY_NOTICES.md`, `CUSTOMER_PACKAGE.md`, `CHANGELOG.md`, and `documentation/index.html`.
 
 External service hosts are constrained to the declared Ton Samith and jsDelivr hosts unless a future release explicitly updates this contract.
 
