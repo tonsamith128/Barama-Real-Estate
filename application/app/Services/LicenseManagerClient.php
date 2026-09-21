@@ -9,6 +9,13 @@ use RuntimeException;
 
 final class LicenseManagerClient
 {
+    public const ERROR_TEMPORARY_UNAVAILABLE = 50301;
+
+    public static function isTemporaryFailure(RuntimeException $exception): bool
+    {
+        return $exception->getCode() === self::ERROR_TEMPORARY_UNAVAILABLE;
+    }
+
     /**
      * Optional transport is used only by deterministic contract QA.
      *
@@ -416,7 +423,8 @@ final class LicenseManagerClient
 
         if ($curl === false) {
             throw new RuntimeException(
-                'License service is temporarily unavailable. Please try again.'
+                'License service is temporarily unavailable. Please try again.',
+                self::ERROR_TEMPORARY_UNAVAILABLE
             );
         }
 
@@ -462,7 +470,8 @@ final class LicenseManagerClient
 
         if ($body === false || $error !== '') {
             throw new RuntimeException(
-                'License service is temporarily unavailable. Please try again.'
+                'License service is temporarily unavailable. Please try again.',
+                self::ERROR_TEMPORARY_UNAVAILABLE
             );
         }
 
@@ -470,11 +479,23 @@ final class LicenseManagerClient
 
         if (!is_array($decoded)) {
             throw new RuntimeException(
-                'License service is temporarily unavailable. Please try again.'
+                'License service is temporarily unavailable. Please try again.',
+                self::ERROR_TEMPORARY_UNAVAILABLE
             );
         }
 
         if ($status < 200 || $status >= 300) {
+            if (
+                $status === 0
+                || in_array($status, [408, 425, 429], true)
+                || $status >= 500
+            ) {
+                throw new RuntimeException(
+                    'License service is temporarily unavailable. Please try again.',
+                    self::ERROR_TEMPORARY_UNAVAILABLE
+                );
+            }
+
             throw new RuntimeException($failureMessage);
         }
 
