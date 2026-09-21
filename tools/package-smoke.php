@@ -49,6 +49,7 @@ foreach ([
     'tools/license-live-smoke.php',
     'tools/http-routing-smoke.php',
     'tools/webserver-package-smoke.sh',
+    'tools/live-server-preflight.php',
     'tools/smtp-test-server.php',
     'tools/smtp-smoke.php',
     'tools/browser-package-prepare.php',
