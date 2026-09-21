@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Barama\Core\Installation;
+use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Services\InstallerService;
 
 $zipPath = $argv[1] ?? '';
@@ -640,6 +641,23 @@ if ($administratorCount !== 1) {
     throw new RuntimeException('First administrator was not provisioned correctly.');
 }
 
+$userWorkspace = (new WorkspaceReadRepository())->adminSection(
+    'users',
+    '',
+    1,
+    20
+);
+
+if (
+    (int) ($userWorkspace['total'] ?? 0) < 1
+    || !is_array($userWorkspace['rows'] ?? null)
+    || ($userWorkspace['rows'] ?? []) === []
+) {
+    throw new RuntimeException(
+        'Admin Users workspace query failed after clean installation.'
+    );
+}
+
 $accountTableCount = (int) $pdo->query(
     "SELECT COUNT(*)
      FROM information_schema.TABLES
@@ -686,6 +704,6 @@ fwrite(
     STDOUT,
     '[PASS] Exact customer ZIP verified: structure, five steps, bad database recovery, '
     . 'subdirectory URLs, clean MySQL installation, production state, migration replay, '
-    . 'database provisioning, administrator provisioning, installation lock and packaged updater contract.'
+    . 'database provisioning, administrator provisioning, Admin Users workspace query, installation lock and packaged updater contract.'
     . PHP_EOL
 );
