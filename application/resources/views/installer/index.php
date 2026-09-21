@@ -29,26 +29,6 @@ $languageValue = (string) (
     $oldWebsite['default_language']
     ?? 'en'
 );
-$mailDriverValue = in_array(
-    (string) ($oldWebsite['mail_driver'] ?? 'smtp'),
-    ['smtp', 'mail'],
-    true
-) ? (string) ($oldWebsite['mail_driver'] ?? 'smtp') : 'smtp';
-$mailEncryptionValue = in_array(
-    (string) ($oldWebsite['mail_encryption'] ?? 'tls'),
-    ['tls', 'ssl', 'none'],
-    true
-) ? (string) ($oldWebsite['mail_encryption'] ?? 'tls') : 'tls';
-$mailFromAddressValue = (string) (
-    $oldWebsite['mail_from_address']
-    ?? $oldWebsite['admin_email']
-    ?? ''
-);
-$mailFromNameValue = (string) (
-    $oldWebsite['mail_from_name']
-    ?? $oldWebsite['site_name']
-    ?? 'Barama Real Estate'
-);
 $languageFlags = [
     'en' => '🇬🇧',
     'km' => '🇰🇭',
@@ -434,6 +414,7 @@ $jsAssetVersion = (string) (
                         action="<?= e($installerUrl) ?>"
                         method="post"
                         class="installer-form"
+                        autocomplete="off"
                         data-installer-database-form
                     >
                         <?= csrf_field() ?>
@@ -487,6 +468,9 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_host"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_host'] ?? '127.0.0.1')) ?>"
                                             maxlength="255"
                                             autocomplete="off"
@@ -516,6 +500,9 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_database"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_database'] ?? '')) ?>"
                                             maxlength="64"
                                             autocomplete="off"
@@ -530,6 +517,9 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_username"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_username'] ?? '')) ?>"
                                             maxlength="191"
                                             autocomplete="username"
@@ -545,6 +535,9 @@ $jsAssetVersion = (string) (
                                             class="form-control"
                                             type="password"
                                             name="db_password"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             autocomplete="new-password"
                                             data-password-field
                                         >
@@ -579,6 +572,9 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_admin_host"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_admin_host'] ?? '127.0.0.1')) ?>"
                                             maxlength="255"
                                             autocomplete="off"
@@ -608,6 +604,9 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_admin_username"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_admin_username'] ?? '')) ?>"
                                             maxlength="191"
                                             autocomplete="username"
@@ -623,6 +622,9 @@ $jsAssetVersion = (string) (
                                             class="form-control"
                                             type="password"
                                             name="db_admin_password"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             autocomplete="new-password"
                                             data-password-field
                                         >
@@ -643,7 +645,7 @@ $jsAssetVersion = (string) (
                                 Barama creates this database and a dedicated user with privileges limited to the new database.
                             </p>
 
-                            <div class="installer-form__grid">
+                            <div class="installer-form__grid installer-form__grid--pair">
                                 <label class="installer-field">
                                     <span class="installer-field__label">New database name</span>
                                     <span class="installer-input">
@@ -651,13 +653,15 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_new_database"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_new_database'] ?? '')) ?>"
                                             maxlength="64"
                                             autocomplete="off"
                                         >
                                     </span>
                                 </label>
-
                                 <label class="installer-field">
                                     <span class="installer-field__label">New database username</span>
                                     <span class="installer-input">
@@ -665,13 +669,18 @@ $jsAssetVersion = (string) (
                                         <input
                                             class="form-control"
                                             name="db_new_username"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             value="<?= e((string) ($oldDatabase['db_new_username'] ?? '')) ?>"
                                             maxlength="32"
                                             autocomplete="off"
                                         >
                                     </span>
                                 </label>
+                            </div>
 
+                            <div class="installer-form__grid installer-form__grid--pair">
                                 <label class="installer-field">
                                     <span class="installer-field__label">New database password</span>
                                     <span class="installer-input">
@@ -680,6 +689,9 @@ $jsAssetVersion = (string) (
                                             class="form-control"
                                             type="password"
                                             name="db_new_password"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             minlength="12"
                                             autocomplete="new-password"
                                             data-password-field
@@ -694,7 +706,6 @@ $jsAssetVersion = (string) (
                                         </button>
                                     </span>
                                 </label>
-
                                 <label class="installer-field">
                                     <span class="installer-field__label">Confirm database password</span>
                                     <span class="installer-input">
@@ -703,6 +714,9 @@ $jsAssetVersion = (string) (
                                             class="form-control"
                                             type="password"
                                             name="db_new_password_confirmation"
+                                            data-1p-ignore
+                                            data-lpignore="true"
+                                            data-bwignore="true"
                                             minlength="12"
                                             autocomplete="new-password"
                                             data-password-field
@@ -717,8 +731,7 @@ $jsAssetVersion = (string) (
                                         </button>
                                     </span>
                                 </label>
-                            </div>
-                        </div>
+                            </div>                       </div>
 
                         <div class="installer-actions">
                             <span class="installer-actions__note">
@@ -933,198 +946,9 @@ $jsAssetVersion = (string) (
                             </label>
                         </div>
 
-                        <div class="installer-section-label">Email delivery</div>
-
-                        <div class="installer-form__grid">
-                            <label class="installer-field">
-                                <span class="installer-field__label">Delivery method</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('mail') ?>
-                                    </span>
-                                    <select
-                                        class="form-select"
-                                        name="mail_driver"
-                                        data-mail-driver
-                                        data-mail-setting
-                                        required
-                                    >
-                                        <option value="smtp" <?= $mailDriverValue === 'smtp' ? 'selected' : '' ?>>
-                                            SMTP (recommended)
-                                        </option>
-                                        <option value="mail" <?= $mailDriverValue === 'mail' ? 'selected' : '' ?>>
-                                            PHP mail
-                                        </option>
-                                    </select>
-                                </span>
-                            </label>
-
-                            <label class="installer-field">
-                                <span class="installer-field__label">From email</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('mail') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        type="email"
-                                        name="mail_from_address"
-                                        value="<?= e($mailFromAddressValue) ?>"
-                                        maxlength="191"
-                                        autocomplete="email"
-                                        data-mail-setting
-                                        data-mail-from-address
-                                        required
-                                    >
-                                </span>
-                            </label>
-
-                            <label class="installer-field">
-                                <span class="installer-field__label">From name</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('building') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        name="mail_from_name"
-                                        value="<?= e($mailFromNameValue) ?>"
-                                        maxlength="120"
-                                        data-mail-setting
-                                        data-mail-from-name
-                                        required
-                                    >
-                                </span>
-                            </label>
-
-                            <label class="installer-field" data-mail-smtp-field>
-                                <span class="installer-field__label">SMTP host</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('server') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        name="mail_host"
-                                        value="<?= e((string) ($oldWebsite['mail_host'] ?? '')) ?>"
-                                        maxlength="255"
-                                        autocomplete="off"
-                                        placeholder="smtp.example.com"
-                                        data-mail-setting
-                                    >
-                                </span>
-                            </label>
-
-                            <label class="installer-field" data-mail-smtp-field>
-                                <span class="installer-field__label">SMTP port</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('server') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        type="number"
-                                        name="mail_port"
-                                        min="1"
-                                        max="65535"
-                                        value="<?= e((string) ($oldWebsite['mail_port'] ?? 587)) ?>"
-                                        data-mail-setting
-                                    >
-                                </span>
-                            </label>
-
-                            <label class="installer-field" data-mail-smtp-field>
-                                <span class="installer-field__label">Encryption</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('shield') ?>
-                                    </span>
-                                    <select
-                                        class="form-select"
-                                        name="mail_encryption"
-                                        data-mail-setting
-                                    >
-                                        <option value="tls" <?= $mailEncryptionValue === 'tls' ? 'selected' : '' ?>>
-                                            TLS / STARTTLS
-                                        </option>
-                                        <option value="ssl" <?= $mailEncryptionValue === 'ssl' ? 'selected' : '' ?>>
-                                            SSL / TLS
-                                        </option>
-                                        <option value="none" <?= $mailEncryptionValue === 'none' ? 'selected' : '' ?>>
-                                            None
-                                        </option>
-                                    </select>
-                                </span>
-                            </label>
-
-                            <label class="installer-field" data-mail-smtp-field>
-                                <span class="installer-field__label">SMTP username</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('user') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        name="mail_username"
-                                        value="<?= e((string) ($oldWebsite['mail_username'] ?? '')) ?>"
-                                        maxlength="191"
-                                        autocomplete="username"
-                                        data-mail-setting
-                                    >
-                                </span>
-                            </label>
-
-                            <label class="installer-field" data-mail-smtp-field>
-                                <span class="installer-field__label">SMTP password</span>
-                                <span class="installer-input">
-                                    <span class="installer-input__icon">
-                                        <?= app_icon('lock') ?>
-                                    </span>
-                                    <input
-                                        class="form-control"
-                                        type="password"
-                                        name="mail_password"
-                                        autocomplete="new-password"
-                                        data-password-field
-                                        data-mail-setting
-                                    >
-                                    <button
-                                        class="installer-input__icon-button"
-                                        type="button"
-                                        data-password-toggle
-                                        aria-label="Show password"
-                                    >
-                                        <?= app_icon('eye') ?>
-                                    </button>
-                                </span>
-                                <small>The SMTP password is never restored after a validation error.</small>
-                            </label>
-                        </div>
-
-                        <div
-                            class="installer-alert"
-                            data-mail-test-status
-                            role="status"
-                            hidden
-                        ></div>
-
                         <div class="installer-actions">
                             <span class="installer-actions__note">
-                                Send a test email to the administrator address before installation.
-                            </span>
-                            <button
-                                class="btn btn-outline-secondary"
-                                type="button"
-                                data-mail-test
-                            >
-                                <?= app_icon('mail') ?>
-                                Send Test Email
-                            </button>
-                        </div>
-
-                        <div class="installer-actions">
-                            <span class="installer-actions__note">
-                                Installation will run automatically when you continue.
+                                Email delivery defaults to PHP mail and can be configured later from the application settings.
                             </span>
                             <button
                                 class="btn btn-primary"
