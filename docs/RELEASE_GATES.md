@@ -97,6 +97,7 @@ These remain intentionally open:
 - final live-server Apache/shared-hosting installer acceptance test
 - final live-server Nginx installer acceptance test
 - final live-server verification of clean-route detection and no-configuration query-routing fallback
+- live administrator authentication and full dashboard/account navigation acceptance
 - final human browser/device visual review on representative desktop, tablet, and mobile browsers
 - final human Light/Dark Mode visual review
 - final live-server production email delivery using a real supported SMTP/PHP-mail provider
