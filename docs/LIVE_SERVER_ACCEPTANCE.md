@@ -32,6 +32,20 @@ Record:
 
 Never copy license keys, purchase codes, SMTP passwords, database passwords, or activation tokens into the acceptance report.
 
+### Optional read-only preflight
+
+Before entering installer credentials, the repository's internal QA utility can inspect the extracted exact customer package and its public HTTPS surface without touching the database or license service:
+
+```bash
+php tools/live-server-preflight.php \
+  --root=/absolute/path/to/extracted/barama \
+  --url=https://barama-test.example.com
+```
+
+The preflight checks PHP/extensions, required package files, canonical CSS/JavaScript, runtime-directory writability, HTTPS/TLS reachability, canonical installer redirect, no-cache/noindex behavior, installer security headers/session-cookie attributes, public assets, and protected application paths.
+
+It is an internal acceptance utility and must not be copied into the CodeCanyon customer ZIP.
+
 ## 1. Fresh package integrity
 
 Before extraction:
