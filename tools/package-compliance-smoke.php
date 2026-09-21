@@ -28,6 +28,7 @@ foreach ([
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
+    'documentation/index.html',
     'README.md',
     'VERSION',
 ] as $required) {

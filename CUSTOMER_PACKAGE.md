@@ -26,6 +26,7 @@ The customer ZIP contains only the runtime product and customer-facing support f
 - notification worker CLI entry point
 - product license notice
 - third-party notices
+- packaged HTML help file: `documentation/index.html`
 - package README and version metadata
 
 ## Not included
@@ -70,6 +71,12 @@ When a newer supported package is uploaded over an installed copy, Barama detect
 
 Create a current files/database backup before upgrading. The updater requires administrator re-authentication and applies only pending ordered migrations.
 
+
+## Customer documentation
+
+Open `documentation/index.html` after extraction for the packaged help file covering system requirements, installation, licensing, account/workspace URLs, email delivery, scheduled notification jobs, upgrades, third-party credits, and support.
+
+The public online documentation remains the extended reference; the packaged HTML file is the customer-safe offline starting point.
 
 ## Package integrity
 

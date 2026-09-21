@@ -104,6 +104,9 @@ jobs:
       - name: Validate exact customer package compliance
         run: php tools/package-compliance-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
 
+      - name: Validate CodeCanyon package preparation
+        run: php tools/codecanyon-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
+
       - name: Validate exact customer package installer
         run: php tools/package-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
 

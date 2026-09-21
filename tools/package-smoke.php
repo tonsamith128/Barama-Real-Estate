@@ -54,6 +54,7 @@ foreach ([
     'tools/browser-package-prepare.php',
     'tools/browser-package-smoke.sh',
     'tools/package-compliance-smoke.php',
+    'tools/codecanyon-smoke.php',
 ] as $forbidden) {
     foreach ($entries as $entry) {
         if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
@@ -112,6 +113,7 @@ foreach ([
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
+    'documentation/index.html',
     'VERSION',
 ] as $required) {
     if (!in_array($required, $entries, true)) {

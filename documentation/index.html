@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Barama Real Estate Documentation</title>
+</head>
+<body>
+    <header>
+        <h1>Barama Real Estate</h1>
+        <p>Property Marketplace &amp; Developer Management PHP Script</p>
+        <p>Author: Ton Samith</p>
+    </header>
+
+    <nav aria-label="Documentation sections">
+        <ul>
+            <li><a href="#requirements">System requirements</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#licensing">License verification</a></li>
+            <li><a href="#accounts">Accounts and workspaces</a></li>
+            <li><a href="#email">Email delivery</a></li>
+            <li><a href="#jobs">Scheduled notification jobs</a></li>
+            <li><a href="#upgrade">Upgrade</a></li>
+            <li><a href="#third-party">Third-party assets</a></li>
+            <li><a href="#support">Support</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="requirements">
+            <h2>System requirements</h2>
+            <ul>
+                <li>PHP 8.2 or newer</li>
+                <li>MySQL 8.0+ or MariaDB 10.6+</li>
+                <li>PDO and PDO MySQL</li>
+                <li>JSON, Mbstring, Ctype, Session, OpenSSL, Fileinfo, and cURL extensions</li>
+                <li>Writable Barama application runtime directories</li>
+                <li>Apache with mod_rewrite/AllowOverride or supported Nginx front-controller routing</li>
+                <li>HTTPS is recommended for production use</li>
+            </ul>
+            <p>No Node.js production runtime, Composer install command, manual migration command, or customer-created .env file is required.</p>
+        </section>
+
+        <section id="installation">
+            <h2>One-click installation</h2>
+            <ol>
+                <li>Upload and extract the customer ZIP into the intended website root.</li>
+                <li>Open the main domain in a browser. Barama redirects automatically to <code>/installer/</code>.</li>
+                <li>Complete <strong>License &amp; Terms</strong>.</li>
+                <li>Confirm <strong>Requirements</strong>.</li>
+                <li>Connect the <strong>Database</strong>.</li>
+                <li>Complete <strong>Website</strong> settings, including the first administrator and email delivery.</li>
+                <li>Review <strong>System Health / Finish</strong> and open the website.</li>
+            </ol>
+            <p>The customer-facing installer always contains exactly five visible steps. Permissions checks remain inside Requirements.</p>
+        </section>
+
+        <section id="licensing">
+            <h2>License verification</h2>
+            <p>The installer supports a Ton Samith direct license key or a CodeCanyon / Envato purchase code through the same license field.</p>
+            <p>Validation is handled through the Ton Samith License Manager. The original purchase code/license key is not stored in persistent runtime state after successful activation.</p>
+        </section>
+
+        <section id="accounts">
+            <h2>Accounts and workspaces</h2>
+            <ul>
+                <li><strong>User Account:</strong> <code>/account</code></li>
+                <li><strong>Company / Vendor Workspace:</strong> <code>/developer</code></li>
+                <li><strong>Public Company Directory:</strong> <code>/company</code></li>
+                <li><strong>Administrator Dashboard:</strong> <code>/dashboard</code></li>
+            </ul>
+            <p>Access is permission controlled. Public registration does not grant company/vendor or administrator permissions automatically.</p>
+        </section>
+
+        <section id="email">
+            <h2>Email delivery</h2>
+            <p>Step 4 of the installer supports SMTP (recommended) or PHP mail. The installer requires a successful test email before installation can finish.</p>
+            <p>SMTP passwords are stored only in protected runtime configuration after successful installation and are not repopulated into installer forms after validation errors.</p>
+        </section>
+
+        <section id="jobs">
+            <h2>Scheduled notification jobs</h2>
+            <p>For saved-search alerts and queued email delivery, schedule the following command with your hosting control panel or cron facility:</p>
+            <pre><code>php /absolute/path/to/barama/tools/notifications.php run</code></pre>
+            <p>Useful variants:</p>
+            <ul>
+                <li><code>php tools/notifications.php alerts all --limit=100</code></li>
+                <li><code>php tools/notifications.php alerts daily --limit=100</code></li>
+                <li><code>php tools/notifications.php alerts weekly --limit=100</code></li>
+                <li><code>php tools/notifications.php outbox 100</code></li>
+            </ul>
+            <p>Run the command from the installed Barama package and use the PHP CLI version supported by the web application.</p>
+        </section>
+
+        <section id="upgrade">
+            <h2>Upgrade</h2>
+            <ol>
+                <li>Create a current backup of both files and database.</li>
+                <li>Upload and extract the newer supported package over the existing installation.</li>
+                <li>Open the main domain. Barama redirects to <code>/updater/</code> when the installed version differs from the package version.</li>
+                <li>Authenticate with an active administrator account and confirm the backup.</li>
+                <li>The updater validates the installed license and applies only pending ordered migrations.</li>
+                <li>Return to the website and verify important customer/admin workflows before removing the backup.</li>
+            </ol>
+            <p>Downgrades are not supported.</p>
+        </section>
+
+        <section id="third-party">
+            <h2>Third-party assets</h2>
+            <p>Barama Real Estate uses Bootstrap 5.3.3 under the MIT License, delivered from jsDelivr at runtime.</p>
+            <p>See <code>../THIRD_PARTY_NOTICES.md</code> in the customer package for the complete dependency notice.</p>
+        </section>
+
+        <section id="support">
+            <h2>Documentation and support</h2>
+            <p>Online documentation: <a href="https://docs.tonsamith.com/docs?=228711-barama-real-estate-property-marketplace-developer-management-php-script">docs.tonsamith.com</a></p>
+            <p>Support: <a href="https://tonsamith.com/contact">tonsamith.com/contact</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Barama Real Estate · Copyright 2026 Ton Samith.</p>
+    </footer>
+</body>
+</html>

@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.12-dev`
+- Current development line: `0.9.13-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -279,3 +279,17 @@ The 0.9.12 development line closes the automated customer-package compliance and
 - one first-party stylesheet and one first-party JavaScript file remain canonical
 
 The final human CodeCanyon submission/package review remains a v1.0.0 gate. See `docs/PACKAGE_COMPLIANCE.md`.
+
+
+## CodeCanyon customer documentation gate
+
+The 0.9.13 development line adds a packaged customer help file and an exact-ZIP CodeCanyon preparation scan.
+
+- `documentation/index.html` is shipped inside the customer ZIP as a self-contained HTML help file
+- the help file covers requirements, the five-step installer, license verification, account/workspace URLs, mail delivery, scheduled notification jobs, upgrades, third-party credits, online documentation, and support
+- exact-ZIP QA requires the HTML help file plus `LICENSE.md`, `THIRD_PARTY_NOTICES.md`, and `CUSTOMER_PACKAGE.md`
+- CodeCanyon package QA rejects inline CSS style attributes in shipped markup
+- CodeCanyon package QA rejects inline JavaScript event-handler attributes, runtime `eval()`, unsafe PHP short tags, and runtime debug dumps
+- development-only CodeCanyon QA scripts remain excluded from the customer ZIP
+
+GitHub-hosted Actions runners are currently not being assigned to new Quality jobs (`runner_id: 0`, no executed steps). Therefore the 0.9.11–0.9.13 automated gates are implemented but remain pending execution; they are not being represented as passed. See `docs/CODECANYON_SUBMISSION.md` and `docs/RELEASE_GATES.md`.
