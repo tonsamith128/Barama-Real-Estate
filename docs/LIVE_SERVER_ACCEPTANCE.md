@@ -367,3 +367,28 @@ Workspace/navigation gate:
 
 These checks may record normal login/logout/security-audit events but must not create business records.
 
+
+
+## Disposable customer lifecycle and administrator write gate
+
+After the read-only workspace/auth gate passes, exercise one controlled disposable customer before release:
+
+- register a unique `@example.invalid` customer through the real HTTP/CSRF flow
+- confirm the account is active, unverified, and assigned the canonical `user` role
+- confirm Barama queues the verification email
+- recover only the disposable account's verification link from the Barama email outbox and complete verification through the real HTTP/CSRF route
+- confirm the verified customer can open `/account` but receives HTTP 403 for `/dashboard`
+- sign in as the installed administrator
+- suspend and restore only the disposable customer through the administrator user-management endpoint
+- grant and revoke the administrator role only on the disposable verified customer
+- confirm the base `user` role remains intact
+- log in again as the disposable customer after auth-version changes and confirm role separation
+- log both sessions out
+- remove the disposable account, its queued verification mail and its QA security-audit rows
+- confirm total user count and active-administrator count return exactly to the pre-test baseline
+- confirm `/health` still reports OK
+
+Do not create or modify company, project, property, listing, inquiry, lead, catalog or media records during this gate.
+
+This gate validates verification-email queue generation and token handling. It does not by itself prove that the host's PHP-mail transport delivered an external message; outbound mail delivery remains a separate server-level acceptance check.
+
