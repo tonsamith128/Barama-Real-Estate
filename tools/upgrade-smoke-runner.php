@@ -252,7 +252,60 @@ function run_barama_upgrade_smoke(
         );
     }
 
-    $result = $upgrade->upgrade([
+    $revokedClient = new \Barama\Services\LicenseManagerClient(
+        static fn (string $path, array $payload): array => [
+            'success' => true,
+            'license' => [
+                'product_slug' => 'barama-real-estate',
+                'status' => 'revoked',
+                'domain' => (string) ($payload['domain'] ?? ''),
+                'installation_id' => (string) ($payload['installation_id'] ?? ''),
+            ],
+        ]
+    );
+    $revokedUpgrade = new \Barama\Services\UpgradeService(
+        $pdo,
+        $revokedClient
+    );
+    $revokedBlocked = false;
+
+    try {
+        $revokedUpgrade->upgrade([
+            'admin_email' => 'upgrade-admin@example.test',
+            'admin_password' => $adminPassword,
+            'backup_confirmed' => '1',
+        ]);
+    } catch (\RuntimeException $exception) {
+        $revokedBlocked =
+            !\Barama\Services\LicenseManagerClient::isTemporaryFailure(
+                $exception
+            )
+            && str_contains(
+                strtolower($exception->getMessage()),
+                'not active'
+            );
+    }
+
+    if (!$revokedBlocked) {
+        throw new \RuntimeException(
+            'A revoked license incorrectly received updater offline grace.'
+        );
+    }
+
+    $temporaryClient = new \Barama\Services\LicenseManagerClient(
+        static function (string $path, array $payload): array {
+            throw new \RuntimeException(
+                'License service is temporarily unavailable. Please try again.',
+                \Barama\Services\LicenseManagerClient::ERROR_TEMPORARY_UNAVAILABLE
+            );
+        }
+    );
+    $graceUpgrade = new \Barama\Services\UpgradeService(
+        $pdo,
+        $temporaryClient
+    );
+
+    $result = $graceUpgrade->upgrade([
         'admin_email' => 'upgrade-admin@example.test',
         'admin_password' => $adminPassword,
         'backup_confirmed' => '1',
@@ -307,7 +360,7 @@ function run_barama_upgrade_smoke(
         );
     }
 
-    $second = $upgrade->upgrade([
+    $second = $graceUpgrade->upgrade([
         'admin_email' => 'upgrade-admin@example.test',
         'admin_password' => $adminPassword,
         'backup_confirmed' => '1',
