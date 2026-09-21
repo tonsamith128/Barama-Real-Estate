@@ -132,6 +132,10 @@ final class LicenseManagerClient
             'domain' => $domain,
             'installation_id' => $installationId,
             'verification_method' => $verificationMethod,
+            'credential_fingerprint' => self::credentialFingerprint(
+                $purchaseCode,
+                $installationId
+            ),
             'validated_at' => gmdate('c'),
         ];
     }
@@ -243,6 +247,18 @@ final class LicenseManagerClient
         }
 
         return $response;
+    }
+
+    public static function credentialFingerprint(
+        string $purchaseCode,
+        string $installationId
+    ): string {
+        return hash(
+            'sha256',
+            self::normalizeInstallationId($installationId)
+                . "\0"
+                . trim($purchaseCode)
+        );
     }
 
     public static function canonicalDomain(string $domain): string
