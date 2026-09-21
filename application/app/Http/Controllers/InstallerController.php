@@ -57,6 +57,10 @@ final class InstallerController
             $step = $allowed;
         }
 
+        if ($step === 1) {
+            Session::forget(self::TERMS_KEY);
+        }
+
         $this->render($service, $step);
     }
 
