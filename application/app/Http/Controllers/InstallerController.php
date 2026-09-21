@@ -310,6 +310,7 @@ final class InstallerController
     ): never {
         $this->requireReachedStep(4);
         $license = $this->requireLicense();
+        $license = $this->revalidateLicenseForInstall($license, $service);
         $database = Session::get(self::DATABASE_KEY, []);
 
         if (!is_array($database) || $database === []) {
@@ -513,6 +514,51 @@ final class InstallerController
             'mail_username' => $request->input('mail_username', ''),
             'mail_password' => $request->input('mail_password', ''),
         ];
+    }
+
+    /**
+     * Revalidate the Step 1 activation immediately before installation mutates
+     * the database or writes production runtime state.
+     *
+     * @param array<string,mixed> $license
+     * @return array<string,mixed>
+     */
+    private function revalidateLicenseForInstall(
+        array $license,
+        InstallerService $service
+    ): array {
+        $installationId = Installation::installationId();
+        $currentDomain = $service->detectedDomain();
+        $validatedDomain = LicenseManagerClient::canonicalDomain(
+            (string) ($license['domain'] ?? '')
+        );
+
+        if (
+            $currentDomain === ''
+            || $validatedDomain === ''
+            || !hash_equals($validatedDomain, $currentDomain)
+        ) {
+            throw new RuntimeException(
+                'The installation domain changed after license validation. Validate the license again on the current domain.'
+            );
+        }
+
+        $validated = (new LicenseManagerClient())->validateActive(
+            (string) ($license['activation_token'] ?? ''),
+            $currentDomain,
+            $installationId
+        );
+
+        return array_merge(
+            $license,
+            $validated,
+            [
+                'status' => 'active',
+                'domain' => $currentDomain,
+                'installation_id' => $installationId,
+                'validated_at' => gmdate('c'),
+            ]
+        );
     }
 
     /** @return array<string,mixed> */
