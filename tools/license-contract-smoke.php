@@ -103,6 +103,7 @@ foreach (['direct', 'envato'] as $method) {
 
 $invalidMethodBlocked = false;
 $nonActiveStatusesBlocked = true;
+$missingBindingFieldsBlocked = true;
 $wrongDomainBlocked = false;
 $wrongProductBlocked = false;
 $wrongInstallationBlocked = false;
@@ -177,6 +178,36 @@ foreach ([
     }
 }
 
+$completeBinding = [
+    'status' => 'active',
+    'product_slug' => 'barama-real-estate',
+    'domain' => $domain,
+    'installation_id' => $installationId,
+];
+
+foreach (array_keys($completeBinding) as $missingField) {
+    $incomplete = $completeBinding;
+    unset($incomplete[$missingField]);
+
+    $incompleteClient = new LicenseManagerClient(
+        static fn (string $path, array $payload): array => [
+            'success' => true,
+            'license' => $incomplete,
+        ]
+    );
+
+    try {
+        $incompleteClient->validateActive(
+            'contract-token',
+            $domain,
+            $installationId
+        );
+        $missingBindingFieldsBlocked = false;
+    } catch (RuntimeException) {
+        // Expected: every binding field must be returned explicitly.
+    }
+}
+
 try {
     $client->activate(
         'BARAMA-CONTRACT-TEST-123456',
@@ -233,6 +264,7 @@ foreach ([
 if (
     !$invalidMethodBlocked
     || !$nonActiveStatusesBlocked
+    || !$missingBindingFieldsBlocked
     || !$wrongDomainBlocked
     || !$wrongProductBlocked
     || !$wrongInstallationBlocked
@@ -262,7 +294,8 @@ if (
 fwrite(
     STDOUT,
     '[PASS] License Manager contract: direct/envato activation, active validation, '
-    . 'domain/product/installation binding, all non-active status rejection, deactivation and '
+    . 'explicit domain/product/installation/status binding, all non-active status rejection, '
+    . 'incomplete-response rejection, deactivation and '
     . 'temporary-vs-permanent outage classification verified.'
     . PHP_EOL
 );
