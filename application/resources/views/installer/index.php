@@ -59,6 +59,14 @@ $databaseModeValue = in_array(
     ['existing', 'create'],
     true
 ) ? (string) ($oldDatabase['db_mode'] ?? 'existing') : 'existing';
+$cssAssetVersion = (string) (
+    @filemtime(BASE_PATH . '/assets/css/app.css')
+    ?: APP_VERSION
+);
+$jsAssetVersion = (string) (
+    @filemtime(BASE_PATH . '/assets/js/app.js')
+    ?: APP_VERSION
+);
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -73,7 +81,7 @@ $databaseModeValue = in_array(
         rel="stylesheet"
     >
     <link
-        href="<?= e($assetBase . '/assets/css/app.css') ?>"
+        href="<?= e($assetBase . '/assets/css/app.css?v=' . rawurlencode($cssAssetVersion)) ?>"
         rel="stylesheet"
     >
 </head>
@@ -1213,7 +1221,7 @@ $databaseModeValue = in_array(
 </div>
 
 <script
-    src="<?= e($assetBase . '/assets/js/app.js') ?>"
+    src="<?= e($assetBase . '/assets/js/app.js?v=' . rawurlencode($jsAssetVersion)) ?>"
     defer
 ></script>
 </body>
