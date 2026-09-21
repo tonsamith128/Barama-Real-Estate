@@ -38,18 +38,15 @@ final class LicenseManagerClient
         string $purchaseCode,
         string $domain,
         string $installationId,
-        string $verificationMethod = 'envato'
+        string $verificationMethod = 'auto'
     ): array {
         $purchaseCode = trim($purchaseCode);
         $domain = self::canonicalDomain($domain);
         $installationId = self::normalizeInstallationId($installationId);
-        $verificationMethod = strtolower(trim($verificationMethod));
-
-        if (!in_array($verificationMethod, ['direct', 'envato'], true)) {
-            throw new RuntimeException(
-                'Choose a valid license verification method.'
-            );
-        }
+        $verificationMethod = $this->resolveVerificationMethod(
+            $purchaseCode,
+            $verificationMethod
+        );
 
         if (
             strlen($purchaseCode) < 8
@@ -340,6 +337,30 @@ final class LicenseManagerClient
             'installation_id' => $installationId,
             'status' => $status !== '' ? $status : 'active',
         ]);
+    }
+
+    private function resolveVerificationMethod(
+        string $purchaseCode,
+        string $verificationMethod
+    ): string {
+        $verificationMethod = strtolower(trim($verificationMethod));
+
+        if ($verificationMethod === 'auto') {
+            return preg_match(
+                '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i',
+                $purchaseCode
+            ) === 1
+                ? 'envato'
+                : 'direct';
+        }
+
+        if (!in_array($verificationMethod, ['direct', 'envato'], true)) {
+            throw new RuntimeException(
+                'The purchase verification request is invalid.'
+            );
+        }
+
+        return $verificationMethod;
     }
 
     private function assertDomainAndInstallation(
