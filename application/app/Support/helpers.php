@@ -69,19 +69,39 @@ if (!function_exists('url')) {
     function url(string $path = '/'): string
     {
         $base = rtrim((string) config('app.url', ''), '/');
+        $path = '/' . ltrim($path, '/');
 
-        if ($base === '') {
-            return '/' . ltrim($path, '/');
+        if ($path === '//') {
+            $path = '/';
         }
 
-        return $base . '/' . ltrim($path, '/');
+        $routingMode = (string) config('app.routing_mode', 'clean');
+
+        if ($routingMode === 'query' && $path !== '/') {
+            $pathOnly = (string) (parse_url($path, PHP_URL_PATH) ?: '/');
+            $query = (string) (parse_url($path, PHP_URL_QUERY) ?? '');
+            $route = rawurlencode('/' . ltrim($pathOnly, '/'));
+            $separator = $query !== '' ? '&' . $query : '';
+            $relative = '/index.php?_route=' . $route . $separator;
+
+            return $base !== '' ? $base . $relative : $relative;
+        }
+
+        if ($base === '') {
+            return $path;
+        }
+
+        return $base . $path;
     }
 }
 
 if (!function_exists('asset')) {
     function asset(string $path): string
     {
-        return url('/assets/' . ltrim($path, '/'));
+        $base = rtrim((string) config('app.url', ''), '/');
+        $relative = '/assets/' . ltrim($path, '/');
+
+        return $base !== '' ? $base . $relative : $relative;
     }
 }
 
