@@ -71,6 +71,8 @@ These gates remain pending until a Quality run receives a real runner and comple
 - ordered pending-migration execution with clean replay
 - source and exact-customer-ZIP upgrade compatibility
 - deterministic Ton Samith License Manager contract QA for Direct and Envato methods
+- updater offline grace restricted to classified transport/service outages, never explicit license rejection
+- live-license rejection QA hardened against outage false positives and concurrent test runs
 - canonical license deactivation support
 - root/subdirectory request-path normalization
 - exact-package Apache and Nginx routing preflight
