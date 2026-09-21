@@ -87,16 +87,46 @@ Required checks include:
 
 HTTPS is reported as a warning during installation when absent, not as a separate permissions stage.
 
+Step 2 presents these checks as a clean requirements table with Requirement, Detected / Details, and Status columns rather than individual boxed cards.
+
+The installer header keeps the canonical language SVG control and shows flag + language options for English, Khmer, and Chinese. The preference is stored locally for the installer session and is synchronized with the Step 4 default-language field when available.
+
 ## Database
 
-Supported minimum database versions:
+Step 3 exposes exactly two database setup modes:
 
-- MySQL 8.0+
-- MariaDB 10.6+
+### Existing Database
 
-The installer can optionally create the named database when the supplied database account has permission. It otherwise connects to an existing empty database.
+Use this when the hosting panel already provides database credentials. The installer requires:
 
-An interrupted Barama installation can be retried when schema_migrations exists and no user account has been provisioned.
+- database host
+- port
+- database name
+- database username
+- database password
+
+The connection must use MySQL 8.0+ or MariaDB 10.6+ and the target database must be empty or a safe interrupted Barama installation.
+
+### Create Database
+
+Use this only when the customer has MySQL/MariaDB administrative credentials. The installer requires:
+
+Database Server Admin Access:
+- admin host
+- admin port
+- admin username
+- admin password
+
+New Database Details:
+- new database name
+- new database username
+- new database password
+- password confirmation
+
+The administrative credentials are used only during provisioning and are never stored in Barama runtime state. Barama creates a dedicated database and dedicated database user, grants that user privileges only on the new database, then verifies the new application connection. If provisioning fails after Barama creates resources, the installer attempts to remove only the database/user created by that attempt.
+
+After successful provisioning, only the dedicated application database credentials continue to Step 4 and into the protected runtime configuration.
+
 
 ## Website finalization
 
