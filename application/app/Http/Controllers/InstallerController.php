@@ -214,26 +214,88 @@ final class InstallerController
         $this->requireReachedStep(3);
         $this->requireLicense();
 
+        $mode = strtolower(trim(
+            (string) $request->input('db_mode', 'existing')
+        ));
+
+        Session::put('installer.database_old', [
+            'db_mode' => in_array($mode, ['existing', 'create'], true)
+                ? $mode
+                : 'existing',
+            'db_host' => trim((string) $request->input(
+                'db_host',
+                '127.0.0.1'
+            )),
+            'db_port' => (string) $request->input('db_port', 3306),
+            'db_database' => trim((string) $request->input(
+                'db_database',
+                ''
+            )),
+            'db_username' => trim((string) $request->input(
+                'db_username',
+                ''
+            )),
+            'db_admin_host' => trim((string) $request->input(
+                'db_admin_host',
+                '127.0.0.1'
+            )),
+            'db_admin_port' => (string) $request->input(
+                'db_admin_port',
+                3306
+            ),
+            'db_admin_username' => trim((string) $request->input(
+                'db_admin_username',
+                ''
+            )),
+            'db_new_database' => trim((string) $request->input(
+                'db_new_database',
+                ''
+            )),
+            'db_new_username' => trim((string) $request->input(
+                'db_new_username',
+                ''
+            )),
+        ]);
+
         $database = $service->testDatabase([
+            'db_mode' => $mode,
             'db_host' => $request->input('db_host', ''),
             'db_port' => $request->input('db_port', 3306),
             'db_database' => $request->input('db_database', ''),
             'db_username' => $request->input('db_username', ''),
             'db_password' => $request->input('db_password', ''),
-            'create_database' => $request->input(
-                'create_database',
+            'db_admin_host' => $request->input(
+                'db_admin_host',
+                '127.0.0.1'
+            ),
+            'db_admin_port' => $request->input('db_admin_port', 3306),
+            'db_admin_username' => $request->input(
+                'db_admin_username',
+                ''
+            ),
+            'db_admin_password' => $request->input(
+                'db_admin_password',
+                ''
+            ),
+            'db_new_database' => $request->input(
+                'db_new_database',
+                ''
+            ),
+            'db_new_username' => $request->input(
+                'db_new_username',
+                ''
+            ),
+            'db_new_password' => $request->input(
+                'db_new_password',
+                ''
+            ),
+            'db_new_password_confirmation' => $request->input(
+                'db_new_password_confirmation',
                 ''
             ),
         ]);
 
         Session::put(self::DATABASE_KEY, $database);
-        Session::put('installer.database_old', [
-            'db_host' => $database['host'],
-            'db_port' => $database['port'],
-            'db_database' => $database['database'],
-            'db_username' => $database['username'],
-            'create_database' => $database['create_database'],
-        ]);
         Session::put(self::STEP_KEY, 4);
 
         $this->redirect($service->installerUrl('step=4'));
