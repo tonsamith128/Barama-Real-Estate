@@ -198,6 +198,17 @@ if (
     || str_contains($viewSource, "<?= \$termsReviewed ? 'checked' : '' ?>")
     || !str_contains($viewSource, 'action="<?= e($installerUrl) ?>"')
     || !str_contains($viewSource, 'data-theme-toggle')
+    || !str_contains($viewSource, 'data-installer-language')
+    || !str_contains($viewSource, '🇰🇭')
+    || !str_contains($viewSource, 'installer-requirements-table')
+    || !str_contains($viewSource, 'name="db_mode"')
+    || !str_contains($viewSource, 'Existing Database')
+    || !str_contains($viewSource, 'Create Database')
+    || !str_contains($viewSource, 'Database Server Admin Access')
+    || !str_contains($viewSource, 'name="db_admin_username"')
+    || !str_contains($viewSource, 'name="db_new_database"')
+    || !str_contains($viewSource, 'name="db_new_password_confirmation"')
+    || str_contains($viewSource, 'name="create_database"')
 ) {
     throw new RuntimeException('Five-step installer controls are incomplete.');
 }
@@ -212,6 +223,12 @@ if (
     || !str_contains($javascriptSource, 'window.localStorage.setItem(storageKey, next)')
     || !str_contains($javascriptSource, "workspaceOpen?.setAttribute('aria-expanded', 'false')")
     || !str_contains($javascriptSource, "workspaceOpen.setAttribute('aria-expanded', 'true')")
+    || !str_contains($stylesheetSource, '.installer-requirements-table')
+    || !str_contains($stylesheetSource, '.installer-database-mode')
+    || !str_contains($stylesheetSource, 'background: transparent')
+    || !str_contains($javascriptSource, '[data-database-mode]')
+    || !str_contains($javascriptSource, 'Create Database & Continue')
+    || !str_contains($javascriptSource, 'barama-installer-language')
 ) {
     throw new RuntimeException('Responsive or Light/Dark installer behavior is incomplete.');
 }
@@ -354,6 +371,10 @@ if (
     || !str_contains($mailServiceSource, 'allow_self_signed')
     || !str_contains($installerServiceSource, 'function testMail(')
     || !str_contains($installerServiceSource, 'function mailFingerprint(')
+    || !str_contains($installerServiceSource, 'function provisionDatabase(')
+    || !str_contains($installerServiceSource, 'CREATE DATABASE')
+    || !str_contains($installerServiceSource, 'CREATE USER')
+    || !str_contains($installerServiceSource, 'GRANT ALL PRIVILEGES ON')
     || !str_contains($licenseClientSource, 'function validateActive(')
     || !str_contains($licenseClientSource, 'function deactivate(')
     || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYPEER')
@@ -460,36 +481,57 @@ if (
 $dbHost = (string) (getenv('PACKAGE_DB_HOST') ?: '127.0.0.1');
 $dbPort = (int) (getenv('PACKAGE_DB_PORT') ?: 3306);
 $dbName = (string) (getenv('PACKAGE_DB_DATABASE') ?: 'barama_package_test');
-$dbUser = (string) (getenv('PACKAGE_DB_USERNAME') ?: 'root');
-$dbPassword = (string) (getenv('PACKAGE_DB_PASSWORD') ?: '');
+$dbAdminUser = (string) (getenv('PACKAGE_DB_USERNAME') ?: 'root');
+$dbAdminPassword = (string) (getenv('PACKAGE_DB_PASSWORD') ?: '');
+$dbUser = 'barama_pkg_' . substr(hash('sha256', $temporaryRoot), 0, 8);
+$dbPassword = 'Barama!Pkg2026-' . substr(hash('sha256', $zipPath), 0, 10);
 
 $badDatabaseRejected = false;
 
 try {
     $service->testDatabase([
-        'db_host' => $dbHost,
-        'db_port' => $dbPort,
-        'db_database' => $dbName,
-        'db_username' => $dbUser,
-        'db_password' => $dbPassword . '-incorrect',
-        'create_database' => '1',
+        'db_mode' => 'create',
+        'db_admin_host' => $dbHost,
+        'db_admin_port' => $dbPort,
+        'db_admin_username' => $dbAdminUser,
+        'db_admin_password' => $dbAdminPassword . '-incorrect',
+        'db_new_database' => $dbName,
+        'db_new_username' => $dbUser,
+        'db_new_password' => $dbPassword,
+        'db_new_password_confirmation' => $dbPassword,
     ]);
 } catch (RuntimeException) {
     $badDatabaseRejected = true;
 }
 
 if (!$badDatabaseRejected) {
-    throw new RuntimeException('Invalid database credentials were not rejected.');
+    throw new RuntimeException(
+        'Invalid database administrator credentials were not rejected.'
+    );
 }
 
 $database = $service->testDatabase([
-    'db_host' => $dbHost,
-    'db_port' => $dbPort,
-    'db_database' => $dbName,
-    'db_username' => $dbUser,
-    'db_password' => $dbPassword,
-    'create_database' => '1',
+    'db_mode' => 'create',
+    'db_admin_host' => $dbHost,
+    'db_admin_port' => $dbPort,
+    'db_admin_username' => $dbAdminUser,
+    'db_admin_password' => $dbAdminPassword,
+    'db_new_database' => $dbName,
+    'db_new_username' => $dbUser,
+    'db_new_password' => $dbPassword,
+    'db_new_password_confirmation' => $dbPassword,
 ]);
+
+if (
+    ($database['provisioned'] ?? false) !== true
+    || ($database['database'] ?? '') !== $dbName
+    || ($database['username'] ?? '') !== $dbUser
+    || isset($database['admin_username'], $database['admin_password'])
+) {
+    throw new RuntimeException(
+        'Create Database mode returned unsafe or incorrect application credentials.'
+    );
+}
 
 $installationId = Installation::installationId();
 
@@ -614,6 +656,6 @@ fwrite(
     STDOUT,
     '[PASS] Exact customer ZIP verified: structure, five steps, bad database recovery, '
     . 'subdirectory URLs, clean MySQL installation, production state, migration replay, '
-    . 'administrator provisioning, installation lock and packaged updater contract.'
+    . 'database provisioning, administrator provisioning, installation lock and packaged updater contract.'
     . PHP_EOL
 );
