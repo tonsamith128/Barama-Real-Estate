@@ -56,7 +56,7 @@ Demo content for the public demonstration website is maintained separately and i
 
 Barama uses these declared external hosts:
 
-- `cdn.jsdelivr.net` for the Bootstrap 5.3.3 stylesheet
+- `cdn.jsdelivr.net` for the Bootstrap 5.3.3 stylesheet; outbound HTTPS access to this host is required for Bootstrap styling
 - `tonsamith.com` for licensing and support
 - `docs.tonsamith.com` for online documentation
 
@@ -69,3 +69,8 @@ See `THIRD_PARTY_NOTICES.md` for dependency licensing information.
 When a newer supported package is uploaded over an installed copy, Barama detects the version mismatch and redirects to `/updater/`.
 
 Create a current files/database backup before upgrading. The updater requires administrator re-authentication and applies only pending ordered migrations.
+
+
+## Package integrity
+
+Each validated customer ZIP is published with a SHA-256 checksum file generated from the exact archive that passed release QA. Verify the checksum before deployment when transferring the package between systems.
