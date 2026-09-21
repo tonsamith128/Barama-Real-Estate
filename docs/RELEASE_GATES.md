@@ -79,10 +79,10 @@ These gates remain pending until a Quality run receives a real runner and comple
 - deterministic Ton Samith License Manager contract QA for Direct and Envato methods
 - canonical license deactivation support
 - root/subdirectory request-path normalization
-- exact-package Apache and Nginx routing preflight
+- exact-package Apache routing and Nginx front-controller preflight
 - deterministic SMTP AUTH LOGIN multipart delivery
-- installer mail configuration validation and test-email enforcement
-- secure SMTP TLS peer/hostname verification configuration
+- installer initializes safe PHP-mail defaults without requiring SMTP knowledge or a test-email gate
+- secure SMTP TLS peer/hostname verification configuration for post-install SMTP settings
 - exact-package Chromium mobile/tablet/desktop QA
 - Light/Dark persistence checks
 - keyboard/focus behavior and serious/critical automated accessibility checks
@@ -96,6 +96,7 @@ These remain intentionally open:
 - live Ton Samith License Manager success using Barama-specific Direct and Envato test credentials through the installer/live-server test
 - final live-server Apache/shared-hosting installer acceptance test
 - final live-server Nginx installer acceptance test
+- final live-server verification of clean-route detection and no-configuration query-routing fallback
 - final human browser/device visual review on representative desktop, tablet, and mobile browsers
 - final human Light/Dark Mode visual review
 - final live-server production email delivery using a real supported SMTP/PHP-mail provider
