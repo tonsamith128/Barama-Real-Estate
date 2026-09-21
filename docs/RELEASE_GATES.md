@@ -40,6 +40,8 @@ The following gates are implemented in the repository but must be rerun before t
 - exact-package release metadata/checksum consistency across source VERSION, ZIP filename, packaged VERSION, README marker, archive comment, and SHA-256 sidecar
 - installer security-header assertions on exact-package Apache/Nginx root and subdirectory hosting
 - updater offline grace restricted to classified transport/service outages, never explicit license rejection
+- installer accepts only explicit active license status with complete product/domain/installation/status bindings
+- installer revalidates the activation token immediately before final database/runtime mutation
 - live-license rejection QA hardened against outage false positives and concurrent test runs
 - packaged customer manifest documenting installation, runtime contents, external services, checksum integrity, and upgrade behavior
 - packaged HTML customer help file at `documentation/index.html`
