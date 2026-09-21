@@ -199,22 +199,8 @@ final class InstallerService
     {
         $database = $this->validateDatabaseInput($input);
 
-        if ($database['create_database']) {
-            $server = $this->connect(
-                $database['host'],
-                $database['port'],
-                null,
-                $database['username'],
-                $database['password']
-            );
-            $this->assertSupportedDatabase($server);
-
-            $tick = chr(96);
-            $server->exec(
-                'CREATE DATABASE IF NOT EXISTS '
-                . $tick . $database['database'] . $tick
-                . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
-            );
+        if ($database['mode'] === 'create') {
+            return $this->provisionDatabase($database);
         }
 
         $connection = $this->connect(
@@ -228,7 +214,16 @@ final class InstallerService
         $this->assertSupportedDatabase($connection);
         $this->assertDatabaseSuitable($connection);
 
-        return $database;
+        return [
+            'host' => $database['host'],
+            'port' => $database['port'],
+            'database' => $database['database'],
+            'username' => $database['username'],
+            'password' => $database['password'],
+            'mode' => 'existing',
+            'create_database' => false,
+            'provisioned' => false,
+        ];
     }
 
     /** @param array<string,mixed> $input @return array<string,mixed> */
@@ -952,35 +947,140 @@ SQL);
     /** @param array<string,mixed> $input @return array<string,mixed> */
     private function validateDatabaseInput(array $input): array
     {
-        $host = trim(
-            (string) ($input['host'] ?? $input['db_host'] ?? '127.0.0.1')
-        );
-        $port = filter_var(
-            $input['port'] ?? $input['db_port'] ?? 3306,
-            FILTER_VALIDATE_INT,
-            ['options' => ['min_range' => 1, 'max_range' => 65535]]
-        );
-        $database = trim(
-            (string) ($input['database'] ?? $input['db_database'] ?? '')
-        );
-        $username = trim(
-            (string) ($input['username'] ?? $input['db_username'] ?? '')
-        );
-        $password = (string) (
-            $input['password'] ?? $input['db_password'] ?? ''
-        );
+        $mode = strtolower(trim((string) ($input['db_mode'] ?? $input['mode'] ?? 'existing')));
+
+        if (!in_array($mode, ['existing', 'create'], true)) {
+            throw new RuntimeException('Choose a valid database setup option.');
+        }
+
+        if ($mode === 'create') {
+            $adminHost = $this->validateDatabaseHost(
+                (string) ($input['db_admin_host'] ?? '127.0.0.1'),
+                'database server host'
+            );
+            $adminPort = $this->validateDatabasePort(
+                $input['db_admin_port'] ?? 3306,
+                'database server port'
+            );
+            $adminUsername = $this->validateDatabaseUsername(
+                (string) ($input['db_admin_username'] ?? ''),
+                'database administrator username',
+                191
+            );
+            $adminPassword = (string) ($input['db_admin_password'] ?? '');
+
+            if (
+                $adminPassword === ''
+                || strlen($adminPassword) > 1024
+                || preg_match('/[\r\n\0]/', $adminPassword) === 1
+            ) {
+                throw new RuntimeException(
+                    'Enter the database administrator password.'
+                );
+            }
+
+            $database = $this->validateDatabaseName(
+                (string) ($input['db_new_database'] ?? '')
+            );
+            $username = $this->validateDatabaseUsername(
+                (string) ($input['db_new_username'] ?? ''),
+                'new database username',
+                32
+            );
+            $password = (string) ($input['db_new_password'] ?? '');
+            $confirmation = (string) (
+                $input['db_new_password_confirmation'] ?? ''
+            );
+
+            if (
+                strlen($password) < 12
+                || strlen($password) > 255
+                || preg_match('/[\r\n\0]/', $password) === 1
+            ) {
+                throw new RuntimeException(
+                    'New database password must contain at least 12 characters.'
+                );
+            }
+
+            if (!hash_equals($password, $confirmation)) {
+                throw new RuntimeException(
+                    'New database password confirmation does not match.'
+                );
+            }
+
+            return [
+                'mode' => 'create',
+                'host' => $adminHost,
+                'port' => $adminPort,
+                'database' => $database,
+                'username' => $username,
+                'password' => $password,
+                'admin_username' => $adminUsername,
+                'admin_password' => $adminPassword,
+            ];
+        }
+
+        return [
+            'mode' => 'existing',
+            'host' => $this->validateDatabaseHost(
+                (string) ($input['db_host'] ?? $input['host'] ?? '127.0.0.1'),
+                'database host'
+            ),
+            'port' => $this->validateDatabasePort(
+                $input['db_port'] ?? $input['port'] ?? 3306,
+                'database port'
+            ),
+            'database' => $this->validateDatabaseName(
+                (string) ($input['db_database'] ?? $input['database'] ?? '')
+            ),
+            'username' => $this->validateDatabaseUsername(
+                (string) ($input['db_username'] ?? $input['username'] ?? ''),
+                'database username',
+                191
+            ),
+            'password' => (string) (
+                $input['db_password'] ?? $input['password'] ?? ''
+            ),
+        ];
+    }
+
+    private function validateDatabaseHost(
+        string $host,
+        string $label
+    ): string {
+        $host = trim($host);
 
         if (
             $host === ''
             || mb_strlen($host) > 255
-            || preg_match('/[\r\n]/', $host) === 1
+            || preg_match('/[\r\n\0]/', $host) === 1
         ) {
-            throw new RuntimeException('Enter a valid database host.');
+            throw new RuntimeException('Enter a valid ' . $label . '.');
         }
 
-        if ($port === false) {
-            throw new RuntimeException('Enter a valid database port.');
+        return $host;
+    }
+
+    private function validateDatabasePort(
+        mixed $port,
+        string $label
+    ): int {
+        $validated = filter_var(
+            $port,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1, 'max_range' => 65535]]
+        );
+
+        if ($validated === false) {
+            throw new RuntimeException('Enter a valid ' . $label . '.');
         }
+
+        return (int) $validated;
+    }
+
+    private function validateDatabaseName(string $database): string
+    {
+        $database = trim($database);
 
         if (preg_match('/^[A-Za-z0-9_-]{1,64}$/', $database) !== 1) {
             throw new RuntimeException(
@@ -988,24 +1088,148 @@ SQL);
             );
         }
 
+        return $database;
+    }
+
+    private function validateDatabaseUsername(
+        string $username,
+        string $label,
+        int $maxLength
+    ): string {
+        $username = trim($username);
+
         if (
             $username === ''
-            || mb_strlen($username) > 191
-            || preg_match('/[\r\n]/', $username) === 1
+            || mb_strlen($username) > $maxLength
+            || preg_match('/^[A-Za-z0-9_.-]+$/', $username) !== 1
+        ) {
+            throw new RuntimeException('Enter a valid ' . $label . '.');
+        }
+
+        return $username;
+    }
+
+    /** @param array<string,mixed> $database @return array<string,mixed> */
+    private function provisionDatabase(array $database): array
+    {
+        $server = $this->connect(
+            (string) $database['host'],
+            (int) $database['port'],
+            null,
+            (string) $database['admin_username'],
+            (string) $database['admin_password']
+        );
+        $this->assertSupportedDatabase($server);
+
+        $databaseName = (string) $database['database'];
+        $username = (string) $database['username'];
+        $password = (string) $database['password'];
+        $databaseIdentifier = $this->quoteDatabaseIdentifier($databaseName);
+        $quotedUsername = $server->quote($username);
+        $quotedAccountHost = $server->quote('%');
+        $quotedPassword = $server->quote($password);
+
+        if (
+            !is_string($quotedUsername)
+            || !is_string($quotedAccountHost)
+            || !is_string($quotedPassword)
         ) {
             throw new RuntimeException(
-                'Enter a valid database username.'
+                'Database provisioning credentials could not be secured.'
+            );
+        }
+
+        $exists = $server->prepare(
+            'SELECT COUNT(*) FROM information_schema.SCHEMATA '
+            . 'WHERE SCHEMA_NAME = :database'
+        );
+        $exists->execute(['database' => $databaseName]);
+
+        if ((int) $exists->fetchColumn() > 0) {
+            throw new RuntimeException(
+                'The database already exists. Choose Existing Database or enter a new database name.'
+            );
+        }
+
+        $databaseCreated = false;
+        $userCreated = false;
+
+        try {
+            $server->exec(
+                'CREATE DATABASE ' . $databaseIdentifier
+                . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+            );
+            $databaseCreated = true;
+
+            $server->exec(
+                'CREATE USER ' . $quotedUsername . '@' . $quotedAccountHost
+                . ' IDENTIFIED BY ' . $quotedPassword
+            );
+            $userCreated = true;
+
+            $server->exec(
+                'GRANT ALL PRIVILEGES ON ' . $databaseIdentifier . '.* TO '
+                . $quotedUsername . '@' . $quotedAccountHost
+            );
+
+            $connection = $this->connect(
+                (string) $database['host'],
+                (int) $database['port'],
+                $databaseName,
+                $username,
+                $password
+            );
+
+            $this->assertSupportedDatabase($connection);
+            $this->assertDatabaseSuitable($connection);
+        } catch (Throwable $exception) {
+            if ($userCreated) {
+                try {
+                    $server->exec(
+                        'DROP USER IF EXISTS '
+                        . $quotedUsername . '@' . $quotedAccountHost
+                    );
+                } catch (Throwable) {
+                }
+            }
+
+            if ($databaseCreated) {
+                try {
+                    $server->exec(
+                        'DROP DATABASE IF EXISTS ' . $databaseIdentifier
+                    );
+                } catch (Throwable) {
+                }
+            }
+
+            if ($exception instanceof RuntimeException) {
+                throw $exception;
+            }
+
+            throw new RuntimeException(
+                'Database creation failed. Confirm the administrator account can create databases and users, then try again.',
+                0,
+                $exception
             );
         }
 
         return [
-            'host' => $host,
-            'port' => (int) $port,
-            'database' => $database,
+            'host' => (string) $database['host'],
+            'port' => (int) $database['port'],
+            'database' => $databaseName,
             'username' => $username,
             'password' => $password,
-            'create_database' => !empty($input['create_database']),
+            'mode' => 'existing',
+            'create_database' => false,
+            'provisioned' => true,
         ];
+    }
+
+    private function quoteDatabaseIdentifier(string $identifier): string
+    {
+        return chr(96)
+            . str_replace(chr(96), chr(96) . chr(96), $identifier)
+            . chr(96);
     }
 
     private function connect(
