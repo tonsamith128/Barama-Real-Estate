@@ -332,3 +332,38 @@ Record only non-secret evidence:
 - any defects and the commit that fixed them
 
 Do not promote `VERSION` to `1.0.0-RC1` until all required live-server and human gates in `docs/RC1_CHECKLIST.md` have passed and the pending GitHub Actions gates have executed successfully.
+
+
+## Post-install authentication and workspace acceptance
+
+After the five-step installation succeeds, run the live HTTP acceptance gates against the installed domain.
+
+Administrator authentication gate:
+
+- public auth routes return HTTP 200
+- `/account` and `/dashboard` redirect guests
+- session cookie is Secure, HttpOnly, and SameSite=Lax
+- administrator login is CSRF protected
+- administrator redirects to `/dashboard`
+- authenticated `/dashboard` and `/account` return HTTP 200
+- authenticated users are redirected away from guest-only login
+- logout is CSRF protected
+- protected routes are inaccessible again after logout
+
+Workspace/navigation gate:
+
+- every canonical Admin Dashboard section renders HTTP 200:
+  overview, approvals, companies, projects, properties, listings, inquiries,
+  leads, catalog, media, users, and security audit
+- every canonical Account section renders HTTP 200:
+  overview, saved, compare, inquiries, viewings, alerts, notifications,
+  recent, company access, profile, privacy, and security
+- an unknown dashboard/account section returns the Barama application 404
+- registration validation rejects invalid input without creating an account
+- duplicate registration rejects an existing email address
+- password-reset request for a nonexistent address returns the same generic
+  success response used for existing accounts and does not disclose account existence
+- an invalid reset token is rejected
+
+These checks may record normal login/logout/security-audit events but must not create business records.
+
