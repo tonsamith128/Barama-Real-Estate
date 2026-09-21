@@ -368,7 +368,6 @@
     const licenseForm = document.querySelector('[data-installer-license-form]');
     const purchaseCode = document.querySelector('[data-purchase-code]');
     const agreement = document.querySelector('[data-terms-agreement]');
-    const licenseMethods = document.querySelectorAll('[data-license-method]');
     const validateButton = document.querySelector('[data-license-validate]');
     const continueButton = document.querySelector('[data-license-continue]');
     const licenseStatus = document.querySelector('[data-license-status]');
@@ -429,29 +428,6 @@
     });
 
     agreement?.addEventListener('change', updateLicenseButtons);
-
-    licenseMethods.forEach((method) => {
-        method.addEventListener('change', () => {
-            document.querySelectorAll('.installer-license-method').forEach((option) => {
-                option.classList.toggle(
-                    'is-selected',
-                    option.querySelector('[data-license-method]')?.checked === true
-                );
-            });
-
-            if (licenseValidated) {
-                licenseValidated = false;
-                installer.setAttribute('data-license-validated', '0');
-
-                if (licenseStatus) {
-                    licenseStatus.hidden = true;
-                    licenseStatus.classList.remove('is-valid', 'is-error');
-                }
-            }
-
-            updateLicenseButtons();
-        });
-    });
 
     updateLicenseButtons();
 
