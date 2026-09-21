@@ -859,9 +859,9 @@ final class WorkspaceReadRepository
         ];
 
         $definition = $definitions[$key] ?? ['filters' => [], 'sorts' => []];
-        $baseSql = preg_replace('/\s+ORDER\s+BY\s+.+$/is', '', trim($sql));
+        $baseSql = $this->stripTopLevelOrderBy($sql);
 
-        if (!is_string($baseSql) || $baseSql === '') {
+        if ($baseSql === '') {
             throw new InvalidArgumentException('Workspace table query could not be prepared.');
         }
 
@@ -906,6 +906,77 @@ final class WorkspaceReadRepository
             $count,
             array_merge($params, $filterParams),
         ];
+    }
+
+    private function stripTopLevelOrderBy(string $sql): string
+    {
+        $sql = trim($sql);
+        $length = strlen($sql);
+        $depth = 0;
+        $quoteCode = null;
+        $orderByOffset = null;
+
+        for ($index = 0; $index < $length; $index++) {
+            $character = $sql[$index];
+            $code = ord($character);
+
+            if ($quoteCode !== null) {
+                if ($code === 92) {
+                    $index++;
+                    continue;
+                }
+
+                if ($code === $quoteCode) {
+                    if (
+                        $index + 1 < $length
+                        && ord($sql[$index + 1]) === $quoteCode
+                    ) {
+                        $index++;
+                        continue;
+                    }
+
+                    $quoteCode = null;
+                }
+
+                continue;
+            }
+
+            if (in_array($code, [39, 34, 96], true)) {
+                $quoteCode = $code;
+                continue;
+            }
+
+            if ($character === '(') {
+                $depth++;
+                continue;
+            }
+
+            if ($character === ')') {
+                $depth = max(0, $depth - 1);
+                continue;
+            }
+
+            if ($depth !== 0) {
+                continue;
+            }
+
+            if (
+                strncasecmp(substr($sql, $index, 8), 'ORDER BY', 8) === 0
+                && ($index === 0 || ctype_space($sql[$index - 1]))
+                && (
+                    $index + 8 >= $length
+                    || ctype_space($sql[$index + 8])
+                )
+            ) {
+                $orderByOffset = $index;
+            }
+        }
+
+        if ($orderByOffset === null) {
+            return $sql;
+        }
+
+        return rtrim(substr($sql, 0, $orderByOffset));
     }
 
     /**
