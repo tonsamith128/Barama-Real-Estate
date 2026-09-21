@@ -14,6 +14,88 @@ if ($zip->open($zipPath) !== true) {
     throw new RuntimeException('Customer package could not be opened for compliance QA.');
 }
 
+$root = dirname(__DIR__);
+$sourceVersion = trim((string) @file_get_contents($root . '/VERSION'));
+
+if (
+    $sourceVersion === ''
+    || preg_match(
+        '/^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/',
+        $sourceVersion
+    ) !== 1
+) {
+    throw new RuntimeException('Source VERSION is missing or invalid.');
+}
+
+$expectedArchiveName = 'Barama-Real-Estate-' . $sourceVersion . '.zip';
+
+if (basename($zipPath) !== $expectedArchiveName) {
+    throw new RuntimeException(
+        'Customer package filename does not match source VERSION: expected '
+        . $expectedArchiveName
+        . ', received '
+        . basename($zipPath)
+    );
+}
+
+$checksumPath = $zipPath . '.sha256';
+
+if (!is_file($checksumPath)) {
+    throw new RuntimeException(
+        'Customer package SHA-256 sidecar is missing: ' . basename($checksumPath)
+    );
+}
+
+$actualHash = hash_file('sha256', $zipPath);
+
+if (!is_string($actualHash)) {
+    throw new RuntimeException('Customer package SHA-256 could not be calculated.');
+}
+
+$expectedChecksumLine = $actualHash . '  ' . $expectedArchiveName;
+$actualChecksumLine = trim((string) file_get_contents($checksumPath));
+
+if (!hash_equals($expectedChecksumLine, $actualChecksumLine)) {
+    throw new RuntimeException(
+        'Customer package SHA-256 sidecar does not match the exact ZIP.'
+    );
+}
+
+$packageVersion = trim((string) $zip->getFromName('VERSION'));
+
+if ($packageVersion !== $sourceVersion) {
+    throw new RuntimeException(
+        'Packaged VERSION does not match source VERSION: source '
+        . $sourceVersion
+        . ', package '
+        . ($packageVersion !== '' ? $packageVersion : '[missing]')
+    );
+}
+
+$expectedArchiveComment = 'Barama Real Estate '
+    . $sourceVersion
+    . ' customer package.';
+$archiveComment = (string) $zip->getArchiveComment();
+
+if ($archiveComment !== $expectedArchiveComment) {
+    throw new RuntimeException(
+        'Customer ZIP archive comment does not match source VERSION.'
+    );
+}
+
+$versionMarker = '- Current development line: `' . $sourceVersion . '`';
+$sourceReadme = (string) @file_get_contents($root . '/README.md');
+$packageReadme = (string) $zip->getFromName('README.md');
+
+if (
+    !str_contains($sourceReadme, $versionMarker)
+    || !str_contains($packageReadme, $versionMarker)
+) {
+    throw new RuntimeException(
+        'README current development line does not match source VERSION.'
+    );
+}
+
 $entries = [];
 
 for ($index = 0; $index < $zip->numFiles; $index++) {
