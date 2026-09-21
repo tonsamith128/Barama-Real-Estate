@@ -13,7 +13,8 @@ use Throwable;
 final class UpgradeService
 {
     public function __construct(
-        private readonly ?PDO $connection = null
+        private readonly ?PDO $connection = null,
+        private readonly ?LicenseManagerClient $licenseClient = null
     ) {
     }
 
@@ -282,7 +283,11 @@ final class UpgradeService
             throw new RuntimeException('The installed license state is invalid.');
         }
 
-        if (defined('BARAMA_CLI') && BARAMA_CLI === true) {
+        if (
+            defined('BARAMA_CLI')
+            && BARAMA_CLI === true
+            && !$this->licenseClient instanceof LicenseManagerClient
+        ) {
             return;
         }
 
@@ -291,7 +296,8 @@ final class UpgradeService
         $installationId = (string) ($license['installation_id'] ?? '');
 
         try {
-            $remote = (new LicenseManagerClient())->validateActive(
+            $client = $this->licenseClient ?? new LicenseManagerClient();
+            $remote = $client->validateActive(
                 $token,
                 $domain,
                 $installationId
@@ -302,6 +308,10 @@ final class UpgradeService
                 'last_validated_at' => gmdate('c'),
             ]);
         } catch (RuntimeException $exception) {
+            if (!LicenseManagerClient::isTemporaryFailure($exception)) {
+                throw $exception;
+            }
+
             $lastValidated = strtotime(
                 (string) ($license['last_validated_at'] ?? $license['validated_at'] ?? '')
             );
