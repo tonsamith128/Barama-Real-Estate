@@ -154,7 +154,7 @@ final class InstallerController
             (string) $request->input('purchase_code', ''),
             $service->detectedDomain(),
             Installation::installationId(),
-            (string) $request->input('license_method', 'envato')
+            'auto'
         );
 
         Session::put(self::LICENSE_KEY, $license);
@@ -191,20 +191,6 @@ final class InstallerController
         ) {
             throw new RuntimeException(
                 'Validate the license before continuing.'
-            );
-        }
-
-        $selectedMethod = strtolower(trim(
-            (string) $request->input('license_method', 'envato')
-        ));
-
-        if (
-            $selectedMethod !== strtolower(
-                (string) ($license['verification_method'] ?? '')
-            )
-        ) {
-            throw new RuntimeException(
-                'Validate the license again after changing the verification method.'
             );
         }
 
