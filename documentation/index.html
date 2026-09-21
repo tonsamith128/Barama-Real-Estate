@@ -36,7 +36,7 @@
                 <li>PDO and PDO MySQL</li>
                 <li>JSON, Mbstring, Ctype, Session, OpenSSL, Fileinfo, and cURL extensions</li>
                 <li>Writable Barama application runtime directories</li>
-                <li>Apache with mod_rewrite/AllowOverride or supported Nginx front-controller routing</li>
+                <li>Apache or Nginx. Barama detects clean routing and uses an automatic no-configuration fallback when Nginx rewrites are unavailable.</li>
                 <li>HTTPS is recommended for production use</li>
             </ul>
             <p>No Node.js production runtime, Composer install command, manual migration command, or customer-created .env file is required.</p>
@@ -50,7 +50,7 @@
                 <li>Complete <strong>License &amp; Terms</strong>.</li>
                 <li>Confirm <strong>Requirements</strong>.</li>
                 <li>Connect an <strong>Existing Database</strong> or use <strong>Create Database</strong> with MySQL/MariaDB administrative credentials.</li>
-                <li>Complete <strong>Website</strong> settings, including the first administrator and email delivery.</li>
+                <li>Complete <strong>Website</strong> settings and create the first administrator.</li>
                 <li>Review <strong>System Health / Finish</strong> and open the website.</li>
             </ol>
             <p>The customer-facing installer always contains exactly five visible steps. Permissions checks remain inside Requirements. Requirements are shown in a clean status table, and the header language control shows flag + language options for English, Khmer, and Chinese.</p>
@@ -76,8 +76,8 @@
 
         <section id="email">
             <h2>Email delivery</h2>
-            <p>Step 4 of the installer supports SMTP (recommended) or PHP mail. The installer requires a successful test email before installation can finish.</p>
-            <p>SMTP passwords are stored only in protected runtime configuration after successful installation and are not repopulated into installer forms after validation errors.</p>
+            <p>Email delivery is intentionally kept out of the installer. Barama starts with PHP mail using the administrator email and website name.</p>
+            <p>If SMTP is required, configure it later from the application settings after installation.</p>
         </section>
 
         <section id="jobs">
