@@ -49,17 +49,18 @@
                 <li>Open the main domain in a browser. Barama redirects automatically to <code>/installer/</code>.</li>
                 <li>Complete <strong>License &amp; Terms</strong>.</li>
                 <li>Confirm <strong>Requirements</strong>.</li>
-                <li>Connect the <strong>Database</strong>.</li>
+                <li>Connect an <strong>Existing Database</strong> or use <strong>Create Database</strong> with MySQL/MariaDB administrative credentials.</li>
                 <li>Complete <strong>Website</strong> settings, including the first administrator and email delivery.</li>
                 <li>Review <strong>System Health / Finish</strong> and open the website.</li>
             </ol>
-            <p>The customer-facing installer always contains exactly five visible steps. Permissions checks remain inside Requirements.</p>
+            <p>The customer-facing installer always contains exactly five visible steps. Permissions checks remain inside Requirements. Requirements are shown in a clean status table, and the header language control shows flag + language options for English, Khmer, and Chinese.</p>
+            <p><strong>Existing Database</strong> uses database credentials already created by your hosting provider. <strong>Create Database</strong> asks for database-server administrative access, creates a dedicated database and application user, verifies the new connection, and does not store the administrative credentials.</p>
         </section>
 
         <section id="licensing">
             <h2>License verification</h2>
-            <p>The installer supports a Ton Samith direct license key or a CodeCanyon / Envato purchase code through the same license field.</p>
-            <p>Validation is handled through the Ton Samith License Manager. The original purchase code/license key is not stored in persistent runtime state after successful activation.</p>
+            <p>The installer uses one purchase-code/license field. Enter the purchase code or authorized license key and click Validate; no verification-method selector is shown.</p>
+            <p>The original purchase code/license key is not stored in persistent runtime state after successful activation. Review and accept the Envato license terms, author disclaimer, and support terms before continuing to Requirements.</p>
         </section>
 
         <section id="accounts">
