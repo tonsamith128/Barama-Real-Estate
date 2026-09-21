@@ -142,10 +142,65 @@ final class InstallerController
         Request $request,
         InstallerService $service
     ): never {
-        $license = (new LicenseManagerClient())->activate(
-            (string) $request->input('purchase_code', ''),
-            $service->detectedDomain(),
-            Installation::installationId(),
+        $purchaseCode = trim((string) $request->input(
+            'purchase_code',
+            ''
+        ));
+        $domain = $service->detectedDomain();
+        $installationId = Installation::installationId();
+        $client = new LicenseManagerClient();
+
+        $existing = Session::get(self::LICENSE_KEY, []);
+        $fingerprint = LicenseManagerClient::credentialFingerprint(
+            $purchaseCode,
+            $installationId
+        );
+
+        if (
+            is_array($existing)
+            && trim((string) ($existing['activation_token'] ?? '')) !== ''
+            && is_string($existing['credential_fingerprint'] ?? null)
+            && hash_equals(
+                (string) $existing['credential_fingerprint'],
+                $fingerprint
+            )
+        ) {
+            try {
+                $validated = $client->validateActive(
+                    (string) $existing['activation_token'],
+                    $domain,
+                    $installationId
+                );
+
+                $license = array_merge($existing, [
+                    'product_slug' => $validated['product_slug'],
+                    'status' => $validated['status'],
+                    'domain' => $validated['domain'],
+                    'installation_id' => $installationId,
+                    'credential_fingerprint' => $fingerprint,
+                    'validated_at' => gmdate('c'),
+                ]);
+
+                Session::put(self::LICENSE_KEY, $license);
+
+                $this->json([
+                    'ok' => true,
+                    'data' => [
+                        'validated' => true,
+                        'message' => 'License is already active on this domain and was revalidated successfully.',
+                    ],
+                ]);
+            } catch (RuntimeException $exception) {
+                if (LicenseManagerClient::isTemporaryFailure($exception)) {
+                    throw $exception;
+                }
+            }
+        }
+
+        $license = $client->activate(
+            $purchaseCode,
+            $domain,
+            $installationId,
             'auto'
         );
 
