@@ -802,7 +802,9 @@ SQL);
                     (string) ($license['verification_method'] ?? ''),
                     ['direct', 'envato'],
                     true
-                ),
+                )
+                && strtolower(trim((string) ($license['status'] ?? '')))
+                    === 'active',
             'Purchase activation is bound to this installation.'
         );
 
@@ -1267,6 +1269,8 @@ SQL);
                 ['direct', 'envato'],
                 true
             )
+            || strtolower(trim((string) ($license['status'] ?? '')))
+                !== 'active'
         ) {
             throw new RuntimeException(
                 'Validate the purchase code before continuing.'
