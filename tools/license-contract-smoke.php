@@ -101,6 +101,28 @@ foreach (['direct', 'envato'] as $method) {
     }
 }
 
+$autoEnvato = $client->activate(
+    '12345678-1234-1234-1234-123456789abc',
+    $domain,
+    $installationId,
+    'auto'
+);
+$autoDirect = $client->activate(
+    'BARAMA-AUTHOR-KEY-123456',
+    $domain,
+    $installationId,
+    'auto'
+);
+
+if (
+    ($autoEnvato['verification_method'] ?? '') !== 'envato'
+    || ($autoDirect['verification_method'] ?? '') !== 'direct'
+) {
+    throw new RuntimeException(
+        'Automatic purchase verification routing is incorrect.'
+    );
+}
+
 $invalidMethodBlocked = false;
 $nonActiveStatusesBlocked = true;
 $missingBindingFieldsBlocked = true;
@@ -281,9 +303,11 @@ $activateEvents = array_values(array_filter(
 ));
 
 if (
-    count($activateEvents) !== 2
+    count($activateEvents) !== 4
     || ($activateEvents[0]['payload']['verification_method'] ?? '') !== 'direct'
     || ($activateEvents[1]['payload']['verification_method'] ?? '') !== 'envato'
+    || ($activateEvents[2]['payload']['verification_method'] ?? '') !== 'envato'
+    || ($activateEvents[3]['payload']['verification_method'] ?? '') !== 'direct'
     || ($activateEvents[0]['payload']['product_slug'] ?? '') !== 'barama-real-estate'
 ) {
     throw new RuntimeException(
@@ -293,7 +317,7 @@ if (
 
 fwrite(
     STDOUT,
-    '[PASS] License Manager contract: direct/envato activation, active validation, '
+    '[PASS] License Manager contract: automatic/direct/envato activation, active validation, '
     . 'explicit domain/product/installation/status binding, all non-active status rejection, '
     . 'incomplete-response rejection, deactivation and '
     . 'temporary-vs-permanent outage classification verified.'
