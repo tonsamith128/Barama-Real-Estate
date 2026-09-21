@@ -77,9 +77,10 @@ The customer sees one purchase-code/license field. No verification-method select
 
 - license validation does not require prior terms acceptance
 - the agreement checkbox is shown on the left
-- the first attempt to check the agreement opens the Terms modal automatically
+- every attempt to check an unaccepted agreement opens the Terms modal automatically
 - the customer reviews the Envato license terms, author disclaimer, and support terms
-- Accept Terms records acceptance and checks the agreement
+- closing the modal without acceptance leaves the checkbox unchecked
+- Accept Terms records acceptance and is the only action that checks the agreement
 - Verify & Continue remains disabled until both license validation and terms acceptance are complete
 - server-side continuation rejects a bypassed or missing agreement
 
