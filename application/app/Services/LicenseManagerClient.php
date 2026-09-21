@@ -318,19 +318,7 @@ final class LicenseManagerClient
             (string) ($license['status'] ?? 'active')
         ));
 
-        if (
-            in_array(
-                $status,
-                [
-                    'revoked',
-                    'suspended',
-                    'invalid',
-                    'deactivated',
-                    'expired',
-                ],
-                true
-            )
-        ) {
+        if ($status !== 'active') {
             throw new RuntimeException('This license is not active.');
         }
 
