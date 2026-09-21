@@ -146,17 +146,16 @@ Verify:
 - administrator name/email
 - generated administrator password
 - password confirmation
-- SMTP or PHP-mail configuration
 
-For SMTP:
+Confirm there is no SMTP/email-delivery setup form and no test-email requirement in the installer.
 
-- use the real provider intended for release acceptance
-- send the installer test email
-- confirm receipt
-- confirm TLS/certificate validation succeeds
-- confirm the SMTP password is not repopulated after validation errors
+After installation, verify protected runtime configuration initializes:
 
-Installation must not complete until the submitted mail configuration has passed its required test.
+- PHP mail as the default mail driver
+- administrator email as the From address
+- website name as the From name
+
+SMTP remains an application setting to configure later when required.
 
 ## 6. Installer Step 5 — Finish
 
@@ -198,7 +197,7 @@ Verify static assets load normally.
 
 For Apache, confirm mod_rewrite/AllowOverride behavior.
 
-For Nginx, confirm the hosting vhost provides the supported front-controller routing contract before describing the installation as one-click on that environment.
+For Nginx, confirm Step 2 reports either clean application routing or the no-configuration query-routing fallback. On a host without clean rewrites, verify generated Sign in/Register/Account links use the fallback and remain functional without manual Nginx changes.
 
 ## 8. Authentication and customer account
 
