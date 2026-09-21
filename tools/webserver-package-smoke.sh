@@ -70,6 +70,31 @@ assert_location() {
     fi
 }
 
+assert_header_contains() {
+    local header="$1"
+    local expected="$2"
+    local url="$3"
+    local actual
+
+    actual="$(
+        curl -sS -D - -o /dev/null "$url" \
+        | tr -d '\r' \
+        | awk -F': *' -v wanted="$header" '
+            tolower($1) == tolower(wanted) {
+                value = $0
+                sub(/^[^:]+:[[:space:]]*/, "", value)
+                print value
+                exit
+            }
+        '
+    )"
+
+    if [[ "$actual" != *"$expected"* ]]; then
+        echo "ERROR: $url expected $header to contain '$expected', received '$actual'." >&2
+        return 1
+    fi
+}
+
 echo "[INFO] Testing exact customer ZIP with Apache 2.4 + mod_rewrite..."
 
 docker run --rm -d     --name "$APACHE_NAME"     -p 18080:80     -v "$PACKAGE:/var/www/html"     php:8.2-apache     sh -lc '
@@ -87,9 +112,18 @@ EOF
 wait_http "http://127.0.0.1:18080/"
 assert_status "302" "http://127.0.0.1:18080/"
 assert_location "/installer/" "http://127.0.0.1:18080/"
+assert_header_contains "Cache-Control" "no-store" "http://127.0.0.1:18080/"
+assert_header_contains "X-Robots-Tag" "noindex" "http://127.0.0.1:18080/"
 assert_status "302" "http://127.0.0.1:18080/properties"
 assert_location "/installer/" "http://127.0.0.1:18080/properties"
 assert_status "200" "http://127.0.0.1:18080/installer/"
+assert_header_contains "Cache-Control" "no-store" "http://127.0.0.1:18080/installer/"
+assert_header_contains "X-Robots-Tag" "noindex" "http://127.0.0.1:18080/installer/"
+assert_header_contains "X-Content-Type-Options" "nosniff" "http://127.0.0.1:18080/installer/"
+assert_header_contains "X-Frame-Options" "SAMEORIGIN" "http://127.0.0.1:18080/installer/"
+assert_header_contains "Content-Security-Policy" "default-src 'self'" "http://127.0.0.1:18080/installer/"
+assert_header_contains "Set-Cookie" "HttpOnly" "http://127.0.0.1:18080/installer/"
+assert_header_contains "Set-Cookie" "SameSite=Lax" "http://127.0.0.1:18080/installer/"
 assert_status "200" "http://127.0.0.1:18080/assets/css/app.css"
 assert_status "403" "http://127.0.0.1:18080/application/config/app.php"
 
@@ -118,6 +152,8 @@ EOF
 wait_http "http://127.0.0.1:18081/barama/"
 assert_status "302" "http://127.0.0.1:18081/barama/"
 assert_location "/barama/installer/" "http://127.0.0.1:18081/barama/"
+assert_header_contains "Cache-Control" "no-store" "http://127.0.0.1:18081/barama/"
+assert_header_contains "X-Robots-Tag" "noindex" "http://127.0.0.1:18081/barama/"
 assert_status "302" "http://127.0.0.1:18081/barama/properties"
 assert_location "/barama/installer/" "http://127.0.0.1:18081/barama/properties"
 assert_status "200" "http://127.0.0.1:18081/barama/installer/"
@@ -166,9 +202,18 @@ docker run --rm -d     --name "$NGINX_NAME"     --network "$NETWORK_NAME"     -p
 wait_http "http://127.0.0.1:18082/"
 assert_status "302" "http://127.0.0.1:18082/"
 assert_location "/installer/" "http://127.0.0.1:18082/"
+assert_header_contains "Cache-Control" "no-store" "http://127.0.0.1:18082/"
+assert_header_contains "X-Robots-Tag" "noindex" "http://127.0.0.1:18082/"
 assert_status "302" "http://127.0.0.1:18082/properties"
 assert_location "/installer/" "http://127.0.0.1:18082/properties"
 assert_status "200" "http://127.0.0.1:18082/installer/"
+assert_header_contains "Cache-Control" "no-store" "http://127.0.0.1:18082/installer/"
+assert_header_contains "X-Robots-Tag" "noindex" "http://127.0.0.1:18082/installer/"
+assert_header_contains "X-Content-Type-Options" "nosniff" "http://127.0.0.1:18082/installer/"
+assert_header_contains "X-Frame-Options" "SAMEORIGIN" "http://127.0.0.1:18082/installer/"
+assert_header_contains "Content-Security-Policy" "default-src 'self'" "http://127.0.0.1:18082/installer/"
+assert_header_contains "Set-Cookie" "HttpOnly" "http://127.0.0.1:18082/installer/"
+assert_header_contains "Set-Cookie" "SameSite=Lax" "http://127.0.0.1:18082/installer/"
 assert_status "200" "http://127.0.0.1:18082/assets/css/app.css"
 assert_status "403" "http://127.0.0.1:18082/application/config/app.php"
 
@@ -219,6 +264,8 @@ docker run --rm -d     --name "$NGINX_NAME"     --network "$NETWORK_NAME"     -p
 wait_http "http://127.0.0.1:18083/barama/"
 assert_status "302" "http://127.0.0.1:18083/barama/"
 assert_location "/barama/installer/" "http://127.0.0.1:18083/barama/"
+assert_header_contains "Cache-Control" "no-store" "http://127.0.0.1:18083/barama/"
+assert_header_contains "X-Robots-Tag" "noindex" "http://127.0.0.1:18083/barama/"
 assert_status "302" "http://127.0.0.1:18083/barama/properties"
 assert_location "/barama/installer/" "http://127.0.0.1:18083/barama/properties"
 assert_status "200" "http://127.0.0.1:18083/barama/installer/"
