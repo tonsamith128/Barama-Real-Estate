@@ -128,6 +128,7 @@ $required = [
     'docs/PACKAGE_COMPLIANCE.md',
     'docs/CODECANYON_SUBMISSION.md',
     'docs/RC1_CHECKLIST.md',
+    'docs/LIVE_SERVER_ACCEPTANCE.md',
     '.github/workflows/license-live.yml',
     'tools/migrate.php',
     'tools/schema-smoke.php',

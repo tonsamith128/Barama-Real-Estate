@@ -53,6 +53,8 @@ A workflow attempt with no assigned runner, no steps, or skipped dependent jobs 
 
 ## Live-server gates
 
+The detailed acceptance procedure is `docs/LIVE_SERVER_ACCEPTANCE.md`.
+
 These are intentionally deferred to the real installer/server acceptance session:
 
 - Ton Samith direct license activation
