@@ -15,6 +15,8 @@ use Throwable;
 
 final class InstallerService
 {
+    private ?string $detectedRoutingMode = null;
+
     /** @return array<int,array{label:string,detail:string,status:string,required:bool}> */
     public function requirements(): array
     {
@@ -104,6 +106,16 @@ final class InstallerService
             'required' => false,
         ];
 
+        $routingMode = $this->routingMode();
+        $checks[] = [
+            'label' => 'Application routing',
+            'detail' => $routingMode === 'clean'
+                ? 'Clean application URLs are supported by the web server.'
+                : 'Clean URL rewrites were not detected. Barama will use its no-configuration routing fallback.',
+            'status' => $routingMode === 'clean' ? 'pass' : 'warning',
+            'required' => false,
+        ];
+
         return $checks;
     }
 
@@ -158,6 +170,73 @@ final class InstallerService
         return LicenseManagerClient::canonicalDomain(
             (string) ($_SERVER['HTTP_HOST'] ?? '')
         );
+    }
+
+    public function routingMode(): string
+    {
+        if ($this->detectedRoutingMode !== null) {
+            return $this->detectedRoutingMode;
+        }
+
+        if (!function_exists('curl_init')) {
+            return $this->detectedRoutingMode = 'query';
+        }
+
+        $probePath = '/__barama-route-probe-'
+            . substr(hash('sha256', Installation::installationId()), 0, 16);
+        $probeUrl = rtrim($this->detectedSiteUrl(), '/')
+            . $probePath
+            . '?cache='
+            . rawurlencode(substr(hash('sha256', microtime(true) . $probePath), 0, 12));
+
+        $handle = curl_init($probeUrl);
+
+        if ($handle === false) {
+            return $this->detectedRoutingMode = 'query';
+        }
+
+        curl_setopt_array($handle, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => false,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_TIMEOUT => 6,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_HTTPHEADER => [
+                'Accept: text/html',
+                'Cache-Control: no-cache',
+            ],
+            CURLOPT_USERAGENT => 'Barama-Installer/' . APP_VERSION,
+        ]);
+
+        $body = curl_exec($handle);
+        $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+        $redirect = (string) curl_getinfo($handle, CURLINFO_REDIRECT_URL);
+        curl_close($handle);
+
+        if ($body === false) {
+            return $this->detectedRoutingMode = 'query';
+        }
+
+        if (
+            in_array($status, [301, 302, 303, 307, 308], true)
+            && $redirect !== ''
+        ) {
+            $redirectPath = (string) (
+                parse_url($redirect, PHP_URL_PATH) ?: ''
+            );
+            $expected = $this->basePath() . '/installer/';
+
+            if (
+                $redirectPath === $expected
+                || rtrim($redirectPath, '/') === rtrim($expected, '/')
+            ) {
+                return $this->detectedRoutingMode = 'clean';
+            }
+        }
+
+        return $this->detectedRoutingMode = 'query';
     }
 
     /** @return array<string,string> */
@@ -584,6 +663,7 @@ final class InstallerService
         $migrations = $this->runMigrations($pdo);
         $installationId = Installation::installationId();
         $appKey = base64_encode(random_bytes(32));
+        $routingMode = $this->routingMode();
 
         try {
             $pdo->beginTransaction();
@@ -596,6 +676,7 @@ final class InstallerService
                 'APP_ENV' => 'production',
                 'APP_DEBUG' => false,
                 'APP_URL' => $website['site_url'],
+                'APP_ROUTING_MODE' => $routingMode,
                 'APP_TIMEZONE' => $website['timezone'],
                 'APP_LOCALE' => $website['default_language'],
                 'APP_KEY' => $appKey,
