@@ -16,6 +16,13 @@ final class LicenseManagerClient
         return $exception->getCode() === self::ERROR_TEMPORARY_UNAVAILABLE;
     }
 
+    public static function isTemporaryHttpStatus(int $status): bool
+    {
+        return $status === 0
+            || in_array($status, [408, 425, 429], true)
+            || $status >= 500;
+    }
+
     /**
      * Optional transport is used only by deterministic contract QA.
      *
@@ -485,11 +492,7 @@ final class LicenseManagerClient
         }
 
         if ($status < 200 || $status >= 300) {
-            if (
-                $status === 0
-                || in_array($status, [408, 425, 429], true)
-                || $status >= 500
-            ) {
+            if (self::isTemporaryHttpStatus($status)) {
                 throw new RuntimeException(
                     'License service is temporarily unavailable. Please try again.',
                     self::ERROR_TEMPORARY_UNAVAILABLE
