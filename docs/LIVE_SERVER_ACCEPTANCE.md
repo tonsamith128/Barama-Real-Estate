@@ -98,21 +98,42 @@ Verify:
 - canonical JavaScript check passes
 - HTTPS is correctly detected
 - no separate Permissions step exists
+- requirements are displayed as a clean table/list without boxed row backgrounds
+- Light/Dark field contrast and larger installer typography remain readable
+- header language control shows the language icon and flag + language options
 
 If a required extension or permission is intentionally disabled for testing, continuation must be blocked with Fix Required.
 
 ## 4. Installer Step 3 — Database
 
-Test failure recovery first:
+Verify both setup modes.
 
-1. enter an invalid database password
-2. confirm connection failure is shown clearly
-3. correct the credentials
-4. confirm connection succeeds without restarting the installer
+### Existing Database
 
-Then verify the intended empty database is accepted.
+1. select Existing Database
+2. confirm host/port and database/name/username fields align cleanly
+3. enter an invalid password and confirm connection failure is clear
+4. correct the credentials
+5. confirm connection succeeds without restarting the installer
+6. confirm an empty supported MySQL 8.0+ or MariaDB 10.6+ database is accepted
 
-If automatic database creation is supported by the supplied account, test it only against a disposable database name.
+### Create Database
+
+Use disposable names and a database administrator account intended for acceptance testing.
+
+1. select Create Database
+2. verify the button changes to Create Database & Continue
+3. enter an invalid database-administrator password and confirm provisioning is rejected
+4. enter valid admin host/port/username/password
+5. enter a new database name, new dedicated username, password, and confirmation
+6. confirm Barama creates the database and dedicated database user
+7. confirm the new user can connect and has access to the new database
+8. confirm the database administrator credentials are not stored in runtime state
+9. confirm only the new application database credentials proceed to Step 4
+10. if a controlled provisioning failure is induced, confirm Barama attempts cleanup of only the resources it just created
+
+Do not run Create Database against production customer databases or reuse an existing database name.
+
 
 ## 5. Installer Step 4 — Website
 
