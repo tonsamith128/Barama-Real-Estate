@@ -129,7 +129,7 @@ final class InstallerController
             'ok' => true,
             'data' => [
                 'accepted' => true,
-                'message' => 'Terms reviewed. You may now accept the agreement.',
+                'message' => 'Terms accepted. You may continue after the license is validated.',
             ],
         ]);
     }
@@ -138,18 +138,6 @@ final class InstallerController
         Request $request,
         InstallerService $service
     ): never {
-        $terms = Session::get(self::TERMS_KEY, []);
-
-        if (
-            !is_array($terms)
-            || ($terms['accepted'] ?? false) !== true
-            || (string) $request->input('agree_terms', '') !== '1'
-        ) {
-            throw new RuntimeException(
-                'Review and accept the terms before validating the purchase code.'
-            );
-        }
-
         $license = (new LicenseManagerClient())->activate(
             (string) $request->input('purchase_code', ''),
             $service->detectedDomain(),
