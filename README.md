@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.13-dev`
+- Current development line: `0.9.14-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -294,3 +294,17 @@ The 0.9.13 development line adds a packaged customer help file and an exact-ZIP 
 - development-only CodeCanyon QA scripts remain excluded from the customer ZIP
 
 GitHub-hosted Actions runners are currently not being assigned to new Quality jobs (`runner_id: 0`, no executed steps). Therefore the 0.9.11–0.9.13 automated gates are implemented but remain pending execution; they are not being represented as passed. See `docs/CODECANYON_SUBMISSION.md` and `docs/RELEASE_GATES.md`.
+
+
+## Pre-RC structural integrity
+
+The 0.9.14 development line adds a mandatory route/controller contract gate before RC1 promotion.
+
+- every declared route must resolve to a real controller method or callable
+- duplicate HTTP method/path registrations fail QA
+- middleware collections must implement the canonical middleware contract
+- critical public, account, company/vendor, and administrator routes must remain registered
+- RC1 promotion criteria are recorded in `docs/RC1_CHECKLIST.md`
+- GitHub Actions attempts with no assigned runner do not count as completed QA
+
+The current runner-allocation issue remains an infrastructure blocker for closing the implemented 0.9.11–0.9.14 automated gates. The project will not represent those gates as passed until a real workflow run executes them.

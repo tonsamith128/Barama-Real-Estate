@@ -36,6 +36,7 @@ The following gates are implemented in the repository but must be rerun before t
 - exact-package dependency and external-host allowlist inspection
 - clean production default with no demo companies, projects, properties, listings, inquiries, leads, or customer accounts
 - exact-package rejection of development manifests, dependency directories, internal QA fixtures, logs, dumps, backups, and known test credentials
+- route/controller contract validation for duplicate routes, missing controller actions, invalid middleware contracts, and critical route presence
 - packaged customer manifest documenting installation, runtime contents, external services, checksum integrity, and upgrade behavior
 - packaged HTML customer help file at `documentation/index.html`
 - CodeCanyon preparation scan for inline CSS attributes, inline JavaScript event handlers, runtime `eval()`, unsafe PHP short tags, and runtime debug dumps
@@ -96,5 +97,13 @@ These remain intentionally open:
 - final human Safari/iOS and Edge/Chrome compatibility review
 - final human CodeCanyon package/submission review
 - online documentation review against the exact v1.0.0 package
+- successful execution of the 0.9.14 route/controller contract gate before RC1 promotion
 
 No open or pending gate should be represented as complete until it has been exercised on the applicable environment.
+
+
+## RC1 promotion
+
+The authoritative RC1 promotion checklist is `docs/RC1_CHECKLIST.md`.
+
+Do not change `VERSION` to `1.0.0-RC1` until the checklist's automated, live-server, and human acceptance gates have recorded successful results.

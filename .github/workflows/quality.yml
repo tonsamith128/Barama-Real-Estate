@@ -95,6 +95,9 @@ jobs:
       - name: Run HTTP routing normalization smoke test
         run: php tools/http-routing-smoke.php
 
+      - name: Run route/controller contract smoke test
+        run: php tools/route-contract-smoke.php
+
       - name: Run source upgrade compatibility smoke test
         run: php tools/upgrade-smoke.php
 
