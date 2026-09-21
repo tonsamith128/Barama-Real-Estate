@@ -125,7 +125,8 @@ if (
 
 $invalidMethodBlocked = false;
 $nonActiveStatusesBlocked = true;
-$missingBindingFieldsBlocked = true;
+$missingCriticalFieldsBlocked = true;
+$missingInstallationEchoAccepted = false;
 $wrongDomainBlocked = false;
 $wrongProductBlocked = false;
 $wrongInstallationBlocked = false;
@@ -207,7 +208,7 @@ $completeBinding = [
     'installation_id' => $installationId,
 ];
 
-foreach (array_keys($completeBinding) as $missingField) {
+foreach (['status', 'product_slug', 'domain'] as $missingField) {
     $incomplete = $completeBinding;
     unset($incomplete[$missingField]);
 
@@ -224,10 +225,34 @@ foreach (array_keys($completeBinding) as $missingField) {
             $domain,
             $installationId
         );
-        $missingBindingFieldsBlocked = false;
+        $missingCriticalFieldsBlocked = false;
     } catch (RuntimeException) {
-        // Expected: every binding field must be returned explicitly.
+        // Expected: product, domain and active status must be explicit.
     }
+}
+
+$withoutInstallationId = $completeBinding;
+unset($withoutInstallationId['installation_id']);
+
+$withoutInstallationClient = new LicenseManagerClient(
+    static fn (string $path, array $payload): array => [
+        'success' => true,
+        'license' => $withoutInstallationId,
+    ]
+);
+
+try {
+    $normalizedWithoutInstallation = $withoutInstallationClient->validateActive(
+        'contract-token',
+        $domain,
+        $installationId
+    );
+
+    $missingInstallationEchoAccepted =
+        ($normalizedWithoutInstallation['installation_id'] ?? '')
+        === $installationId;
+} catch (RuntimeException) {
+    $missingInstallationEchoAccepted = false;
 }
 
 try {
@@ -286,7 +311,8 @@ foreach ([
 if (
     !$invalidMethodBlocked
     || !$nonActiveStatusesBlocked
-    || !$missingBindingFieldsBlocked
+    || !$missingCriticalFieldsBlocked
+    || !$missingInstallationEchoAccepted
     || !$wrongDomainBlocked
     || !$wrongProductBlocked
     || !$wrongInstallationBlocked
@@ -318,8 +344,9 @@ if (
 fwrite(
     STDOUT,
     '[PASS] License Manager contract: automatic/direct/envato activation, active validation, '
-    . 'explicit domain/product/installation/status binding, all non-active status rejection, '
-    . 'incomplete-response rejection, deactivation and '
+    . 'explicit domain/product/status binding, optional installation-id echo normalization, '
+    . 'mismatched installation rejection, all non-active status rejection, '
+    . 'incomplete critical-response rejection, deactivation and '
     . 'temporary-vs-permanent outage classification verified.'
     . PHP_EOL
 );
