@@ -102,7 +102,7 @@ foreach (['direct', 'envato'] as $method) {
 }
 
 $invalidMethodBlocked = false;
-$inactiveBlocked = false;
+$nonActiveStatusesBlocked = true;
 $wrongDomainBlocked = false;
 $wrongProductBlocked = false;
 $wrongInstallationBlocked = false;
@@ -143,6 +143,40 @@ if (
     );
 }
 
+foreach ([
+    'revoked',
+    'suspended',
+    'invalid',
+    'deactivated',
+    'expired',
+    'inactive',
+    'pending',
+    'disabled',
+] as $status) {
+    $statusClient = new LicenseManagerClient(
+        static fn (string $path, array $payload): array => [
+            'success' => true,
+            'license' => [
+                'status' => $status,
+                'product_slug' => 'barama-real-estate',
+                'domain' => $domain,
+                'installation_id' => $installationId,
+            ],
+        ]
+    );
+
+    try {
+        $statusClient->validateActive(
+            'contract-token',
+            $domain,
+            $installationId
+        );
+        $nonActiveStatusesBlocked = false;
+    } catch (RuntimeException) {
+        // Expected: only an explicitly active license may validate.
+    }
+}
+
 try {
     $client->activate(
         'BARAMA-CONTRACT-TEST-123456',
@@ -155,12 +189,6 @@ try {
 }
 
 foreach ([
-    'inactive' => [
-        'status' => 'revoked',
-        'product_slug' => 'barama-real-estate',
-        'domain' => $domain,
-        'installation_id' => $installationId,
-    ],
     'domain' => [
         'status' => 'active',
         'product_slug' => 'barama-real-estate',
@@ -195,7 +223,6 @@ foreach ([
         );
     } catch (RuntimeException) {
         match ($case) {
-            'inactive' => $inactiveBlocked = true,
             'domain' => $wrongDomainBlocked = true,
             'product' => $wrongProductBlocked = true,
             'installation' => $wrongInstallationBlocked = true,
@@ -205,7 +232,7 @@ foreach ([
 
 if (
     !$invalidMethodBlocked
-    || !$inactiveBlocked
+    || !$nonActiveStatusesBlocked
     || !$wrongDomainBlocked
     || !$wrongProductBlocked
     || !$wrongInstallationBlocked
@@ -235,7 +262,7 @@ if (
 fwrite(
     STDOUT,
     '[PASS] License Manager contract: direct/envato activation, active validation, '
-    . 'domain/product/installation binding, inactive rejection, deactivation and '
+    . 'domain/product/installation binding, all non-active status rejection, deactivation and '
     . 'temporary-vs-permanent outage classification verified.'
     . PHP_EOL
 );
