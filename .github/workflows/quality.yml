@@ -170,12 +170,6 @@ jobs:
           MANIFEST="validated-package/Barama-Real-Estate-$(cat VERSION).artifact.json"
           php tools/rc1-artifact.php verify "$MANIFEST" "$ZIP" --expect-version="$(cat VERSION)" --expect-commit="${GITHUB_SHA}"
 
-      - name: Verify RC candidate artifact binding
-        run: |
-          ZIP="validated-package/Barama-Real-Estate-$(cat VERSION).zip"
-          MANIFEST="validated-package/Barama-Real-Estate-$(cat VERSION).artifact.json"
-          php tools/rc1-artifact.php verify "$MANIFEST" "$ZIP" --expect-version="$(cat VERSION)" --expect-commit="${GITHUB_SHA}"
-
       - name: Validate web-server QA script syntax
         run: bash -n tools/webserver-package-smoke.sh
 
@@ -231,6 +225,12 @@ jobs:
         run: |
           cd validated-package
           sha256sum -c Barama-Real-Estate-$(cat ../VERSION).zip.sha256
+
+      - name: Verify RC candidate artifact binding
+        run: |
+          ZIP="validated-package/Barama-Real-Estate-$(cat VERSION).zip"
+          MANIFEST="validated-package/Barama-Real-Estate-$(cat VERSION).artifact.json"
+          php tools/rc1-artifact.php verify "$MANIFEST" "$ZIP" --expect-version="$(cat VERSION)" --expect-commit="${GITHUB_SHA}"
 
       - name: Validate browser QA script syntax
         run: bash -n tools/browser-package-smoke.sh
