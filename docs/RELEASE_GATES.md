@@ -156,3 +156,19 @@ Pre-install mode remains the default. Installed mode is selected with --phase=in
 The optional --json report contains only non-secret environment/result metadata and is suitable for review before recording RC1 evidence. The preflight never authenticates, activates/deactivates licenses, changes database records, sends mail or mutates marketplace/account data.
 
 The tool remains excluded from the customer ZIP. Real live-server execution is still required before any associated RC1 gate can be marked passed.
+
+
+## RC candidate artifact binding
+
+The 0.9.19 development line adds a machine-verifiable artifact binding for every exact ZIP used in RC acceptance.
+
+- tools/rc1-artifact.php generates a .artifact.json manifest only after the exact ZIP and its SHA-256 sidecar exist.
+- the manifest binds the product, source VERSION, full source commit SHA, exact package filename, package SHA-256, byte size, checksum filename and UTC generation timestamp.
+- verification rejects schema drift plus filename, size, SHA-256, sidecar, expected-version or expected-commit mismatches.
+- tools/rc1-artifact-smoke.php proves matching verification and rejects wrong commits, tampered packages and unknown manifest fields.
+- Foundation QA generates and verifies the manifest using the workflow commit.
+- Exact Package Web Server QA and Exact Package Browser & Accessibility QA independently verify the downloaded ZIP/manifest against the same workflow commit before running.
+- the ZIP, checksum and artifact manifest are uploaded together as one validated short-lived workflow artifact set.
+- the artifact manifest remains outside the customer ZIP and contains no credentials or runtime secrets.
+
+Artifact binding does not close an RC1 gate on its own. It ensures that later live-server and human evidence can be tied to the intended exact package instead of a similarly named or stale build.

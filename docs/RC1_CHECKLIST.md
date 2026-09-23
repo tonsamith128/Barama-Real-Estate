@@ -19,6 +19,7 @@ The repository must retain:
 - clean production defaults with no demo marketplace inventory or hard-coded administrator account
 - one canonical RC1 acceptance policy plus controlled evidence writer and smoke test
 - one canonical read-only live-server preflight covering both pre-install and installed states
+- machine-verifiable RC candidate artifact binding for exact ZIP filename, SHA-256, source version and source commit
 
 ## Automated gates
 
@@ -42,6 +43,7 @@ Foundation QA must include:
 - route/controller contract, including semantic dynamic-route collision and public-action validation
 - source upgrade compatibility, including revoked-license rejection versus temporary-outage grace
 - exact customer ZIP build
+- RC candidate artifact manifest generation and verification against the workflow commit
 - exact-package metadata/checksum consistency
 - exact-package compliance
 - CodeCanyon preparation scan

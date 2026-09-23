@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.18-dev`
+- Current development line: `0.9.19-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -369,3 +369,19 @@ The 0.9.18 development line extends the existing read-only live-server preflight
 - the preflight remains development-only and is not copied into the CodeCanyon customer ZIP
 
 This milestone does not mark any live-server RC1 gate as passed. Those gates remain pending until the exact candidate package is exercised on the intended hosting environment.
+
+
+## RC candidate artifact binding
+
+The 0.9.19 development line binds every exact customer ZIP used for RC acceptance to its source identity.
+
+- tools/rc1-artifact.php generates a machine-readable .artifact.json manifest only after the exact ZIP and SHA-256 sidecar exist
+- the manifest binds product, source VERSION, full 40-character source commit, exact ZIP filename, ZIP SHA-256, byte size, checksum filename and UTC generation timestamp
+- verification rejects filename, size, SHA-256, sidecar, version, commit or schema mismatches
+- tools/rc1-artifact-smoke.php proves valid binding plus wrong-commit, package-tamper and schema-drift rejection
+- Foundation QA generates and verifies the manifest using the workflow commit
+- Exact Package Web Server QA and Exact Package Browser & Accessibility QA independently re-verify the downloaded artifact against that same commit before testing
+- the workflow uploads the ZIP, .sha256 and .artifact.json together as one short-lived validated artifact set
+- the binding manifest is release evidence, not a customer runtime file, and is not placed inside the CodeCanyon ZIP
+
+No RC1 acceptance gate is marked passed by artifact generation alone. Live-server acceptance must use the ZIP whose filename/hash/version/commit match the verified manifest.

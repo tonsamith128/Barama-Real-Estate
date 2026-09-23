@@ -21,6 +21,7 @@ Keep the test isolated from production customer data.
 
 Record:
 
+- artifact manifest filename
 - package filename
 - package SHA-256
 - Git commit
@@ -61,12 +62,28 @@ This is an internal acceptance utility and must not be copied into the CodeCanyo
 
 ## 1. Fresh package integrity
 
-Before extraction:
+Before extraction, keep these three files together from the same validated workflow artifact:
+
+- Barama-Real-Estate-<version>.zip
+- Barama-Real-Estate-<version>.zip.sha256
+- Barama-Real-Estate-<version>.artifact.json
+
+First verify the machine-readable artifact binding from the repository checkout used for acceptance:
+
+    php tools/rc1-artifact.php verify \
+      /absolute/path/Barama-Real-Estate-<version>.artifact.json \
+      /absolute/path/Barama-Real-Estate-<version>.zip \
+      --expect-version=<version> \
+      --expect-commit=<40-character-source-commit>
+
+The verifier must pass before extraction. It checks the exact filename, SHA-256, size, checksum sidecar, source version and source commit against the manifest.
+
+Then:
 
 1. verify the ZIP SHA-256 against the release checksum
 2. confirm the package contains only the customer runtime/help files
 3. confirm no .env, runtime installation state, logs, SQL dumps, QA scripts, node_modules, vendor directory, or test credentials are present
-4. extract into the intended website root
+4. extract that exact verified ZIP into the intended website root
 
 Expected result: opening the main domain redirects to the canonical trailing-slash `/installer/` URL with no-cache behavior.
 
