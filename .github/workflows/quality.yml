@@ -107,6 +107,9 @@ jobs:
       - name: Run RC candidate artifact binding smoke test
         run: php tools/rc1-artifact-smoke.php
 
+      - name: Run live acceptance session guard smoke test
+        run: php tools/rc1-live-session-smoke.php
+
       - name: Run source upgrade compatibility smoke test
         run: php tools/upgrade-smoke.php
 

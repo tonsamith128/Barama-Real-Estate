@@ -161,6 +161,8 @@ $required = [
     'tools/rc1-evidence-smoke.php',
     'tools/rc1-artifact.php',
     'tools/rc1-artifact-smoke.php',
+    'tools/rc1-live-session.php',
+    'tools/rc1-live-session-smoke.php',
     'application/app/Services/AccountSettingsService.php',
     'application/app/Services/EmailVerificationService.php',
     'application/app/Services/SecurityAuditService.php',

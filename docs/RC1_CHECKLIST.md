@@ -20,6 +20,7 @@ The repository must retain:
 - one canonical RC1 acceptance policy plus controlled evidence writer and smoke test
 - one canonical read-only live-server preflight covering both pre-install and installed states
 - machine-verifiable RC candidate artifact binding for exact ZIP filename, SHA-256, source version and source commit
+- one canonical live acceptance session guard that binds artifact identity to sanitized pre-install/installed preflight evidence
 
 ## Automated gates
 

@@ -51,6 +51,8 @@ foreach ([
     'tools/http-routing-smoke.php',
     'tools/webserver-package-smoke.sh',
     'tools/live-server-preflight.php',
+    'tools/rc1-live-session.php',
+    'tools/rc1-live-session-smoke.php',
     'tools/smtp-test-server.php',
     'tools/smtp-smoke.php',
     'tools/browser-package-prepare.php',

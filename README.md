@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.19-dev`
+- Current development line: `0.9.20-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -385,3 +385,23 @@ The 0.9.19 development line binds every exact customer ZIP used for RC acceptanc
 - the binding manifest is release evidence, not a customer runtime file, and is not placed inside the CodeCanyon ZIP
 
 No RC1 acceptance gate is marked passed by artifact generation alone. Live-server acceptance must use the ZIP whose filename/hash/version/commit match the verified manifest.
+
+
+## Live acceptance session guard
+
+The 0.9.20 development line adds one deterministic repository-only command for the real hosting acceptance session.
+
+- tools/rc1-live-session.php verifies the exact ZIP against its .artifact.json manifest, expected source version and full source commit before any live preflight runs
+- it then invokes the existing read-only two-phase live-server preflight for preinstall or installed state
+- the target URL must be HTTPS and credential-free, with no query string or fragment
+- the generated report records only the bound artifact identity, URL host/path, PHP runtime identity, sanitized preflight results, a deterministic session fingerprint and a concise evidence summary
+- common secret/credential patterns are rejected before any report is persisted
+- artifact-binding failure stops the session before preflight and creates no report
+- clean preflight results produce session_status=passed
+- warnings produce session_status=review_required with exit code 3 so a warning cannot silently become RC1 evidence
+- failed preflight results produce session_status=failed
+- report writes are atomic and use restrictive file permissions where supported
+- tools/rc1-live-session-smoke.php validates the orchestration with isolated temporary fixtures
+- the session guard and smoke test remain excluded from the CodeCanyon customer ZIP
+
+The session report does not update docs/RC1_ACCEPTANCE.json automatically. A human must review the report and then use tools/rc1-evidence.php only for gates that genuinely passed.

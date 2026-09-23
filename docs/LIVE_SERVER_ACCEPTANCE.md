@@ -435,3 +435,26 @@ Example:
     php tools/rc1-evidence.php --gate=live_server.production_mail_delivery --status=pass --evidence="Production delivery received successfully; provider and timestamp recorded without credentials."
 
 If a later regression reopens a gate, reset it to pending with no evidence. The evidence writer clears stale evidence and updates the acceptance timestamp atomically.
+
+
+## Canonical acceptance session command
+
+For the real hosting acceptance session, prefer the session guard rather than running artifact verification and preflight as unrelated commands.
+
+Pre-install example:
+
+    php tools/rc1-live-session.php \
+      --manifest=/absolute/path/Barama-Real-Estate-<version>.artifact.json \
+      --package=/absolute/path/Barama-Real-Estate-<version>.zip \
+      --root=/www/wwwroot/baramarealestate.tonsamith.com \
+      --url=https://baramarealestate.tonsamith.com \
+      --phase=preinstall \
+      --expect-version=<version> \
+      --expect-commit=<40-character-source-commit> \
+      --output=/root/barama-acceptance-preinstall.json
+
+After installation, repeat with --phase=installed and a separate output filename.
+
+Exit status 0 means the bound session passed without warnings. Exit status 3 means review_required; do not mark an RC1 gate passed until the warning is resolved or independently reviewed. Exit status 1 means failed. Artifact binding failures stop before preflight and do not create a report.
+
+The report is non-secret by design and includes a concise evidence_summary suitable for review before using tools/rc1-evidence.php. The guard never modifies docs/RC1_ACCEPTANCE.json automatically.

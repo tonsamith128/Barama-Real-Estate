@@ -172,3 +172,16 @@ The 0.9.19 development line adds a machine-verifiable artifact binding for every
 - the artifact manifest remains outside the customer ZIP and contains no credentials or runtime secrets.
 
 Artifact binding does not close an RC1 gate on its own. It ensures that later live-server and human evidence can be tied to the intended exact package instead of a similarly named or stale build.
+
+
+## Live acceptance session guard
+
+The 0.9.20 development line adds tools/rc1-live-session.php as the canonical orchestrator for future aaPanel/live-server acceptance.
+
+The guard first verifies the exact customer ZIP against its RC candidate artifact manifest, expected source VERSION and full source commit. Only after that binding succeeds does it invoke the existing read-only live-server preflight for either preinstall or installed state.
+
+The generated report is intentionally sanitized and limited to artifact identity, URL host/path, PHP runtime identity, preflight result counts/checks, a deterministic session fingerprint and a concise evidence summary. Credential-like material is rejected before report creation. Artifact verification failure creates no session report.
+
+A warning is never treated as a pass: clean results return passed, warnings return review_required with exit code 3, and failed preflights return failed. The tool never writes RC1 acceptance status itself; reviewed results must still be recorded through tools/rc1-evidence.php.
+
+The guard is development-only and remains outside the customer ZIP.
