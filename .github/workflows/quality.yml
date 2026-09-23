@@ -101,6 +101,9 @@ jobs:
       - name: Validate RC1 acceptance record and promotion guard
         run: php tools/rc1-readiness.php
 
+      - name: Run controlled RC1 evidence workflow smoke test
+        run: php tools/rc1-evidence-smoke.php
+
       - name: Run source upgrade compatibility smoke test
         run: php tools/upgrade-smoke.php
 

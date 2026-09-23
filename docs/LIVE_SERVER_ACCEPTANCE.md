@@ -392,3 +392,16 @@ Do not create or modify company, project, property, listing, inquiry, lead, cata
 
 This gate validates verification-email queue generation and token handling. It does not by itself prove that the host's PHP-mail transport delivered an external message; outbound mail delivery remains a separate server-level acceptance check.
 
+
+
+## Recording RC1 evidence safely
+
+After a live-server or human acceptance gate genuinely passes, record only a concise non-secret result with tools/rc1-evidence.php.
+
+The command is dry-run by default. Review its output first, then repeat with --apply. Never include license keys, purchase codes, activation tokens, SMTP/database passwords, API secrets, authenticated URLs, or other credentials.
+
+Example:
+
+    php tools/rc1-evidence.php --gate=live_server.production_mail_delivery --status=pass --evidence="Production delivery received successfully; provider and timestamp recorded without credentials."
+
+If a later regression reopens a gate, reset it to pending with no evidence. The evidence writer clears stale evidence and updates the acceptance timestamp atomically.

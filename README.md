@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.16-dev`
+- Current development line: `0.9.17-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -340,3 +340,18 @@ The 0.9.16 development line adds a fail-safe RC1 acceptance record and validator
 - the customer ZIP remains unchanged because repository QA/evidence files are development-only
 
 GitHub-hosted runner allocation is still pending, so this newly implemented guard is not represented as an executed automated gate yet.
+
+
+## Controlled RC1 evidence workflow
+
+The 0.9.17 development line hardens the handoff from repository QA into live and human RC1 acceptance.
+
+- one canonical policy defines all 23 RC1 gates and evidence hygiene rules
+- the evidence writer is dry-run by default and requires an explicit --apply to change the acceptance record
+- unknown gates, invalid states, stale pending evidence, multiline/oversized evidence, and common credential/secret patterns are rejected
+- concurrent edits are detected before an atomic replacement
+- the readiness validator independently enforces the same gate policy even if the JSON file is edited manually
+- an isolated smoke test proves the writer does not mutate the canonical record during QA
+- these development-only files are excluded from the CodeCanyon customer ZIP
+
+No RC1 gate is marked passed by this milestone. Live-server, automated runner, browser/device, localization/content, and final submission evidence remain pending until actually exercised.

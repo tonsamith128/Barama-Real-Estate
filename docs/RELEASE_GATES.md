@@ -129,3 +129,19 @@ During development, pending gates are allowed and reported. A manual `--strict` 
 Only non-secret evidence belongs in the record. Secrets remain outside Git history.
 
 This guard is implemented but remains pending real GitHub Actions execution while hosted-runner allocation is unavailable.
+
+
+## Controlled RC1 evidence workflow
+
+The 0.9.17 development line adds a repository-only evidence policy and writer for docs/RC1_ACCEPTANCE.json.
+
+- tools/rc1-acceptance-lib.php is the canonical definition of the 23 gates and evidence hygiene rules.
+- tools/rc1-evidence.php is dry-run by default and requires --apply for a write.
+- only canonical gates and pending/pass states are accepted.
+- pass requires concise non-secret evidence; pending must contain no evidence.
+- common credential/secret patterns, multiline evidence, oversized evidence, unknown keys, and stale pending evidence are rejected.
+- writes use a same-directory temporary file plus atomic rename and refuse to apply if the record changed after it was read.
+- tools/rc1-evidence-smoke.php validates the workflow against an isolated temporary copy and verifies the canonical record is untouched.
+- the customer ZIP is unchanged because all evidence tooling remains development-only.
+
+This hardening improves the future live-server acceptance session but does not close any automated, live-server, or human RC1 gate by itself.

@@ -17,6 +17,7 @@ The repository must retain:
 - canonical updater
 - CodeCanyon customer documentation and third-party notices
 - clean production defaults with no demo marketplace inventory or hard-coded administrator account
+- one canonical RC1 acceptance policy plus controlled evidence writer and smoke test
 
 ## Automated gates
 
@@ -103,6 +104,20 @@ php tools/rc1-readiness.php --strict
 ```
 
 before promoting the version. During normal `0.9.x-dev` work, the validator checks the record structure and reports pending gates without failing. If `VERSION` is ever set to `1.0.0-RC1`, strict mode is automatic and every mandatory gate must be passed.
+
+## Controlled evidence workflow
+
+Use tools/rc1-evidence.php instead of editing passed gates casually.
+
+A proposed change is dry-run only unless --apply is supplied. The writer accepts only the 23 canonical GROUP.GATE names, requires concise non-secret evidence for pass, forbids retained evidence for pending, rejects common credential/secret patterns, updates updated_at in UTC, checks for concurrent file changes, and replaces the JSON record atomically.
+
+Example dry-run:
+
+    php tools/rc1-evidence.php --gate=live_server.nginx_installer_acceptance --status=pass --evidence="Nginx installer acceptance passed on the validated package and commit."
+
+After reviewing the dry-run result, add --apply to persist it. To reopen a gate, set --status=pending with no evidence.
+
+The validator independently rejects unknown groups/gates/entry keys, unsafe evidence, and pending gates that retain stale evidence. The isolated smoke test must pass without mutating docs/RC1_ACCEPTANCE.json.
 
 ## RC1 promotion rule
 

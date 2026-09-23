@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
+require_once $root . '/tools/rc1-acceptance-lib.php';
+
 $recordPath = $root . '/docs/RC1_ACCEPTANCE.json';
 $versionPath = $root . '/VERSION';
 $strictRequested = in_array('--strict', $argv, true);
@@ -31,176 +33,48 @@ if (!is_file($recordPath) || !is_readable($recordPath)) {
     if (!is_array($decoded)) {
         $fail('RC1 acceptance record is not valid JSON.');
     } else {
-        $required = [
-            'automated' => [
-                'foundation_qa',
-                'exact_package_webserver_qa',
-                'exact_package_browser_accessibility_qa',
-            ],
-            'live_server' => [
-                'direct_license_activation',
-                'envato_purchase_activation',
-                'apache_installer_acceptance',
-                'nginx_installer_acceptance',
-                'route_fallback_acceptance',
-                'administrator_auth_workspace_acceptance',
-                'disposable_customer_lifecycle_acceptance',
-                'production_mail_delivery',
-                'updater_acceptance',
-            ],
-            'human' => [
-                'desktop_tablet_mobile_visual_review',
-                'light_dark_visual_review',
-                'keyboard_focus_review',
-                'english_content_review',
-                'khmer_content_review',
-                'chinese_content_review',
-                'safari_ios_acceptance',
-                'edge_chrome_acceptance',
-                'customer_html_help_review',
-                'online_documentation_parity_review',
-                'codecanyon_package_submission_review',
-            ],
-        ];
-
-        if (($decoded['schema_version'] ?? null) !== 1) {
-            $fail('RC1 acceptance schema_version must be 1.');
-        } else {
-            $pass('RC1 acceptance schema version is supported.');
-        }
-
-        if (($decoded['target_version'] ?? '') !== '1.0.0-RC1') {
-            $fail('RC1 acceptance target_version must be 1.0.0-RC1.');
-        } else {
-            $pass('RC1 acceptance target version is canonical.');
-        }
-
-        $sourceVersion = trim(
-            (string) @file_get_contents($versionPath)
-        );
+        $sourceVersion = trim((string) @file_get_contents($versionPath));
         $strict = $strictRequested || $sourceVersion === '1.0.0-RC1';
-        $pending = 0;
-        $gateCount = 0;
-
-        foreach ($required as $group => $gates) {
-            $actualGroup = $decoded[$group] ?? null;
-
-            if (!is_array($actualGroup)) {
-                $fail('Missing RC1 acceptance group: ' . $group);
-                continue;
-            }
-
-            foreach ($gates as $gate) {
-                $gateCount++;
-                $entry = $actualGroup[$gate] ?? null;
-
-                if (!is_array($entry)) {
-                    $fail(
-                        'Missing RC1 acceptance gate: '
-                        . $group
-                        . '.'
-                        . $gate
-                    );
-                    continue;
-                }
-
-                $status = strtolower(trim(
-                    (string) ($entry['status'] ?? '')
-                ));
-                $evidence = trim(
-                    (string) ($entry['evidence'] ?? '')
-                );
-
-                if (!in_array($status, ['pending', 'pass'], true)) {
-                    $fail(
-                        'Invalid RC1 gate status for '
-                        . $group
-                        . '.'
-                        . $gate
-                        . '.'
-                    );
-                    continue;
-                }
-
-                if ($status === 'pass') {
-                    if ($evidence === '') {
-                        $fail(
-                            'Passed RC1 gate requires non-secret evidence: '
-                            . $group
-                            . '.'
-                            . $gate
-                        );
-                    } else {
-                        $pass(
-                            'RC1 gate evidence recorded: '
-                            . $group
-                            . '.'
-                            . $gate
-                        );
-                    }
-
-                    continue;
-                }
-
-                $pending++;
-
-                if ($strict) {
-                    $fail(
-                        'RC1 gate is still pending: '
-                        . $group
-                        . '.'
-                        . $gate
-                    );
-                }
-            }
-        }
-
-        $knownGroups = ['schema_version', 'target_version', 'updated_at'];
-        $knownGroups = array_merge(
-            $knownGroups,
-            array_keys($required)
+        $result = baramaRc1ValidateRecord(
+            $decoded,
+            $strict,
+            $sourceVersion
         );
 
-        foreach (array_keys($decoded) as $key) {
-            if (!in_array($key, $knownGroups, true)) {
-                $fail(
-                    'Unknown top-level RC1 acceptance key: '
-                    . (string) $key
-                );
-            }
+        (($decoded['schema_version'] ?? null) === 1)
+            ? $pass('RC1 acceptance schema version is supported.')
+            : null;
+
+        (($decoded['target_version'] ?? '') === '1.0.0-RC1')
+            ? $pass('RC1 acceptance target version is canonical.')
+            : null;
+
+        foreach ($result['passed'] as $gate) {
+            $pass('RC1 gate evidence recorded: ' . $gate);
         }
 
         $pass(
             'RC1 acceptance record contains '
-            . $gateCount
+            . (string) $result['gate_count']
             . ' mandatory gates.'
         );
 
-        if (!$strict && $pending > 0) {
+        if (!$strict && $result['pending'] !== []) {
             fwrite(
                 STDOUT,
                 '[INFO] '
-                . $pending
+                . count($result['pending'])
                 . ' RC1 gate(s) remain pending during development.'
                 . PHP_EOL
             );
         }
 
-        if ($strict && $pending === 0) {
-            $updatedAt = trim(
-                (string) ($decoded['updated_at'] ?? '')
-            );
+        if ($strict && $result['pending'] === []) {
+            $pass('RC1 acceptance timestamp is recorded.');
+        }
 
-            if (
-                $updatedAt === ''
-                || strtotime($updatedAt) === false
-            ) {
-                $fail(
-                    'Strict RC1 acceptance requires a valid updated_at timestamp.'
-                );
-            } else {
-                $pass('RC1 acceptance timestamp is recorded.');
-            }
+        foreach ($result['issues'] as $issue) {
+            $fail($issue);
         }
     }
 }
