@@ -36,7 +36,7 @@ The following gates are implemented in the repository but must be rerun before t
 - exact-package dependency and external-host allowlist inspection
 - clean production default with no demo companies, projects, properties, listings, inquiries, leads, or customer accounts
 - exact-package rejection of development manifests, dependency directories, internal QA fixtures, logs, dumps, backups, and known test credentials
-- route/controller contract validation for duplicate routes, missing controller actions, invalid middleware contracts, and critical route presence
+- strengthened route/controller contract validation for exact and semantic route collisions, duplicate path parameters, missing/non-public controller actions, invalid middleware contracts, and critical route presence
 - exact-package release metadata/checksum consistency across source VERSION, ZIP filename, packaged VERSION, README marker, archive comment, and SHA-256 sidecar
 - installer security-header assertions on exact-package Apache/Nginx root and subdirectory hosting
 - updater offline grace restricted to classified transport/service outages, never explicit license rejection
@@ -106,7 +106,7 @@ These remain intentionally open:
 - final human Safari/iOS and Edge/Chrome compatibility review
 - final human CodeCanyon package/submission review
 - online documentation review against the exact v1.0.0 package
-- successful execution of the 0.9.14 route/controller contract gate before RC1 promotion
+- successful execution of the strengthened 0.9.15 route/controller contract gate before RC1 promotion
 
 No open or pending gate should be represented as complete until it has been exercised on the applicable environment.
 

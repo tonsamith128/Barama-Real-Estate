@@ -11,7 +11,7 @@ The repository must retain:
 - no duplicate historical source-version trees
 - no old/backup/copy/legacy implementation files
 - deterministic ordered migrations
-- complete route/controller contracts with no duplicate method/path registrations
+- complete route/controller contracts with no exact or semantic method/path collisions, duplicate path parameters, or non-public controller actions
 - fresh-install and supported-upgrade paths
 - five-step installer only
 - canonical updater
@@ -37,7 +37,7 @@ Foundation QA must include:
 - SMTP contract
 - License Manager deterministic contract, including temporary-vs-permanent failure classification
 - HTTP root/subdirectory normalization
-- route/controller contract
+- route/controller contract, including semantic dynamic-route collision and public-action validation
 - source upgrade compatibility, including revoked-license rejection versus temporary-outage grace
 - exact customer ZIP build
 - exact-package metadata/checksum consistency

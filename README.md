@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.14-dev`
+- Current development line: `0.9.15-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -308,3 +308,20 @@ The 0.9.14 development line adds a mandatory route/controller contract gate befo
 - GitHub Actions attempts with no assigned runner do not count as completed QA
 
 The current runner-allocation issue remains an infrastructure blocker for closing the implemented 0.9.11–0.9.14 automated gates. The project will not represent those gates as passed until a real workflow run executes them.
+
+
+## Route contract hardening
+
+The 0.9.15 development line strengthens the RC1 route/controller gate without changing application URLs.
+
+The route contract now rejects:
+
+- exact duplicate method/path registrations
+- semantically ambiguous dynamic patterns such as `/item/{id}` and `/item/{slug}`
+- duplicate path-parameter names within one route
+- missing controller classes or actions
+- non-public controller actions
+- invalid middleware contracts
+- missing critical locale, authentication, account, developer, and administrator routes
+
+The current route table contains 77 registered routes and has no semantic dynamic-route collisions. Final closure of this gate still requires a real GitHub Actions runner to execute the Quality workflow.
