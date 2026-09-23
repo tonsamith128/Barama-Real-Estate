@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "target_version": "1.0.0-RC1",
+  "updated_at": "",
+  "automated": {
+    "foundation_qa": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "exact_package_webserver_qa": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "exact_package_browser_accessibility_qa": {
+      "status": "pending",
+      "evidence": ""
+    }
+  },
+  "live_server": {
+    "direct_license_activation": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "envato_purchase_activation": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "apache_installer_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "nginx_installer_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "route_fallback_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "administrator_auth_workspace_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "disposable_customer_lifecycle_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "production_mail_delivery": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "updater_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    }
+  },
+  "human": {
+    "desktop_tablet_mobile_visual_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "light_dark_visual_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "keyboard_focus_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "english_content_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "khmer_content_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "chinese_content_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "safari_ios_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "edge_chrome_acceptance": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "customer_html_help_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "online_documentation_parity_review": {
+      "status": "pending",
+      "evidence": ""
+    },
+    "codecanyon_package_submission_review": {
+      "status": "pending",
+      "evidence": ""
+    }
+  }
+}

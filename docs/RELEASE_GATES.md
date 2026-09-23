@@ -116,3 +116,16 @@ No open or pending gate should be represented as complete until it has been exer
 The authoritative RC1 promotion checklist is `docs/RC1_CHECKLIST.md`.
 
 Do not change `VERSION` to `1.0.0-RC1` until the checklist's automated, live-server, and human acceptance gates have recorded successful results.
+
+
+## RC1 promotion guard
+
+The 0.9.16 development line adds a machine-readable RC1 acceptance record at `docs/RC1_ACCEPTANCE.json` and the canonical validator `tools/rc1-readiness.php`.
+
+The guard covers all mandatory automated, live-server, and human acceptance gates listed in `docs/RC1_CHECKLIST.md`.
+
+During development, pending gates are allowed and reported. A manual `--strict` run fails while any required gate is pending. If `VERSION` is changed to `1.0.0-RC1`, strict validation becomes automatic, so RC1 promotion cannot pass repository QA with incomplete acceptance evidence.
+
+Only non-secret evidence belongs in the record. Secrets remain outside Git history.
+
+This guard is implemented but remains pending real GitHub Actions execution while hosted-runner allocation is unavailable.

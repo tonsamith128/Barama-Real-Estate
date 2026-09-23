@@ -85,9 +85,28 @@ Before RC1:
 - online documentation parity review
 - final CodeCanyon package/upload-form review
 
+## RC1 acceptance record
+
+Non-secret acceptance evidence is recorded in `docs/RC1_ACCEPTANCE.json`.
+
+Each mandatory automated, live-server, and human gate has exactly one status:
+
+- `pending`
+- `pass`
+
+A `pass` entry must include concise non-secret evidence. Never put passwords, purchase codes, license keys, SMTP credentials, database credentials, activation tokens, or other secrets in the record.
+
+Run:
+
+```bash
+php tools/rc1-readiness.php --strict
+```
+
+before promoting the version. During normal `0.9.x-dev` work, the validator checks the record structure and reports pending gates without failing. If `VERSION` is ever set to `1.0.0-RC1`, strict mode is automatic and every mandatory gate must be passed.
+
 ## RC1 promotion rule
 
-Only after the repository-controlled gates are intact and the automated/live/human gates above have recorded successful results should `VERSION` be promoted to `1.0.0-RC1`.
+Only after the repository-controlled gates are intact and the automated/live/human gates above have recorded successful results in `docs/RC1_ACCEPTANCE.json` should `VERSION` be promoted to `1.0.0-RC1`.
 
 RC1 must then be built from that exact commit, and the generated ZIP plus SHA-256 checksum must pass the full exact-package pipeline again.
 

@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.15-dev`
+- Current development line: `0.9.16-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -325,3 +325,18 @@ The route contract now rejects:
 - missing critical locale, authentication, account, developer, and administrator routes
 
 The current route table contains 77 registered routes and has no semantic dynamic-route collisions. Final closure of this gate still requires a real GitHub Actions runner to execute the Quality workflow.
+
+
+## RC1 promotion guard
+
+The 0.9.16 development line adds a fail-safe RC1 acceptance record and validator.
+
+- `docs/RC1_ACCEPTANCE.json` tracks non-secret evidence for every mandatory automated, live-server, and human RC1 gate
+- `tools/rc1-readiness.php` validates the record structure during development
+- `php tools/rc1-readiness.php --strict` fails until every gate is passed
+- changing `VERSION` to `1.0.0-RC1` automatically enables strict validation
+- passed gates require concise non-secret evidence
+- credentials, purchase codes, license keys, SMTP/database passwords, and activation tokens must never be stored in the acceptance record
+- the customer ZIP remains unchanged because repository QA/evidence files are development-only
+
+GitHub-hosted runner allocation is still pending, so this newly implemented guard is not represented as an executed automated gate yet.

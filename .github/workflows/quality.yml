@@ -98,6 +98,9 @@ jobs:
       - name: Run route/controller contract smoke test
         run: php tools/route-contract-smoke.php
 
+      - name: Validate RC1 acceptance record and promotion guard
+        run: php tools/rc1-readiness.php
+
       - name: Run source upgrade compatibility smoke test
         run: php tools/upgrade-smoke.php
 
