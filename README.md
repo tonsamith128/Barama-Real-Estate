@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.17-dev`
+- Current development line: `0.9.18-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -355,3 +355,17 @@ The 0.9.17 development line hardens the handoff from repository QA into live and
 - these development-only files are excluded from the CodeCanyon customer ZIP
 
 No RC1 gate is marked passed by this milestone. Live-server, automated runner, browser/device, localization/content, and final submission evidence remain pending until actually exercised.
+
+
+## Two-phase live-server preflight
+
+The 0.9.18 development line extends the existing read-only live-server preflight instead of creating a parallel acceptance tool.
+
+- preinstall remains the default phase and verifies the extracted exact package before installer credentials are entered
+- --phase=installed verifies the completed installation without authenticating or mutating data
+- installed-state checks cover package/installed version parity, protected runtime-state presence and world-access permissions, public routes, guest redirects for /account, /developer and /dashboard, sealed /installer/, current-version /updater/ availability, the minimal /health payload, canonical assets, application security headers and protected source paths
+- --json emits a machine-readable non-secret report suitable for acceptance evidence review
+- the report records only the URL host, package version and check results; it does not read or print database passwords, SMTP credentials, license keys, purchase codes, activation tokens or administrator passwords
+- the preflight remains development-only and is not copied into the CodeCanyon customer ZIP
+
+This milestone does not mark any live-server RC1 gate as passed. Those gates remain pending until the exact candidate package is exercised on the intended hosting environment.

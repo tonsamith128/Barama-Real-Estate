@@ -18,6 +18,7 @@ The repository must retain:
 - CodeCanyon customer documentation and third-party notices
 - clean production defaults with no demo marketplace inventory or hard-coded administrator account
 - one canonical RC1 acceptance policy plus controlled evidence writer and smoke test
+- one canonical read-only live-server preflight covering both pre-install and installed states
 
 ## Automated gates
 

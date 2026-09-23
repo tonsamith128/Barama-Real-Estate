@@ -32,9 +32,9 @@ Record:
 
 Never copy license keys, purchase codes, SMTP passwords, database passwords, or activation tokens into the acceptance report.
 
-### Optional read-only preflight
+### Read-only live preflight
 
-Before entering installer credentials, the repository's internal QA utility can inspect the extracted exact customer package and its public HTTPS surface without touching the database or license service:
+Before entering installer credentials, run the repository's internal preflight against the extracted exact customer package:
 
 ```bash
 php tools/live-server-preflight.php \
@@ -42,9 +42,22 @@ php tools/live-server-preflight.php \
   --url=https://barama-test.example.com
 ```
 
-The preflight checks PHP/extensions, required package files, canonical CSS/JavaScript, runtime-directory writability, HTTPS/TLS reachability, canonical installer redirect, no-cache/noindex behavior, installer security headers/session-cookie attributes, public assets, and protected application paths.
+The default preinstall phase checks PHP/extensions, required package files, canonical CSS/JavaScript, runtime-directory writability, HTTPS/TLS reachability, canonical installer redirect, no-cache/noindex behavior, installer security headers/session-cookie attributes, public assets, protected application paths, and confirms no installation lock exists.
 
-It is an internal acceptance utility and must not be copied into the CodeCanyon customer ZIP.
+After Step 5 completes, run the same canonical tool in installed mode:
+
+```bash
+php tools/live-server-preflight.php \
+  --root=/absolute/path/to/extracted/barama \
+  --url=https://barama-test.example.com \
+  --phase=installed
+```
+
+Installed mode remains read-only. It verifies package/installed-version parity, protected runtime-state file presence and world-access permissions, public routes, guest redirects for Account/Developer/Admin, the sealed installer redirect, current-version updater availability and no-cache/noindex behavior, the minimal health payload, application security headers, the canonical stylesheet, and protected source paths.
+
+For a compact non-secret result that can be reviewed before recording RC1 evidence, add --json. The JSON report includes only the URL host, package version, phase, aggregate counts, and check results. It does not read or print database passwords, SMTP credentials, license/purchase values, activation tokens, or administrator credentials.
+
+This is an internal acceptance utility and must not be copied into the CodeCanyon customer ZIP.
 
 ## 1. Fresh package integrity
 

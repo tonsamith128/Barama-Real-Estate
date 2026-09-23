@@ -145,3 +145,14 @@ The 0.9.17 development line adds a repository-only evidence policy and writer fo
 - the customer ZIP is unchanged because all evidence tooling remains development-only.
 
 This hardening improves the future live-server acceptance session but does not close any automated, live-server, or human RC1 gate by itself.
+
+
+## Two-phase live-server preflight
+
+The 0.9.18 development line extends tools/live-server-preflight.php into one canonical read-only preflight for both sides of the installer.
+
+Pre-install mode remains the default. Installed mode is selected with --phase=installed and verifies the deployed package/version, protected runtime-state file presence and permissions, public routes, guest access boundaries, installer sealing, updater reachability for the current version, health payload, application security headers, canonical assets and protected source paths.
+
+The optional --json report contains only non-secret environment/result metadata and is suitable for review before recording RC1 evidence. The preflight never authenticates, activates/deactivates licenses, changes database records, sends mail or mutates marketplace/account data.
+
+The tool remains excluded from the customer ZIP. Real live-server execution is still required before any associated RC1 gate can be marked passed.
