@@ -1071,3 +1071,218 @@
     else enhanceAll();
 })();
 
+/* BARAMA_PUBLIC_UI_HEADER_HERO_FOOTER_V100 */
+(() => {
+    const onReady = (callback) => {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', callback, { once: true });
+        } else {
+            callback();
+        }
+    };
+
+    const svg = (name) => {
+        const icons = {
+            home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v11h14V10M9 21v-6h6v6"/>',
+            properties: '<path d="M4 21V9l8-6 8 6v12"/><path d="M8 21v-7h8v7"/><path d="M9 10h6"/>',
+            projects: '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>',
+            companies: '<path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M16 9h2a2 2 0 0 1 2 2v10M8 7h4M8 11h4M8 15h4M8 19h4M3 21h18"/>',
+            user: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+            login: '<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/>',
+            register: '<path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>'
+        };
+        return `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.user}</svg>`;
+    };
+
+    const normalizePath = (value) => {
+        try {
+            const url = new URL(value, window.location.origin);
+            let path = url.pathname || '/';
+            if (path.length > 1) path = path.replace(/\/+$/, '');
+            return path;
+        } catch (_) {
+            return '/';
+        }
+    };
+
+    onReady(() => {
+        const header = document.querySelector('.site-header');
+        if (!header || header.dataset.baramaPublicUiEnhanced === '1') return;
+        header.dataset.baramaPublicUiEnhanced = '1';
+
+        const currentPath = normalizePath(window.location.href);
+        const navIcons = new Map([
+            ['/', 'home'],
+            ['/properties', 'properties'],
+            ['/projects', 'projects'],
+            ['/company', 'companies'],
+            ['/companies', 'companies']
+        ]);
+
+        header.querySelectorAll('a[href]').forEach((link) => {
+            if (link.classList.contains('brand')) return;
+            const path = normalizePath(link.href);
+            const iconName = navIcons.get(path);
+            if (!iconName) return;
+
+            if (!link.querySelector('.barama-nav-icon')) {
+                const icon = document.createElement('span');
+                icon.className = 'barama-nav-icon';
+                icon.innerHTML = svg(iconName);
+                link.prepend(icon);
+            }
+
+            const active = path === '/'
+                ? currentPath === '/'
+                : currentPath === path || currentPath.startsWith(`${path}/`);
+            if (active) {
+                link.classList.add('is-active');
+                link.setAttribute('aria-current', 'page');
+            }
+        });
+
+        /* Existing locale controller/session architecture stays authoritative.
+           We only submit the existing form immediately when the select changes. */
+        const localeForm = header.querySelector('[data-locale-switch]');
+        const localeSelect = header.querySelector('[data-locale-select]');
+        const localeSubmit = header.querySelector('[data-locale-submit]');
+        if (localeSubmit) {
+            localeSubmit.hidden = true;
+            localeSubmit.setAttribute('aria-hidden', 'true');
+            localeSubmit.tabIndex = -1;
+        }
+        if (localeForm && localeSelect && localeSelect.dataset.autoSubmitBound !== '1') {
+            localeSelect.dataset.autoSubmitBound = '1';
+            localeSelect.addEventListener('change', () => {
+                if (typeof localeForm.requestSubmit === 'function') {
+                    localeForm.requestSubmit();
+                } else {
+                    localeForm.submit();
+                }
+            });
+        }
+
+        const themeToggle = header.querySelector('[data-theme-toggle]');
+        const loginSource = Array.from(header.querySelectorAll('a[href]'))
+            .find((a) => normalizePath(a.href) === '/login');
+        const registerSource = Array.from(header.querySelectorAll('a[href]'))
+            .find((a) => normalizePath(a.href) === '/register');
+
+        /* Place the new user button beside the existing locale control.
+           No logo, routing, auth or theme logic is replaced. */
+        const preferredHost = (themeToggle && themeToggle.parentElement)
+            || (localeForm && localeForm.parentElement)
+            || header.querySelector('.container')
+            || header;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'barama-user-menu-wrap';
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'barama-user-trigger';
+        trigger.setAttribute('aria-label', 'Account menu');
+        trigger.setAttribute('aria-haspopup', 'menu');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.innerHTML = svg('user');
+
+        const menu = document.createElement('div');
+        menu.className = 'barama-user-menu';
+        menu.hidden = true;
+        menu.setAttribute('role', 'menu');
+        menu.innerHTML = `
+            <div class="barama-user-menu__head">
+                <strong>Account</strong>
+                <small>Sign in or create an account to manage your Barama activity.</small>
+            </div>
+            <div class="barama-user-menu__actions" data-barama-user-actions></div>
+            <div class="barama-user-menu__footer">
+                <div class="barama-user-menu__theme" data-barama-theme-slot>
+                    <span class="barama-user-menu__theme-label">Theme</span>
+                </div>
+                <div class="barama-user-menu__legal">
+                    <a href="/account/privacy">Privacy</a>
+                    <span title="Public Terms page is not configured yet.">Terms</span>
+                    <span title="Public Disclaimer page is not configured yet.">Disclaimer</span>
+                </div>
+            </div>
+        `;
+
+        const actions = menu.querySelector('[data-barama-user-actions]');
+
+        const addAction = (source, href, title, helper, iconName) => {
+            if (source) source.classList.add('barama-account-source-hidden');
+            const a = document.createElement('a');
+            a.className = 'barama-user-action';
+            a.href = source ? source.href : href;
+            a.setAttribute('role', 'menuitem');
+            a.innerHTML = `
+                <span class="barama-user-action__icon">${svg(iconName)}</span>
+                <span><strong>${title}</strong><small>${helper}</small></span>
+                <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+            `;
+            actions.appendChild(a);
+        };
+
+        if (loginSource || registerSource) {
+            addAction(
+                loginSource,
+                '/login',
+                'Sign in',
+                'Access saved properties and your account activity.',
+                'login'
+            );
+            addAction(
+                registerSource,
+                '/register',
+                'Register',
+                'Create an account to save and manage your activity.',
+                'register'
+            );
+        } else {
+            const accountSource = Array.from(header.querySelectorAll('a[href]'))
+                .find((a) => {
+                    const path = normalizePath(a.href);
+                    return path === '/account' || path.startsWith('/account/');
+                });
+            if (accountSource) {
+                addAction(
+                    accountSource,
+                    '/account',
+                    'My account',
+                    'Open your profile, settings and saved activity.',
+                    'user'
+                );
+            }
+        }
+
+        wrap.append(trigger, menu);
+        preferredHost.appendChild(wrap);
+
+        const themeSlot = menu.querySelector('[data-barama-theme-slot]');
+        if (themeToggle && themeSlot) {
+            themeSlot.prepend(themeToggle);
+        }
+
+        const setOpen = (open) => {
+            menu.hidden = !open;
+            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            setOpen(menu.hidden);
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!wrap.contains(event.target)) setOpen(false);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !menu.hidden) {
+                setOpen(false);
+                trigger.focus();
+            }
+        });
+    });
+})();
