@@ -1,17 +1,19 @@
-<section class="auth-premium">
-    <div class="container app-container">
-        <div class="auth-premium__grid">
-            <aside class="auth-story">
-                <span class="eyebrow">Password recovery</span>
-                <h1>Recover your account safely.</h1>
-                <p>Barama keeps recovery private: the same confirmation is shown whether or not an email belongs to an active account.</p>
+<section class="auth-premium auth-premium--standalone">
+    <div class="container app-container auth-standalone__container">
+                <a
+            class="auth-standalone__brand"
+            href="<?= e(url('/')) ?>"
+            aria-label="<?= e(t('Back to home')) ?>"
+        >
+            <img
+                src="<?= e(asset('images/branding/barama-logo-header.png')) ?>"
+                alt="<?= e(t('Barama')) ?>"
+                width="2172"
+                height="724"
+            >
+        </a>
 
-                <div class="auth-story__features">
-                    <article><span><?= app_icon('shield') ?></span><div><strong>Private response</strong><small>Account existence is never disclosed.</small></div></article>
-                    <article><span><?= app_icon('clock') ?></span><div><strong>Time-limited link</strong><small>Reset links expire automatically.</small></div></article>
-                    <article><span><?= app_icon('key') ?></span><div><strong>Single-use reset</strong><small>A successful reset invalidates the token.</small></div></article>
-                </div>
-            </aside>
+        <div class="auth-premium__grid auth-premium__grid--standalone">
 
             <div class="auth-panel">
                 <div class="auth-panel__head">
@@ -44,8 +46,11 @@
                     </button>
                 </form>
 
-                <div class="auth-panel__footer">
-                    <a href="<?= e(url('/login')) ?>">Back to sign in</a>
+                <div class="auth-panel__footer auth-panel__footer--split">
+                    <a class="auth-panel__home" href="<?= e(url('/')) ?>"><?= e(t('Back to home')) ?></a>
+                    <span class="auth-panel__secondary">
+                        <a href="<?= e(url('/login')) ?>"><?= e(t('Back to sign in')) ?></a>
+                    </span>
                 </div>
             </div>
         </div>
