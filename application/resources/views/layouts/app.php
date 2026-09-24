@@ -13,6 +13,18 @@ if ($appBasePath !== '/' && str_starts_with($localeReturn, $appBasePath)) {
     $localeReturn = substr($localeReturn, strlen($appBasePath)) ?: '/';
 }
 
+$authRoutePath = '/' . trim($localeReturn, '/');
+
+if ($authRoutePath === '') {
+    $authRoutePath = '/';
+}
+
+$isStandaloneAuthPage = in_array(
+    $authRoutePath,
+    ['/login', '/register', '/forgot-password'],
+    true
+);
+
 $queryString = (string) (parse_url($requestUri, PHP_URL_QUERY) ?? '');
 
 if ($queryString !== '') {
@@ -22,6 +34,34 @@ if ($queryString !== '') {
 <!doctype html>
 <html lang="<?= e(app_locale()) ?>" data-bs-theme="light">
 <head>
+    <script data-barama-theme-prepaint>
+        (() => {
+            const root = document.documentElement;
+            let theme = 'light';
+
+            try {
+                const stored = window.localStorage.getItem('barama-theme');
+
+                if (stored === 'light' || stored === 'dark') {
+                    theme = stored;
+                } else if (
+                    window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ) {
+                    theme = 'dark';
+                }
+            } catch (error) {
+                if (
+                    window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ) {
+                    theme = 'dark';
+                }
+            }
+
+            root.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
@@ -34,7 +74,8 @@ if ($queryString !== '') {
     >
     <link href="<?= e(asset('css/app.css')) ?>" rel="stylesheet">
 </head>
-<body>
+<body class="<?= $isStandaloneAuthPage ? 'auth-standalone-body' : '' ?>">
+    <?php if (!$isStandaloneAuthPage): ?>
     <header class="site-header" data-site-header>
         <div class="container app-container">
             <div class="site-header__inner">
@@ -132,6 +173,7 @@ if ($queryString !== '') {
             </div>
         </div>
     </header>
+    <?php endif; ?>
 
     <?php if (isset($workspaceNavigation) && is_array($workspaceNavigation)): ?>
         <div class="workspace-shell">
@@ -202,6 +244,7 @@ if ($queryString !== '') {
         </main>
     <?php endif; ?>
 
+    <?php if (!$isStandaloneAuthPage): ?>
     <footer class="site-footer">
         <div class="container app-container">
             <div class="site-footer__grid">
@@ -247,6 +290,7 @@ if ($queryString !== '') {
             </div>
         </div>
     </footer>
+    <?php endif; ?>
 
     <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
