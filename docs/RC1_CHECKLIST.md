@@ -21,6 +21,7 @@ The repository must retain:
 - one canonical read-only live-server preflight covering both pre-install and installed states
 - machine-verifiable RC candidate artifact binding for exact ZIP filename, SHA-256, source version and source commit
 - one canonical live acceptance session guard that binds artifact identity to sanitized pre-install/installed preflight evidence
+- one separate internal aaPanel acceptance bundle, cryptographically bound to the exact candidate and excluded from the customer package
 
 ## Automated gates
 

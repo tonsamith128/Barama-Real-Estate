@@ -53,6 +53,8 @@ foreach ([
     'tools/live-server-preflight.php',
     'tools/rc1-live-session.php',
     'tools/rc1-live-session-smoke.php',
+    'tools/build-acceptance-bundle.php',
+    'tools/acceptance-bundle-smoke.php',
     'tools/smtp-test-server.php',
     'tools/smtp-smoke.php',
     'tools/browser-package-prepare.php',

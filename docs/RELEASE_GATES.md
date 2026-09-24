@@ -185,3 +185,16 @@ The generated report is intentionally sanitized and limited to artifact identity
 A warning is never treated as a pass: clean results return passed, warnings return review_required with exit code 3, and failed preflights return failed. The tool never writes RC1 acceptance status itself; reviewed results must still be recorded through tools/rc1-evidence.php.
 
 The guard is development-only and remains outside the customer ZIP.
+
+
+## Internal aaPanel acceptance bundle
+
+The 0.9.21 development line adds a separate internal acceptance artifact without changing the CodeCanyon customer package.
+
+tools/build-acceptance-bundle.php consumes only an already-bound exact customer ZIP plus its .sha256 and .artifact.json files. It re-verifies source VERSION and the full source commit before creating build/acceptance/Barama-Real-Estate-aaPanel-Acceptance-<version>.zip.
+
+The bundle carries only the bound candidate, the canonical read-only acceptance utilities, hard-scoped Barama server helpers, a payload checksum inventory, internal instructions and rollback notes. It excludes docs/RC1_ACCEPTANCE.json, rc1-evidence writers, CI source and unpacked customer runtime.
+
+The generated shell helpers are fixed to the Barama domain/root and aaPanel PHP 8.4 CLI. They verify or record sanitized evidence only; deployment, database backup/restore and rollback remain deliberate manual aaPanel actions.
+
+Quality uploads the internal bundle separately from the customer artifact set. Building or verifying this internal bundle does not close an RC1 gate.

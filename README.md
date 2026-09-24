@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.20-dev`
+- Current development line: `0.9.21-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -405,3 +405,20 @@ The 0.9.20 development line adds one deterministic repository-only command for t
 - the session guard and smoke test remain excluded from the CodeCanyon customer ZIP
 
 The session report does not update docs/RC1_ACCEPTANCE.json automatically. A human must review the report and then use tools/rc1-evidence.php only for gates that genuinely passed.
+
+
+## Internal aaPanel acceptance bundle
+
+The 0.9.21 development line packages the exact RC candidate and its read-only live-acceptance utilities into a separate internal artifact for the future aaPanel session.
+
+- tools/build-acceptance-bundle.php only accepts a customer ZIP whose artifact manifest verifies against the current source VERSION and full source commit
+- the bundle is generated under build/acceptance/, physically separate from CodeCanyon customer artifacts under build/
+- it contains the bound customer ZIP, SHA-256 sidecar, artifact manifest, canonical artifact verifier, live-server preflight, live-session guard, acceptance policy helper, internal instructions, rollback notes and three hard-scoped shell helpers
+- the helpers target only baramarealestate.tonsamith.com, /www/wwwroot/baramarealestate.tonsamith.com and /www/server/php/84/bin/php
+- no helper deletes files, changes a database, signs in, activates/deactivates licenses, sends mail or automates rollback/deployment
+- BUNDLE_CONTENTS.sha256 protects every internal payload file after extraction
+- the outer acceptance ZIP receives its own SHA-256 sidecar
+- tools/acceptance-bundle-smoke.php verifies required contents, forbidden-content exclusions, Barama-only scope, non-destructive helpers, checksum inventory and fail-closed source-commit binding
+- Quality uploads the customer artifact set and the internal aaPanel acceptance bundle as two distinct GitHub artifacts
+
+See docs/AAPANEL_ACCEPTANCE_BUNDLE.md for the controlled handoff procedure. This internal artifact is never part of the CodeCanyon submission.
