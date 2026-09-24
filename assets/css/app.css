@@ -7542,3 +7542,330 @@ body.installer-modal-open {
 }
 @media(prefers-reduced-motion:reduce){.auth-premium--standalone .auth-input > .auth-floating-label{transition:none}}
 
+/* BARAMA_PUBLIC_UI_HEADER_HERO_FOOTER_V100 */
+
+/* Keep primary header navigation quiet by default.
+   Only hover/focus and the active route receive a surface. */
+.site-header nav a:not(.brand),
+.site-header .header-nav a,
+.site-header .site-nav a {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+.site-header nav a:not(.brand):hover,
+.site-header nav a:not(.brand):focus-visible,
+.site-header .header-nav a:hover,
+.site-header .header-nav a:focus-visible,
+.site-header .site-nav a:hover,
+.site-header .site-nav a:focus-visible,
+.site-header nav a.is-active,
+.site-header .header-nav a.is-active,
+.site-header .site-nav a.is-active {
+    background: color-mix(in srgb, var(--barama-primary) 8%, var(--barama-surface)) !important;
+    color: var(--barama-text) !important;
+    border-color: color-mix(in srgb, var(--barama-primary) 13%, var(--barama-border)) !important;
+}
+
+.barama-nav-icon {
+    display: inline-grid;
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    place-items: center;
+}
+
+.barama-nav-icon svg,
+.barama-user-trigger svg,
+.barama-user-action__icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.site-header nav a:not(.brand),
+.site-header .header-nav a,
+.site-header .site-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
+}
+
+/* Smaller global marketplace hero headline. */
+.market-home__copy h1 {
+    max-width: 12.5ch;
+    font-size: clamp(2.75rem, 4.45vw, 4rem) !important;
+    line-height: .99 !important;
+    letter-spacing: -.045em !important;
+}
+
+/* Locale selection applies immediately; the old Apply button stays hidden. */
+.header-locale [data-locale-submit] {
+    display: none !important;
+}
+
+.header-locale select {
+    cursor: pointer;
+}
+
+/* Compact account/user menu. */
+.barama-user-menu-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.barama-user-trigger {
+    display: inline-grid;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    place-items: center;
+    border: 1px solid var(--barama-border);
+    border-radius: 13px;
+    background: transparent;
+    color: var(--barama-text);
+    cursor: pointer;
+    transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.barama-user-trigger:hover,
+.barama-user-trigger:focus-visible,
+.barama-user-trigger[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--barama-primary) 8%, var(--barama-surface));
+    border-color: color-mix(in srgb, var(--barama-primary) 22%, var(--barama-border));
+}
+
+.barama-user-trigger:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--barama-primary) 20%, transparent);
+    outline-offset: 2px;
+}
+
+.barama-user-trigger svg {
+    width: 20px;
+    height: 20px;
+}
+
+.barama-user-menu {
+    position: absolute;
+    z-index: 1200;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(340px, calc(100vw - 24px));
+    padding: 10px;
+    border: 1px solid var(--barama-border);
+    border-radius: 18px;
+    background: var(--barama-surface);
+    color: var(--barama-text);
+    box-shadow: 0 22px 55px rgba(15, 23, 42, .16);
+}
+
+.barama-user-menu[hidden] {
+    display: none !important;
+}
+
+.barama-user-menu__head {
+    padding: 8px 10px 10px;
+}
+
+.barama-user-menu__head strong,
+.barama-user-menu__head small {
+    display: block;
+}
+
+.barama-user-menu__head strong {
+    font-size: .82rem;
+    font-weight: 850;
+}
+
+.barama-user-menu__head small {
+    margin-top: 2px;
+    color: var(--barama-muted);
+    font-size: .67rem;
+    line-height: 1.45;
+}
+
+.barama-user-menu__actions {
+    display: grid;
+    gap: 6px;
+}
+
+.barama-user-action {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 58px;
+    padding: 9px 10px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    color: var(--barama-text);
+    text-decoration: none;
+    background: transparent;
+    transition: background-color .16s ease, border-color .16s ease;
+}
+
+.barama-user-action:hover,
+.barama-user-action:focus-visible {
+    background: color-mix(in srgb, var(--barama-primary) 7%, var(--barama-surface));
+    border-color: color-mix(in srgb, var(--barama-primary) 12%, var(--barama-border));
+    color: var(--barama-text);
+}
+
+.barama-user-action__icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--barama-primary) 9%, transparent);
+    color: var(--barama-primary);
+}
+
+.barama-user-action__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.barama-user-action span:not(.barama-user-action__icon),
+.barama-user-action strong,
+.barama-user-action small {
+    min-width: 0;
+}
+
+.barama-user-action strong,
+.barama-user-action small {
+    display: block;
+}
+
+.barama-user-action strong {
+    font-size: .75rem;
+    font-weight: 820;
+}
+
+.barama-user-action small {
+    margin-top: 2px;
+    color: var(--barama-muted);
+    font-size: .63rem;
+    line-height: 1.35;
+}
+
+.barama-user-action__arrow {
+    color: var(--barama-muted);
+    font-size: .76rem;
+}
+
+.barama-user-menu__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 9px;
+    padding: 10px 6px 3px;
+    border-top: 1px solid var(--barama-border);
+}
+
+.barama-user-menu__theme {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.barama-user-menu__theme .theme-toggle {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 10px !important;
+}
+
+.barama-user-menu__theme-label {
+    color: var(--barama-muted);
+    font-size: .61rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.barama-user-menu__legal {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    text-align: right;
+}
+
+.barama-user-menu__legal a,
+.barama-user-menu__legal span {
+    color: var(--barama-muted);
+    font-size: .58rem;
+    line-height: 1.35;
+    text-decoration: none;
+}
+
+.barama-user-menu__legal a:hover,
+.barama-user-menu__legal a:focus-visible {
+    color: var(--barama-primary);
+    text-decoration: underline;
+}
+
+.barama-account-source-hidden {
+    display: none !important;
+}
+
+/* Four desktop footer items become a real two-column grid on small screens.
+   Do not let later mobile rules collapse it back to one column. */
+@media (max-width: 767.98px) {
+    .site-footer__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 24px 18px !important;
+    }
+
+    .site-footer__brand {
+        grid-column: auto !important;
+    }
+
+    .market-home__copy h1 {
+        font-size: clamp(2.35rem, 8vw, 3.25rem) !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .site-footer__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .site-footer__brand {
+        grid-column: auto !important;
+    }
+
+    .barama-user-menu {
+        position: fixed;
+        top: 72px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+
+    .barama-user-menu__footer {
+        align-items: center;
+    }
+
+    .market-home__copy h1 {
+        max-width: 13ch;
+        font-size: clamp(2.2rem, 10vw, 2.85rem) !important;
+        line-height: 1.01 !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .barama-user-trigger,
+    .barama-user-action,
+    .site-header nav a {
+        transition: none !important;
+    }
+}
