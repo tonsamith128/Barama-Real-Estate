@@ -96,6 +96,65 @@ if (
     );
 }
 
+$packageDocumentation = (string) $zip->getFromName(
+    'documentation/index.html'
+);
+$packageInstallerView = (string) $zip->getFromName(
+    'application/resources/views/installer/index.php'
+);
+$packageInstallerController = (string) $zip->getFromName(
+    'application/app/Http/Controllers/InstallerController.php'
+);
+
+foreach ([
+    'Step 4 Website includes SMTP',
+    'installation is blocked server-side until the exact submitted mail configuration passes a test',
+    'SMTP passwords are never repopulated after validation errors',
+] as $retiredMailClaim) {
+    if (str_contains($packageReadme, $retiredMailClaim)) {
+        throw new RuntimeException(
+            'README contains retired installer mail behavior: '
+            . $retiredMailClaim
+        );
+    }
+}
+
+foreach ([
+    'Step 4 collects website and administrator details only',
+    'installation initializes PHP mail as the safe default',
+    'SMTP remains supported by the canonical mail transport',
+] as $readmeMailMarker) {
+    if (!str_contains($packageReadme, $readmeMailMarker)) {
+        throw new RuntimeException(
+            'README mail setup is not aligned with the current installer: '
+            . $readmeMailMarker
+        );
+    }
+}
+
+if (
+    !str_contains(
+        $packageDocumentation,
+        'Email delivery is intentionally kept out of the installer.'
+    )
+    || !str_contains(
+        $packageDocumentation,
+        'Barama starts with PHP mail'
+    )
+    || !str_contains(
+        $packageInstallerView,
+        'Email delivery defaults to PHP mail'
+    )
+    || !str_contains(
+        $packageInstallerController,
+        "'mail_driver' => 'mail'"
+    )
+) {
+    throw new RuntimeException(
+        'Installer/README/HTML documentation mail behavior is not in parity.'
+    );
+}
+
 $entries = [];
 
 for ($index = 0; $index < $zip->numFiles; $index++) {

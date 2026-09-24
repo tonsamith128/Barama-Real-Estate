@@ -198,3 +198,14 @@ The bundle carries only the bound candidate, the canonical read-only acceptance 
 The generated shell helpers are fixed to the Barama domain/root and aaPanel PHP 8.4 CLI. They verify or record sanitized evidence only; deployment, database backup/restore and rollback remain deliberate manual aaPanel actions.
 
 Quality uploads the internal bundle separately from the customer artifact set. Building or verifying this internal bundle does not close an RC1 gate.
+
+
+## Customer documentation parity
+
+The 0.9.22 development line closes a package-documentation mismatch before live candidate acceptance.
+
+The shipped README, CHANGELOG, packaged HTML help and actual installer must agree that the five-step installer does not request SMTP credentials or require a mail test. Step 4 initializes PHP mail from the website/administrator details, while the canonical SMTP transport remains available for post-install provider configuration.
+
+Exact-package compliance QA rejects the retired Step 4 SMTP/test-email wording and requires the current PHP-mail-default contract in the shipped README, HTML help, installer view and installer controller.
+
+This correction changes customer-package contents, so 0.9.21-dev is superseded for live candidate acceptance. No RC1 gate is marked passed by this documentation correction.

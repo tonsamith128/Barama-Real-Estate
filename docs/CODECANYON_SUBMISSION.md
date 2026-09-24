@@ -27,7 +27,7 @@ The packaged HTML documentation must cover:
 - one-click five-step installer
 - licensing methods
 - account/workspace URLs
-- SMTP/PHP-mail setup
+- installer PHP-mail defaults and post-install SMTP configuration
 - scheduled notification/outbox jobs
 - upgrade workflow and backup requirement
 - third-party asset credits

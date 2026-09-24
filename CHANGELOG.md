@@ -36,7 +36,7 @@ Initial CodeCanyon release preparation.
 - Ton Samith direct and CodeCanyon/Envato license verification methods
 - MySQL/MariaDB installation and ordered migrations
 - first-administrator provisioning
-- SMTP/PHP-mail configuration and test delivery
+- PHP-mail defaults during installation with optional authenticated SMTP configuration after installation
 - secure browser updater with administrator re-authentication and pending-migration execution
 - notification/outbox command for scheduled hosting jobs
 

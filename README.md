@@ -4,7 +4,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Current development line: `0.9.21-dev`
+- Current development line: `0.9.22-dev`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
@@ -201,21 +201,17 @@ Nginx does not read `.htaccess`; the hosting environment or panel must already p
 
 ## Installer email delivery
 
-The 0.9.8 development line completes customer-facing mail configuration without adding a sixth installer step.
+The current five-step installer keeps email setup intentionally simple for non-technical customers.
 
-- Step 4 Website includes SMTP (recommended) and PHP mail delivery settings
-- all mail fields use the shared installer form/icon system
-- the administrator email is the test recipient
-- installation is blocked server-side until the exact submitted mail configuration passes a test
-- only a SHA-256 fingerprint of the tested configuration is retained in installer session state
-- SMTP passwords are never repopulated after validation errors
-- production runtime configuration stores the selected mail driver and credentials under protected application storage
-- SMTP sockets require peer and hostname certificate verification for TLS/SSL
-- Step 5 reports email-delivery configuration health
-- Quality CI uses a local PHP SMTP fixture to verify AUTH LOGIN and multipart delivery without external credentials
-- exact customer ZIP QA verifies the installer mail contract while excluding internal SMTP QA scripts
+- Step 4 collects website and administrator details only; it does not ask the buyer to configure SMTP
+- installation initializes PHP mail as the safe default, using the administrator email and website name for the initial sender identity
+- SMTP remains supported by the canonical mail transport and can be configured after installation when the buyer needs an authenticated provider
+- SMTP TLS/SSL connections require peer and hostname certificate verification
+- Quality CI uses a local PHP SMTP fixture to verify AUTH LOGIN and multipart transport behavior without external credentials
+- exact customer ZIP QA verifies that the installer, README and packaged HTML help describe the same mail setup
+- real provider delivery remains a final live-server acceptance gate
 
-Real provider delivery remains a final live-server acceptance gate.
+This keeps the installer at five steps and avoids blocking a first installation on SMTP credentials or a test-email requirement.
 
 
 ## Browser and accessibility release QA
@@ -422,3 +418,15 @@ The 0.9.21 development line packages the exact RC candidate and its read-only li
 - Quality uploads the customer artifact set and the internal aaPanel acceptance bundle as two distinct GitHub artifacts
 
 See docs/AAPANEL_ACCEPTANCE_BUNDLE.md for the controlled handoff procedure. This internal artifact is never part of the CodeCanyon submission.
+
+
+## Customer documentation parity guard
+
+The 0.9.22 development line closes a customer-package documentation drift discovered before live candidate acceptance.
+
+- the root README, packaged HTML help, installer UI and installer controller now describe the same five-step mail behavior
+- Step 4 does not request SMTP credentials or require a test email
+- installation starts with PHP mail defaults derived from the website/administrator details
+- authenticated SMTP remains a post-install option through the canonical mail transport
+- exact-package compliance QA rejects the retired Step 4 SMTP/test-email claims and requires the current PHP-mail-default wording
+- this is a customer-package correction, so the live acceptance candidate must be built from 0.9.22-dev rather than the superseded 0.9.21-dev source identity
