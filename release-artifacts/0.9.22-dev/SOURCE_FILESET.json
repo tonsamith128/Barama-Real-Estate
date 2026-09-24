@@ -1,0 +1,810 @@
+{
+  "schema_version": 1,
+  "product": "barama-real-estate",
+  "source_version": "0.9.22-dev",
+  "source_commit": "9ad9f6405f3206d7d5f411158a338fec24cbbcde",
+  "source_tree": "ca5c3603b0153b66c3bb831f782cd8dbee562b8c",
+  "package_file_count": 160,
+  "files": [
+    {
+      "path": ".htaccess",
+      "git_blob_sha": "630bc7302a45eb5e1f83945231a8bc627eee6428",
+      "size_bytes": 483
+    },
+    {
+      "path": "application/app/Core/Application.php",
+      "git_blob_sha": "7bf7d00c2c7f176e063717dc0448b863d60c1d20",
+      "size_bytes": 338
+    },
+    {
+      "path": "application/app/Core/Config.php",
+      "git_blob_sha": "05cc382cd82802113e5b424cb8b566e612fea549",
+      "size_bytes": 1286
+    },
+    {
+      "path": "application/app/Core/Csrf.php",
+      "git_blob_sha": "ca374b3c9d3722ac03f430d0b1a3066206691172",
+      "size_bytes": 818
+    },
+    {
+      "path": "application/app/Core/Database.php",
+      "git_blob_sha": "12895f82918684bd0135f79045387fe388ad7ea9",
+      "size_bytes": 1702
+    },
+    {
+      "path": "application/app/Core/Installation.php",
+      "git_blob_sha": "7336ad7ebc6ca97131b9b64c4c4e15e68c67a3d9",
+      "size_bytes": 6436
+    },
+    {
+      "path": "application/app/Core/MiddlewareInterface.php",
+      "git_blob_sha": "efa0c4a364d72739b28b2eb0260e36a7b19918f6",
+      "size_bytes": 163
+    },
+    {
+      "path": "application/app/Core/Request.php",
+      "git_blob_sha": "dd1a7b66047dbe68de841b708c3da64dfed8c65f",
+      "size_bytes": 3223
+    },
+    {
+      "path": "application/app/Core/Response.php",
+      "git_blob_sha": "92faf9bc47dc2170f49bce8ff63e0b798da9eefc",
+      "size_bytes": 2478
+    },
+    {
+      "path": "application/app/Core/Router.php",
+      "git_blob_sha": "32ab20731345a8f9def88838cd1ed498f34d35ba",
+      "size_bytes": 4778
+    },
+    {
+      "path": "application/app/Core/RuntimeEnvironment.php",
+      "git_blob_sha": "9622818033126d2fabaf3d2d84b3fc57c9a10b7e",
+      "size_bytes": 1043
+    },
+    {
+      "path": "application/app/Core/Session.php",
+      "git_blob_sha": "a47723400eca3fd74b53f27cf6216ffe088a5c47",
+      "size_bytes": 748
+    },
+    {
+      "path": "application/app/Core/View.php",
+      "git_blob_sha": "ec4bfe9f2db8560f7dd7c4ac9403ef23b7a79162",
+      "size_bytes": 1413
+    },
+    {
+      "path": "application/app/Domain/RealEstate/DomainRules.php",
+      "git_blob_sha": "3eaf8d5e9ea53dc0bc3d7e586c8124d2e7243187",
+      "size_bytes": 5458
+    },
+    {
+      "path": "application/app/Http/Controllers/AccountController.php",
+      "git_blob_sha": "a4384b9b8a12ad18f259f0ca50421f253c7e1a36",
+      "size_bytes": 7665
+    },
+    {
+      "path": "application/app/Http/Controllers/AccountManagementController.php",
+      "git_blob_sha": "2aceb4940b081a3872b3554e1210eed7eb576ad7",
+      "size_bytes": 10355
+    },
+    {
+      "path": "application/app/Http/Controllers/AdminManagementController.php",
+      "git_blob_sha": "53bf9e6fd1dee676c15111836c2f8d627b3dca49",
+      "size_bytes": 4863
+    },
+    {
+      "path": "application/app/Http/Controllers/AuthController.php",
+      "git_blob_sha": "89a47b598c5fa9ea45a1cc0fc0a7cdf177acf949",
+      "size_bytes": 10101
+    },
+    {
+      "path": "application/app/Http/Controllers/CompanyController.php",
+      "git_blob_sha": "9d11b6bff8d1aeadec9d2e984019b32dc04d6a59",
+      "size_bytes": 2118
+    },
+    {
+      "path": "application/app/Http/Controllers/DashboardController.php",
+      "git_blob_sha": "a6a47e69bad9bdf2cb2ef5c9caaee04be2f2ce6b",
+      "size_bytes": 17191
+    },
+    {
+      "path": "application/app/Http/Controllers/DeveloperController.php",
+      "git_blob_sha": "86a5e3ac08f2ed292bac6781135c70ad985c7f5d",
+      "size_bytes": 15866
+    },
+    {
+      "path": "application/app/Http/Controllers/DeveloperManagementController.php",
+      "git_blob_sha": "660f12e6106368670094a21bd60e6db637d4977a",
+      "size_bytes": 8388
+    },
+    {
+      "path": "application/app/Http/Controllers/HomeController.php",
+      "git_blob_sha": "af49a69aaa2f04d9acdde6ce9d724c9ca3cddc17",
+      "size_bytes": 1268
+    },
+    {
+      "path": "application/app/Http/Controllers/InquiryController.php",
+      "git_blob_sha": "e93d287505b1483a5b6de65143e33d0589f84c31",
+      "size_bytes": 1337
+    },
+    {
+      "path": "application/app/Http/Controllers/InstallerController.php",
+      "git_blob_sha": "8f8c6338fffa50ce3be62b67b230d320c9df980d",
+      "size_bytes": 20281
+    },
+    {
+      "path": "application/app/Http/Controllers/LocaleController.php",
+      "git_blob_sha": "e9c215280b450bf009cb13ddb88fea25ffbeab5e",
+      "size_bytes": 1094
+    },
+    {
+      "path": "application/app/Http/Controllers/MarketplaceController.php",
+      "git_blob_sha": "46dfad43f2bf3a9f51a429da382105d4bf83d590",
+      "size_bytes": 5709
+    },
+    {
+      "path": "application/app/Http/Controllers/PublicMediaController.php",
+      "git_blob_sha": "d77c5c50cb8e518be71fdf9a7810493d804a0d81",
+      "size_bytes": 1558
+    },
+    {
+      "path": "application/app/Http/Controllers/UpgradeController.php",
+      "git_blob_sha": "20dd6390ced9c19ed6a6cb5e1998df2df27e4c32",
+      "size_bytes": 3149
+    },
+    {
+      "path": "application/app/Http/Middleware/AuthMiddleware.php",
+      "git_blob_sha": "e7ce6c6e5415a163fa44ad3702863549e5ac8c43",
+      "size_bytes": 639
+    },
+    {
+      "path": "application/app/Http/Middleware/CsrfMiddleware.php",
+      "git_blob_sha": "29e4a7edb8e09070e902b17a63c5388a09f707e6",
+      "size_bytes": 724
+    },
+    {
+      "path": "application/app/Http/Middleware/GuestMiddleware.php",
+      "git_blob_sha": "4fe9d64dd73f0d2baf75b0ac61b81b4399847f3a",
+      "size_bytes": 508
+    },
+    {
+      "path": "application/app/Http/Middleware/PermissionMiddleware.php",
+      "git_blob_sha": "4089907a09a39bb9d62873c9caae6b1e8810d0fa",
+      "size_bytes": 903
+    },
+    {
+      "path": "application/app/Repositories/AccountSettingsRepository.php",
+      "git_blob_sha": "edeb09bfe63fc54e0f02286a7037b3e997304a65",
+      "size_bytes": 12104
+    },
+    {
+      "path": "application/app/Repositories/CatalogRepository.php",
+      "git_blob_sha": "2363fd1b51a007b85297078b23631ad7ada58d99",
+      "size_bytes": 2862
+    },
+    {
+      "path": "application/app/Repositories/CompanyMembershipRepository.php",
+      "git_blob_sha": "c65285683b8b5e0646f75c7eecbd92c91a7913f1",
+      "size_bytes": 1062
+    },
+    {
+      "path": "application/app/Repositories/CompanyMembershipWriteRepository.php",
+      "git_blob_sha": "4d47d2d49e7b6dd734e42e89b771be7d00468940",
+      "size_bytes": 1491
+    },
+    {
+      "path": "application/app/Repositories/CompanyRepository.php",
+      "git_blob_sha": "d7c6cae1cc93e85599410dafe9f310a5483436a3",
+      "size_bytes": 1453
+    },
+    {
+      "path": "application/app/Repositories/CompanyWriteRepository.php",
+      "git_blob_sha": "739911df3b842e93a92fc2ada06c40bf60380163",
+      "size_bytes": 2707
+    },
+    {
+      "path": "application/app/Repositories/CustomerEngagementRepository.php",
+      "git_blob_sha": "a168a898b9e9a2bbdfa15c5ad8eb42d75b98a15c",
+      "size_bytes": 19919
+    },
+    {
+      "path": "application/app/Repositories/EmailVerificationRepository.php",
+      "git_blob_sha": "11d5ea8055adfef8a04d1fc6cdf28dfae0746c38",
+      "size_bytes": 2624
+    },
+    {
+      "path": "application/app/Repositories/InquiryRepository.php",
+      "git_blob_sha": "25acbf779de18e4f9bfdc86e6960ac588f4f20e6",
+      "size_bytes": 5826
+    },
+    {
+      "path": "application/app/Repositories/LeadRepository.php",
+      "git_blob_sha": "429d2b853c5fd7c81335f6f49d3600dd172b2207",
+      "size_bytes": 2177
+    },
+    {
+      "path": "application/app/Repositories/ListingRepository.php",
+      "git_blob_sha": "c9397f6f6d3714e373ee7accea30647d5bb9e395",
+      "size_bytes": 1904
+    },
+    {
+      "path": "application/app/Repositories/ListingWriteRepository.php",
+      "git_blob_sha": "c253da55295924503720f707f42ad4c842865c3c",
+      "size_bytes": 3302
+    },
+    {
+      "path": "application/app/Repositories/LocationRepository.php",
+      "git_blob_sha": "b52def7e0f65b0f85eff950fb198de607aa15a07",
+      "size_bytes": 1433
+    },
+    {
+      "path": "application/app/Repositories/MarketplaceRepository.php",
+      "git_blob_sha": "b472036af25be5799275e97c9caee9d5960de6e0",
+      "size_bytes": 29671
+    },
+    {
+      "path": "application/app/Repositories/MediaRepository.php",
+      "git_blob_sha": "66d7a4eacae861b78e3a7baf783cd24b80c3d5a8",
+      "size_bytes": 4814
+    },
+    {
+      "path": "application/app/Repositories/NotificationRepository.php",
+      "git_blob_sha": "319116283f0745b301956894bed6cfbf198d5e30",
+      "size_bytes": 11815
+    },
+    {
+      "path": "application/app/Repositories/PasswordResetRepository.php",
+      "git_blob_sha": "e1842d843b4779f2d49cd68a2e3d5876d1082d9e",
+      "size_bytes": 2382
+    },
+    {
+      "path": "application/app/Repositories/ProjectRepository.php",
+      "git_blob_sha": "7b88e0b24681733b02471677d1e1e811d1f79bce",
+      "size_bytes": 1377
+    },
+    {
+      "path": "application/app/Repositories/ProjectWriteRepository.php",
+      "git_blob_sha": "350fb5c479a312e9eede2093f8299ddec5c6a025",
+      "size_bytes": 2984
+    },
+    {
+      "path": "application/app/Repositories/PropertyRepository.php",
+      "git_blob_sha": "e49a0c97e93c65b543bd7c53c5367b6b1c0bde2b",
+      "size_bytes": 2204
+    },
+    {
+      "path": "application/app/Repositories/PropertyWriteRepository.php",
+      "git_blob_sha": "952e5812f11b67568de18d40d0ff1ce3e0dd8adb",
+      "size_bytes": 4293
+    },
+    {
+      "path": "application/app/Repositories/RoleRepository.php",
+      "git_blob_sha": "c68ecaaf302b04bd455ccc0c28e15cbfc82af625",
+      "size_bytes": 3553
+    },
+    {
+      "path": "application/app/Repositories/SavedSearchAlertRepository.php",
+      "git_blob_sha": "50547bd38abbf75851757265fecd7d44e5db772c",
+      "size_bytes": 4096
+    },
+    {
+      "path": "application/app/Repositories/SecurityAuditRepository.php",
+      "git_blob_sha": "ca9fc63fe8c7356a147d9910fd15de79b71bae84",
+      "size_bytes": 1083
+    },
+    {
+      "path": "application/app/Repositories/UserRepository.php",
+      "git_blob_sha": "4a9c832c560c5a155e8df1cb58a45d8b09dba7ce",
+      "size_bytes": 4800
+    },
+    {
+      "path": "application/app/Repositories/WorkflowRepository.php",
+      "git_blob_sha": "03a0edaa244a99916f9d304bc2269511f2611d20",
+      "size_bytes": 5107
+    },
+    {
+      "path": "application/app/Repositories/WorkspaceReadRepository.php",
+      "git_blob_sha": "159fde0f6ecfeea89b5829e0b5d9fd66ee25d37d",
+      "size_bytes": 44026
+    },
+    {
+      "path": "application/app/Repositories/WorkspaceRecordRepository.php",
+      "git_blob_sha": "7a3e9458e4e0e981a7fd5b54323d9f4ee6f80c40",
+      "size_bytes": 12228
+    },
+    {
+      "path": "application/app/Security/InquiryThrottle.php",
+      "git_blob_sha": "24174b25ae0faaea66f0e41ffde46dc974ff08dd",
+      "size_bytes": 2804
+    },
+    {
+      "path": "application/app/Security/LoginThrottle.php",
+      "git_blob_sha": "7dac45f4e2119b9c38f4b23d6bcad6856ed1701e",
+      "size_bytes": 3836
+    },
+    {
+      "path": "application/app/Security/PasswordPolicy.php",
+      "git_blob_sha": "88db1ce9d4eab62a49ab323769aeb663e8d0b830",
+      "size_bytes": 1291
+    },
+    {
+      "path": "application/app/Services/AccountSettingsService.php",
+      "git_blob_sha": "3af678ec0c0fd2246c46e929bf4fdeb62b08e7d3",
+      "size_bytes": 8626
+    },
+    {
+      "path": "application/app/Services/AuthService.php",
+      "git_blob_sha": "d1795cfbb3f911fd96a51ffc65439e4071e6b108",
+      "size_bytes": 10059
+    },
+    {
+      "path": "application/app/Services/BulkModerationService.php",
+      "git_blob_sha": "792ae878ad2b4206f5e608609ecc07c36a389aab",
+      "size_bytes": 3707
+    },
+    {
+      "path": "application/app/Services/CatalogManagementService.php",
+      "git_blob_sha": "25612a54496f41ecc2485e7fc40572bb01127e0e",
+      "size_bytes": 3647
+    },
+    {
+      "path": "application/app/Services/CompanyAccessService.php",
+      "git_blob_sha": "b11baf6261fa54af5522e81a94e47e323332116e",
+      "size_bytes": 1134
+    },
+    {
+      "path": "application/app/Services/CompanyManagementService.php",
+      "git_blob_sha": "6c80aaa1ec12837c60c41c9f3cca688193537562",
+      "size_bytes": 5539
+    },
+    {
+      "path": "application/app/Services/CompanyOnboardingService.php",
+      "git_blob_sha": "d9996aee4adff0d52fafc93e4e9e256c77f718da",
+      "size_bytes": 4437
+    },
+    {
+      "path": "application/app/Services/CustomerEngagementService.php",
+      "git_blob_sha": "c970f95385e66877bb62064923a29f81f6c778fa",
+      "size_bytes": 13660
+    },
+    {
+      "path": "application/app/Services/DomainWorkflowService.php",
+      "git_blob_sha": "2762870ba37cfb0ff135450a4248dca268b54d18",
+      "size_bytes": 8986
+    },
+    {
+      "path": "application/app/Services/EmailVerificationService.php",
+      "git_blob_sha": "b7fd73b4bd4a25318454c62e238ee5e83eef623e",
+      "size_bytes": 3964
+    },
+    {
+      "path": "application/app/Services/InquiryService.php",
+      "git_blob_sha": "26362cb1426c849dfc2aa5bbc9b0654ce2069378",
+      "size_bytes": 3801
+    },
+    {
+      "path": "application/app/Services/InstallerService.php",
+      "git_blob_sha": "b7d50534514318e0df36a49f5b39ceb60140536e",
+      "size_bytes": 51918
+    },
+    {
+      "path": "application/app/Services/LeadManagementService.php",
+      "git_blob_sha": "251446913448dad7b2bb5fabbfb66ac7aaff246b",
+      "size_bytes": 2609
+    },
+    {
+      "path": "application/app/Services/LicenseManagerClient.php",
+      "git_blob_sha": "e011d47be859369a939510683aabc3667bc0dcba",
+      "size_bytes": 23780
+    },
+    {
+      "path": "application/app/Services/ListingManagementService.php",
+      "git_blob_sha": "acc5f590e844983c3749f0e5e34bc6f96c871b30",
+      "size_bytes": 4597
+    },
+    {
+      "path": "application/app/Services/MailService.php",
+      "git_blob_sha": "458cac2e9237c83b8845cbafc4e463eb9dfb80ac",
+      "size_bytes": 10354
+    },
+    {
+      "path": "application/app/Services/MediaManagementService.php",
+      "git_blob_sha": "bc284af28814697226d6d1d68255c3f4fa3e72bb",
+      "size_bytes": 3851
+    },
+    {
+      "path": "application/app/Services/MediaStorageService.php",
+      "git_blob_sha": "607e06dfd391ed845b741f49a42be0f1de938b62",
+      "size_bytes": 6143
+    },
+    {
+      "path": "application/app/Services/MembershipService.php",
+      "git_blob_sha": "65c64c26492c1e45d83e9e68c6caaafca4dd8fb3",
+      "size_bytes": 6457
+    },
+    {
+      "path": "application/app/Services/NotificationService.php",
+      "git_blob_sha": "caef60beca6ad9637b34762586a4db1f15251b13",
+      "size_bytes": 5733
+    },
+    {
+      "path": "application/app/Services/OutboxDeliveryService.php",
+      "git_blob_sha": "200388b0649e64a8d4d6ea10a92d3ed8f0a90378",
+      "size_bytes": 2480
+    },
+    {
+      "path": "application/app/Services/PasswordResetService.php",
+      "git_blob_sha": "0f815b03ee96cbcb52ca1f5342de1336b733dc23",
+      "size_bytes": 4080
+    },
+    {
+      "path": "application/app/Services/ProjectManagementService.php",
+      "git_blob_sha": "7dbb7d25cc53d9846e76320d689c39a4fd281850",
+      "size_bytes": 3501
+    },
+    {
+      "path": "application/app/Services/PropertyManagementService.php",
+      "git_blob_sha": "6dfcba17b362cc801f93c276c50063a9549ab9d8",
+      "size_bytes": 5037
+    },
+    {
+      "path": "application/app/Services/SavedSearchAlertService.php",
+      "git_blob_sha": "bd2acb242178f783ae0007d1e6b98c2dfcbb6bc8",
+      "size_bytes": 6374
+    },
+    {
+      "path": "application/app/Services/SecurityAuditService.php",
+      "git_blob_sha": "2f8e5569789f7aa60643d738df3d8c3c5e6a96d2",
+      "size_bytes": 1840
+    },
+    {
+      "path": "application/app/Services/UpgradeService.php",
+      "git_blob_sha": "832a9ddeefaab6d628f846130e8bb0c610e48180",
+      "size_bytes": 14343
+    },
+    {
+      "path": "application/app/Services/UserAdministrationService.php",
+      "git_blob_sha": "d67728f4f30c7b4771885f32c591e54ed0244b52",
+      "size_bytes": 3965
+    },
+    {
+      "path": "application/app/Services/ViewingManagementService.php",
+      "git_blob_sha": "0a5a255a63e73ec41625b135315b2cbfcdb9d9b7",
+      "size_bytes": 5655
+    },
+    {
+      "path": "application/app/Support/DomainInput.php",
+      "git_blob_sha": "f7d7e205a3f10fe9ff7fe54c2c52937c8fe2a6e2",
+      "size_bytes": 3909
+    },
+    {
+      "path": "application/app/Support/helpers.php",
+      "git_blob_sha": "83088e11edfc70cf6c9412a6d51e8d73c026b3fc",
+      "size_bytes": 8257
+    },
+    {
+      "path": "application/app/Support/IdGenerator.php",
+      "git_blob_sha": "b09208243adb7508d2bf30f329b49197f18a96ef",
+      "size_bytes": 763
+    },
+    {
+      "path": "application/app/Support/Locale.php",
+      "git_blob_sha": "a39544f8cb70f3ab3facd37e268c2da37c31666e",
+      "size_bytes": 2733
+    },
+    {
+      "path": "application/app/Support/Slugger.php",
+      "git_blob_sha": "75963899837f692d6469e71e84b3b7e3fd7f782f",
+      "size_bytes": 972
+    },
+    {
+      "path": "application/bootstrap/app.php",
+      "git_blob_sha": "9c00caf1cdd6902aa9cf116245841bf65ba36465",
+      "size_bytes": 1133
+    },
+    {
+      "path": "application/bootstrap/runtime.php",
+      "git_blob_sha": "d84fd64eda8564b91983e6adb98fe94fddd8dd20",
+      "size_bytes": 1626
+    },
+    {
+      "path": "application/config/app.php",
+      "git_blob_sha": "fd92a811a01aa4ebc8234d8887ec0504efa7955d",
+      "size_bytes": 911
+    },
+    {
+      "path": "application/config/auth.php",
+      "git_blob_sha": "78209dc928d4ae676c019b948de7d1615f209f34",
+      "size_bytes": 345
+    },
+    {
+      "path": "application/config/database.php",
+      "git_blob_sha": "1285ac1f3a9c3f3273c4bba0f909c680c2e68dda",
+      "size_bytes": 345
+    },
+    {
+      "path": "application/config/domain.php",
+      "git_blob_sha": "401f190f30ebacbf87182f5462402be11b3397db",
+      "size_bytes": 380
+    },
+    {
+      "path": "application/config/license.php",
+      "git_blob_sha": "8f195dd95ebd2f3354ea6f50a4e707f8d2745cb8",
+      "size_bytes": 407
+    },
+    {
+      "path": "application/config/mail.php",
+      "git_blob_sha": "bdc939eee199d1a2097289206de5e14b64ebf07d",
+      "size_bytes": 789
+    },
+    {
+      "path": "application/database/migrations/0001_create_auth_core.php",
+      "git_blob_sha": "0af4cf3ce4c2eafbf048da579a07671ea11370cc",
+      "size_bytes": 4048
+    },
+    {
+      "path": "application/database/migrations/0002_seed_auth_roles_permissions.php",
+      "git_blob_sha": "680040a925d524e8d8b32872100758457c119dd9",
+      "size_bytes": 2426
+    },
+    {
+      "path": "application/database/migrations/0003_create_real_estate_domain.php",
+      "git_blob_sha": "189c549d1db513a7b98d8e07b7e2e630f35be5d6",
+      "size_bytes": 16359
+    },
+    {
+      "path": "application/database/migrations/0004_seed_real_estate_permissions.php",
+      "git_blob_sha": "1f60b661f7011bc762d2f933beb8b1f4eb2d4b72",
+      "size_bytes": 2370
+    },
+    {
+      "path": "application/database/migrations/0005_create_domain_workflow_support.php",
+      "git_blob_sha": "4a058eeea31289ee60e4611e7b96cd25083c071c",
+      "size_bytes": 1426
+    },
+    {
+      "path": "application/database/migrations/0006_create_customer_engagement.php",
+      "git_blob_sha": "91717dc5b49aee9354888a923112051b34a4c9ff",
+      "size_bytes": 5078
+    },
+    {
+      "path": "application/database/migrations/0007_create_notification_delivery.php",
+      "git_blob_sha": "ac09758f14f83f64dddbc3efefab233b4914fa7d",
+      "size_bytes": 3884
+    },
+    {
+      "path": "application/database/migrations/0008_create_application_settings.php",
+      "git_blob_sha": "54b8b195c7f95ffa1b7d72dcd5ba776cdebafcaf",
+      "size_bytes": 535
+    },
+    {
+      "path": "application/database/migrations/0009_create_account_onboarding.php",
+      "git_blob_sha": "1f071faeb41b56a1186afd45d81f17d23f7c3eb4",
+      "size_bytes": 2814
+    },
+    {
+      "path": "application/database/migrations/0010_release_security_hardening.php",
+      "git_blob_sha": "b0367cb2b69c7f857b7511ea421dd0c6204e6a0a",
+      "size_bytes": 2202
+    },
+    {
+      "path": "application/resources/lang/en.php",
+      "git_blob_sha": "dc6b873a344b3be75ce1b5e873fc3e24a92ddf87",
+      "size_bytes": 4297
+    },
+    {
+      "path": "application/resources/lang/km.php",
+      "git_blob_sha": "31c6cebf1284ffadf5b2674f15f5865e1fe7c995",
+      "size_bytes": 7545
+    },
+    {
+      "path": "application/resources/lang/zh.php",
+      "git_blob_sha": "c6032a3a3c277c963a05108dcf9903769229d330",
+      "size_bytes": 4144
+    },
+    {
+      "path": "application/resources/views/account/email-change.php",
+      "git_blob_sha": "a16bfb041aefa5781c497da48adee3c0a395716d",
+      "size_bytes": 1924
+    },
+    {
+      "path": "application/resources/views/account/index.php",
+      "git_blob_sha": "ad171daec3d1cf05255c0aef8aeefaf84111ca43",
+      "size_bytes": 40527
+    },
+    {
+      "path": "application/resources/views/auth/forgot-password.php",
+      "git_blob_sha": "3a959043d66d5fdd1dd80d99a3f97505fc55d0b8",
+      "size_bytes": 2810
+    },
+    {
+      "path": "application/resources/views/auth/login.php",
+      "git_blob_sha": "d338cf5111ae9379e2bf7197eb096e8990bd6ef0",
+      "size_bytes": 4848
+    },
+    {
+      "path": "application/resources/views/auth/register.php",
+      "git_blob_sha": "a80802713f4e669da060783c58ebb3cac4a04c2c",
+      "size_bytes": 5204
+    },
+    {
+      "path": "application/resources/views/auth/reset-password.php",
+      "git_blob_sha": "1d1082dc0484c4cdb16ca316e755de968c03751e",
+      "size_bytes": 4371
+    },
+    {
+      "path": "application/resources/views/auth/verify-email.php",
+      "git_blob_sha": "98f178f9357526d9d6cb8bd8384f4dc40b2e0c48",
+      "size_bytes": 3583
+    },
+    {
+      "path": "application/resources/views/company/index.php",
+      "git_blob_sha": "6cf534510d41425ce7d7689e1c7dc4aec1697bd3",
+      "size_bytes": 3625
+    },
+    {
+      "path": "application/resources/views/company/show.php",
+      "git_blob_sha": "578531622ab27f631f6a15e78c3b41125c80f621",
+      "size_bytes": 5604
+    },
+    {
+      "path": "application/resources/views/components/inventory-card.php",
+      "git_blob_sha": "ead56e74a024b04156f883edb60e00615a0f1883",
+      "size_bytes": 4153
+    },
+    {
+      "path": "application/resources/views/errors/403.php",
+      "git_blob_sha": "be0385052cdaff14969ea57ecd325a9d14fe99c9",
+      "size_bytes": 356
+    },
+    {
+      "path": "application/resources/views/errors/404.php",
+      "git_blob_sha": "79d366fe5c1d95d6bf663bee7d994bb477c1f8c6",
+      "size_bytes": 346
+    },
+    {
+      "path": "application/resources/views/errors/419.php",
+      "git_blob_sha": "5695a44e8c6a27b0af3f8e2f91bfc3a9928c553c",
+      "size_bytes": 381
+    },
+    {
+      "path": "application/resources/views/home.php",
+      "git_blob_sha": "0fe21632f7ed75b9b09ac05f8061280343333fec",
+      "size_bytes": 7705
+    },
+    {
+      "path": "application/resources/views/installer/index.php",
+      "git_blob_sha": "37093bed74542b088e9706f584cf361fc5669bb6",
+      "size_bytes": 54953
+    },
+    {
+      "path": "application/resources/views/layouts/app.php",
+      "git_blob_sha": "e3a2bae6ba42240f46f4b059d3067e9157d99ff6",
+      "size_bytes": 14084
+    },
+    {
+      "path": "application/resources/views/marketplace/project.php",
+      "git_blob_sha": "3a1bba7d73052d5ddd3158262b589927acd916dc",
+      "size_bytes": 5689
+    },
+    {
+      "path": "application/resources/views/marketplace/projects.php",
+      "git_blob_sha": "73b38fab2038608771b31a12e510fbfaa1956886",
+      "size_bytes": 4069
+    },
+    {
+      "path": "application/resources/views/marketplace/properties.php",
+      "git_blob_sha": "916137974844b174d8f0b76b305e345106f1f95d",
+      "size_bytes": 7282
+    },
+    {
+      "path": "application/resources/views/marketplace/property.php",
+      "git_blob_sha": "a07e6d32013c1b06f9fd2e18c594cdfdc97a559b",
+      "size_bytes": 11066
+    },
+    {
+      "path": "application/resources/views/updater/index.php",
+      "git_blob_sha": "6353604d20d6164dcb1701e185223398096704d8",
+      "size_bytes": 11336
+    },
+    {
+      "path": "application/resources/views/workspace/index.php",
+      "git_blob_sha": "4c12f5129c2c4178a81452a22b83140e7d837eeb",
+      "size_bytes": 39400
+    },
+    {
+      "path": "application/resources/views/workspace/record.php",
+      "git_blob_sha": "09c6a5260d166c585f9d8e623ffea652e1093fd2",
+      "size_bytes": 35430
+    },
+    {
+      "path": "application/routes/web.php",
+      "git_blob_sha": "00b870b14706e93c61fdfb1fb750633486097efa",
+      "size_bytes": 13867
+    },
+    {
+      "path": "application/storage/cache/.gitignore",
+      "git_blob_sha": "d6b7ef32c8478a48c3994dcadc86837f4371184d",
+      "size_bytes": 14
+    },
+    {
+      "path": "application/storage/logs/.gitignore",
+      "git_blob_sha": "d6b7ef32c8478a48c3994dcadc86837f4371184d",
+      "size_bytes": 14
+    },
+    {
+      "path": "application/storage/uploads/.gitignore",
+      "git_blob_sha": "d6b7ef32c8478a48c3994dcadc86837f4371184d",
+      "size_bytes": 14
+    },
+    {
+      "path": "application/storage/uploads/.htaccess",
+      "git_blob_sha": "78c3c55e7dc82ba794fe407faab05d94f30d1a12",
+      "size_bytes": 36
+    },
+    {
+      "path": "assets/css/app.css",
+      "git_blob_sha": "3f8ca9b6225b8c9467d0424ddc7c721f4494c03a",
+      "size_bytes": 148901
+    },
+    {
+      "path": "assets/js/app.js",
+      "git_blob_sha": "dae7d6f9893737d4de41f956583fe26dc2a12b7c",
+      "size_bytes": 33445
+    },
+    {
+      "path": "CHANGELOG.md",
+      "git_blob_sha": "b176992655c5e4beeeca3b811f6c0a656acb3a0f",
+      "size_bytes": 2178
+    },
+    {
+      "path": "CUSTOMER_PACKAGE.md",
+      "git_blob_sha": "ebeff9a813650c6583ce73b37ba0fa9777a3b12f",
+      "size_bytes": 3421
+    },
+    {
+      "path": "documentation/index.html",
+      "git_blob_sha": "44998037057d3a688b130494ea91ff69b2644f33",
+      "size_bytes": 7794
+    },
+    {
+      "path": "index.php",
+      "git_blob_sha": "f494d22d28bca87df92e0b4fae8fc178f3deec15",
+      "size_bytes": 1590
+    },
+    {
+      "path": "installer/index.php",
+      "git_blob_sha": "4fba7cfc3cb924b76d4f974fdfa193dca1899278",
+      "size_bytes": 208
+    },
+    {
+      "path": "LICENSE.md",
+      "git_blob_sha": "a23b100799756ede9e73565f3651a5c992217b43",
+      "size_bytes": 857
+    },
+    {
+      "path": "README.md",
+      "git_blob_sha": "1fe45640ecbdc88d260ecc0c5c0873093c1d02c5",
+      "size_bytes": 28987
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "git_blob_sha": "2c8e5c5b280f9da48e8a67ac036724a736465d16",
+      "size_bytes": 1922
+    },
+    {
+      "path": "tools/notifications.php",
+      "git_blob_sha": "3f1ee2fb1778cb17650e4d34d8d3f3588bd6a8d6",
+      "size_bytes": 3141
+    },
+    {
+      "path": "updater/index.php",
+      "git_blob_sha": "e20acc25f39ca8980939ba516889dc8a84a708f8",
+      "size_bytes": 202
+    },
+    {
+      "path": "VERSION",
+      "git_blob_sha": "29acfff8c577adbd7969fac5ed85f0094d8d2a71",
+      "size_bytes": 11
+    }
+  ]
+}

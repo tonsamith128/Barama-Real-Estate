@@ -1,0 +1,11 @@
+{
+    "schema_version": 1,
+    "product": "barama-real-estate",
+    "source_version": "0.9.22-dev",
+    "source_commit": "9ad9f6405f3206d7d5f411158a338fec24cbbcde",
+    "package_filename": "Barama-Real-Estate-0.9.22-dev.zip",
+    "package_sha256": "d7a7898465edb0f897325d47123eaf61eac521e941ebf6c54875ac7167db8eff",
+    "package_size_bytes": 1203338,
+    "checksum_filename": "Barama-Real-Estate-0.9.22-dev.zip.sha256",
+    "generated_at": "2026-09-24T02:08:43Z"
+}
