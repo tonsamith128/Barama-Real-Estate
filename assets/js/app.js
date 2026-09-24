@@ -1016,3 +1016,58 @@
         }
     });
 })();
+
+
+/* Barama compact auth field labels — keep in canonical app.js */
+(() => {
+    const enhanceAuthFields = () => {
+        document.querySelectorAll('.auth-premium--standalone .auth-form__field').forEach((field) => {
+            const label = field.querySelector('.auth-label');
+            const input = field.querySelector('input, textarea');
+            if (!label || !input) return;
+            const labelText = (label.textContent || '').trim();
+            if (labelText && !input.getAttribute('placeholder')) input.setAttribute('placeholder', labelText);
+            if (input.type === 'email' && (input.value || '').trim().toLowerCase() === 'you@example.com') input.value = '';
+            label.classList.add('auth-label--field-placeholder');
+        });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceAuthFields, { once: true });
+    else enhanceAuthFields();
+})();
+
+
+/* Barama auth floating labels — canonical app.js only */
+(() => {
+    const selector = '.auth-premium--standalone .auth-field';
+    const hasValue = (input) => {
+        if ((input.value || '').trim() !== '') return true;
+        try { return input.matches(':-webkit-autofill'); } catch (error) { return false; }
+    };
+    const updateField = (field, input) => {
+        field.classList.toggle('is-floating', document.activeElement === input || hasValue(input));
+    };
+    const enhanceField = (field) => {
+        if (field.dataset.authFloatingReady === '1') return;
+        const inputWrap = field.querySelector('.auth-input');
+        const input = inputWrap ? inputWrap.querySelector('input, textarea, select') : null;
+        const children = Array.from(field.children);
+        const labelTextNode = children.find((child) => child !== inputWrap && child.tagName === 'SPAN' && !child.classList.contains('auth-input'));
+        if (!inputWrap || !input || !labelTextNode) return;
+        labelTextNode.classList.add('auth-floating-label');
+        inputWrap.insertBefore(labelTextNode, input);
+        input.setAttribute('placeholder', ' ');
+        field.dataset.authFloatingReady = '1';
+        const refresh = () => updateField(field, input);
+        input.addEventListener('focus', refresh);
+        input.addEventListener('blur', refresh);
+        input.addEventListener('input', refresh);
+        input.addEventListener('change', refresh);
+        refresh();
+        window.setTimeout(refresh, 80);
+        window.setTimeout(refresh, 350);
+    };
+    const enhanceAll = () => document.querySelectorAll(selector).forEach(enhanceField);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
+    else enhanceAll();
+})();
+
