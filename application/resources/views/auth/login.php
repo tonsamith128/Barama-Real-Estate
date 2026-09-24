@@ -1,26 +1,19 @@
-<section class="auth-premium">
-    <div class="container app-container">
-        <div class="auth-premium__grid">
-            <aside class="auth-story">
-                <span class="eyebrow"><?= e(t('Secure account access')) ?></span>
-                <h1><?= e(t('Welcome back.')) ?></h1>
-                <p><?= e(t('Use one account for property activity, company workspaces, and administration based on your assigned permissions.')) ?></p>
+<section class="auth-premium auth-premium--standalone">
+    <div class="container app-container auth-standalone__container">
+                <a
+            class="auth-standalone__brand"
+            href="<?= e(url('/')) ?>"
+            aria-label="<?= e(t('Back to home')) ?>"
+        >
+            <img
+                src="<?= e(asset('images/branding/barama-logo-header.png')) ?>"
+                alt="<?= e(t('Barama')) ?>"
+                width="2172"
+                height="724"
+            >
+        </a>
 
-                <div class="auth-story__features">
-                    <article>
-                        <span><?= app_icon('heart') ?></span>
-                        <div><strong><?= e(t('Save & compare')) ?></strong><small><?= e(t('Keep a focused shortlist of marketplace properties.')) ?></small></div>
-                    </article>
-                    <article>
-                        <span><?= app_icon('calendar') ?></span>
-                        <div><strong><?= e(t('Track activity')) ?></strong><small><?= e(t('Review inquiries, viewings, alerts, and notifications.')) ?></small></div>
-                    </article>
-                    <article>
-                        <span><?= app_icon('building') ?></span>
-                        <div><strong><?= e(t('Role-aware access')) ?></strong><small><?= e(t('Company and admin tools appear only when permission is granted.')) ?></small></div>
-                    </article>
-                </div>
-            </aside>
+        <div class="auth-premium__grid auth-premium__grid--standalone">
 
             <div class="auth-panel">
                 <div class="auth-panel__head">
@@ -87,9 +80,12 @@
                     </button>
                 </form>
 
-                <div class="auth-panel__footer">
-                    <span><?= e(t('New to Barama?')) ?></span>
-                    <a href="<?= e(url('/register')) ?>"><?= e(t('Create an account')) ?></a>
+                <div class="auth-panel__footer auth-panel__footer--split">
+                    <a class="auth-panel__home" href="<?= e(url('/')) ?>"><?= e(t('Back to home')) ?></a>
+                    <span class="auth-panel__secondary">
+                        <span><?= e(t('New to Barama?')) ?></span>
+                        <a href="<?= e(url('/register')) ?>"><?= e(t('Create an account')) ?></a>
+                    </span>
                 </div>
             </div>
         </div>
