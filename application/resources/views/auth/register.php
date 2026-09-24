@@ -1,17 +1,19 @@
-<section class="auth-premium">
-    <div class="container app-container">
-        <div class="auth-premium__grid">
-            <aside class="auth-story">
-                <span class="eyebrow"><?= e(t('Create your account')) ?></span>
-                <h1><?= e(t('One account for your property journey.')) ?></h1>
-                <p><?= e(t('Public registration creates a secure customer account. Verify your email after registration; company/vendor and administrator access remain permission-controlled.')) ?></p>
+<section class="auth-premium auth-premium--standalone">
+    <div class="container app-container auth-standalone__container">
+                <a
+            class="auth-standalone__brand"
+            href="<?= e(url('/')) ?>"
+            aria-label="<?= e(t('Back to home')) ?>"
+        >
+            <img
+                src="<?= e(asset('images/branding/barama-logo-header.png')) ?>"
+                alt="<?= e(t('Barama')) ?>"
+                width="2172"
+                height="724"
+            >
+        </a>
 
-                <div class="auth-story__features">
-                    <article><span><?= app_icon('home') ?></span><div><strong><?= e(t('Discover')) ?></strong><small><?= e(t('Save, compare, and revisit published properties.')) ?></small></div></article>
-                    <article><span><?= app_icon('message') ?></span><div><strong><?= e(t('Connect')) ?></strong><small><?= e(t('Keep inquiries and viewing requests organized.')) ?></small></div></article>
-                    <article><span><?= app_icon('bell') ?></span><div><strong><?= e(t('Stay updated')) ?></strong><small><?= e(t('Create saved searches and control notifications.')) ?></small></div></article>
-                </div>
-            </aside>
+        <div class="auth-premium__grid auth-premium__grid--standalone">
 
             <div class="auth-panel">
                 <div class="auth-panel__head">
@@ -69,9 +71,12 @@
                     </button>
                 </form>
 
-                <div class="auth-panel__footer">
-                    <span><?= e(t('Already have an account?')) ?></span>
-                    <a href="<?= e(url('/login')) ?>"><?= e(t('Sign in')) ?></a>
+                <div class="auth-panel__footer auth-panel__footer--split">
+                    <a class="auth-panel__home" href="<?= e(url('/')) ?>"><?= e(t('Back to home')) ?></a>
+                    <span class="auth-panel__secondary">
+                        <span><?= e(t('Already have an account?')) ?></span>
+                        <a href="<?= e(url('/login')) ?>"><?= e(t('Sign in')) ?></a>
+                    </span>
                 </div>
             </div>
         </div>
