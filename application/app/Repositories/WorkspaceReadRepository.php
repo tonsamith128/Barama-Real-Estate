@@ -914,6 +914,24 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "published"), 0) AS published,
                 COALESCE(SUM(status = "paused"), 0) AS paused
                 FROM listings WHERE deleted_at IS NULL',
+            'inquiries' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "new"), 0) AS new,
+                COALESCE(SUM(status = "read"), 0) AS `read`,
+                COALESCE(SUM(status = "replied"), 0) AS replied,
+                COALESCE(SUM(status = "closed"), 0) AS closed,
+                COALESCE(SUM(status = "spam"), 0) AS spam,
+                (SELECT COUNT(*) FROM leads l WHERE l.inquiry_id IS NOT NULL AND l.deleted_at IS NULL) AS converted
+                FROM inquiries',
+            'leads' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(stage NOT IN ("won", "lost")), 0) AS active,
+                COALESCE(SUM(stage = "new"), 0) AS new,
+                COALESCE(SUM(stage = "contacted"), 0) AS contacted,
+                COALESCE(SUM(stage = "qualified"), 0) AS qualified,
+                COALESCE(SUM(stage = "viewing"), 0) AS viewing,
+                COALESCE(SUM(stage = "negotiation"), 0) AS negotiation,
+                COALESCE(SUM(stage = "won"), 0) AS won,
+                COALESCE(SUM(stage = "lost"), 0) AS lost
+                FROM leads WHERE deleted_at IS NULL',
             default => null,
         };
 
@@ -1076,30 +1094,75 @@ final class WorkspaceReadRepository
             ],
             'inquiries' => [
                 'SELECT i.id, i.contact_name, i.contact_email, i.contact_phone,
-                        i.status, i.source, i.created_at, c.name AS company_name
+                        i.status, i.source, i.assigned_user_id, i.created_at, i.updated_at,
+                        c.name AS company_name,
+                        p.title AS property_title, p.reference_code AS property_reference,
+                        p.property_type, p.location_id,
+                        listing.transaction_type, listing.price, listing.currency,
+                        assigned.name AS assigned_user_name,
+                        converted_lead.id AS converted_lead_id, converted_lead.stage AS converted_lead_stage
                  FROM inquiries i
                  LEFT JOIN companies c ON c.id = i.company_id
-                 WHERE CONCAT_WS(" ", i.contact_name, i.contact_email, i.contact_phone) LIKE :search
+                 LEFT JOIN properties p ON p.id = i.property_id AND p.deleted_at IS NULL
+                 LEFT JOIN listings listing ON listing.id = i.listing_id AND listing.deleted_at IS NULL
+                 LEFT JOIN users assigned ON assigned.id = i.assigned_user_id
+                 LEFT JOIN leads converted_lead ON converted_lead.inquiry_id = i.id AND converted_lead.deleted_at IS NULL
+                 WHERE CONCAT_WS(
+                    " ", i.contact_name, i.contact_email, i.contact_phone,
+                    c.name, p.title, p.reference_code, assigned.name
+                 ) LIKE :search
                  ORDER BY i.created_at DESC',
                 'SELECT COUNT(*)
-                 FROM inquiries
-                 WHERE CONCAT_WS(" ", contact_name, contact_email, contact_phone) LIKE :search',
+                 FROM inquiries i
+                 LEFT JOIN companies c ON c.id = i.company_id
+                 LEFT JOIN properties p ON p.id = i.property_id AND p.deleted_at IS NULL
+                 LEFT JOIN users assigned ON assigned.id = i.assigned_user_id
+                 WHERE CONCAT_WS(
+                    " ", i.contact_name, i.contact_email, i.contact_phone,
+                    c.name, p.title, p.reference_code, assigned.name
+                 ) LIKE :search',
                 ['search' => $search],
             ],
             'leads' => [
                 'SELECT l.id, l.contact_name, l.contact_email, l.contact_phone,
-                        l.stage, l.transaction_type, l.preferred_location_id,
-                        l.budget_min, l.budget_max,
-                        l.currency, l.updated_at, c.name AS company_name
+                        l.stage, l.transaction_type, l.property_type,
+                        l.preferred_location_id, l.budget_min, l.budget_max,
+                        l.currency, l.assigned_user_id, l.last_contact_at,
+                        l.next_follow_up_at, l.updated_at,
+                        c.name AS company_name,
+                        assigned.name AS assigned_user_name,
+                        loc.name AS preferred_location_name,
+                        inquiry.id AS source_inquiry_id,
+                        p.title AS source_property_title,
+                        p.reference_code AS source_property_reference,
+                        listing.transaction_type AS source_listing_offer,
+                        listing.price AS source_listing_price,
+                        listing.currency AS source_listing_currency
                  FROM leads l
                  INNER JOIN companies c ON c.id = l.company_id
+                 LEFT JOIN users assigned ON assigned.id = l.assigned_user_id
+                 LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                 LEFT JOIN inquiries inquiry ON inquiry.id = l.inquiry_id
+                 LEFT JOIN properties p ON p.id = inquiry.property_id AND p.deleted_at IS NULL
+                 LEFT JOIN listings listing ON listing.id = inquiry.listing_id AND listing.deleted_at IS NULL
                  WHERE l.deleted_at IS NULL
-                   AND CONCAT_WS(" ", l.contact_name, l.contact_email, l.contact_phone) LIKE :search
+                   AND CONCAT_WS(
+                    " ", l.contact_name, l.contact_email, l.contact_phone,
+                    c.name, p.title, p.reference_code, assigned.name, loc.name
+                   ) LIKE :search
                  ORDER BY l.updated_at DESC',
                 'SELECT COUNT(*)
-                 FROM leads
-                 WHERE deleted_at IS NULL
-                   AND CONCAT_WS(" ", contact_name, contact_email, contact_phone) LIKE :search',
+                 FROM leads l
+                 INNER JOIN companies c ON c.id = l.company_id
+                 LEFT JOIN users assigned ON assigned.id = l.assigned_user_id
+                 LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                 LEFT JOIN inquiries inquiry ON inquiry.id = l.inquiry_id
+                 LEFT JOIN properties p ON p.id = inquiry.property_id AND p.deleted_at IS NULL
+                 WHERE l.deleted_at IS NULL
+                   AND CONCAT_WS(
+                    " ", l.contact_name, l.contact_email, l.contact_phone,
+                    c.name, p.title, p.reference_code, assigned.name, loc.name
+                   ) LIKE :search',
                 ['search' => $search],
             ],
             'catalog' => [

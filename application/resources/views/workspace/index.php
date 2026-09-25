@@ -363,9 +363,20 @@ $renderActions = static function (array $row) use (
             }
         } elseif ($activeSection === 'inquiries') {
             if ($status === 'new') {
-                $buttons[] = $actionButton('inquiry', $id, 'read', 'Mark read');
+                $buttons[] = $actionButton('inquiry', $id, 'read', 'Mark read', 'primary');
+                $buttons[] = $actionButton('inquiry', $id, 'spam', 'Mark spam', 'danger');
             } elseif ($status === 'read') {
-                $buttons[] = $actionButton('inquiry', $id, 'replied', 'Mark replied');
+                $buttons[] = $actionButton('inquiry', $id, 'replied', 'Mark replied', 'primary');
+                $buttons[] = $actionButton('inquiry', $id, 'closed', 'Close');
+                $buttons[] = $actionButton('inquiry', $id, 'spam', 'Mark spam', 'danger');
+            } elseif ($status === 'replied') {
+                $buttons[] = $actionButton('inquiry', $id, 'closed', 'Close');
+            }
+
+            if (!empty($row['converted_lead_id'])) {
+                $buttons[] = '<a class="table-action" href="' . e(url(
+                    '/dashboard/manage/lead/' . (int) $row['converted_lead_id']
+                )) . '">Open linked lead</a>';
             }
         }
     }
@@ -376,7 +387,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -406,6 +417,11 @@ $renderActions = static function (array $row) use (
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Company-scoped access enforced
+            </span>
+        <?php elseif ($workspaceType === 'admin' && in_array($activeSection, ['inquiries', 'leads'], true)): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('shield') ?>
+                Platform oversight · company-owned operations
             </span>
         <?php elseif ($workspaceType === 'admin'): ?>
             <span class="workspace-context-note">

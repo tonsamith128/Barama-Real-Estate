@@ -134,8 +134,13 @@ if ($workspaceType === 'developer') {
         $actions[] = $workflowButton('published', 'Resume', 'primary');
     } elseif ($recordResource === 'inquiry' && $status === 'new') {
         $actions[] = $workflowButton('read', 'Mark read', 'primary');
+        $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
     } elseif ($recordResource === 'inquiry' && $status === 'read') {
         $actions[] = $workflowButton('replied', 'Mark replied', 'primary');
+        $actions[] = $workflowButton('closed', 'Close');
+        $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
+    } elseif ($recordResource === 'inquiry' && $status === 'replied') {
+        $actions[] = $workflowButton('closed', 'Close');
     }
 }
 
@@ -197,6 +202,7 @@ $details = match ($recordResource) {
         'Source' => $record['source'] ?? null,
         'Received' => $record['created_at'] ?? null,
         'Responded' => $record['responded_at'] ?? null,
+        'Lead stage' => $record['converted_lead_stage'] ?? null,
     ],
     'viewing' => [
         'Customer' => $record['customer_name'] ?? null,
@@ -221,6 +227,10 @@ $details = match ($recordResource) {
         'Source inquiry' => $record['source_inquiry_id'] ?? null,
         'Source property' => $record['source_property_title'] ?? null,
         'Property reference' => $record['source_property_reference'] ?? null,
+        'Source offer' => $record['source_listing_offer'] ?? null,
+        'Source listing price' => ($record['source_listing_price'] ?? null) !== null
+            ? (string) ($record['source_listing_currency'] ?? 'USD') . ' ' . number_format((float) $record['source_listing_price'], 2)
+            : null,
         'Email' => $record['contact_email'] ?? null,
         'Phone' => $record['contact_phone'] ?? null,
         'Assigned to' => $record['assigned_user_name'] ?? null,
@@ -230,6 +240,8 @@ $details = match ($recordResource) {
         'Budget' => ($record['budget_max'] ?? null) !== null
             ? (string) ($record['currency'] ?? 'USD') . ' ' . number_format((float) $record['budget_max'], 2)
             : null,
+        'Last contact' => $record['last_contact_at'] ?? null,
+        'Next follow-up' => $record['next_follow_up_at'] ?? null,
     ],
     default => [],
 };
@@ -281,6 +293,44 @@ $details = match ($recordResource) {
                 </label>
                 <button class="btn btn-primary" type="submit"><?= app_icon('check') ?> Apply decision</button>
             </form>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($workspaceType === 'admin' && $recordResource === 'inquiry'): ?>
+        <section class="workspace-record-panel workspace-customer-operation-panel">
+            <div class="workspace-record-panel__head">
+                <h2>Inquiry oversight</h2>
+                <span>Platform-level visibility; the company remains responsible for customer follow-up and qualification.</span>
+            </div>
+            <?php if (!empty($record['converted_lead_id'])): ?>
+                <div class="workspace-operation-ready">
+                    <span class="workspace-operation-ready__icon"><?= app_icon('pipeline') ?></span>
+                    <div>
+                        <strong>Converted to a company property lead</strong>
+                        <span>Lead stage: <?= e($humanize($record['converted_lead_stage'] ?? 'new')) ?>.</span>
+                    </div>
+                    <a class="btn btn-primary btn-sm" href="<?= e(url('/dashboard/manage/lead/' . (int) $record['converted_lead_id'])) ?>">Open linked lead</a>
+                </div>
+            <?php else: ?>
+                <div class="workspace-record-empty">This inquiry has not been converted to a property lead. Lead qualification remains a company workspace action.</div>
+            <?php endif; ?>
+        </section>
+    <?php elseif ($workspaceType === 'admin' && $recordResource === 'lead'): ?>
+        <section class="workspace-record-panel workspace-customer-operation-panel">
+            <div class="workspace-record-panel__head">
+                <h2>Company-owned property lead</h2>
+                <span>Administrator access is oversight-only. Pipeline progression and follow-up remain with the company team.</span>
+            </div>
+            <div class="workspace-operation-ready">
+                <span class="workspace-operation-ready__icon"><?= app_icon('shield') ?></span>
+                <div>
+                    <strong><?= e((string) ($record['company_name'] ?? 'Company')) ?> pipeline</strong>
+                    <span>Current stage: <?= e($humanize($record['stage'] ?? 'new')) ?><?= !empty($record['assigned_user_name']) ? ' · Assigned to ' . e((string) $record['assigned_user_name']) : '' ?>.</span>
+                </div>
+                <?php if (!empty($record['source_inquiry_id'])): ?>
+                    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/dashboard/manage/inquiry/' . (int) $record['source_inquiry_id'])) ?>">Open source inquiry</a>
+                <?php endif; ?>
+            </div>
         </section>
     <?php endif; ?>
 

@@ -41,11 +41,11 @@ final class DashboardController
         ],
         'inquiries' => [
             'title' => 'Inquiries',
-            'description' => 'Inspect marketplace inquiry volume and operational status across companies.',
+            'description' => 'Oversee property inquiries across companies, listing context, response state, and lead conversion without replacing company ownership.',
         ],
         'leads' => [
-            'title' => 'Leads',
-            'description' => 'Inspect lead pipeline activity without taking ownership away from company teams.',
+            'title' => 'Property Leads',
+            'description' => 'Monitor company-owned property lead pipelines, source inquiries, property interest, assignment, and outcomes without taking over follow-up.',
         ],
         'catalog' => [
             'title' => 'Locations & Amenities',
@@ -235,6 +235,22 @@ final class DashboardController
                 ['label' => 'Published', 'value' => $marketplace['published'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/listings?status=published'],
                 ['label' => 'Paused', 'value' => $marketplace['paused'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/listings?status=paused'],
             ],
+            'inquiries' => [
+                ['label' => 'All inquiries', 'value' => $marketplace['total'] ?? 0, 'icon' => 'message', 'href' => '/dashboard/inquiries'],
+                ['label' => 'New', 'value' => $marketplace['new'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/inquiries?status=new'],
+                ['label' => 'Awaiting response', 'value' => $marketplace['read'] ?? 0, 'icon' => 'eye', 'href' => '/dashboard/inquiries?status=read'],
+                ['label' => 'Replied', 'value' => $marketplace['replied'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/inquiries?status=replied'],
+                ['label' => 'Converted to lead', 'value' => $marketplace['converted'] ?? 0, 'icon' => 'pipeline'],
+                ['label' => 'Closed / spam', 'value' => ($marketplace['closed'] ?? 0) + ($marketplace['spam'] ?? 0), 'icon' => 'shield'],
+            ],
+            'leads' => [
+                ['label' => 'All property leads', 'value' => $marketplace['total'] ?? 0, 'icon' => 'pipeline', 'href' => '/dashboard/leads'],
+                ['label' => 'Active pipeline', 'value' => $marketplace['active'] ?? 0, 'icon' => 'clock'],
+                ['label' => 'Qualified', 'value' => $marketplace['qualified'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/leads?status=qualified'],
+                ['label' => 'Negotiation', 'value' => $marketplace['negotiation'] ?? 0, 'icon' => 'message', 'href' => '/dashboard/leads?status=negotiation'],
+                ['label' => 'Won', 'value' => $marketplace['won'] ?? 0, 'icon' => 'home', 'href' => '/dashboard/leads?status=won'],
+                ['label' => 'Lost', 'value' => $marketplace['lost'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/leads?status=lost'],
+            ],
             default => [
                 ['label' => 'Pending approval', 'value' => $summary['pending_approvals'], 'icon' => 'shield'],
                 ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building'],
@@ -275,6 +291,16 @@ final class DashboardController
                 'icon' => 'tag',
                 'title' => 'No listings match this view',
                 'detail' => 'Adjust offer type, publication status, location or search filters.',
+            ],
+            'inquiries' => [
+                'icon' => 'message',
+                'title' => 'No property inquiries match this view',
+                'detail' => 'Adjust inquiry status or search by customer, property reference, listing, or company.',
+            ],
+            'leads' => [
+                'icon' => 'pipeline',
+                'title' => 'No property leads match this view',
+                'detail' => 'Adjust pipeline stage, property interest, preferred location, or customer search filters.',
             ],
             default => [
                 'icon' => 'search',
@@ -505,15 +531,20 @@ final class DashboardController
             'inquiries' => [
                 'contact_name' => 'Contact',
                 'company_name' => 'Company',
-                'source' => 'Source',
+                'property_reference' => 'Property',
+                'assigned_user_name' => 'Assigned to',
                 'status' => 'Status',
+                'converted_lead_stage' => 'Lead stage',
                 'created_at' => 'Received',
             ],
             'leads' => [
                 'contact_name' => 'Contact',
                 'company_name' => 'Company',
+                'source_property_reference' => 'Property',
                 'transaction_type' => 'Interest',
+                'preferred_location_name' => 'Preferred location',
                 'budget_max' => 'Budget',
+                'assigned_user_name' => 'Assigned to',
                 'stage' => 'Stage',
                 'updated_at' => 'Updated',
             ],

@@ -177,21 +177,41 @@ final class WorkspaceRecordRepository
                             AND p.deleted_at IS NULL
                           LIMIT 1',
             'inquiry' => 'SELECT i.*, c.name AS company_name,
-                                 p.title AS property_title, l.slug AS listing_slug,
-                                 u.name AS assigned_user_name
+                                 p.title AS property_title, p.reference_code,
+                                 p.property_type, p.location_id,
+                                 loc.name AS location_name,
+                                 listing.slug AS listing_slug, listing.transaction_type,
+                                 listing.price, listing.currency,
+                                 assigned.name AS assigned_user_name,
+                                 converted_lead.id AS converted_lead_id,
+                                 converted_lead.stage AS converted_lead_stage
                           FROM inquiries i
                           LEFT JOIN companies c ON c.id = i.company_id
-                          LEFT JOIN properties p ON p.id = i.property_id
-                          LEFT JOIN listings l ON l.id = i.listing_id
-                          LEFT JOIN users u ON u.id = i.assigned_user_id
+                          LEFT JOIN properties p ON p.id = i.property_id AND p.deleted_at IS NULL
+                          LEFT JOIN locations loc ON loc.id = p.location_id
+                          LEFT JOIN listings listing ON listing.id = i.listing_id AND listing.deleted_at IS NULL
+                          LEFT JOIN users assigned ON assigned.id = i.assigned_user_id
+                          LEFT JOIN leads converted_lead ON converted_lead.inquiry_id = i.id AND converted_lead.deleted_at IS NULL
                           WHERE i.id = :id LIMIT 1',
             'lead' => 'SELECT l.*, c.name AS company_name,
-                              u.name AS assigned_user_name,
-                              loc.name AS preferred_location_name
+                              assigned.name AS assigned_user_name,
+                              loc.name AS preferred_location_name,
+                              inquiry.id AS source_inquiry_id,
+                              inquiry.status AS source_inquiry_status,
+                              p.title AS source_property_title,
+                              p.reference_code AS source_property_reference,
+                              p.property_type AS source_property_type,
+                              listing.slug AS source_listing_slug,
+                              listing.transaction_type AS source_listing_offer,
+                              listing.price AS source_listing_price,
+                              listing.currency AS source_listing_currency
                        FROM leads l
                        INNER JOIN companies c ON c.id = l.company_id
-                       LEFT JOIN users u ON u.id = l.assigned_user_id
+                       LEFT JOIN users assigned ON assigned.id = l.assigned_user_id
                        LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                       LEFT JOIN inquiries inquiry ON inquiry.id = l.inquiry_id
+                       LEFT JOIN properties p ON p.id = inquiry.property_id AND p.deleted_at IS NULL
+                       LEFT JOIN listings listing ON listing.id = inquiry.listing_id AND listing.deleted_at IS NULL
                        WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
             default => throw new InvalidArgumentException('Unsupported workspace resource.'),
         };
