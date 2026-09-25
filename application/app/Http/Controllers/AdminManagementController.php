@@ -183,6 +183,22 @@ final class AdminManagementController
         });
     }
 
+    public function revokeUserSessions(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid user ID is required.');
+            }
+
+            (new UserAdministrationService())->revokeSessions((int) $id);
+
+            return [
+                'user_id' => (int) $id,
+                'message' => 'Active sessions were invalidated for this account.',
+            ];
+        });
+    }
+
     /**
      * @param callable(): array<string, mixed> $action
      */

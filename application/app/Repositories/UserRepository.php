@@ -124,6 +124,43 @@ final class UserRepository
         return $this->authVersion($userId);
     }
 
+    /** @return array<int,array{id:int,name:string}> */
+    public function soleOwnedCompanies(int $userId): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT c.id, c.name
+             FROM companies c
+             INNER JOIN company_members owner_membership
+                ON owner_membership.company_id = c.id
+               AND owner_membership.user_id = :user_id
+               AND owner_membership.member_role = "owner"
+               AND owner_membership.status = "active"
+             WHERE c.deleted_at IS NULL
+               AND NOT EXISTS (
+                    SELECT 1
+                    FROM company_members other_owner
+                    WHERE other_owner.company_id = c.id
+                      AND other_owner.user_id <> :other_user_id
+                      AND other_owner.member_role = "owner"
+                      AND other_owner.status = "active"
+               )
+             ORDER BY c.name ASC
+             LIMIT 20'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'other_user_id' => $userId,
+        ]);
+
+        return array_map(
+            static fn (array $row): array => [
+                'id' => (int) $row['id'],
+                'name' => (string) $row['name'],
+            ],
+            $statement->fetchAll(PDO::FETCH_ASSOC)
+        );
+    }
+
     private function authVersion(int $userId): int
     {
         $statement = Database::connection()->prepare(

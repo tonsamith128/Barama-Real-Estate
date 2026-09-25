@@ -213,6 +213,68 @@ final class WorkspaceRecordRepository
                        LEFT JOIN properties p ON p.id = inquiry.property_id AND p.deleted_at IS NULL
                        LEFT JOIN listings listing ON listing.id = inquiry.listing_id AND listing.deleted_at IS NULL
                        WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
+            'user' => 'SELECT u.id, u.uuid, u.name, u.email, u.status, u.auth_version,
+                              u.email_verified_at, u.last_login_at, u.created_at, u.updated_at,
+                              COALESCE(role_summary.roles, "user") AS roles,
+                              CASE
+                                  WHEN COALESCE(role_summary.is_administrator, 0) = 1 THEN "administrator"
+                                  WHEN COALESCE(role_summary.is_developer, 0) = 1 THEN "developer"
+                                  ELSE "user"
+                              END AS account_role,
+                              COALESCE(company_access.company_count, 0) AS company_count,
+                              COALESCE(company_access.owned_company_count, 0) AS owned_company_count,
+                              COALESCE(company_access.company_access, "") AS company_access,
+                              (
+                                  SELECT COUNT(*)
+                                  FROM security_audit_events user_events
+                                  WHERE user_events.actor_user_id = u.id
+                                     OR user_events.subject_user_id = u.id
+                              ) AS security_events_count,
+                              (
+                                  SELECT MAX(user_events.created_at)
+                                  FROM security_audit_events user_events
+                                  WHERE user_events.actor_user_id = u.id
+                                     OR user_events.subject_user_id = u.id
+                              ) AS last_security_event_at
+                       FROM users u
+                       LEFT JOIN (
+                          SELECT ur.user_id,
+                                 GROUP_CONCAT(DISTINCT r.slug ORDER BY r.slug SEPARATOR ", ") AS roles,
+                                 MAX(r.slug = "administrator") AS is_administrator,
+                                 MAX(r.slug = "developer") AS is_developer
+                          FROM user_roles ur
+                          INNER JOIN roles r ON r.id = ur.role_id
+                          GROUP BY ur.user_id
+                       ) role_summary ON role_summary.user_id = u.id
+                       LEFT JOIN (
+                          SELECT cm.user_id,
+                                 COUNT(DISTINCT cm.company_id) AS company_count,
+                                 COUNT(DISTINCT CASE WHEN cm.member_role = "owner" THEN cm.company_id END) AS owned_company_count,
+                                 GROUP_CONCAT(
+                                    DISTINCT CONCAT(c.name, " (", cm.member_role, ")")
+                                    ORDER BY c.name SEPARATOR ", "
+                                 ) AS company_access
+                          FROM company_members cm
+                          INNER JOIN companies c ON c.id = cm.company_id
+                          WHERE cm.status = "active"
+                            AND c.deleted_at IS NULL
+                          GROUP BY cm.user_id
+                       ) company_access ON company_access.user_id = u.id
+                       WHERE u.id = :id
+                       LIMIT 1',
+            'audit' => 'SELECT e.id, e.event_type,
+                               SUBSTRING_INDEX(e.event_type, ".", 1) AS event_family,
+                               e.actor_user_id, e.subject_user_id,
+                               e.ip_hash, e.user_agent_hash, e.metadata_json, e.created_at,
+                               actor.name AS actor_name, actor.email AS actor_email,
+                               actor.status AS actor_status,
+                               subject.name AS subject_name, subject.email AS subject_email,
+                               subject.status AS subject_status
+                        FROM security_audit_events e
+                        LEFT JOIN users actor ON actor.id = e.actor_user_id
+                        LEFT JOIN users subject ON subject.id = e.subject_user_id
+                        WHERE e.id = :id
+                        LIMIT 1',
             default => throw new InvalidArgumentException('Unsupported workspace resource.'),
         };
 
@@ -226,7 +288,9 @@ final class WorkspaceRecordRepository
 
         return [
             'record' => $record,
-            'history' => $this->history($resource, $id),
+            'history' => in_array($resource, ['user', 'audit'], true)
+                ? []
+                : $this->history($resource, $id),
             'media' => in_array($resource, ['company', 'project', 'property', 'listing'], true)
                 ? $this->media($resource, $id)
                 : [],

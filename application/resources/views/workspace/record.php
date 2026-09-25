@@ -10,14 +10,22 @@ $locations = is_array($formOptions['locations'] ?? null) ? $formOptions['locatio
 $humanize = static fn (mixed $value): string =>
     ucwords(str_replace('_', ' ', trim((string) $value)));
 
+$currentUserId = (int) (auth_user()['id'] ?? 0);
+
 $title = (string) (
     $record['name']
     ?? $record['title']
     ?? $record['property_title']
     ?? $record['contact_name']
+    ?? $record['event_type']
     ?? ucfirst($recordResource)
 );
 $status = (string) ($record['status'] ?? $record['stage'] ?? '');
+$auditMetadata = [];
+if ($recordResource === 'audit' && !empty($record['metadata_json'])) {
+    $decodedMetadata = json_decode((string) $record['metadata_json'], true);
+    $auditMetadata = is_array($decodedMetadata) ? $decodedMetadata : [];
+}
 $viewingTransitions = $recordResource === 'viewing'
     ? match ($status) {
         'pending' => ['confirmed' => 'Confirm', 'rescheduled' => 'Reschedule', 'declined' => 'Decline'],
@@ -49,6 +57,8 @@ $sectionPath = match ($recordResource) {
     'inquiry' => $workspaceType === 'admin' ? '/dashboard/inquiries' : '/developer/inquiries',
     'viewing' => '/developer/viewings',
     'lead' => $workspaceType === 'admin' ? '/dashboard/leads' : '/developer/leads',
+    'user' => '/dashboard/users',
+    'audit' => '/dashboard/audit',
     default => $workspaceType === 'admin' ? '/dashboard' : '/developer',
 };
 
@@ -141,6 +151,48 @@ if ($workspaceType === 'developer') {
         $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
     } elseif ($recordResource === 'inquiry' && $status === 'replied') {
         $actions[] = $workflowButton('closed', 'Close');
+    } elseif ($recordResource === 'user') {
+        $roles = array_filter(array_map(
+            'trim',
+            explode(',', strtolower((string) ($record['roles'] ?? '')))
+        ));
+        $isAdministrator = in_array('administrator', $roles, true);
+        $isSelf = (int) $record['id'] === $currentUserId;
+        $verified = !empty($record['email_verified_at']);
+
+        if (!$isSelf) {
+            if ($status === 'active') {
+                $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="suspended">'
+                    . '<button class="btn btn-sm btn-outline-secondary" type="submit">Suspend</button></form>';
+                $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="deactivated">'
+                    . '<button class="btn btn-sm btn-outline-danger" type="submit">Deactivate</button></form>';
+            } else {
+                $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="active">'
+                    . '<button class="btn btn-sm btn-primary" type="submit">Restore</button></form>';
+            }
+
+            if ($isAdministrator) {
+                $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/administrator')) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="enabled" value="0">'
+                    . '<button class="btn btn-sm btn-outline-secondary" type="submit">Remove admin</button></form>';
+            } elseif ($status === 'active' && $verified) {
+                $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/administrator')) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="enabled" value="1">'
+                    . '<button class="btn btn-sm btn-outline-secondary" type="submit">Make admin</button></form>';
+            }
+
+            $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/sessions/revoke')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="btn btn-sm btn-outline-danger" type="submit">Revoke sessions</button></form>';
+        }
     }
 }
 
@@ -243,6 +295,33 @@ $details = match ($recordResource) {
         'Last contact' => $record['last_contact_at'] ?? null,
         'Next follow-up' => $record['next_follow_up_at'] ?? null,
     ],
+    'user' => [
+        'Email' => $record['email'] ?? null,
+        'Primary access' => $record['account_role'] ?? null,
+        'Roles' => $record['roles'] ?? null,
+        'Active companies' => $record['company_count'] ?? 0,
+        'Company owner of' => $record['owned_company_count'] ?? 0,
+        'Company access' => $record['company_access'] ?? null,
+        'Email verified' => $record['email_verified_at'] ?? null,
+        'Last login' => $record['last_login_at'] ?? null,
+        'Security events' => $record['security_events_count'] ?? 0,
+        'Last security event' => $record['last_security_event_at'] ?? null,
+        'Created' => $record['created_at'] ?? null,
+        'Updated' => $record['updated_at'] ?? null,
+    ],
+    'audit' => [
+        'Event family' => $record['event_family'] ?? null,
+        'Actor' => !empty($record['actor_email'])
+            ? trim((string) ($record['actor_name'] ?? '') . ' · ' . (string) $record['actor_email'])
+            : 'System',
+        'Subject' => !empty($record['subject_email'])
+            ? trim((string) ($record['subject_name'] ?? '') . ' · ' . (string) $record['subject_email'])
+            : null,
+        'Subject status' => $record['subject_status'] ?? null,
+        'IP fingerprint' => !empty($record['ip_hash']) ? substr((string) $record['ip_hash'], 0, 16) . '…' : null,
+        'User-agent fingerprint' => !empty($record['user_agent_hash']) ? substr((string) $record['user_agent_hash'], 0, 16) . '…' : null,
+        'Occurred' => $record['created_at'] ?? null,
+    ],
     default => [],
 };
 ?>
@@ -258,7 +337,11 @@ $details = match ($recordResource) {
             <span class="eyebrow"><?= e($humanize($recordResource)) ?> record</span>
             <h1><?= e($title) ?></h1>
             <div class="workspace-record-status">
-                <span class="status-badge status-badge--<?= e(preg_replace('/[^a-z0-9_-]/', '', strtolower($status)) ?: 'neutral') ?>"><?= e($humanize($status)) ?></span>
+                <?php if ($status !== ''): ?>
+                    <span class="status-badge status-badge--<?= e(preg_replace('/[^a-z0-9_-]/', '', strtolower($status)) ?: 'neutral') ?>"><?= e($humanize($status)) ?></span>
+                <?php elseif ($recordResource === 'audit'): ?>
+                    <span class="status-badge status-badge--neutral"><?= e($humanize($record['event_family'] ?? 'security')) ?></span>
+                <?php endif; ?>
                 <span>#<?= e((string) $record['id']) ?></span>
             </div>
         </div>
@@ -334,6 +417,45 @@ $details = match ($recordResource) {
         </section>
     <?php endif; ?>
 
+    <?php if ($workspaceType === 'admin' && $recordResource === 'user'): ?>
+        <section class="workspace-record-panel workspace-customer-operation-panel">
+            <div class="workspace-record-panel__head">
+                <h2>Account & real-estate access safeguards</h2>
+                <span>Account administration is security-scoped; company ownership and workspace access remain part of the real-estate domain.</span>
+            </div>
+            <div class="workspace-operation-ready">
+                <span class="workspace-operation-ready__icon"><?= app_icon('building') ?></span>
+                <div>
+                    <strong><?= e(number_format((int) ($record['company_count'] ?? 0))) ?> active company connection<?= (int) ($record['company_count'] ?? 0) === 1 ? '' : 's' ?></strong>
+                    <span><?= (int) ($record['owned_company_count'] ?? 0) > 0
+                        ? e(number_format((int) $record['owned_company_count']) . ' company ownership assignment(s). Sole owners must transfer ownership before account disablement.')
+                        : 'No active company ownership blocks account disablement.' ?></span>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($workspaceType === 'admin' && $recordResource === 'audit'): ?>
+        <section class="workspace-record-panel workspace-customer-operation-panel">
+            <div class="workspace-record-panel__head">
+                <h2>Immutable security event</h2>
+                <span>This event is read-only. Raw IP addresses and user-agent strings are not stored here; only SHA-256 fingerprints are retained.</span>
+            </div>
+            <?php if ($auditMetadata !== []): ?>
+                <dl class="workspace-record-details">
+                    <?php foreach ($auditMetadata as $key => $value): ?>
+                        <?php if (is_scalar($value) || $value === null): ?>
+                            <div>
+                                <dt><?= e($humanize($key)) ?></dt>
+                                <dd><?= $value === null || $value === '' ? '—' : e((string) $value) ?></dd>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </dl>
+            <?php else: ?>
+                <div class="workspace-record-empty">No safe metadata was recorded for this event.</div>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
+
     <?php if ($workspaceType === 'developer' && in_array($recordResource, ['company','project','property','listing'], true) && !$editable): ?>
         <div class="workspace-lock-note">
             <?= app_icon('shield') ?>
@@ -380,6 +502,7 @@ $details = match ($recordResource) {
                             'Company type', 'Project type', 'Completion', 'Type',
                             'Offer', 'Pricing period', 'Preferred contact', 'Source',
                             'Interest', 'Property type', 'Preferred time', 'Alternate time',
+                            'Primary access', 'Event family', 'Subject status',
                         ];
                         $displayValue = in_array($label, $humanizedLabels, true)
                             ? $humanize($value)
@@ -615,25 +738,46 @@ $details = match ($recordResource) {
         </div>
 
         <aside class="workspace-record-side">
-            <section class="workspace-record-panel">
-                <div class="workspace-record-panel__head"><h2>Workflow history</h2></div>
-                <?php if ($history === []): ?>
-                    <div class="workspace-record-empty">No status changes have been recorded yet.</div>
-                <?php else: ?>
-                    <ol class="workspace-history">
-                        <?php foreach ($history as $entry): ?>
-                            <li>
-                                <span class="workspace-history__dot"></span>
-                                <div>
-                                    <strong><?= e($humanize($entry['from_status'] ?? '')) ?> → <?= e($humanize($entry['to_status'] ?? '')) ?></strong>
-                                    <small><?= e((string) ($entry['actor_name'] ?? 'System')) ?> · <?= e((string) ($entry['created_at'] ?? '')) ?></small>
-                                    <?php if (!empty($entry['note'])): ?><p><?= e((string) $entry['note']) ?></p><?php endif; ?>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ol>
-                <?php endif; ?>
-            </section>
+            <?php if ($recordResource === 'user'): ?>
+                <section class="workspace-record-panel">
+                    <div class="workspace-record-panel__head"><h2>Security posture</h2></div>
+                    <dl class="workspace-record-details">
+                        <div><dt>Account status</dt><dd><?= e($humanize($record['status'] ?? 'active')) ?></dd></div>
+                        <div><dt>Email</dt><dd><?= !empty($record['email_verified_at']) ? 'Verified' : 'Unverified' ?></dd></div>
+                        <div><dt>Recorded security events</dt><dd><?= e(number_format((int) ($record['security_events_count'] ?? 0))) ?></dd></div>
+                        <div><dt>Session generation</dt><dd><?= e((string) ($record['auth_version'] ?? 1)) ?></dd></div>
+                    </dl>
+                    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/dashboard/audit?q=' . rawurlencode((string) ($record['email'] ?? '')))) ?>">View related audit events</a>
+                </section>
+            <?php elseif ($recordResource === 'audit'): ?>
+                <section class="workspace-record-panel">
+                    <div class="workspace-record-panel__head"><h2>Audit integrity</h2></div>
+                    <div class="workspace-record-empty">No edit, delete, or workflow action is available for security-audit records.</div>
+                    <?php if (!empty($record['subject_user_id'])): ?>
+                        <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/dashboard/manage/user/' . (int) $record['subject_user_id'])) ?>">Open subject account</a>
+                    <?php endif; ?>
+                </section>
+            <?php else: ?>
+                <section class="workspace-record-panel">
+                    <div class="workspace-record-panel__head"><h2>Workflow history</h2></div>
+                    <?php if ($history === []): ?>
+                        <div class="workspace-record-empty">No status changes have been recorded yet.</div>
+                    <?php else: ?>
+                        <ol class="workspace-history">
+                            <?php foreach ($history as $entry): ?>
+                                <li>
+                                    <span class="workspace-history__dot"></span>
+                                    <div>
+                                        <strong><?= e($humanize($entry['from_status'] ?? '')) ?> → <?= e($humanize($entry['to_status'] ?? '')) ?></strong>
+                                        <small><?= e((string) ($entry['actor_name'] ?? 'System')) ?> · <?= e((string) ($entry['created_at'] ?? '')) ?></small>
+                                        <?php if (!empty($entry['note'])): ?><p><?= e((string) $entry['note']) ?></p><?php endif; ?>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
         </aside>
     </div>
 </section>

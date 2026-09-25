@@ -31,6 +31,12 @@ final class UserAdministrationService
             throw new InvalidArgumentException('User account was not found.');
         }
 
+        $previousStatus = (string) $target['status'];
+
+        if ($status === $previousStatus) {
+            return;
+        }
+
         if ((int) $actor['id'] === $targetUserId && $status !== 'active') {
             throw new DomainException('You cannot suspend or deactivate your own administrator account.');
         }
@@ -45,13 +51,35 @@ final class UserAdministrationService
             throw new DomainException('The final active administrator account cannot be disabled.');
         }
 
+        if ($status !== 'active') {
+            $soleOwnedCompanies = $users->soleOwnedCompanies($targetUserId);
+
+            if ($soleOwnedCompanies !== []) {
+                $names = array_map(
+                    static fn (array $company): string => (string) $company['name'],
+                    array_slice($soleOwnedCompanies, 0, 3)
+                );
+                $suffix = count($soleOwnedCompanies) > 3 ? ' and other companies' : '';
+
+                throw new DomainException(
+                    'Transfer company ownership before disabling this account. Sole ownership is still assigned to: '
+                    . implode(', ', $names)
+                    . $suffix
+                    . '.'
+                );
+            }
+        }
+
         $users->setStatusAndInvalidate($targetUserId, $status);
 
         (new SecurityAuditService())->record(
             'admin.user_status_changed',
             (int) $actor['id'],
             $targetUserId,
-            ['status' => $status]
+            [
+                'previous_status' => $previousStatus,
+                'status' => $status,
+            ]
         );
     }
 
@@ -67,6 +95,10 @@ final class UserAdministrationService
 
         $roles = new RoleRepository();
         $currentlyAdmin = $roles->userHasRole($targetUserId, 'administrator');
+
+        if ($enabled && (string) $target['status'] !== 'active') {
+            throw new DomainException('Restore the user account before granting administrator access.');
+        }
 
         if ($enabled && empty($target['email_verified_at'])) {
             throw new DomainException('Verify the user email before granting administrator access.');
@@ -114,6 +146,26 @@ final class UserAdministrationService
             (int) $actor['id'],
             $targetUserId,
             ['role' => 'administrator']
+        );
+    }
+
+    public function revokeSessions(int $targetUserId): void
+    {
+        $actor = $this->administrator();
+        $users = new UserRepository();
+        $target = $users->findById($targetUserId);
+
+        if ($target === null) {
+            throw new InvalidArgumentException('User account was not found.');
+        }
+
+        $users->incrementAuthVersion($targetUserId);
+
+        (new SecurityAuditService())->record(
+            'admin.user_sessions_revoked',
+            (int) $actor['id'],
+            $targetUserId,
+            ['target_status' => (string) $target['status']]
         );
     }
 

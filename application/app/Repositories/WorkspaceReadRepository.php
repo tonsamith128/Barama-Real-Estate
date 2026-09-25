@@ -944,6 +944,27 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(stage = "won"), 0) AS won,
                 COALESCE(SUM(stage = "lost"), 0) AS lost
                 FROM leads WHERE deleted_at IS NULL',
+            'users' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "active"), 0) AS active,
+                COALESCE(SUM(status = "suspended"), 0) AS suspended,
+                COALESCE(SUM(status = "deactivated"), 0) AS deactivated,
+                COALESCE(SUM(email_verified_at IS NOT NULL), 0) AS verified,
+                (SELECT COUNT(DISTINCT ur.user_id)
+                 FROM user_roles ur
+                 INNER JOIN roles r ON r.id = ur.role_id
+                 WHERE r.slug = "administrator") AS administrators,
+                (SELECT COUNT(DISTINCT cm.user_id)
+                 FROM company_members cm
+                 INNER JOIN companies c ON c.id = cm.company_id
+                 WHERE cm.status = "active"
+                   AND c.deleted_at IS NULL) AS company_members
+                FROM users',
+            'audit' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(event_type LIKE "auth.%"), 0) AS auth_events,
+                COALESCE(SUM(event_type LIKE "account.%"), 0) AS account_events,
+                COALESCE(SUM(event_type LIKE "admin.%"), 0) AS admin_events,
+                COALESCE(SUM(created_at >= (CURRENT_TIMESTAMP - INTERVAL 1 DAY)), 0) AS recent_24h
+                FROM security_audit_events',
             default => null,
         };
 
@@ -1266,14 +1287,44 @@ final class WorkspaceReadRepository
                 'SELECT u.id, u.name, u.email, u.status,
                         CASE WHEN u.email_verified_at IS NULL
                              THEN "unverified" ELSE "verified" END AS email_state,
-                        u.email_verified_at, u.last_login_at, u.updated_at,
-                        COALESCE(GROUP_CONCAT(r.slug ORDER BY r.slug SEPARATOR ", "), "user") AS roles
+                        u.email_verified_at, u.last_login_at, u.created_at, u.updated_at,
+                        COALESCE(role_summary.roles, "user") AS roles,
+                        CASE
+                            WHEN COALESCE(role_summary.is_administrator, 0) = 1 THEN "administrator"
+                            WHEN COALESCE(role_summary.is_developer, 0) = 1 THEN "developer"
+                            ELSE "user"
+                        END AS account_role,
+                        COALESCE(company_access.company_count, 0) AS company_count,
+                        COALESCE(company_access.owned_company_count, 0) AS owned_company_count,
+                        COALESCE(company_access.company_names, "") AS company_names,
+                        (
+                            SELECT COUNT(*)
+                            FROM security_audit_events user_events
+                            WHERE user_events.actor_user_id = u.id
+                               OR user_events.subject_user_id = u.id
+                        ) AS security_events_count
                  FROM users u
-                 LEFT JOIN user_roles ur ON ur.user_id = u.id
-                 LEFT JOIN roles r ON r.id = ur.role_id
-                 WHERE CONCAT_WS(" ", u.name, u.email) LIKE :search
-                 GROUP BY u.id, u.name, u.email, u.status, u.email_verified_at,
-                          u.last_login_at, u.updated_at
+                 LEFT JOIN (
+                    SELECT ur.user_id,
+                           GROUP_CONCAT(DISTINCT r.slug ORDER BY r.slug SEPARATOR ", ") AS roles,
+                           MAX(r.slug = "administrator") AS is_administrator,
+                           MAX(r.slug = "developer") AS is_developer
+                    FROM user_roles ur
+                    INNER JOIN roles r ON r.id = ur.role_id
+                    GROUP BY ur.user_id
+                 ) role_summary ON role_summary.user_id = u.id
+                 LEFT JOIN (
+                    SELECT cm.user_id,
+                           COUNT(DISTINCT cm.company_id) AS company_count,
+                           COUNT(DISTINCT CASE WHEN cm.member_role = "owner" THEN cm.company_id END) AS owned_company_count,
+                           GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS company_names
+                    FROM company_members cm
+                    INNER JOIN companies c ON c.id = cm.company_id
+                    WHERE cm.status = "active"
+                      AND c.deleted_at IS NULL
+                    GROUP BY cm.user_id
+                 ) company_access ON company_access.user_id = u.id
+                 WHERE CONCAT_WS(" ", u.name, u.email, company_access.company_names) LIKE :search
                  ORDER BY u.updated_at DESC',
                 'SELECT COUNT(*)
                  FROM users u
@@ -1282,13 +1333,41 @@ final class WorkspaceReadRepository
             ],
             'audit' => [
                 'SELECT e.id, e.event_type,
-                        COALESCE(actor.email, "System") AS actor,
-                        COALESCE(subject.email, "—") AS subject,
+                        SUBSTRING_INDEX(e.event_type, ".", 1) AS event_family,
+                        e.actor_user_id, e.subject_user_id,
+                        CASE
+                            WHEN actor.id IS NULL THEN "System"
+                            ELSE CONCAT(actor.name, " · ", actor.email)
+                        END AS actor,
+                        CASE
+                            WHEN subject.id IS NULL THEN "—"
+                            ELSE CONCAT(subject.name, " · ", subject.email)
+                        END AS subject,
+                        actor.status AS actor_status,
+                        subject.status AS subject_status,
+                        CASE
+                            WHEN e.ip_hash IS NOT NULL OR e.user_agent_hash IS NOT NULL
+                            THEN "hashed"
+                            ELSE "not recorded"
+                        END AS client_state,
                         e.created_at
                  FROM security_audit_events e
                  LEFT JOIN users actor ON actor.id = e.actor_user_id
                  LEFT JOIN users subject ON subject.id = e.subject_user_id
-                 WHERE CONCAT_WS(" ", e.event_type, actor.email, subject.email) LIKE :search
+                 WHERE (
+                    CONVERT(
+                        CONCAT_WS(
+                            " ",
+                            e.event_type,
+                            actor.name,
+                            actor.email,
+                            subject.name,
+                            subject.email,
+                            COALESCE(CAST(e.metadata_json AS CHAR), "")
+                        )
+                        USING utf8mb4
+                    ) COLLATE utf8mb4_unicode_ci
+                 ) LIKE :search
                  ORDER BY e.created_at DESC',
                 'SELECT COUNT(*)
                  FROM security_audit_events e
@@ -1466,16 +1545,17 @@ final class WorkspaceReadRepository
                 ],
             ],
             'admin:users' => [
-                'filters' => ['status' => 'status'],
+                'filters' => ['status' => 'status', 'type' => 'account_role'],
                 'sorts' => [
                     'updated_desc' => 'updated_at DESC',
                     'updated_asc' => 'updated_at ASC',
                     'name_asc' => 'name ASC',
                     'name_desc' => 'name DESC',
+                    'company_desc' => 'company_count DESC',
                 ],
             ],
             'admin:audit' => [
-                'filters' => [],
+                'filters' => ['type' => 'event_family'],
                 'sorts' => [
                     'updated_desc' => 'created_at DESC',
                     'updated_asc' => 'created_at ASC',

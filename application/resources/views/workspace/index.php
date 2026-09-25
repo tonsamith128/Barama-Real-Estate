@@ -28,6 +28,8 @@ $queryBase = array_filter([
 $humanize = static fn (mixed $value): string =>
     ucwords(str_replace('_', ' ', trim((string) $value)));
 
+$currentUserId = (int) (auth_user()['id'] ?? 0);
+
 $formatCell = static function (string $key, array $row) use ($humanize): string {
     $value = $row[$key] ?? null;
 
@@ -40,7 +42,7 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
         return e($currency . ' ' . number_format((float) $value, 2));
     }
 
-    if (in_array($key, ['usage_count', 'children_count', 'attachment_count', 'primary_count'], true)) {
+    if (in_array($key, ['usage_count', 'children_count', 'attachment_count', 'primary_count', 'company_count', 'owned_company_count', 'security_events_count'], true)) {
         return e(number_format((int) $value));
     }
 
@@ -77,6 +79,13 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
 
     if ($key === 'email_state') {
         $normalized = strtolower((string) $value) === 'verified' ? 'approved' : 'pending';
+        return '<span class="status-badge status-badge--' . e($normalized) . '">'
+            . e($humanize($value))
+            . '</span>';
+    }
+
+    if ($key === 'client_state') {
+        $normalized = strtolower((string) $value) === 'hashed' ? 'approved' : 'neutral';
         return '<span class="status-badge status-badge--' . e($normalized) . '">'
             . e($humanize($value))
             . '</span>';
@@ -131,7 +140,8 @@ $renderActions = static function (array $row) use (
     $workspaceType,
     $activeSection,
     $actionButton,
-    $humanize
+    $humanize,
+    $currentUserId
 ): string {
     $id = (int) ($row['id'] ?? 0);
 
@@ -161,6 +171,8 @@ $renderActions = static function (array $row) use (
             'listings' => 'listing',
             'inquiries' => 'inquiry',
             'leads' => 'lead',
+            'users' => 'user',
+            'audit' => 'audit',
             default => null,
         };
 
@@ -325,33 +337,48 @@ $renderActions = static function (array $row) use (
                 array_map('trim', explode(',', strtolower($roles))),
                 true
             );
+            $isSelf = $id === $currentUserId;
+            $emailVerified = (string) ($row['email_state'] ?? '') === 'verified';
 
-            if ($status === 'active') {
-                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+            if (!$isSelf) {
+                if ($status === 'active') {
+                    $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+                        . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="status" value="suspended">'
+                        . '<button class="table-action" type="submit">Suspend</button></form>';
+                    $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+                        . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="status" value="deactivated">'
+                        . '<button class="table-action table-action--danger" type="submit">Deactivate</button></form>';
+                } else {
+                    $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
+                        . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="status" value="active">'
+                        . '<button class="table-action table-action--primary" type="submit">Restore</button></form>';
+                }
+
+                if ($isAdministrator) {
+                    $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/administrator'))
+                        . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="enabled" value="0">'
+                        . '<button class="table-action" type="submit">Remove admin</button></form>';
+                } elseif ($status === 'active' && $emailVerified) {
+                    $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/administrator'))
+                        . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="enabled" value="1">'
+                        . '<button class="table-action" type="submit">Make admin</button></form>';
+                }
+
+                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/sessions/revoke'))
                     . '" method="post" data-workspace-form>'
                     . csrf_field()
-                    . '<input type="hidden" name="status" value="suspended">'
-                    . '<button class="table-action" type="submit">Suspend</button></form>';
-                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
-                    . '" method="post" data-workspace-form>'
-                    . csrf_field()
-                    . '<input type="hidden" name="status" value="deactivated">'
-                    . '<button class="table-action table-action--danger" type="submit">Deactivate</button></form>';
-            } else {
-                $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/status'))
-                    . '" method="post" data-workspace-form>'
-                    . csrf_field()
-                    . '<input type="hidden" name="status" value="active">'
-                    . '<button class="table-action table-action--primary" type="submit">Restore</button></form>';
+                    . '<button class="table-action table-action--danger" type="submit">Revoke sessions</button></form>';
             }
-
-            $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/administrator'))
-                . '" method="post" data-workspace-form>'
-                . csrf_field()
-                . '<input type="hidden" name="enabled" value="' . ($isAdministrator ? '0' : '1') . '">'
-                . '<button class="table-action" type="submit">'
-                . ($isAdministrator ? 'Remove admin' : 'Make admin')
-                . '</button></form>';
         } elseif (in_array($activeSection, ['overview', 'approvals'], true)) {
             // Pending moderation is intentionally reviewed on the record page so
             // rejection reasons and workflow history are captured consistently.
@@ -445,7 +472,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'catalog', 'media'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'catalog', 'media', 'users', 'audit'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -485,6 +512,16 @@ $renderActions = static function (array $row) use (
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Canonical real-estate platform data
+            </span>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'users'): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('shield') ?>
+                Account security · real-estate access context
+            </span>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'audit'): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('lock') ?>
+                Immutable security events
             </span>
         <?php elseif ($workspaceType === 'admin'): ?>
             <span class="workspace-context-note">
@@ -846,6 +883,20 @@ $renderActions = static function (array $row) use (
             <div><span><?= app_icon('image') ?></span><strong>Listing media</strong><small>Images and PDFs stay attached to a company, project, property or listing record.</small></div>
             <div><span><?= app_icon('shield') ?></span><strong>Workflow locked</strong><small>Reviewed or published records keep their approved media unchanged until returned to an editable state.</small></div>
             <div><span><?= app_icon('check') ?></span><strong>Primary image</strong><small>One primary image can lead each gallery collection.</small></div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($workspaceType === 'admin' && $activeSection === 'users'): ?>
+        <section class="workspace-management-guide" aria-label="User administration safeguards">
+            <div><span><?= app_icon('shield') ?></span><strong>Administrator continuity</strong><small>The final active administrator cannot be disabled or stripped of admin access.</small></div>
+            <div><span><?= app_icon('building') ?></span><strong>Company ownership</strong><small>Sole company owners must transfer ownership before their account can be suspended or deactivated.</small></div>
+            <div><span><?= app_icon('lock') ?></span><strong>Session invalidation</strong><small>Status, administrator-role and explicit session actions invalidate existing authenticated sessions.</small></div>
+        </section>
+    <?php elseif ($workspaceType === 'admin' && $activeSection === 'audit'): ?>
+        <section class="workspace-management-guide" aria-label="Security audit rules">
+            <div><span><?= app_icon('shield') ?></span><strong>Immutable evidence</strong><small>Audit events are read-only in the administrator interface.</small></div>
+            <div><span><?= app_icon('lock') ?></span><strong>Hashed client data</strong><small>IP and user-agent values are stored only as SHA-256 fingerprints, not raw client values.</small></div>
+            <div><span><?= app_icon('search') ?></span><strong>Traceability</strong><small>Filter by event family and inspect actor, subject and safe metadata for account-security investigations.</small></div>
         </section>
     <?php endif; ?>
 

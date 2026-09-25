@@ -388,6 +388,12 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 
+$router->post(
+    '/dashboard/users/{id}/sessions/revoke',
+    [AdminManagementController::class, 'revokeUserSessions'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
 $router->get('/health', static function (Request $request): Response {
     return Response::json([
         'status' => 'ok',

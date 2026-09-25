@@ -79,7 +79,7 @@ final class DashboardController
     {
         $resource = strtolower(trim($resource));
 
-        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead'], true)
+        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'user', 'audit'], true)
             || !ctype_digit($id)
             || (int) $id < 1
         ) {
@@ -104,6 +104,7 @@ final class DashboardController
             ?? $record['title']
             ?? $record['property_title']
             ?? $record['contact_name']
+            ?? $record['event_type']
             ?? ucfirst($resource)
         );
 
@@ -263,6 +264,21 @@ final class DashboardController
                 ['label' => 'Won', 'value' => $marketplace['won'] ?? 0, 'icon' => 'home', 'href' => '/dashboard/leads?status=won'],
                 ['label' => 'Lost', 'value' => $marketplace['lost'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/leads?status=lost'],
             ],
+            'users' => [
+                ['label' => 'All users', 'value' => $marketplace['total'] ?? 0, 'icon' => 'users', 'href' => '/dashboard/users'],
+                ['label' => 'Active', 'value' => $marketplace['active'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/users?status=active'],
+                ['label' => 'Suspended', 'value' => $marketplace['suspended'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/users?status=suspended'],
+                ['label' => 'Verified email', 'value' => $marketplace['verified'] ?? 0, 'icon' => 'mail'],
+                ['label' => 'Administrators', 'value' => $marketplace['administrators'] ?? 0, 'icon' => 'shield', 'href' => '/dashboard/users?type=administrator'],
+                ['label' => 'Company access', 'value' => $marketplace['company_members'] ?? 0, 'icon' => 'building'],
+            ],
+            'audit' => [
+                ['label' => 'All events', 'value' => $marketplace['total'] ?? 0, 'icon' => 'shield', 'href' => '/dashboard/audit'],
+                ['label' => 'Authentication', 'value' => $marketplace['auth_events'] ?? 0, 'icon' => 'lock', 'href' => '/dashboard/audit?type=auth'],
+                ['label' => 'Account security', 'value' => $marketplace['account_events'] ?? 0, 'icon' => 'user', 'href' => '/dashboard/audit?type=account'],
+                ['label' => 'Administrator', 'value' => $marketplace['admin_events'] ?? 0, 'icon' => 'users', 'href' => '/dashboard/audit?type=admin'],
+                ['label' => 'Last 24 hours', 'value' => $marketplace['recent_24h'] ?? 0, 'icon' => 'clock'],
+            ],
             default => [
                 ['label' => 'Pending approval', 'value' => $summary['pending_approvals'], 'icon' => 'shield'],
                 ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building'],
@@ -324,6 +340,16 @@ final class DashboardController
                 'title' => 'No property leads match this view',
                 'detail' => 'Adjust pipeline stage, property interest, preferred location, or customer search filters.',
             ],
+            'users' => [
+                'icon' => 'users',
+                'title' => 'No user accounts match this view',
+                'detail' => 'Adjust account status, role or search by user, email, or company access.',
+            ],
+            'audit' => [
+                'icon' => 'shield',
+                'title' => 'No security events match this view',
+                'detail' => 'Adjust event family or search by event, actor, subject, or safe metadata.',
+            ],
             default => [
                 'icon' => 'search',
                 'title' => 'No records found',
@@ -370,6 +396,8 @@ final class DashboardController
             'listing' => 'listings',
             'inquiry' => 'inquiries',
             'lead' => 'leads',
+            'user' => 'users',
+            'audit' => 'audit',
             default => 'overview',
         };
     }
@@ -480,18 +508,19 @@ final class DashboardController
             ],
             'users' => [
                 'statuses' => ['active', 'suspended', 'deactivated'],
-                'types' => [],
+                'types' => ['administrator', 'developer', 'user'],
                 'location' => false,
                 'sorts' => [
                     'updated_desc' => 'Recently updated',
                     'updated_asc' => 'Oldest updated',
                     'name_asc' => 'Name A–Z',
                     'name_desc' => 'Name Z–A',
+                    'company_desc' => 'Most company access',
                 ],
             ],
             'audit' => [
                 'statuses' => [],
-                'types' => [],
+                'types' => ['auth', 'account', 'admin'],
                 'location' => false,
                 'sorts' => [
                     'updated_desc' => 'Newest event',
@@ -596,15 +625,19 @@ final class DashboardController
             'users' => [
                 'name' => 'User',
                 'email' => 'Email',
-                'roles' => 'Roles',
+                'account_role' => 'Access',
+                'company_count' => 'Companies',
+                'owned_company_count' => 'Owner of',
                 'email_state' => 'Email',
                 'status' => 'Status',
                 'last_login_at' => 'Last login',
             ],
             'audit' => [
                 'event_type' => 'Event',
+                'event_family' => 'Family',
                 'actor' => 'Actor',
                 'subject' => 'Subject',
+                'client_state' => 'Client data',
                 'created_at' => 'Occurred',
             ],
             default => [],
