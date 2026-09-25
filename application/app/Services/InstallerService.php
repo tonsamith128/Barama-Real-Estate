@@ -7,6 +7,7 @@ namespace Barama\Services;
 use Barama\Core\Installation;
 use Barama\Support\IdGenerator;
 use Barama\Support\Locale;
+use Barama\Support\MigrationCatalog;
 use DateTimeZone;
 use PDO;
 use PDOException;
@@ -766,13 +767,9 @@ SQL);
             'SELECT migration FROM schema_migrations ORDER BY id'
         )->fetchAll(PDO::FETCH_COLUMN);
 
-        $lookup = array_fill_keys(
-            array_map('strval', $applied),
-            true
-        );
+        $lookup = MigrationCatalog::appliedLookup($applied);
 
-        $files = glob(APP_PATH . '/database/migrations/*.php') ?: [];
-        sort($files, SORT_STRING);
+        $files = MigrationCatalog::files();
 
         if ($files === []) {
             throw new RuntimeException('Database migrations are missing.');

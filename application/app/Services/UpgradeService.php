@@ -6,6 +6,7 @@ namespace Barama\Services;
 
 use Barama\Core\Database;
 use Barama\Core\Installation;
+use Barama\Support\MigrationCatalog;
 use PDO;
 use RuntimeException;
 use Throwable;
@@ -386,10 +387,6 @@ final class UpgradeService
     /** @return array<int,string> */
     private function pendingMigrations(PDO $pdo): array
     {
-        $files = glob(APP_PATH . '/database/migrations/*.php') ?: [];
-        sort($files, SORT_STRING);
-        $expected = array_map('basename', $files);
-
         try {
             $applied = $pdo->query(
                 'SELECT migration FROM schema_migrations ORDER BY id'
@@ -398,12 +395,7 @@ final class UpgradeService
             $applied = [];
         }
 
-        $lookup = array_fill_keys(array_map('strval', $applied), true);
-
-        return array_values(array_filter(
-            $expected,
-            static fn (string $name): bool => !isset($lookup[$name])
-        ));
+        return MigrationCatalog::pending($applied);
     }
 
     /** @param array<int,string> $migrations */
