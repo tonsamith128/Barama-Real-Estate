@@ -49,11 +49,11 @@ final class DashboardController
         ],
         'catalog' => [
             'title' => 'Locations & Amenities',
-            'description' => 'Maintain the canonical location hierarchy and amenity catalog used by marketplace inventory.',
+            'description' => 'Maintain the canonical real-estate location hierarchy and amenity catalog with guarded deactivation for data already in use.',
         ],
         'media' => [
-            'title' => 'Media',
-            'description' => 'Inspect uploaded media metadata and storage usage across the platform.',
+            'title' => 'Real Estate Media',
+            'description' => 'Inspect listing media attachment context, primary-image usage, storage metadata, and safe orphan cleanup across the platform.',
         ],
         'users' => [
             'title' => 'Users',
@@ -235,6 +235,18 @@ final class DashboardController
                 ['label' => 'Published', 'value' => $marketplace['published'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/listings?status=published'],
                 ['label' => 'Paused', 'value' => $marketplace['paused'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/listings?status=paused'],
             ],
+            'catalog' => [
+                ['label' => 'Locations', 'value' => $marketplace['locations'] ?? 0, 'icon' => 'map', 'href' => '/dashboard/catalog?type=location'],
+                ['label' => 'Active locations', 'value' => $marketplace['active_locations'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/catalog?type=location&status=active'],
+                ['label' => 'Amenities', 'value' => $marketplace['amenities'] ?? 0, 'icon' => 'layers', 'href' => '/dashboard/catalog?type=amenity'],
+                ['label' => 'Active amenities', 'value' => $marketplace['active_amenities'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/catalog?type=amenity&status=active'],
+            ],
+            'media' => [
+                ['label' => 'Media assets', 'value' => $marketplace['total'] ?? 0, 'icon' => 'image', 'href' => '/dashboard/media'],
+                ['label' => 'Images', 'value' => $marketplace['images'] ?? 0, 'icon' => 'image'],
+                ['label' => 'PDF documents', 'value' => $marketplace['pdfs'] ?? 0, 'icon' => 'layers'],
+                ['label' => 'Orphaned assets', 'value' => $marketplace['orphaned'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/media?status=orphan'],
+            ],
             'inquiries' => [
                 ['label' => 'All inquiries', 'value' => $marketplace['total'] ?? 0, 'icon' => 'message', 'href' => '/dashboard/inquiries'],
                 ['label' => 'New', 'value' => $marketplace['new'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/inquiries?status=new'],
@@ -271,6 +283,16 @@ final class DashboardController
                 'icon' => 'check',
                 'title' => 'Approval queue is clear',
                 'detail' => 'New Company, Project, Property and Listing submissions will appear here for review.',
+            ],
+            'catalog' => [
+                'icon' => 'map',
+                'title' => 'No catalog records match this view',
+                'detail' => 'Create a location or amenity, or adjust the catalog status, type or search filters.',
+            ],
+            'media' => [
+                'icon' => 'image',
+                'title' => 'No media assets match this view',
+                'detail' => 'Real-estate listing images and documents will appear here with their attachment context.',
             ],
             'companies' => [
                 'icon' => 'building',
@@ -440,17 +462,20 @@ final class DashboardController
                 'sorts' => [
                     'name_asc' => 'Name A–Z',
                     'name_desc' => 'Name Z–A',
+                    'usage_desc' => 'Most used',
                     'updated_desc' => 'Recently updated',
                 ],
             ],
             'media' => [
-                'statuses' => [],
+                'statuses' => ['attached', 'orphan'],
                 'types' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
                 'location' => false,
                 'sorts' => [
                     'updated_desc' => 'Newest uploaded',
                     'updated_asc' => 'Oldest uploaded',
                     'name_asc' => 'Filename A–Z',
+                    'size_desc' => 'Largest files',
+                    'size_asc' => 'Smallest files',
                 ],
             ],
             'users' => [
@@ -551,13 +576,19 @@ final class DashboardController
             'catalog' => [
                 'entity_type' => 'Type',
                 'title' => 'Name',
-                'context' => 'Category',
+                'parent_name' => 'Parent',
+                'context' => 'Category / type',
+                'usage_count' => 'Used by',
+                'children_count' => 'Children',
                 'status' => 'Status',
                 'updated_at' => 'Updated',
             ],
             'media' => [
                 'original_name' => 'File',
-                'uploaded_by' => 'Uploaded by',
+                'target_title' => 'Attached to',
+                'attachment_state' => 'State',
+                'attachment_count' => 'Attachments',
+                'primary_count' => 'Primary',
                 'mime_type' => 'Type',
                 'size_bytes' => 'Size',
                 'created_at' => 'Uploaded',

@@ -6,6 +6,7 @@ namespace Barama\Repositories;
 
 use Barama\Core\Database;
 use Barama\Support\IdGenerator;
+use PDO;
 
 final class CatalogRepository
 {
@@ -54,6 +55,72 @@ final class CatalogRepository
         return $statement->fetchColumn() !== false;
     }
 
+    /** @return array<string,mixed>|null */
+    public function location(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT id, parent_id, type, name, status
+             FROM locations
+             WHERE id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,int> */
+    public function locationUsage(int $id): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT
+                (SELECT COUNT(*) FROM locations child
+                 WHERE child.parent_id = :location_id_children
+                   AND child.status = "active") AS active_children,
+                (SELECT COUNT(*) FROM companies c
+                 WHERE c.location_id = :location_id_companies
+                   AND c.deleted_at IS NULL) AS companies,
+                (SELECT COUNT(*) FROM projects p
+                 WHERE p.location_id = :location_id_projects
+                   AND p.deleted_at IS NULL) AS projects,
+                (SELECT COUNT(*) FROM properties p
+                 WHERE p.location_id = :location_id_properties
+                   AND p.deleted_at IS NULL) AS properties,
+                (SELECT COUNT(*) FROM leads l
+                 WHERE l.preferred_location_id = :location_id_leads
+                   AND l.deleted_at IS NULL) AS leads,
+                (SELECT COUNT(*) FROM saved_searches s
+                 WHERE s.location_id = :location_id_searches) AS saved_searches'
+        );
+        $statement->execute([
+            'location_id_children' => $id,
+            'location_id_companies' => $id,
+            'location_id_projects' => $id,
+            'location_id_properties' => $id,
+            'location_id_leads' => $id,
+            'location_id_searches' => $id,
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'active_children' => (int) ($row['active_children'] ?? 0),
+            'companies' => (int) ($row['companies'] ?? 0),
+            'projects' => (int) ($row['projects'] ?? 0),
+            'properties' => (int) ($row['properties'] ?? 0),
+            'leads' => (int) ($row['leads'] ?? 0),
+            'saved_searches' => (int) ($row['saved_searches'] ?? 0),
+        ];
+    }
+
+    public function setLocationStatus(int $id, string $status): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE locations SET status = :status WHERE id = :id'
+        );
+        $statement->execute(['status' => $status, 'id' => $id]);
+    }
+
     /** @param array<string, mixed> $data */
     public function createAmenity(array $data): int
     {
@@ -74,6 +141,57 @@ final class CatalogRepository
         ]);
 
         return (int) Database::connection()->lastInsertId();
+    }
+
+    /** @return array<string,mixed>|null */
+    public function amenity(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT id, name, category, status
+             FROM amenities
+             WHERE id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,int> */
+    public function amenityUsage(int $id): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT
+                (SELECT COUNT(*)
+                 FROM project_amenities pa
+                 INNER JOIN projects p ON p.id = pa.project_id
+                 WHERE pa.amenity_id = :amenity_id_projects
+                   AND p.deleted_at IS NULL) AS projects,
+                (SELECT COUNT(*)
+                 FROM property_amenities pa
+                 INNER JOIN properties p ON p.id = pa.property_id
+                 WHERE pa.amenity_id = :amenity_id_properties
+                   AND p.deleted_at IS NULL) AS properties'
+        );
+        $statement->execute([
+            'amenity_id_projects' => $id,
+            'amenity_id_properties' => $id,
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'projects' => (int) ($row['projects'] ?? 0),
+            'properties' => (int) ($row['properties'] ?? 0),
+        ];
+    }
+
+    public function setAmenityStatus(int $id, string $status): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE amenities SET status = :status WHERE id = :id'
+        );
+        $statement->execute(['status' => $status, 'id' => $id]);
     }
 
     public function amenitySlugExists(string $slug): bool

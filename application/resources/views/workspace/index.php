@@ -40,6 +40,21 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
         return e($currency . ' ' . number_format((float) $value, 2));
     }
 
+    if (in_array($key, ['usage_count', 'children_count', 'attachment_count', 'primary_count'], true)) {
+        return e(number_format((int) $value));
+    }
+
+    if (in_array($key, ['original_name', 'target_title', 'parent_name', 'uploaded_by'], true)) {
+        return e((string) $value);
+    }
+
+    if ($key === 'attachment_state') {
+        $normalized = strtolower((string) $value) === 'attached' ? 'approved' : 'pending';
+        return '<span class="status-badge status-badge--' . e($normalized) . '">'
+            . e($humanize($value))
+            . '</span>';
+    }
+
     if ($key === 'size_bytes') {
         $bytes = (int) $value;
         if ($bytes >= 1048576) {
@@ -361,6 +376,49 @@ $renderActions = static function (array $row) use (
             } elseif ($status === 'paused') {
                 $buttons[] = $actionButton('listing', $id, 'published', 'Resume', 'primary');
             }
+        } elseif ($activeSection === 'catalog') {
+            $entityType = (string) ($row['entity_type'] ?? '');
+            $usageCount = (int) ($row['usage_count'] ?? 0);
+            $childrenCount = (int) ($row['children_count'] ?? 0);
+
+            if (in_array($entityType, ['location', 'amenity'], true)) {
+                $route = $entityType === 'location'
+                    ? '/dashboard/locations/' . $id . '/status'
+                    : '/dashboard/amenities/' . $id . '/status';
+
+                if ($status === 'inactive') {
+                    $buttons[] = '<form action="' . e(url($route)) . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="status" value="active">'
+                        . '<button class="table-action table-action--primary" type="submit">Activate</button></form>';
+                } elseif ($status === 'active' && $usageCount === 0 && $childrenCount === 0) {
+                    $buttons[] = '<form action="' . e(url($route)) . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="status" value="inactive">'
+                        . '<button class="table-action table-action--danger" type="submit">Deactivate</button></form>';
+                }
+            }
+        } elseif ($activeSection === 'media') {
+            $attachmentCount = (int) ($row['attachment_count'] ?? 0);
+            $targetType = (string) ($row['target_type'] ?? '');
+            $targetId = (int) ($row['target_id'] ?? 0);
+
+            if (
+                $attachmentCount > 0
+                && in_array($targetType, ['company', 'project', 'property', 'listing'], true)
+                && $targetId > 0
+            ) {
+                $buttons[] = '<a class="table-action" href="' . e(url(
+                    '/dashboard/manage/' . rawurlencode($targetType) . '/' . $targetId
+                )) . '">Open attached record</a>';
+            }
+
+            if ($attachmentCount === 0) {
+                $buttons[] = '<form action="' . e(url('/dashboard/media/' . $id . '/orphan'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<button class="table-action table-action--danger" type="submit">Delete orphan</button></form>';
+            }
         } elseif ($activeSection === 'inquiries') {
             if ($status === 'new') {
                 $buttons[] = $actionButton('inquiry', $id, 'read', 'Mark read', 'primary');
@@ -387,7 +445,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'catalog', 'media'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -422,6 +480,11 @@ $renderActions = static function (array $row) use (
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Platform oversight · company-owned operations
+            </span>
+        <?php elseif ($workspaceType === 'admin' && in_array($activeSection, ['catalog', 'media'], true)): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('shield') ?>
+                Canonical real-estate platform data
             </span>
         <?php elseif ($workspaceType === 'admin'): ?>
             <span class="workspace-context-note">
@@ -733,7 +796,10 @@ $renderActions = static function (array $row) use (
                                 <?php endforeach; ?>
                             </select>
                         </label>
-                        <label><span>Country code</span><input class="form-control" name="country_code" maxlength="2"></label>
+                        <label><span>Country code</span><input class="form-control" name="country_code" maxlength="2" placeholder="KH"></label>
+                        <label><span>Latitude</span><input class="form-control" name="latitude" type="number" step="0.0000001" min="-90" max="90"></label>
+                        <label><span>Longitude</span><input class="form-control" name="longitude" type="number" step="0.0000001" min="-180" max="180"></label>
+                        <label><span>Sort order</span><input class="form-control" name="sort_order" type="number" value="0"></label>
                     </div>
                     <button class="btn btn-primary" type="submit">Create location</button>
                 </form>
@@ -746,11 +812,26 @@ $renderActions = static function (array $row) use (
                         <label><span>Name</span><input class="form-control" name="name" required maxlength="140"></label>
                         <label><span>Category</span><input class="form-control" name="category" value="general" maxlength="80"></label>
                         <label><span>Icon key</span><input class="form-control" name="icon_key" maxlength="100"></label>
+                        <label><span>Sort order</span><input class="form-control" name="sort_order" type="number" value="0"></label>
                     </div>
                     <button class="btn btn-primary" type="submit">Create amenity</button>
                 </form>
             </details>
         </div>
+    <?php endif; ?>
+
+    <?php if ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
+        <section class="workspace-management-guide workspace-management-guide--media" aria-label="Catalog safeguards">
+            <div><span><?= app_icon('map') ?></span><strong>Location hierarchy</strong><small>Parent and child locations remain explicit so marketplace inventory uses one canonical geography.</small></div>
+            <div><span><?= app_icon('shield') ?></span><strong>In-use protection</strong><small>Locations or amenities referenced by active real-estate data cannot be deactivated.</small></div>
+            <div><span><?= app_icon('check') ?></span><strong>Status, not deletion</strong><small>Catalog records are activated or deactivated without destroying historical real-estate references.</small></div>
+        </section>
+    <?php elseif ($workspaceType === 'admin' && $activeSection === 'media'): ?>
+        <section class="workspace-management-guide workspace-management-guide--media" aria-label="Platform media safeguards">
+            <div><span><?= app_icon('image') ?></span><strong>Attachment context</strong><small>Every attached asset shows the first real-estate record, attachment count and primary-image usage.</small></div>
+            <div><span><?= app_icon('shield') ?></span><strong>Owned media protected</strong><small>Attached assets stay under their Company, Project, Property or Listing workflow.</small></div>
+            <div><span><?= app_icon('alert') ?></span><strong>Orphan cleanup only</strong><small>Admin deletion is limited to assets with zero real-estate attachments.</small></div>
+        </section>
     <?php endif; ?>
 
     <?php if ($workspaceType === 'developer' && $activeSection === 'team'): ?>
@@ -916,8 +997,7 @@ $renderActions = static function (array $row) use (
                     <?php endif; ?>
                     <?php if ($page < $pages): ?>
                         <?php $nextQuery = $queryBase; $nextQuery['page'] = $page + 1; ?>
-                        <a href="?<?= e(http_build_query($nextQuery)) ?>">Next</a>
-                    <?php endif; ?>
+                        <a href="?<?= e(http_build_query($nextQuery)) ?>">Next</a>                    <?php endif; ?>
                 </div>
             </nav>
         <?php endif; ?>

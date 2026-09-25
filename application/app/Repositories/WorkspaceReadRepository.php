@@ -914,6 +914,18 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "published"), 0) AS published,
                 COALESCE(SUM(status = "paused"), 0) AS paused
                 FROM listings WHERE deleted_at IS NULL',
+            'catalog' => 'SELECT
+                (SELECT COUNT(*) FROM locations) AS locations,
+                (SELECT COUNT(*) FROM locations WHERE status = "active") AS active_locations,
+                (SELECT COUNT(*) FROM amenities) AS amenities,
+                (SELECT COUNT(*) FROM amenities WHERE status = "active") AS active_amenities',
+            'media' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(m.mime_type LIKE "image/%"), 0) AS images,
+                COALESCE(SUM(m.mime_type = "application/pdf"), 0) AS pdfs,
+                COALESCE(SUM(CASE WHEN NOT EXISTS (
+                    SELECT 1 FROM media_attachments ma WHERE ma.media_asset_id = m.id
+                ) THEN 1 ELSE 0 END), 0) AS orphaned
+                FROM media_assets m',
             'inquiries' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(status = "new"), 0) AS new,
                 COALESCE(SUM(status = "read"), 0) AS `read`,
@@ -985,8 +997,7 @@ final class WorkspaceReadRepository
                     SELECT "property" AS entity_type, id, title,
                            status, updated_at, property_type AS context
                     FROM properties
-                    WHERE status = "pending" AND deleted_at IS NULL
-                    UNION ALL
+                    WHERE status = "pending" AND deleted_at IS NULL                    UNION ALL
                     SELECT "listing" AS entity_type, l.id, p.title,
                            l.status, l.updated_at, l.transaction_type AS context
                     FROM listings l
@@ -1168,36 +1179,86 @@ final class WorkspaceReadRepository
             'catalog' => [
                 'SELECT *
                  FROM (
-                    SELECT "location" AS entity_type, id, name AS title,
-                           status, type AS context, updated_at
-                    FROM locations
+                    SELECT "location" AS entity_type, l.id, l.name AS title,
+                           l.status, l.type AS context, parent.name AS parent_name,
+                           (SELECT COUNT(*) FROM locations child
+                            WHERE child.parent_id = l.id AND child.status = "active") AS children_count,
+                           (
+                               (SELECT COUNT(*) FROM companies c WHERE c.location_id = l.id AND c.deleted_at IS NULL)
+                               + (SELECT COUNT(*) FROM projects p WHERE p.location_id = l.id AND p.deleted_at IS NULL)
+                               + (SELECT COUNT(*) FROM properties p WHERE p.location_id = l.id AND p.deleted_at IS NULL)
+                               + (SELECT COUNT(*) FROM leads lead_row WHERE lead_row.preferred_location_id = l.id AND lead_row.deleted_at IS NULL)
+                               + (SELECT COUNT(*) FROM saved_searches saved WHERE saved.location_id = l.id)
+                           ) AS usage_count,
+                           l.updated_at
+                    FROM locations l
+                    LEFT JOIN locations parent ON parent.id = l.parent_id
                     UNION ALL
-                    SELECT "amenity" AS entity_type, id, name AS title,
-                           status, category AS context, updated_at
-                    FROM amenities
+                    SELECT "amenity" AS entity_type, a.id, a.name AS title,
+                           a.status, a.category AS context, NULL AS parent_name,
+                           0 AS children_count,
+                           (
+                               (SELECT COUNT(*) FROM project_amenities pa
+                                INNER JOIN projects project_row ON project_row.id = pa.project_id
+                                WHERE pa.amenity_id = a.id AND project_row.deleted_at IS NULL)
+                               + (SELECT COUNT(*) FROM property_amenities pa
+                                  INNER JOIN properties property_row ON property_row.id = pa.property_id
+                                  WHERE pa.amenity_id = a.id AND property_row.deleted_at IS NULL)
+                           ) AS usage_count,
+                           a.updated_at
+                    FROM amenities a
                  ) catalog
-                 WHERE catalog.title LIKE :search
+                 WHERE CONCAT_WS(" ", catalog.title, catalog.context, catalog.parent_name) LIKE :search
                  ORDER BY catalog.entity_type ASC, catalog.title ASC',
-                'SELECT COUNT(*)
-                 FROM (
-                    SELECT name AS title FROM locations
-                    UNION ALL
-                    SELECT name AS title FROM amenities
-                 ) catalog
-                 WHERE catalog.title LIKE :search',
+                'SELECT COUNT(*) FROM locations',
                 ['search' => $search],
             ],
             'media' => [
-                'SELECT m.id, m.original_name, m.mime_type, m.size_bytes,
-                        m.width_px, m.height_px, m.created_at,
-                        u.name AS uploaded_by
-                 FROM media_assets m
-                 LEFT JOIN users u ON u.id = m.created_by_user_id
-                 WHERE m.original_name LIKE :search
-                 ORDER BY m.created_at DESC',
-                'SELECT COUNT(*)
-                 FROM media_assets
-                 WHERE original_name LIKE :search',
+                'SELECT *
+                 FROM (
+                    SELECT m.id, m.id AS media_id, m.uuid, m.original_name,
+                           m.mime_type, m.size_bytes, m.width_px, m.height_px,
+                           m.disk, m.path, m.alt_text, m.checksum_sha256,
+                           m.created_at, COALESCE(u.name, "System") AS uploaded_by,
+                           (SELECT COUNT(*) FROM media_attachments ma
+                            WHERE ma.media_asset_id = m.id) AS attachment_count,
+                           (SELECT COUNT(*) FROM media_attachments ma
+                            WHERE ma.media_asset_id = m.id AND ma.is_primary = 1) AS primary_count,
+                           CASE WHEN EXISTS (
+                               SELECT 1 FROM media_attachments ma WHERE ma.media_asset_id = m.id
+                           ) THEN "attached" ELSE "orphan" END AS attachment_state,
+                           (SELECT ma.entity_type FROM media_attachments ma
+                            WHERE ma.media_asset_id = m.id
+                            ORDER BY ma.is_primary DESC, ma.id ASC LIMIT 1) AS target_type,
+                           (SELECT ma.entity_id FROM media_attachments ma
+                            WHERE ma.media_asset_id = m.id
+                            ORDER BY ma.is_primary DESC, ma.id ASC LIMIT 1) AS target_id,
+                           (SELECT ma.collection FROM media_attachments ma
+                            WHERE ma.media_asset_id = m.id
+                            ORDER BY ma.is_primary DESC, ma.id ASC LIMIT 1) AS collection,
+                           (SELECT CASE ma.entity_type
+                                WHEN "company" THEN (SELECT company_row.name FROM companies company_row WHERE company_row.id = ma.entity_id)
+                                WHEN "project" THEN (SELECT project_row.name FROM projects project_row WHERE project_row.id = ma.entity_id)
+                                WHEN "property" THEN (SELECT property_row.title FROM properties property_row WHERE property_row.id = ma.entity_id)
+                                WHEN "listing" THEN (SELECT property_row.title
+                                     FROM listings listing_row
+                                     INNER JOIN properties property_row ON property_row.id = listing_row.property_id
+                                     WHERE listing_row.id = ma.entity_id)
+                                ELSE NULL
+                            END
+                            FROM media_attachments ma
+                            WHERE ma.media_asset_id = m.id
+                            ORDER BY ma.is_primary DESC, ma.id ASC LIMIT 1) AS target_title
+                    FROM media_assets m
+                    LEFT JOIN users u ON u.id = m.created_by_user_id
+                 ) media_rows
+                 WHERE CONCAT_WS(
+                    " ", media_rows.original_name, media_rows.alt_text,
+                    media_rows.uploaded_by, media_rows.target_title,
+                    media_rows.target_type, media_rows.collection
+                 ) LIKE :search
+                 ORDER BY media_rows.created_at DESC',
+                'SELECT COUNT(*) FROM media_assets',
                 ['search' => $search],
             ],
             'users' => [
@@ -1386,11 +1447,22 @@ final class WorkspaceReadRepository
             ],
             'admin:catalog' => [
                 'filters' => ['status' => 'status', 'type' => 'entity_type'],
-                'sorts' => ['name_asc' => 'title ASC', 'name_desc' => 'title DESC', 'updated_desc' => 'updated_at DESC'],
+                'sorts' => [
+                    'name_asc' => 'title ASC',
+                    'name_desc' => 'title DESC',
+                    'usage_desc' => 'usage_count DESC',
+                    'updated_desc' => 'updated_at DESC',
+                ],
             ],
             'admin:media' => [
-                'filters' => ['type' => 'mime_type'],
-                'sorts' => ['updated_desc' => 'created_at DESC', 'updated_asc' => 'created_at ASC', 'name_asc' => 'original_name ASC'],
+                'filters' => ['status' => 'attachment_state', 'type' => 'mime_type'],
+                'sorts' => [
+                    'updated_desc' => 'created_at DESC',
+                    'updated_asc' => 'created_at ASC',
+                    'name_asc' => 'original_name ASC',
+                    'size_desc' => 'size_bytes DESC',
+                    'size_asc' => 'size_bytes ASC',
+                ],
             ],
             'admin:users' => [
                 'filters' => ['status' => 'status'],

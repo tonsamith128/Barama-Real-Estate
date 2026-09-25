@@ -68,6 +68,23 @@ final class MediaRepository
     }
 
     /** @return array<string,mixed>|null */
+    public function asset(int $mediaId): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT id, uuid, created_by_user_id, disk, path, original_name,
+                    mime_type, extension, size_bytes, width_px, height_px,
+                    alt_text, checksum_sha256, created_at, updated_at
+             FROM media_assets
+             WHERE id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $mediaId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,mixed>|null */
     public function attachment(int $attachmentId): ?array
     {
         $statement = Database::connection()->prepare(

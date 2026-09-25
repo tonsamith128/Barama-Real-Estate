@@ -352,6 +352,21 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/locations/{id}/status',
+    [AdminManagementController::class, 'updateLocationStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('location.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/amenities/{id}/status',
+    [AdminManagementController::class, 'updateAmenityStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/media/{id}/orphan',
+    [AdminManagementController::class, 'deleteOrphanMedia'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/dashboard/bulk-workflow',
     [AdminManagementController::class, 'bulkWorkflow'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]

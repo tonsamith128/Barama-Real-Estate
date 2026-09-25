@@ -93,6 +93,85 @@ final class CatalogManagementService
         ]);
     }
 
+    public function setLocationStatus(int $id, string $status): void
+    {
+        $this->assertAdminPermission('location.manage');
+        $status = strtolower(trim($status));
+
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            throw new InvalidArgumentException('Invalid location status.');
+        }
+
+        $location = $this->catalog->location($id);
+
+        if ($location === null) {
+            throw new InvalidArgumentException('Location was not found.');
+        }
+
+        if ((string) $location['status'] === $status) {
+            return;
+        }
+
+        if ($status === 'active') {
+            $parentId = isset($location['parent_id']) ? (int) $location['parent_id'] : 0;
+
+            if ($parentId > 0) {
+                $parent = $this->catalog->location($parentId);
+
+                if ($parent === null || (string) $parent['status'] !== 'active') {
+                    throw new DomainException('Reactivate the parent location before activating this location.');
+                }
+            }
+        } else {
+            $usage = $this->catalog->locationUsage($id);
+            $directUsage = $usage['companies']
+                + $usage['projects']
+                + $usage['properties']
+                + $usage['leads']
+                + $usage['saved_searches'];
+
+            if ($usage['active_children'] > 0) {
+                throw new DomainException('Deactivate child locations before deactivating this parent location.');
+            }
+
+            if ($directUsage > 0) {
+                throw new DomainException('This location is still used by real-estate inventory, leads, or saved property searches and cannot be deactivated yet.');
+            }
+        }
+
+        $this->catalog->setLocationStatus($id, $status);
+    }
+
+    public function setAmenityStatus(int $id, string $status): void
+    {
+        $this->assertAdminPermission('amenity.manage');
+        $status = strtolower(trim($status));
+
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            throw new InvalidArgumentException('Invalid amenity status.');
+        }
+
+        $amenity = $this->catalog->amenity($id);
+
+        if ($amenity === null) {
+            throw new InvalidArgumentException('Amenity was not found.');
+        }
+
+        if ((string) $amenity['status'] === $status) {
+            return;
+        }
+
+        if ($status === 'inactive') {
+            $usage = $this->catalog->amenityUsage($id);
+
+            if (($usage['projects'] + $usage['properties']) > 0) {
+                throw new DomainException('This amenity is still assigned to active real-estate inventory and cannot be deactivated yet.');
+            }
+        }
+
+        $this->catalog->setAmenityStatus($id, $status);
+    }
+
     private function assertAdminPermission(string $permission): void
     {
         $auth = new AuthService();

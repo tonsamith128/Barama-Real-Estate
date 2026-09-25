@@ -6,6 +6,7 @@ namespace Barama\Http\Controllers;
 
 use Barama\Core\Request;
 use Barama\Core\Response;
+use Barama\Services\AdminMediaManagementService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
@@ -27,6 +28,58 @@ final class AdminManagementController
         return $this->execute(fn (): array => [
             'amenity_id' => (new CatalogManagementService())->createAmenity($request->all()),
         ], 201);
+    }
+
+    public function updateLocationStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid location ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new CatalogManagementService())->setLocationStatus((int) $id, $status);
+
+            return [
+                'location_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Location status updated.',
+            ];
+        });
+    }
+
+    public function updateAmenityStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid amenity ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new CatalogManagementService())->setAmenityStatus((int) $id, $status);
+
+            return [
+                'amenity_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Amenity status updated.',
+            ];
+        });
+    }
+
+    public function deleteOrphanMedia(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid media asset ID is required.');
+            }
+
+            (new AdminMediaManagementService())->deleteOrphanAsset((int) $id);
+
+            return [
+                'media_id' => (int) $id,
+                'message' => 'Orphaned media asset deleted.',
+            ];
+        });
     }
 
     public function bulkWorkflow(Request $request): Response
