@@ -997,7 +997,8 @@ $renderActions = static function (array $row) use (
                     <?php endif; ?>
                     <?php if ($page < $pages): ?>
                         <?php $nextQuery = $queryBase; $nextQuery['page'] = $page + 1; ?>
-                        <a href="?<?= e(http_build_query($nextQuery)) ?>">Next</a>                    <?php endif; ?>
+                        <a href="?<?= e(http_build_query($nextQuery)) ?>">Next</a>
+                    <?php endif; ?>
                 </div>
             </nav>
         <?php endif; ?>

@@ -997,7 +997,8 @@ final class WorkspaceReadRepository
                     SELECT "property" AS entity_type, id, title,
                            status, updated_at, property_type AS context
                     FROM properties
-                    WHERE status = "pending" AND deleted_at IS NULL                    UNION ALL
+                    WHERE status = "pending" AND deleted_at IS NULL
+                    UNION ALL
                     SELECT "listing" AS entity_type, l.id, p.title,
                            l.status, l.updated_at, l.transaction_type AS context
                     FROM listings l
