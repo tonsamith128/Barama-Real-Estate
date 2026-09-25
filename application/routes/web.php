@@ -12,6 +12,7 @@ use Barama\Http\Controllers\CompanyController;
 use Barama\Http\Controllers\DashboardController;
 use Barama\Http\Controllers\DeveloperController;
 use Barama\Http\Controllers\DeveloperManagementController;
+use Barama\Http\Controllers\WorkspaceSettingsController;
 use Barama\Http\Controllers\HomeController;
 use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
@@ -195,6 +196,10 @@ $router->post(
     [AccountManagementController::class, 'updateNotificationPreferences'],
     [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
 );
+$router->get('/account/settings', [WorkspaceSettingsController::class, 'accountIndex'], [new AuthMiddleware(), new PermissionMiddleware('account.access')]);
+$router->get('/account/settings/{section}', [WorkspaceSettingsController::class, 'account'], [new AuthMiddleware(), new PermissionMiddleware('account.access')]);
+$router->post('/account/settings/{section}', [WorkspaceSettingsController::class, 'saveAccount'], [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]);
+
 $router->get(
     '/account/{section}',
     [AccountController::class, 'section'],
@@ -211,6 +216,10 @@ $router->get(
     [DeveloperController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
 );
+$router->get('/developer/settings', [WorkspaceSettingsController::class, 'developerIndex'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
+$router->get('/developer/settings/{section}', [WorkspaceSettingsController::class, 'developer'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
+$router->post('/developer/settings/{section}', [WorkspaceSettingsController::class, 'saveDeveloper'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]);
+
 $router->get(
     '/developer/{section}',
     [DeveloperController::class, 'section'],
@@ -230,6 +239,11 @@ $router->post(
 $router->post(
     '/developer/companies/{id}/members',
     [DeveloperManagementController::class, 'addMember'],
+    [new AuthMiddleware(), new PermissionMiddleware('company.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/developer/companies/{id}/members/{userId}/role',
+    [DeveloperManagementController::class, 'updateMemberRole'],
     [new AuthMiddleware(), new PermissionMiddleware('company.manage'), new CsrfMiddleware()]
 );
 $router->post(
@@ -288,6 +302,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('lead.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/developer/media/{id}/alt-text',
+    [DeveloperManagementController::class, 'updateMediaAltText'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/developer/media/{id}/primary',
     [DeveloperManagementController::class, 'setPrimaryMedia'],
     [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
@@ -313,6 +332,10 @@ $router->get(
     [DashboardController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
 );
+$router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+
 $router->get(
     '/dashboard/{section}',
     [DashboardController::class, 'section'],

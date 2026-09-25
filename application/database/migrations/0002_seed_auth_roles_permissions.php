@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use PDO;
-use RuntimeException;
 
 return static function (PDO $pdo): void {
     $roles = [
@@ -61,7 +59,7 @@ return static function (PDO $pdo): void {
 
     $assignments = [
         'user' => ['account.access'],
-        'developer' => ['account.access', 'developer.access'],
+        'developer' => ['developer.access'],
         'administrator' => ['account.access', 'developer.access', 'dashboard.access'],
     ];
 

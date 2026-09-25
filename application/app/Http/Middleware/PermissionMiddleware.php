@@ -25,7 +25,17 @@ final class PermissionMiddleware implements MiddlewareInterface
             return Response::redirect(url('/login'));
         }
 
-        if (!$auth->can($this->permission)) {
+        $workspacePermissions = [
+            'account.access' => 'account',
+            'developer.access' => 'developer',
+            'dashboard.access' => 'dashboard',
+        ];
+
+        $allowed = isset($workspacePermissions[$this->permission])
+            ? $auth->canAccessWorkspace($workspacePermissions[$this->permission])
+            : $auth->can($this->permission);
+
+        if (!$allowed) {
             return Response::html(
                 View::render('errors/403', [
                     'pageTitle' => 'Access denied',

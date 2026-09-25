@@ -247,6 +247,20 @@ final class AuthService
             && $this->roles->userCan((int) $user['id'], $permissionSlug);
     }
 
+    /* BARAMA_WORKSPACE_BOUNDARY_V100 */
+    public function canAccessWorkspace(string $workspace): bool
+    {
+        return match ($workspace) {
+            'account' => $this->can('account.access')
+                && (!$this->hasRole('developer') || $this->hasRole('administrator')),
+            'developer' => $this->can('developer.access')
+                && ($this->hasRole('developer') || $this->hasRole('administrator')),
+            'dashboard' => $this->can('dashboard.access')
+                && $this->hasRole('administrator'),
+            default => false,
+        };
+    }
+
     public function hasRole(string $roleSlug): bool
     {
         $user = $this->user();

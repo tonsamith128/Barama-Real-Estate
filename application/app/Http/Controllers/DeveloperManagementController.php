@@ -70,6 +70,27 @@ final class DeveloperManagementController
         });
     }
 
+    public function updateMemberRole(Request $request, string $id, string $userId): Response
+    {
+        return $this->execute(function () use ($request, $id, $userId): array {
+            $companyId = $this->id($id);
+            $memberUserId = $this->id($userId);
+            $memberRole = trim((string) $request->input('member_role', ''));
+            (new MembershipService())->updateRole(
+                $companyId,
+                $memberUserId,
+                $memberRole
+            );
+
+            return [
+                'company_id' => $companyId,
+                'user_id' => $memberUserId,
+                'member_role' => $memberRole,
+                'message' => 'Company member role updated.',
+            ];
+        });
+    }
+
     public function deactivateMember(Request $request, string $id, string $userId): Response
     {
         return $this->execute(function () use ($id, $userId): array {
@@ -177,6 +198,22 @@ final class DeveloperManagementController
         ], 201);
     }
 
+    public function updateMediaAltText(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            $attachmentId = $this->id($id);
+            (new MediaManagementService())->updateAltText(
+                $attachmentId,
+                $request->input('alt_text')
+            );
+
+            return [
+                'attachment_id' => $attachmentId,
+                'message' => 'Media alt text updated.',
+            ];
+        });
+    }
+
     public function setPrimaryMedia(Request $request, string $id): Response
     {
         return $this->execute(function () use ($id): array {
@@ -213,11 +250,30 @@ final class DeveloperManagementController
                 throw new InvalidArgumentException('A file upload is required.');
             }
 
+            $input = $request->all();
+            $target = trim((string) ($input['media_target'] ?? ''));
+
+            if (
+                $target !== ''
+                && (
+                    empty($input['entity_type'])
+                    || empty($input['entity_id'])
+                )
+            ) {
+                if (preg_match('/^(company|project|property|listing):(\d+)$/', $target, $matches) !== 1) {
+                    throw new InvalidArgumentException('Select a valid real-estate media target.');
+                }
+
+                $input['entity_type'] = $matches[1];
+                $input['entity_id'] = (int) $matches[2];
+            }
+
             return [
                 'media_id' => (new MediaStorageService())->storeAndAttach(
                     $file,
-                    $request->all()
+                    $input
                 ),
+                'message' => 'Media uploaded and attached to the selected real-estate record.',
             ];
         }, 201);
     }

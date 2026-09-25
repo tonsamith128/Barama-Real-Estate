@@ -9,10 +9,13 @@ $pages = (int) ($records['pages'] ?? 1);
 $companies = is_array($formOptions['companies'] ?? null) ? $formOptions['companies'] : [];
 $projects = is_array($formOptions['projects'] ?? null) ? $formOptions['projects'] : [];
 $properties = is_array($formOptions['properties'] ?? null) ? $formOptions['properties'] : [];
+$listings = is_array($formOptions['listings'] ?? null) ? $formOptions['listings'] : [];
 $locations = is_array($formOptions['locations'] ?? null) ? $formOptions['locations'] : [];
 $tableFilters = is_array($tableFilters ?? null) ? $tableFilters : [];
 $filterOptions = is_array($filterOptions ?? null) ? $filterOptions : [];
 $tableSort = trim((string) ($tableSort ?? 'updated_desc'));
+$emptyState = is_array($emptyState ?? null) ? $emptyState : [];
+$sectionGuide = is_array($sectionGuide ?? null) ? $sectionGuide : [];
 $bulkMode = $workspaceType === 'admin' && $activeSection === 'approvals';
 $queryBase = array_filter([
     'q' => $search,
@@ -49,6 +52,12 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
     if ($key === 'width_px') {
         $height = $row['height_px'] ?? null;
         return e($height ? ((int) $value . ' × ' . (int) $height . ' px') : '—');
+    }
+
+    if ($key === 'is_primary') {
+        return (int) $value === 1
+            ? '<span class="status-badge status-badge--approved">Primary</span>'
+            : '<span class="status-badge status-badge--neutral">Gallery</span>';
     }
 
     if ($key === 'email_state') {
@@ -142,9 +151,12 @@ $renderActions = static function (array $row) use (
 
     if (is_string($viewResource) && $viewResource !== '') {
         $base = $workspaceType === 'admin' ? '/dashboard/manage/' : '/developer/manage/';
+        $viewLabel = $workspaceType === 'admin' && in_array($activeSection, ['overview', 'approvals'], true)
+            ? 'Review'
+            : 'View';
         $buttons[] = '<a class="table-action" href="' . e(url(
             $base . rawurlencode($viewResource) . '/' . $id
-        )) . '">View</a>';
+        )) . '">' . e($viewLabel) . '</a>';
     }
 
     if ($workspaceType === 'developer') {
@@ -183,11 +195,17 @@ $renderActions = static function (array $row) use (
                 $buttons[] = $actionButton('inquiry', $id, 'replied', 'Mark replied');
             }
 
-            if (in_array($status, ['new', 'read', 'replied'], true)) {
-                $buttons[] = '<form action="' . e(url('/developer/inquiries/' . $id . '/lead'))
-                    . '" method="post" data-workspace-form>'
-                    . csrf_field()
-                    . '<button class="table-action table-action--primary" type="submit">Convert lead</button></form>';
+            if (
+                in_array($status, ['new', 'read', 'replied'], true)
+                && empty($row['converted_lead_id'])
+            ) {
+                $buttons[] = '<a class="table-action table-action--primary" href="' . e(url(
+                    '/developer/manage/inquiry/' . $id
+                )) . '">Review / convert lead</a>';
+            } elseif (!empty($row['converted_lead_id'])) {
+                $buttons[] = '<a class="table-action" href="' . e(url(
+                    '/developer/manage/lead/' . (int) $row['converted_lead_id']
+                )) . '">Open lead</a>';
             }
         } elseif ($resource === 'lead') {
             $next = match ($status) {
@@ -211,11 +229,11 @@ $renderActions = static function (array $row) use (
             }
         } elseif ($activeSection === 'team') {
             $companyId = (int) ($row['company_id'] ?? 0);
+            $rowType = (string) ($row['row_type'] ?? 'member');
+            $memberRole = (string) ($row['member_role'] ?? '');
+            $viewerRole = (string) ($row['viewer_role'] ?? '');
 
-            if (
-                (string) ($row['row_type'] ?? 'member') === 'invitation'
-                && (string) ($row['status'] ?? '') === 'pending'
-            ) {
+            if ($rowType === 'invitation' && (string) ($row['status'] ?? '') === 'pending') {
                 $buttons[] = '<form action="' . e(url(
                     '/developer/companies/' . $companyId . '/invitations/' . $id . '/revoke'
                 )) . '" method="post" data-workspace-form>'
@@ -223,13 +241,65 @@ $renderActions = static function (array $row) use (
                     . '<button class="table-action table-action--danger" type="submit">Revoke invite</button></form>';
             } elseif (
                 (string) ($row['status'] ?? '') === 'active'
-                && (string) ($row['member_role'] ?? '') !== 'owner'
+                && $memberRole !== 'owner'
             ) {
+                $assignable = $viewerRole === 'owner'
+                    ? ['manager' => 'Manager', 'agent' => 'Agent', 'member' => 'Member']
+                    : ($memberRole === 'manager'
+                        ? []
+                        : ['agent' => 'Agent', 'member' => 'Member']);
+
+                foreach ($assignable as $targetRole => $label) {
+                    if ($memberRole === $targetRole) {
+                        continue;
+                    }
+
+                    $buttons[] = '<form action="' . e(url(
+                        '/developer/companies/' . $companyId . '/members/' . $id . '/role'
+                    )) . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<input type="hidden" name="member_role" value="' . e($targetRole) . '">'
+                        . '<button class="table-action" type="submit">Set ' . e($label) . '</button></form>';
+                }
+
                 $buttons[] = '<form action="' . e(url(
                     '/developer/companies/' . $companyId . '/members/' . $id . '/deactivate'
                 )) . '" method="post" data-workspace-form>'
                     . csrf_field()
                     . '<button class="table-action table-action--danger" type="submit">Deactivate</button></form>';
+            }
+        } elseif ($activeSection === 'media') {
+            $entityType = (string) ($row['entity_type'] ?? '');
+            $entityId = (int) ($row['entity_id'] ?? 0);
+            $targetStatus = (string) ($row['target_status'] ?? '');
+            $editableMedia = in_array($targetStatus, ['draft', 'rejected'], true);
+
+            if (
+                in_array($entityType, ['company', 'project', 'property', 'listing'], true)
+                && $entityId > 0
+            ) {
+                $buttons[] = '<a class="table-action" href="' . e(url(
+                    '/developer/manage/' . rawurlencode($entityType) . '/' . $entityId
+                )) . '">Open record</a>';
+            }
+
+            if ($editableMedia) {
+                if (
+                    empty($row['is_primary'])
+                    && str_starts_with((string) ($row['mime_type'] ?? ''), 'image/')
+                ) {
+                    $buttons[] = '<form action="' . e(url(
+                        '/developer/media/' . $id . '/primary'
+                    )) . '" method="post" data-workspace-form>'
+                        . csrf_field()
+                        . '<button class="table-action table-action--primary" type="submit">Make primary</button></form>';
+                }
+
+                $buttons[] = '<form action="' . e(url(
+                    '/developer/media/' . $id . '/remove'
+                )) . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<button class="table-action table-action--danger" type="submit">Remove attachment</button></form>';
             }
         }
     } else {
@@ -268,10 +338,8 @@ $renderActions = static function (array $row) use (
                 . ($isAdministrator ? 'Remove admin' : 'Make admin')
                 . '</button></form>';
         } elseif (in_array($activeSection, ['overview', 'approvals'], true)) {
-            $resource = (string) ($row['entity_type'] ?? '');
-            $approveStatus = $resource === 'listing' ? 'published' : 'approved';
-            $buttons[] = $actionButton($resource, $id, $approveStatus, 'Approve', 'primary');
-            $buttons[] = $actionButton($resource, $id, 'rejected', 'Reject', 'danger');
+            // Pending moderation is intentionally reviewed on the record page so
+            // rejection reasons and workflow history are captured consistently.
         } elseif ($activeSection === 'companies') {
             if ($status === 'approved') {
                 $buttons[] = $actionButton('company', $id, 'suspended', 'Suspend', 'danger');
@@ -306,6 +374,22 @@ $renderActions = static function (array $row) use (
         return '<span class="table-action-placeholder">No action</span>';
     }
 
+    if (
+        ($workspaceType === 'admin'
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings'], true))
+        || ($workspaceType === 'developer'
+            && in_array(
+                $activeSection,
+                ['company', 'projects', 'properties', 'listings', 'inquiries', 'viewings', 'leads', 'team', 'media'],
+                true
+            ))
+    ) {
+        return '<details class="workspace-row-actions">'
+            . '<summary aria-label="Record actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>'
+            . '<div class="workspace-row-actions__menu">' . implode('', $buttons) . '</div>'
+            . '</details>';
+    }
+
     return '<div class="table-actions">' . implode('', $buttons) . '</div>';
 };
 ?>
@@ -333,15 +417,40 @@ $renderActions = static function (array $row) use (
 
     <div class="workspace-stats" aria-label="Workspace summary">
         <?php foreach ($stats as $stat): ?>
-            <article class="workspace-stat">
-                <span class="workspace-stat__icon"><?= app_icon((string) $stat['icon']) ?></span>
-                <div>
-                    <strong><?= e((string) $stat['value']) ?></strong>
-                    <span><?= e((string) $stat['label']) ?></span>
-                </div>
-            </article>
+            <?php if (!empty($stat['href'])): ?>
+                <a class="workspace-stat workspace-stat--link" href="<?= e(url((string) $stat['href'])) ?>">
+                    <span class="workspace-stat__icon"><?= app_icon((string) $stat['icon']) ?></span>
+                    <div>
+                        <strong><?= e((string) $stat['value']) ?></strong>
+                        <span><?= e((string) $stat['label']) ?></span>
+                    </div>
+                </a>
+            <?php else: ?>
+                <article class="workspace-stat">
+                    <span class="workspace-stat__icon"><?= app_icon((string) $stat['icon']) ?></span>
+                    <div>
+                        <strong><?= e((string) $stat['value']) ?></strong>
+                        <span><?= e((string) $stat['label']) ?></span>
+                    </div>
+                </article>
+            <?php endif; ?>
         <?php endforeach; ?>
     </div>
+
+    <?php if ($workspaceType === 'developer' && !empty($sectionGuide['steps'])): ?>
+        <section class="workspace-portfolio-lifecycle" aria-label="Portfolio workflow">
+            <div class="workspace-portfolio-lifecycle__head">
+                <span><?= app_icon('shield') ?></span>
+                <div><strong>Portfolio workflow</strong><small>Canonical review lifecycle for this module</small></div>
+            </div>
+            <ol>
+                <?php foreach ((array) $sectionGuide['steps'] as $index => $step): ?>
+                    <li><span><?= e((string) ($index + 1)) ?></span><strong><?= e((string) $step) ?></strong></li>
+                <?php endforeach; ?>
+            </ol>
+            <?php if (!empty($sectionGuide['note'])): ?><p><?= e((string) $sectionGuide['note']) ?></p><?php endif; ?>
+        </section>
+    <?php endif; ?>
 
     <div data-workspace-notice hidden></div>
 
@@ -484,7 +593,7 @@ $renderActions = static function (array $row) use (
                         </select>
                     </label>
                     <label><span>Price</span><input class="form-control" name="price" type="number" min="0" step="0.01" required></label>
-                    <label><span>Currency</span><input class="form-control" name="currency" value="USD" maxlength="3" required></label>
+                    <label><span>Currency</span><input class="form-control" name="currency" value="<?= e((string) (($workspacePreferences['default_currency'] ?? 'USD'))) ?>" maxlength="3" required></label>
                     <label><span>Pricing period</span>
                         <select class="form-select" name="pricing_period">
                             <option value="">Not applicable</option>
@@ -526,23 +635,63 @@ $renderActions = static function (array $row) use (
         </details>
     <?php elseif ($workspaceType === 'developer' && $activeSection === 'media'): ?>
         <details class="workspace-create">
-            <summary><?= app_icon('plus') ?><span>Upload media</span></summary>
+            <summary><?= app_icon('plus') ?><span>Attach media to listing inventory</span></summary>
             <form action="<?= e(url('/developer/media')) ?>" method="post" enctype="multipart/form-data" data-workspace-form class="workspace-form">
                 <?= csrf_field() ?>
                 <div class="workspace-form__grid">
-                    <label><span>Attach to</span>
-                        <select class="form-select" name="entity_type" required>
-                            <option value="company">Company</option>
-                            <option value="project">Project</option>
-                            <option value="property">Property</option>
-                            <option value="listing">Listing</option>
+                    <label class="workspace-form__span-2"><span>Real-estate record</span>
+                        <select class="form-select" name="media_target" required>
+                            <option value="">Select an editable record</option>
+
+                            <?php $editableCompanies = array_filter($companies, static fn (array $item): bool => in_array((string) ($item['status'] ?? ''), ['draft','rejected'], true)); ?>
+                            <?php if ($editableCompanies !== []): ?>
+                                <optgroup label="Companies">
+                                    <?php foreach ($editableCompanies as $company): ?>
+                                        <option value="company:<?= e((string) $company['id']) ?>"><?= e((string) $company['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+
+                            <?php $editableProjects = array_filter($projects, static fn (array $item): bool => in_array((string) ($item['status'] ?? ''), ['draft','rejected'], true)); ?>
+                            <?php if ($editableProjects !== []): ?>
+                                <optgroup label="Projects">
+                                    <?php foreach ($editableProjects as $project): ?>
+                                        <option value="project:<?= e((string) $project['id']) ?>"><?= e((string) $project['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+
+                            <?php $editableProperties = array_filter($properties, static fn (array $item): bool => in_array((string) ($item['status'] ?? ''), ['draft','rejected'], true)); ?>
+                            <?php if ($editableProperties !== []): ?>
+                                <optgroup label="Properties">
+                                    <?php foreach ($editableProperties as $property): ?>
+                                        <option value="property:<?= e((string) $property['id']) ?>"><?= e((string) $property['reference_code']) ?> · <?= e((string) $property['title']) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+
+                            <?php $editableListings = array_filter($listings, static fn (array $item): bool => in_array((string) ($item['status'] ?? ''), ['draft','rejected'], true)); ?>
+                            <?php if ($editableListings !== []): ?>
+                                <optgroup label="Listings">
+                                    <?php foreach ($editableListings as $listing): ?>
+                                        <option value="listing:<?= e((string) $listing['id']) ?>"><?= e((string) $listing['reference_code']) ?> · <?= e((string) $listing['property_title']) ?> · <?= e($humanize($listing['transaction_type'])) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
                         </select>
                     </label>
-                    <label><span>Record ID</span><input class="form-control" name="entity_id" type="number" min="1" required></label>
                     <label class="workspace-form__span-2"><span>File</span><input class="form-control" name="file" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required></label>
-                    <label class="workspace-form__span-2"><span>Alt text</span><input class="form-control" name="alt_text" maxlength="255"></label>
+                    <label class="workspace-form__span-2"><span>Alt text</span><input class="form-control" name="alt_text" maxlength="255" placeholder="Describe the property image for accessibility and listing context"></label>
+                    <label><span>Collection</span>
+                        <select class="form-select" name="collection">
+                            <option value="gallery">Gallery</option>
+                            <option value="floorplan">Floor plan</option>
+                            <option value="document">Document</option>
+                        </select>
+                    </label>
+                    <label class="workspace-check"><input type="checkbox" name="is_primary" value="1"><span>Use as primary listing image</span></label>
                 </div>
-                <button class="btn btn-primary" type="submit">Upload media</button>
+                <button class="btn btn-primary" type="submit"><?= app_icon('image') ?> Upload & attach media</button>
             </form>
         </details>
     <?php elseif ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
@@ -586,6 +735,21 @@ $renderActions = static function (array $row) use (
                 </form>
             </details>
         </div>
+    <?php endif; ?>
+
+    <?php if ($workspaceType === 'developer' && $activeSection === 'team'): ?>
+        <section class="workspace-management-guide" aria-label="Company team roles">
+            <div><span><?= app_icon('shield') ?></span><strong>Owner</strong><small>Company ownership and manager-role control.</small></div>
+            <div><span><?= app_icon('users') ?></span><strong>Manager</strong><small>Manages listing operations and non-manager team members.</small></div>
+            <div><span><?= app_icon('user') ?></span><strong>Agent</strong><small>Works with property listings, inquiries, viewings and leads as permitted.</small></div>
+            <div><span><?= app_icon('home') ?></span><strong>Member</strong><small>Company workspace access without ownership controls.</small></div>
+        </section>
+    <?php elseif ($workspaceType === 'developer' && $activeSection === 'media'): ?>
+        <section class="workspace-management-guide workspace-management-guide--media" aria-label="Listing media rules">
+            <div><span><?= app_icon('image') ?></span><strong>Listing media</strong><small>Images and PDFs stay attached to a company, project, property or listing record.</small></div>
+            <div><span><?= app_icon('shield') ?></span><strong>Workflow locked</strong><small>Reviewed or published records keep their approved media unchanged until returned to an editable state.</small></div>
+            <div><span><?= app_icon('check') ?></span><strong>Primary image</strong><small>One primary image can lead each gallery collection.</small></div>
+        </section>
     <?php endif; ?>
 
     <section class="workspace-panel">
@@ -686,9 +850,10 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0))) ?>" class="workspace-empty">
-                                <strong>No records found</strong>
-                                <span>Records matching this section and search will appear here.</span>
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
+                                <span class="workspace-empty__icon"><?= app_icon((string) ($emptyState['icon'] ?? 'search')) ?></span>
+                                <strong><?= e((string) ($emptyState['title'] ?? 'No records found')) ?></strong>
+                                <span><?= e((string) ($emptyState['detail'] ?? 'Records matching this section and search will appear here.')) ?></span>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -720,7 +885,15 @@ $renderActions = static function (array $row) use (
         <?php if ($pages > 1): ?>
             <nav class="workspace-pagination" aria-label="Table pagination">
                 <span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span>
-                <div>
+                <form method="get" class="workspace-pagination__goto" aria-label="Go to page">
+                    <?php foreach ($queryBase as $queryKey => $queryValue): ?>
+                        <input type="hidden" name="<?= e((string) $queryKey) ?>" value="<?= e((string) $queryValue) ?>">
+                    <?php endforeach; ?>
+                    <label for="workspace-page-jump">Go to page</label>
+                    <input id="workspace-page-jump" name="page" type="number" min="1" max="<?= e((string) $pages) ?>" value="<?= e((string) $page) ?>" inputmode="numeric">
+                    <button type="submit">Go</button>
+                </form>
+                <div class="workspace-pagination__steps">
                     <?php if ($page > 1): ?>
                         <?php $previousQuery = $queryBase; $previousQuery['page'] = $page - 1; ?>
                         <a href="?<?= e(http_build_query($previousQuery)) ?>">Previous</a>

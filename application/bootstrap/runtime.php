@@ -50,6 +50,19 @@ require_once APP_PATH . '/app/Support/helpers.php';
 RuntimeEnvironment::load();
 Config::load(APP_PATH . '/config');
 
+// BARAMA_PRODUCTION_ERROR_DISPLAY_GUARD
+// Keep PHP warnings/deprecations in server logs instead of rendering them into
+// customer-facing production pages. Development environments may retain their
+// host-configured display behavior.
+if (
+    strtolower((string) config('app.environment', 'production'))
+    === 'production'
+) {
+    @ini_set('display_errors', '0');
+    @ini_set('display_startup_errors', '0');
+    @ini_set('log_errors', '1');
+}
+
 date_default_timezone_set(
     (string) config('app.timezone', 'Asia/Phnom_Penh')
 );

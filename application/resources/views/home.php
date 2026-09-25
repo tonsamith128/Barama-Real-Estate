@@ -94,7 +94,7 @@ $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
             <a href="<?= e(url('/properties')) ?>">View all properties</a>
         </div>
         <div class="inventory-grid">
-            <?php foreach ($latestListings as $listing): ?><?= BaramaCoreView::partial('components/inventory-card', ['kind' => 'listing', 'item' => $listing]) ?><?php endforeach; ?>
+            <?php foreach ($latestListings as $listing): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $listing]) ?><?php endforeach; ?>
         </div>
     </div>
 </section>
@@ -110,7 +110,7 @@ $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
                     <a href="<?= e(url('/projects')) ?>">View projects</a>
                 </div>
                 <div class="inventory-grid inventory-grid--projects">
-                    <?php foreach ($latestProjects as $project): ?><?= BaramaCoreView::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?>
+                    <?php foreach ($latestProjects as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?>
                 </div>
             </div>
         <?php endif; ?>
@@ -122,7 +122,7 @@ $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
                     <a href="<?= e(url('/company')) ?>">View directory</a>
                 </div>
                 <div class="inventory-grid inventory-grid--companies">
-                    <?php foreach ($featuredCompanies as $company): ?><?= BaramaCoreView::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?><?php endforeach; ?>
+                    <?php foreach ($featuredCompanies as $company): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?><?php endforeach; ?>
                 </div>
             </div>
         <?php endif; ?>

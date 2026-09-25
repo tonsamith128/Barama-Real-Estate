@@ -62,8 +62,15 @@ final class WorkspaceRecordRepository
                             AND p.deleted_at IS NULL
                           LIMIT 1',
             'inquiry' => 'SELECT i.*, c.name AS company_name,
-                                 p.title AS property_title, l.slug AS listing_slug,
-                                 cm.member_role AS viewer_role
+                                 p.title AS property_title, p.reference_code,
+                                 p.property_type, p.location_id,
+                                 loc.name AS location_name,
+                                 l.slug AS listing_slug, l.transaction_type,
+                                 l.price, l.currency,
+                                 assigned.name AS assigned_user_name,
+                                 cm.member_role AS viewer_role,
+                                 (SELECT MIN(ld.id) FROM leads ld WHERE ld.inquiry_id = i.id AND ld.deleted_at IS NULL) AS converted_lead_id,
+                                 (SELECT ld.stage FROM leads ld WHERE ld.inquiry_id = i.id AND ld.deleted_at IS NULL ORDER BY ld.id ASC LIMIT 1) AS converted_lead_stage
                           FROM inquiries i
                           INNER JOIN companies c ON c.id = i.company_id
                           INNER JOIN company_members cm
@@ -71,10 +78,16 @@ final class WorkspaceRecordRepository
                             AND cm.user_id = :user_id
                             AND cm.status = "active"
                           LEFT JOIN properties p ON p.id = i.property_id
+                          LEFT JOIN locations loc ON loc.id = p.location_id
                           LEFT JOIN listings l ON l.id = i.listing_id
+                          LEFT JOIN users assigned ON assigned.id = i.assigned_user_id
                           WHERE i.id = :id LIMIT 1',
             'viewing' => 'SELECT v.*, c.name AS company_name,
-                                 l.slug AS listing_slug, p.title AS property_title,
+                                 l.slug AS listing_slug, l.transaction_type,
+                                 l.price, l.currency,
+                                 p.title AS property_title, p.reference_code,
+                                 p.property_type, p.location_id,
+                                 loc.name AS location_name,
                                  u.name AS customer_name, u.email AS customer_email,
                                  cm.member_role AS viewer_role
                           FROM viewing_requests v
@@ -85,11 +98,16 @@ final class WorkspaceRecordRepository
                             AND cm.status = "active"
                           INNER JOIN listings l ON l.id = v.listing_id
                           INNER JOIN properties p ON p.id = l.property_id
+                          LEFT JOIN locations loc ON loc.id = p.location_id
                           INNER JOIN users u ON u.id = v.user_id
                           WHERE v.id = :id LIMIT 1',
             'lead' => 'SELECT l.*, c.name AS company_name,
                               u.name AS assigned_user_name,
                               loc.name AS preferred_location_name,
+                              inquiry.id AS source_inquiry_id,
+                              p.title AS source_property_title,
+                              p.reference_code AS source_property_reference,
+                              listing.slug AS source_listing_slug,
                               cm.member_role AS viewer_role
                        FROM leads l
                        INNER JOIN companies c ON c.id = l.company_id
@@ -99,6 +117,9 @@ final class WorkspaceRecordRepository
                          AND cm.status = "active"
                        LEFT JOIN users u ON u.id = l.assigned_user_id
                        LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                       LEFT JOIN inquiries inquiry ON inquiry.id = l.inquiry_id
+                       LEFT JOIN properties p ON p.id = inquiry.property_id
+                       LEFT JOIN listings listing ON listing.id = inquiry.listing_id
                        WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
             default => throw new InvalidArgumentException('Unsupported workspace resource.'),
         };

@@ -508,6 +508,7 @@ final class MarketplaceRepository
     }
 
     /** @return array<int,array<string,mixed>> */
+    /* BARAMA_SINGLE_DETAIL_MEDIA_REPOSITORY_V100 */
     public function gallery(string $entityType, int $entityId): array
     {
         if (!in_array($entityType, ['company', 'project', 'property', 'listing'], true)) {
@@ -516,13 +517,18 @@ final class MarketplaceRepository
 
         $statement = Database::connection()->prepare(
             'SELECT ma.id AS attachment_id, ma.collection, ma.position, ma.is_primary,
-                    m.id AS media_id, m.uuid, m.original_name, m.mime_type,
+                    m.id AS media_id, m.uuid, m.disk, m.path,
+                    m.original_name, m.mime_type,
                     m.width_px, m.height_px, m.alt_text
              FROM media_attachments ma
              INNER JOIN media_assets m ON m.id = ma.media_asset_id
              WHERE ma.entity_type = :entity_type
                AND ma.entity_id = :entity_id
-               AND m.mime_type LIKE "image/%"
+               AND (
+                   m.mime_type LIKE "image/%"
+                   OR m.mime_type IN ("video/mp4", "video/webm", "video/ogg", "video/quicktime")
+                   OR (m.mime_type = "text/x-youtube" AND m.disk = "external")
+               )
              ORDER BY ma.is_primary DESC, ma.position ASC, ma.id ASC'
         );
         $statement->execute([
@@ -540,7 +546,11 @@ final class MarketplaceRepository
             'SELECT m.*
              FROM media_assets m
              WHERE m.uuid = :uuid
-               AND m.mime_type IN ("image/jpeg", "image/png", "image/webp")
+               AND m.disk <> "external"
+               AND m.mime_type IN (
+                   "image/jpeg", "image/png", "image/webp",
+                   "video/mp4", "video/webm", "video/ogg", "video/quicktime"
+               )
                AND EXISTS (
                    SELECT 1
                    FROM media_attachments ma

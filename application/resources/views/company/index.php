@@ -29,7 +29,7 @@ $total = (int) ($inventory['total'] ?? 0);
     <div class="container app-container">
         <div class="marketplace-results__bar"><div><strong><?= e(number_format($total)) ?> compan<?= $total === 1 ? 'y' : 'ies' ?></strong><span>Approved public profiles</span></div></div>
         <?php if ($rows === []): ?><div class="marketplace-empty marketplace-empty--premium"><?= app_icon('building') ?><strong>No companies match these filters.</strong><span>Try a broader company type or location.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/company')) ?>">View all companies</a></div>
-        <?php else: ?><div class="inventory-grid inventory-grid--companies"><?php foreach ($rows as $company): ?><?= BaramaCoreView::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?><?php endforeach; ?></div><?php endif; ?>
+        <?php else: ?><div class="inventory-grid inventory-grid--companies"><?php foreach ($rows as $company): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?><?php endforeach; ?></div><?php endif; ?>
         <?php if ($pages > 1): ?><nav class="marketplace-pagination"><span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span><div><?php $base = $filters; if ($page > 1): $base['page'] = $page - 1; ?><a href="?<?= e(http_build_query($base)) ?>">Previous</a><?php endif; ?><?php $base = $filters; if ($page < $pages): $base['page'] = $page + 1; ?><a href="?<?= e(http_build_query($base)) ?>">Next</a><?php endif; ?></div></nav><?php endif; ?>
     </div>
 </section>

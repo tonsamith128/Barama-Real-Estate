@@ -33,6 +33,22 @@ final class CompanyMembershipWriteRepository
         ]);
     }
 
+    public function updateRole(int $companyId, int $userId, string $memberRole): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE company_members
+             SET member_role = :member_role, updated_at = CURRENT_TIMESTAMP
+             WHERE company_id = :company_id
+               AND user_id = :user_id
+               AND status = "active"'
+        );
+        $statement->execute([
+            'member_role' => $memberRole,
+            'company_id' => $companyId,
+            'user_id' => $userId,
+        ]);
+    }
+
     public function deactivate(int $companyId, int $userId): void
     {
         $statement = Database::connection()->prepare(

@@ -189,6 +189,59 @@ final class NotificationRepository
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function notificationsForAccount(
+        int $userId,
+        string $search = '',
+        string $state = '',
+        string $category = '',
+        int $limit = 150
+    ): array {
+        $where = [
+            'user_id = :user_id',
+            'category IN ("saved_search_alerts", "viewing_updates", "inquiry_updates")',
+            'CONCAT_WS(" ", title, message, type) LIKE :search',
+        ];
+        $params = [
+            'user_id' => $userId,
+            'search' => '%' . trim($search) . '%',
+        ];
+
+        if ($state === 'unread') {
+            $where[] = 'read_at IS NULL';
+        } elseif ($state === 'read') {
+            $where[] = 'read_at IS NOT NULL';
+        }
+
+        if (in_array($category, ['saved_search_alerts', 'viewing_updates', 'inquiry_updates'], true)) {
+            $where[] = 'category = :category';
+            $params['category'] = $category;
+        }
+
+        $statement = Database::connection()->prepare(
+            'SELECT id, uuid, category, type, title, message, action_url,
+                    entity_type, entity_id, read_at, created_at
+             FROM notifications
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY created_at DESC, id DESC
+             LIMIT :limit'
+        );
+
+        foreach ($params as $key => $value) {
+            $statement->bindValue(
+                ':' . $key,
+                $value,
+                $key === 'user_id' ? PDO::PARAM_INT : PDO::PARAM_STR
+            );
+        }
+        $statement->bindValue(':limit', max(1, min(200, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function unreadCount(int $userId): int
     {
         $statement = Database::connection()->prepare(

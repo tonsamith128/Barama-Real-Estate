@@ -220,6 +220,48 @@ final class AccountSettingsRepository
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function ownedCompaniesForAccess(int $userId): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT c.id, c.name, c.company_type, c.status, c.email, c.phone,
+                    c.updated_at, cm.member_role, loc.name AS location_name,
+                    (
+                        SELECT COUNT(*)
+                        FROM projects p
+                        WHERE p.company_id = c.id
+                          AND p.deleted_at IS NULL
+                    ) AS project_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM properties pr
+                        WHERE pr.company_id = c.id
+                          AND pr.deleted_at IS NULL
+                    ) AS property_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM listings l
+                        INNER JOIN properties lp ON lp.id = l.property_id
+                        WHERE lp.company_id = c.id
+                          AND l.deleted_at IS NULL
+                          AND lp.deleted_at IS NULL
+                    ) AS listing_count
+             FROM companies c
+             INNER JOIN company_members cm ON cm.company_id = c.id
+             LEFT JOIN locations loc ON loc.id = c.location_id
+             WHERE cm.user_id = :user_id
+               AND cm.member_role = "owner"
+               AND cm.status = "active"
+               AND c.deleted_at IS NULL
+             ORDER BY c.updated_at DESC'
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** @return array<int,array<string,mixed>> */
     public function invitationsForEmail(string $email): array
     {

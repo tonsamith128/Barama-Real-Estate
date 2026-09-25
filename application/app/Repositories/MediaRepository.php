@@ -71,7 +71,8 @@ final class MediaRepository
     public function attachment(int $attachmentId): ?array
     {
         $statement = Database::connection()->prepare(
-            'SELECT ma.*, m.uuid, m.path, m.original_name, m.mime_type, m.disk
+            'SELECT ma.*, m.uuid, m.path, m.original_name, m.mime_type, m.disk,
+                    m.alt_text
              FROM media_attachments ma
              INNER JOIN media_assets m ON m.id = ma.media_asset_id
              WHERE ma.id = :id
@@ -81,6 +82,19 @@ final class MediaRepository
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
+    }
+
+    public function updateAltText(int $mediaId, ?string $altText): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE media_assets
+             SET alt_text = :alt_text
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'alt_text' => $altText,
+            'id' => $mediaId,
+        ]);
     }
 
     public function setPrimary(int $attachmentId): void

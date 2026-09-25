@@ -65,7 +65,7 @@ final class Response
                 'X-Frame-Options' => 'SAMEORIGIN',
                 'Referrer-Policy' => 'strict-origin-when-cross-origin',
                 'Permissions-Policy' => 'camera=(), microphone=(), payment=()',
-                'Content-Security-Policy' => "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; img-src 'self' data: https:; style-src 'self' https://cdn.jsdelivr.net; script-src 'self'; font-src 'self' data: https:; connect-src 'self'",
+                'Content-Security-Policy' => "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; img-src 'self' data: https:; style-src 'self' https://cdn.jsdelivr.net; script-src 'self'; font-src 'self' data: https:; connect-src 'self'; media-src 'self' blob:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
             ];
 
             if (is_https()) {

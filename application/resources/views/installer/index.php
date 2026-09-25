@@ -54,6 +54,10 @@ $jsAssetVersion = (string) (
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="<?= e($assetBase . '/assets/images/branding/favicon-32x32.png') ?>" sizes="32x32" type="image/png">
+    <link rel="icon" href="<?= e($assetBase . '/assets/images/branding/favicon-16x16.png') ?>" sizes="16x16" type="image/png">
+    <link rel="shortcut icon" href="<?= e($assetBase . '/favicon.ico') ?>">
+    <link rel="apple-touch-icon" href="<?= e($assetBase . '/assets/images/branding/apple-touch-icon.png') ?>">
     <meta name="robots" content="noindex,nofollow,noarchive">
     <title><?= e($pageTitle) ?></title>
     <link
@@ -75,7 +79,14 @@ $jsAssetVersion = (string) (
 >
     <aside class="installer-sidebar">
         <div class="installer-brand">
-            <span class="brand__mark" aria-hidden="true">B</span>
+            <img
+                class="installer-brand__logo"
+                src="<?= e($assetBase . '/assets/images/branding/barama-mark-256.png') ?>"
+                alt=""
+                width="42"
+                height="42"
+                aria-hidden="true"
+            >
             <div>
                 <strong>Barama Real Estate</strong>
                 <span>One-click Installer</span>

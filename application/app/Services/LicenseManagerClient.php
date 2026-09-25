@@ -745,7 +745,7 @@ final class LicenseManagerClient
             CURLINFO_RESPONSE_CODE
         );
         $error = curl_error($curl);
-        curl_close($curl);
+        // PHP 8.0+ releases cURL handles automatically; curl_close() is deprecated in PHP 8.5.
 
         if ($body === false || $error !== '') {
             throw new RuntimeException(

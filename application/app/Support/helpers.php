@@ -176,6 +176,13 @@ if (!function_exists('t')) {
     function t(string $key, array $replace = []): string { return Locale::translate($key, $replace); }
 }
 
+if (!function_exists('auth_workspace_can')) {
+    function auth_workspace_can(string $workspace): bool
+    {
+        return auth()->canAccessWorkspace($workspace);
+    }
+}
+
 if (!function_exists('app_icon')) {
     function app_icon(string $name, string $class = ''): string
     {
@@ -209,6 +216,10 @@ if (!function_exists('app_icon')) {
             'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
             'check' => '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
             'alert' => '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v4M12 17h.01"/>',
+            'phone' => '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z"/>',
+            'video' => '<rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2v8l-4-2v-4Z"/><path d="m9 9 4 3-4 3V9Z"/>',
+            'youtube' => '<rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="m10 9 5 3-5 3V9Z"/>',
+            'gallery' => '<rect x="3" y="4" width="14" height="14" rx="2"/><path d="m6 15 3-3 2 2 2-2 4 4"/><path d="M7.5 8.5h.01"/><path d="M7 21h11a3 3 0 0 0 3-3V9"/>',
             'eye' => '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',
         ];
 
@@ -219,5 +230,278 @@ if (!function_exists('app_icon')) {
             . ' viewBox="0 0 24 24" fill="none" stroke="currentColor"'
             . ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
             . ' aria-hidden="true">' . $path . '</svg>';
+    }
+}
+
+/* BARAMA_SINGLE_DETAIL_MEDIA_HELPERS_V100 */
+if (!function_exists('barama_youtube_embed_url')) {
+    function barama_youtube_embed_url(string $value): ?string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $videoId = null;
+
+        if (preg_match('/^[A-Za-z0-9_-]{11}$/', $value) === 1) {
+            $videoId = $value;
+        } else {
+            $parts = parse_url($value);
+
+            if (!is_array($parts)) {
+                return null;
+            }
+
+            $host = strtolower((string) ($parts['host'] ?? ''));
+            $host = preg_replace('/^www\./', '', $host) ?? $host;
+            $path = trim((string) ($parts['path'] ?? ''), '/');
+
+            if ($host === 'youtu.be') {
+                $videoId = explode('/', $path)[0] ?? null;
+            } elseif (in_array($host, ['youtube.com', 'm.youtube.com', 'youtube-nocookie.com'], true)) {
+                if ($path === 'watch') {
+                    parse_str((string) ($parts['query'] ?? ''), $query);
+                    $videoId = isset($query['v']) ? (string) $query['v'] : null;
+                } elseif (
+                    preg_match('#^(?:embed|shorts)/([A-Za-z0-9_-]{11})#', $path, $matches) === 1
+                ) {
+                    $videoId = $matches[1];
+                }
+            }
+        }
+
+        if (!is_string($videoId) || preg_match('/^[A-Za-z0-9_-]{11}$/', $videoId) !== 1) {
+            return null;
+        }
+
+        return 'https://www.youtube-nocookie.com/embed/' . $videoId
+            . '?rel=0&modestbranding=1';
+    }
+}
+
+if (!function_exists('barama_detail_media_kind')) {
+    /** @param array<string,mixed> $media */
+    function barama_detail_media_kind(array $media): string
+    {
+        $mime = strtolower(trim((string) ($media['mime_type'] ?? '')));
+
+        if (str_starts_with($mime, 'image/')) {
+            return 'image';
+        }
+
+        if (str_starts_with($mime, 'video/')) {
+            return 'video';
+        }
+
+        if (
+            $mime === 'text/x-youtube'
+            && barama_youtube_embed_url((string) ($media['path'] ?? '')) !== null
+        ) {
+            return 'youtube';
+        }
+
+        return 'unsupported';
+    }
+}
+
+if (!function_exists('barama_detail_media_stage')) {
+    /**
+     * @param array<int,array<string,mixed>> $gallery
+     */
+    function barama_detail_media_stage(
+        array $gallery,
+        string $title,
+        string $emptyIcon = 'image'
+    ): string {
+        $items = [];
+
+        foreach ($gallery as $media) {
+            if (!is_array($media)) {
+                continue;
+            }
+
+            $kind = barama_detail_media_kind($media);
+
+            if ($kind === 'unsupported') {
+                continue;
+            }
+
+            $media['barama_kind'] = $kind;
+            $items[] = $media;
+        }
+
+        if ($items === []) {
+            return '<div class="detail-media-stage detail-media-stage--empty">'
+                . '<div class="detail-media-stage__empty">'
+                . app_icon($emptyIcon)
+                . '<strong>Media coming soon</strong>'
+                . '<span>Photos, uploaded video, and YouTube media can appear here.</span>'
+                . '</div></div>';
+        }
+
+        $photoCount = 0;
+        $videoCount = 0;
+        $youtubeCount = 0;
+
+        foreach ($items as $item) {
+            if ($item['barama_kind'] === 'image') {
+                $photoCount++;
+            } elseif ($item['barama_kind'] === 'video') {
+                $videoCount++;
+            } elseif ($item['barama_kind'] === 'youtube') {
+                $youtubeCount++;
+            }
+        }
+
+        $html = '<div class="detail-media-stage" data-detail-media-stage>';
+        $html .= '<div class="detail-media-stage__viewer">';
+
+        foreach ($items as $index => $media) {
+            $kind = (string) $media['barama_kind'];
+            $active = $index === 0 ? ' is-active' : '';
+            $alt = (string) ($media['alt_text'] ?: $title);
+            $html .= '<div class="detail-media-slide' . $active . '"'
+                . ' data-detail-media-slide="' . $index . '"'
+                . ' data-detail-media-kind="' . e($kind) . '"'
+                . ($index === 0 ? '' : ' hidden')
+                . '>';
+
+            if ($kind === 'image') {
+                $src = url('/media/' . rawurlencode((string) $media['uuid']));
+                $html .= '<button class="detail-media-slide__image" type="button"'
+                    . ' data-gallery-image'
+                    . ' data-gallery-src="' . e($src) . '"'
+                    . ' data-gallery-alt="' . e($alt) . '">'
+                    . '<img src="' . e($src) . '" alt="' . e($alt) . '"'
+                    . ($index === 0 ? ' fetchpriority="high"' : ' loading="lazy"')
+                    . '>'
+                    . '<span class="detail-media-slide__zoom">' . app_icon('image') . '<span>View photo</span></span>'
+                    . '</button>';
+            } elseif ($kind === 'video') {
+                $src = url('/media/' . rawurlencode((string) $media['uuid']));
+                $html .= '<video controls playsinline preload="metadata" aria-label="' . e($alt) . '">'
+                    . '<source src="' . e($src) . '" type="' . e((string) $media['mime_type']) . '">'
+                    . 'Your browser does not support this video.'
+                    . '</video>';
+            } else {
+                $embed = barama_youtube_embed_url((string) ($media['path'] ?? ''));
+                if ($embed !== null) {
+                    $html .= '<iframe src="' . e($embed) . '"'
+                        . ' title="' . e($alt) . '"'
+                        . ' loading="lazy"'
+                        . ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
+                        . ' referrerpolicy="strict-origin-when-cross-origin"'
+                        . ' allowfullscreen></iframe>';
+                }
+            }
+
+            $html .= '</div>';
+        }
+
+        $html .= '</div>';
+
+        $html .= '<div class="detail-media-stage__toolbar">';
+        $html .= '<div class="detail-media-stage__counts">';
+        if ($photoCount > 0) {
+            $html .= '<span>' . app_icon('image') . e((string) $photoCount) . ' photo' . ($photoCount === 1 ? '' : 's') . '</span>';
+        }
+        if ($videoCount > 0) {
+            $html .= '<span>' . app_icon('video') . e((string) $videoCount) . ' video' . ($videoCount === 1 ? '' : 's') . '</span>';
+        }
+        if ($youtubeCount > 0) {
+            $html .= '<span>' . app_icon('youtube') . e((string) $youtubeCount) . ' YouTube</span>';
+        }
+        $html .= '</div>';
+        $html .= '</div>';
+
+        if (count($items) > 1) {
+            $html .= '<div class="detail-media-thumbs" role="tablist" aria-label="Media gallery">';
+
+            foreach ($items as $index => $media) {
+                $kind = (string) $media['barama_kind'];
+                $active = $index === 0 ? ' is-active' : '';
+                $alt = (string) ($media['alt_text'] ?: $title);
+                $label = match ($kind) {
+                    'video' => 'Video ' . ($index + 1),
+                    'youtube' => 'YouTube ' . ($index + 1),
+                    default => 'Photo ' . ($index + 1),
+                };
+
+                $html .= '<button class="detail-media-thumb' . $active . '"'
+                    . ' type="button" role="tab"'
+                    . ' aria-selected="' . ($index === 0 ? 'true' : 'false') . '"'
+                    . ' aria-label="' . e($label) . '"'
+                    . ' data-detail-media-thumb="' . $index . '">';
+
+                if ($kind === 'image') {
+                    $src = url('/media/' . rawurlencode((string) $media['uuid']));
+                    $html .= '<img src="' . e($src) . '" alt="" loading="lazy">';
+                } else {
+                    $html .= '<span class="detail-media-thumb__icon">'
+                        . app_icon($kind === 'youtube' ? 'youtube' : 'video')
+                        . '</span>';
+                    $html .= '<small>' . e($kind === 'youtube' ? 'YouTube' : 'Video') . '</small>';
+                }
+
+                $html .= '</button>';
+            }
+
+            $html .= '</div>';
+        }
+
+        $html .= '</div>';
+
+        return $html;
+    }
+}
+
+/* BARAMA_DETAIL_PRICE_FORMAT_V102 */
+if (!function_exists('barama_detail_price')) {
+    function barama_detail_price(
+        string $currency,
+        float|int|string $amount,
+        ?string $period = null
+    ): string {
+        $code = strtoupper(trim($currency));
+        $symbols = [
+            'USD' => '$',
+            'KHR' => '៛',
+            'EUR' => '€',
+            'GBP' => '£',
+            'THB' => '฿',
+            'JPY' => '¥',
+            'CNY' => '¥',
+            'SGD' => 'S$',
+            'AUD' => 'A$',
+            'CAD' => 'C$',
+        ];
+
+        $symbol = $symbols[$code] ?? ($code !== '' ? $code . ' ' : '');
+        $formatted = $symbol . number_format((float) $amount, 0);
+
+        $period = strtolower(trim((string) $period));
+        if ($period !== '') {
+            $periodMap = [
+                'monthly' => 'month',
+                'month' => 'month',
+                'per_month' => 'month',
+                'weekly' => 'week',
+                'week' => 'week',
+                'per_week' => 'week',
+                'daily' => 'day',
+                'day' => 'day',
+                'per_day' => 'day',
+                'yearly' => 'year',
+                'annual' => 'year',
+                'year' => 'year',
+                'per_year' => 'year',
+            ];
+
+            $formatted .= '/' . ($periodMap[$period] ?? str_replace('_', '-', $period));
+        }
+
+        return $formatted;
     }
 }

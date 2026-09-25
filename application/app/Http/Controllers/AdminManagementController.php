@@ -68,6 +68,10 @@ final class AdminManagementController
             $status = trim((string) $request->input('status', ''));
             $note = trim((string) $request->input('note', ''));
 
+            if ($status === 'rejected' && $note === '') {
+                throw new InvalidArgumentException('A rejection reason is required before returning this record to the submitter.');
+            }
+
             (new DomainWorkflowService())->transition(
                 $resource,
                 (int) $id,

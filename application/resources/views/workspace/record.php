@@ -91,13 +91,13 @@ if ($workspaceType === 'developer') {
     } elseif ($recordResource === 'inquiry') {
         if ($status === 'new') {
             $actions[] = $workflowButton('read', 'Mark read', 'primary');
+            $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
         } elseif ($status === 'read') {
             $actions[] = $workflowButton('replied', 'Mark replied', 'primary');
-        }
-        if (in_array($status, ['new', 'read', 'replied'], true)) {
-            $actions[] = '<form action="' . e(url('/developer/inquiries/' . (int) $record['id'] . '/lead'))
-                . '" method="post" data-workspace-form>' . csrf_field()
-                . '<button class="btn btn-sm btn-outline-secondary" type="submit">Convert to lead</button></form>';
+            $actions[] = $workflowButton('closed', 'Close');
+            $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
+        } elseif ($status === 'replied') {
+            $actions[] = $workflowButton('closed', 'Close');
         }
     } elseif ($recordResource === 'lead') {
         $next = match ($status) {
@@ -119,12 +119,8 @@ if ($workspaceType === 'developer') {
     }
 } else {
     if ($status === 'pending' && in_array($recordResource, ['company', 'project', 'property', 'listing'], true)) {
-        $actions[] = $workflowButton(
-            $recordResource === 'listing' ? 'published' : 'approved',
-            $recordResource === 'listing' ? 'Approve & publish' : 'Approve',
-            'primary'
-        );
-        $actions[] = $workflowButton('rejected', 'Reject', 'danger');
+        // Pending moderation uses the structured review panel below so the
+        // administrator can capture a decision note before changing state.
     } elseif ($recordResource === 'company' && $status === 'approved') {
         $actions[] = $workflowButton('suspended', 'Suspend', 'danger');
     } elseif ($recordResource === 'company' && $status === 'suspended') {
@@ -188,6 +184,13 @@ $details = match ($recordResource) {
     'inquiry' => [
         'Company' => $record['company_name'] ?? null,
         'Property' => $record['property_title'] ?? null,
+        'Reference' => $record['reference_code'] ?? null,
+        'Location' => $record['location_name'] ?? null,
+        'Offer' => $record['transaction_type'] ?? null,
+        'Price' => ($record['price'] ?? null) !== null
+            ? (string) ($record['currency'] ?? 'USD') . ' ' . number_format((float) $record['price'], 2)
+            : null,
+        'Assigned to' => $record['assigned_user_name'] ?? null,
         'Email' => $record['contact_email'] ?? null,
         'Phone' => $record['contact_phone'] ?? null,
         'Preferred contact' => $record['preferred_contact'] ?? null,
@@ -200,6 +203,12 @@ $details = match ($recordResource) {
         'Customer email' => $record['customer_email'] ?? null,
         'Company' => $record['company_name'] ?? null,
         'Property' => $record['property_title'] ?? null,
+        'Reference' => $record['reference_code'] ?? null,
+        'Location' => $record['location_name'] ?? null,
+        'Offer' => $record['transaction_type'] ?? null,
+        'Price' => ($record['price'] ?? null) !== null
+            ? (string) ($record['currency'] ?? 'USD') . ' ' . number_format((float) $record['price'], 2)
+            : null,
         'Preferred date' => $record['preferred_date'] ?? null,
         'Preferred time' => $record['preferred_time_window'] ?? null,
         'Alternate date' => $record['alternate_date'] ?? null,
@@ -209,6 +218,9 @@ $details = match ($recordResource) {
     ],
     'lead' => [
         'Company' => $record['company_name'] ?? null,
+        'Source inquiry' => $record['source_inquiry_id'] ?? null,
+        'Source property' => $record['source_property_title'] ?? null,
+        'Property reference' => $record['source_property_reference'] ?? null,
         'Email' => $record['contact_email'] ?? null,
         'Phone' => $record['contact_phone'] ?? null,
         'Assigned to' => $record['assigned_user_name'] ?? null,
@@ -243,6 +255,35 @@ $details = match ($recordResource) {
 
     <div data-workspace-notice hidden></div>
 
+    <?php if ($workspaceType === 'admin' && $status === 'pending' && in_array($recordResource, ['company','project','property','listing'], true)): ?>
+        <section class="workspace-admin-moderation" aria-labelledby="admin-moderation-title">
+            <div class="workspace-admin-moderation__intro">
+                <span class="workspace-admin-moderation__icon"><?= app_icon('shield') ?></span>
+                <div>
+                    <span class="eyebrow">Moderation decision</span>
+                    <h2 id="admin-moderation-title">Review before changing publication state</h2>
+                    <p>Confirm the record details and attached media. A rejection reason is required so the submitter knows what must be corrected.</p>
+                </div>
+            </div>
+            <form action="<?= e(url('/dashboard/workflow/' . rawurlencode($recordResource) . '/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-admin-moderation__form">
+                <?= csrf_field() ?>
+                <label>
+                    <span>Decision</span>
+                    <select class="form-select" name="status" required>
+                        <option value="">Choose a decision</option>
+                        <option value="<?= $recordResource === 'listing' ? 'published' : 'approved' ?>"><?= $recordResource === 'listing' ? 'Approve & publish' : 'Approve' ?></option>
+                        <option value="rejected">Reject and return for correction</option>
+                    </select>
+                </label>
+                <label class="workspace-admin-moderation__note">
+                    <span>Decision note <small>Required for rejection</small></span>
+                    <textarea class="form-control" name="note" rows="4" maxlength="500" placeholder="Add review context, approval notes, or the exact corrections required for rejection."></textarea>
+                </label>
+                <button class="btn btn-primary" type="submit"><?= app_icon('check') ?> Apply decision</button>
+            </form>
+        </section>
+    <?php endif; ?>
+
     <?php if ($workspaceType === 'developer' && in_array($recordResource, ['company','project','property','listing'], true) && !$editable): ?>
         <div class="workspace-lock-note">
             <?= app_icon('shield') ?>
@@ -251,6 +292,31 @@ $details = match ($recordResource) {
                 <span>This record can be viewed and moved through its allowed workflow, but content and media cannot be changed while it is in the <?= e($humanize($status)) ?> state.</span>
             </div>
         </div>
+    <?php endif; ?>
+
+    <?php if ($workspaceType === 'developer' && in_array($recordResource, ['company','project','property','listing'], true)): ?>
+        <?php
+        $portfolioState = match (true) {
+            $status === 'draft' => ['edit', 'Draft — ready for editing', 'Complete the record and submit it for review when it is ready.'],
+            $status === 'pending' => ['clock', 'Pending marketplace review', 'Content is locked while an administrator reviews this submission.'],
+            $status === 'rejected' => ['alert', 'Changes requested', 'Review the moderation history, return the record to draft, make corrections, then resubmit.'],
+            $recordResource === 'company' && $status === 'approved' => ['shield', 'Company approved', 'This company can own approved marketplace inventory and workspace members.'],
+            $recordResource === 'project' && $status === 'approved' => ['shield', 'Project approved', 'The project passed moderation and can now be published.'],
+            $recordResource === 'project' && $status === 'published' => ['home', 'Project published', 'This development project is available to the marketplace.'],
+            $recordResource === 'property' && $status === 'approved' => ['shield', 'Property approved', 'The canonical property can now be used for sale or rental listings.'],
+            $recordResource === 'listing' && $status === 'published' => ['tag', 'Listing live', 'The offer is visible to marketplace customers until paused, closed, or expired.'],
+            $recordResource === 'listing' && $status === 'paused' => ['clock', 'Listing paused', 'The offer is temporarily hidden and can be resumed or closed.'],
+            in_array($status, ['archived','closed','expired','suspended'], true) => ['shield', $humanize($status), 'This record is outside the active marketplace lifecycle.'],
+            default => ['shield', $humanize($status), 'This record remains protected by company-scoped workspace access.'],
+        };
+        ?>
+        <section class="workspace-portfolio-state">
+            <span class="workspace-portfolio-state__icon"><?= app_icon((string) $portfolioState[0]) ?></span>
+            <div>
+                <strong><?= e((string) $portfolioState[1]) ?></strong>
+                <span><?= e((string) $portfolioState[2]) ?></span>
+            </div>
+        </section>
     <?php endif; ?>
 
     <div class="workspace-record-layout">
@@ -284,6 +350,42 @@ $details = match ($recordResource) {
                     <div class="workspace-record-copy"><h3><?= e($copyHeading) ?></h3><p><?= nl2br(e((string) $longText)) ?></p></div>
                 <?php endif; ?>
             </section>
+
+            <?php if ($workspaceType === 'developer' && $recordResource === 'inquiry'): ?>
+                <section class="workspace-record-panel workspace-customer-operation-panel">
+                    <div class="workspace-record-panel__head">
+                        <h2>Property lead qualification</h2>
+                        <span>Convert only genuine listing interest into the company property-lead pipeline.</span>
+                    </div>
+
+                    <?php if (!empty($record['converted_lead_id'])): ?>
+                        <div class="workspace-operation-ready">
+                            <span class="workspace-operation-ready__icon"><?= app_icon('pipeline') ?></span>
+                            <div>
+                                <strong>Inquiry converted to a property lead</strong>
+                                <span>Current lead stage: <?= e($humanize($record['converted_lead_stage'] ?? 'new')) ?>.</span>
+                            </div>
+                            <a class="btn btn-primary btn-sm" href="<?= e(url('/developer/manage/lead/' . (int) $record['converted_lead_id'])) ?>">Open lead</a>
+                        </div>
+                    <?php elseif (in_array($status, ['new', 'read', 'replied'], true)): ?>
+                        <form action="<?= e(url('/developer/inquiries/' . (int) $record['id'] . '/lead')) ?>" method="post" data-workspace-form class="workspace-form">
+                            <?= csrf_field() ?>
+                            <div class="workspace-form__grid">
+                                <label><span>Interest</span><select class="form-select" name="transaction_type"><option value="">Not specified</option><option value="sale" <?= ($record['transaction_type'] ?? '') === 'sale' ? 'selected' : '' ?>>For sale</option><option value="rent" <?= ($record['transaction_type'] ?? '') === 'rent' ? 'selected' : '' ?>>For rent</option></select></label>
+                                <label><span>Property type</span><select class="form-select" name="property_type"><option value="">Not specified</option><?php foreach (['apartment','condominium','house','villa','townhouse','land','office','retail','warehouse','industrial','hotel','commercial','other'] as $type): ?><option value="<?= e($type) ?>" <?= ($record['property_type'] ?? '') === $type ? 'selected' : '' ?>><?= e($humanize($type)) ?></option><?php endforeach; ?></select></label>
+                                <label><span>Preferred location</span><select class="form-select" name="preferred_location_id"><option value="">Not specified</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (int) ($record['location_id'] ?? 0) === (int) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                                <label><span>Currency</span><input class="form-control" name="currency" value="<?= e((string) ($record['currency'] ?? 'USD')) ?>" maxlength="3"></label>
+                                <label><span>Minimum budget</span><input class="form-control" type="number" min="0" step="0.01" name="budget_min"></label>
+                                <label><span>Maximum budget</span><input class="form-control" type="number" min="0" step="0.01" name="budget_max"></label>
+                                <label class="workspace-form__span-2"><span>Qualification notes</span><textarea class="form-control" name="notes" rows="4" maxlength="10000" placeholder="Property requirements or qualification notes relevant to this inquiry"></textarea></label>
+                            </div>
+                            <button class="btn btn-primary" type="submit"><?= app_icon('pipeline') ?> Convert to property lead</button>
+                        </form>
+                    <?php else: ?>
+                        <div class="workspace-record-empty">Closed or spam inquiries cannot be converted into property leads.</div>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
 
             <?php if ($workspaceType === 'developer' && $recordResource === 'viewing'): ?>
                 <section class="workspace-record-panel">
@@ -422,8 +524,17 @@ $details = match ($recordResource) {
                                     </div>
                                     <div class="workspace-media-item__body">
                                         <strong><?= e((string) $item['original_name']) ?></strong>
-                                        <span><?= e((string) $item['mime_type']) ?><?= !empty($item['is_primary']) ? ' · Primary' : '' ?></span>
+                                        <span><?= e((string) $item['mime_type']) ?> · <?= e($humanize($item['collection'] ?? 'gallery')) ?><?= !empty($item['is_primary']) ? ' · Primary' : '' ?></span>
+                                        <?php if (!empty($item['alt_text'])): ?><small class="workspace-media-item__alt"><?= e((string) $item['alt_text']) ?></small><?php endif; ?>
                                         <?php if ($editable): ?>
+                                            <form action="<?= e(url('/developer/media/' . (int) $item['attachment_id'] . '/alt-text')) ?>" method="post" data-workspace-form class="workspace-media-alt-form">
+                                                <?= csrf_field() ?>
+                                                <label>
+                                                    <span>Alt text</span>
+                                                    <input class="form-control" name="alt_text" value="<?= e((string) ($item['alt_text'] ?? '')) ?>" maxlength="255" placeholder="Describe this real-estate image">
+                                                </label>
+                                                <button type="submit">Update alt text</button>
+                                            </form>
                                             <div class="workspace-media-item__actions">
                                                 <?php if (empty($item['is_primary']) && str_starts_with((string) $item['mime_type'], 'image/')): ?>
                                                     <form action="<?= e(url('/developer/media/' . (int) $item['attachment_id'] . '/primary')) ?>" method="post" data-workspace-form><?= csrf_field() ?><button type="submit">Make primary</button></form>

@@ -14,6 +14,27 @@ use Throwable;
 
 final class MediaManagementService
 {
+    public function updateAltText(int $attachmentId, ?string $altText): void
+    {
+        $media = new MediaRepository();
+        $attachment = $this->manageableAttachment($media, $attachmentId);
+
+        $altText = $altText !== null ? trim($altText) : null;
+
+        if ($altText === '') {
+            $altText = null;
+        }
+
+        if ($altText !== null && mb_strlen($altText) > 255) {
+            throw new InvalidArgumentException('Alt text cannot exceed 255 characters.');
+        }
+
+        $media->updateAltText(
+            (int) $attachment['media_asset_id'],
+            $altText
+        );
+    }
+
     public function setPrimary(int $attachmentId): void
     {
         $media = new MediaRepository();

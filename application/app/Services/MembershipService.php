@@ -140,6 +140,57 @@ final class MembershipService
         (new AccountSettingsRepository())->revokeInvitation($invitationId, $companyId);
     }
 
+    public function updateRole(int $companyId, int $userId, string $memberRole): void
+    {
+        if (!in_array($memberRole, ['manager', 'agent', 'member'], true)) {
+            throw new InvalidArgumentException('Invalid assignable company member role.');
+        }
+
+        $actor = $this->assertCanManageMembers($companyId);
+        $target = (new CompanyMembershipRepository())
+            ->findActiveMembership($companyId, $userId);
+
+        if ($target === null) {
+            throw new InvalidArgumentException('Company member was not found.');
+        }
+
+        if ((string) $target['member_role'] === 'owner') {
+            throw new DomainException('The company owner role cannot be changed here.');
+        }
+
+        $auth = new AuthService();
+
+        if (!$auth->hasRole('administrator')) {
+            $actorMembership = (new CompanyMembershipRepository())
+                ->findActiveMembership($companyId, (int) $actor['id']);
+
+            if (
+                $actorMembership === null
+                || !in_array((string) $actorMembership['member_role'], self::MANAGER_ROLES, true)
+            ) {
+                throw new DomainException('Company owner or manager access is required.');
+            }
+
+            if (
+                (string) $actorMembership['member_role'] !== 'owner'
+                && (
+                    (string) $target['member_role'] === 'manager'
+                    || $memberRole === 'manager'
+                )
+            ) {
+                throw new DomainException(
+                    'Only the company owner can assign or change the manager role.'
+                );
+            }
+        }
+
+        (new CompanyMembershipWriteRepository())->updateRole(
+            $companyId,
+            $userId,
+            $memberRole
+        );
+    }
+
     public function deactivate(int $companyId, int $userId): void
     {
         $this->assertCanManageMembers($companyId);

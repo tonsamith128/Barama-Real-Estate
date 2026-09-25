@@ -89,6 +89,7 @@ final class WorkspaceReadRepository
      *     companies: array<int, array<string, mixed>>,
      *     projects: array<int, array<string, mixed>>,
      *     properties: array<int, array<string, mixed>>,
+     *     listings: array<int, array<string, mixed>>,
      *     locations: array<int, array<string, mixed>>
      * }
      */
@@ -132,6 +133,23 @@ final class WorkspaceReadRepository
         );
         $properties->execute(['user_id' => $userId]);
 
+        $listings = $pdo->prepare(
+            'SELECT l.id, l.property_id, l.transaction_type, l.status,
+                    p.title AS property_title, p.reference_code, p.company_id,
+                    c.name AS company_name
+             FROM listings l
+             INNER JOIN properties p ON p.id = l.property_id
+             INNER JOIN companies c ON c.id = p.company_id
+             INNER JOIN company_members cm ON cm.company_id = p.company_id
+             WHERE cm.user_id = :user_id
+               AND cm.status = "active"
+               AND l.deleted_at IS NULL
+               AND p.deleted_at IS NULL
+             ORDER BY p.title ASC, l.id ASC
+             LIMIT 400'
+        );
+        $listings->execute(['user_id' => $userId]);
+
         $locations = $pdo->query(
             'SELECT id, name, type
              FROM locations
@@ -144,6 +162,7 @@ final class WorkspaceReadRepository
             'companies' => $companies->fetchAll(PDO::FETCH_ASSOC),
             'projects' => $projects->fetchAll(PDO::FETCH_ASSOC),
             'properties' => $properties->fetchAll(PDO::FETCH_ASSOC),
+            'listings' => $listings->fetchAll(PDO::FETCH_ASSOC),
             'locations' => $locations->fetchAll(PDO::FETCH_ASSOC),
         ];
     }
@@ -171,30 +190,46 @@ final class WorkspaceReadRepository
         [$sql, $countSql, $params] = match ($section) {
             'overview', 'inquiries' => [
                 'SELECT i.id, i.contact_name, i.contact_email, i.contact_phone,
-                        i.status, i.source, i.created_at,
+                        i.status, i.source, i.created_at, i.responded_at,
+                        i.assigned_user_id,
                         c.name AS company_name,
-                        p.title AS property_title
+                        p.title AS property_title, p.reference_code,
+                        p.property_type, p.location_id,
+                        loc.name AS location_name,
+                        l.transaction_type, l.price, l.currency,
+                        assigned.name AS assigned_user_name,
+                        (SELECT MIN(ld.id) FROM leads ld WHERE ld.inquiry_id = i.id AND ld.deleted_at IS NULL) AS converted_lead_id,
+                        (SELECT ld.stage FROM leads ld WHERE ld.inquiry_id = i.id AND ld.deleted_at IS NULL ORDER BY ld.id ASC LIMIT 1) AS converted_lead_stage
+                 FROM inquiries i
+                 INNER JOIN company_members cm ON cm.company_id = i.company_id
+                 LEFT JOIN companies c ON c.id = i.company_id
+                 LEFT JOIN properties p ON p.id = i.property_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
+                 LEFT JOIN listings l ON l.id = i.listing_id
+                 LEFT JOIN users assigned ON assigned.id = i.assigned_user_id
+                 WHERE cm.user_id = :user_id
+                   AND cm.status = "active"
+                   AND CONCAT_WS(" ", i.contact_name, i.contact_email, i.contact_phone, c.name, p.title, p.reference_code) LIKE :search
+                 ORDER BY i.created_at DESC',
+                'SELECT COUNT(*)
                  FROM inquiries i
                  INNER JOIN company_members cm ON cm.company_id = i.company_id
                  LEFT JOIN companies c ON c.id = i.company_id
                  LEFT JOIN properties p ON p.id = i.property_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
-                   AND CONCAT_WS(" ", i.contact_name, i.contact_email, i.contact_phone) LIKE :search
-                 ORDER BY i.created_at DESC',
-                'SELECT COUNT(*)
-                 FROM inquiries i
-                 INNER JOIN company_members cm ON cm.company_id = i.company_id
-                 WHERE cm.user_id = :user_id
-                   AND cm.status = "active"
-                   AND CONCAT_WS(" ", i.contact_name, i.contact_email, i.contact_phone) LIKE :search',
+                   AND CONCAT_WS(" ", i.contact_name, i.contact_email, i.contact_phone, c.name, p.title, p.reference_code) LIKE :search',
                 ['user_id' => $userId, 'search' => $search],
             ],
             'company' => [
                 'SELECT c.id, c.name, c.company_type, c.status, c.email, c.phone,
-                        c.location_id, c.updated_at, cm.member_role
+                        c.location_id, c.updated_at, cm.member_role,
+                        loc.name AS location_name,
+                        (SELECT COUNT(*) FROM projects p2 WHERE p2.company_id = c.id AND p2.deleted_at IS NULL) AS projects_count,
+                        (SELECT COUNT(*) FROM properties p3 WHERE p3.company_id = c.id AND p3.deleted_at IS NULL) AS properties_count
                  FROM companies c
                  INNER JOIN company_members cm ON cm.company_id = c.id
+                 LEFT JOIN locations loc ON loc.id = c.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
                    AND c.deleted_at IS NULL
@@ -211,10 +246,13 @@ final class WorkspaceReadRepository
             ],
             'projects' => [
                 'SELECT p.id, p.name, p.project_type, p.completion_status, p.status,
-                        p.location_id, p.updated_at, c.name AS company_name
+                        p.location_id, p.updated_at, c.name AS company_name,
+                        loc.name AS location_name,
+                        (SELECT COUNT(*) FROM properties prop WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count
                  FROM projects p
                  INNER JOIN company_members cm ON cm.company_id = p.company_id
                  INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
                    AND p.deleted_at IS NULL
@@ -232,10 +270,12 @@ final class WorkspaceReadRepository
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.property_type, p.status,
                         p.location_id, p.bedrooms, p.bathrooms, p.updated_at,
-                        c.name AS company_name
+                        c.name AS company_name, loc.name AS location_name,
+                        (SELECT COUNT(*) FROM listings li WHERE li.property_id = p.id AND li.deleted_at IS NULL) AS listings_count
                  FROM properties p
                  INNER JOIN company_members cm ON cm.company_id = p.company_id
                  INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
                    AND p.deleted_at IS NULL
@@ -252,12 +292,15 @@ final class WorkspaceReadRepository
             ],
             'listings' => [
                 'SELECT l.id, p.title AS property_title, p.reference_code,
-                        p.property_type, p.location_id,
+                        p.property_type, p.location_id, c.name AS company_name,
+                        loc.name AS location_name,
                         l.transaction_type, l.status, l.price, l.currency,
-                        l.pricing_period, l.updated_at
+                        l.pricing_period, l.expires_at, l.updated_at
                  FROM listings l
                  INNER JOIN properties p ON p.id = l.property_id
                  INNER JOIN company_members cm ON cm.company_id = p.company_id
+                 INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
                    AND l.deleted_at IS NULL
@@ -276,41 +319,64 @@ final class WorkspaceReadRepository
                 ['user_id' => $userId, 'search' => $search],
             ],
             'leads' => [
-                'SELECT l.id, l.contact_name, l.contact_email, l.contact_phone,
-                        l.stage, l.transaction_type, l.preferred_location_id,
-                        l.budget_min, l.budget_max,
-                        l.currency, l.updated_at, c.name AS company_name
+                'SELECT l.id, l.inquiry_id, l.contact_name, l.contact_email, l.contact_phone,
+                        l.stage, l.transaction_type, l.property_type,
+                        l.preferred_location_id, l.budget_min, l.budget_max,
+                        l.currency, l.assigned_user_id, l.updated_at,
+                        c.name AS company_name,
+                        assigned.name AS assigned_user_name,
+                        loc.name AS preferred_location_name,
+                        i.id AS source_inquiry_id,
+                        p.title AS source_property_title,
+                        p.reference_code AS source_property_reference,
+                        listing.slug AS source_listing_slug
                  FROM leads l
                  INNER JOIN company_members cm ON cm.company_id = l.company_id
                  INNER JOIN companies c ON c.id = l.company_id
+                 LEFT JOIN users assigned ON assigned.id = l.assigned_user_id
+                 LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                 LEFT JOIN inquiries i ON i.id = l.inquiry_id
+                 LEFT JOIN properties p ON p.id = i.property_id
+                 LEFT JOIN listings listing ON listing.id = i.listing_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
                    AND l.deleted_at IS NULL
-                   AND CONCAT_WS(" ", l.contact_name, l.contact_email, l.contact_phone) LIKE :search
+                   AND CONCAT_WS(" ", l.contact_name, l.contact_email, l.contact_phone, c.name, assigned.name, loc.name, p.title, p.reference_code) LIKE :search
                  ORDER BY l.updated_at DESC',
                 'SELECT COUNT(*)
                  FROM leads l
                  INNER JOIN company_members cm ON cm.company_id = l.company_id
+                 INNER JOIN companies c ON c.id = l.company_id
+                 LEFT JOIN users assigned ON assigned.id = l.assigned_user_id
+                 LEFT JOIN locations loc ON loc.id = l.preferred_location_id
+                 LEFT JOIN inquiries i ON i.id = l.inquiry_id
+                 LEFT JOIN properties p ON p.id = i.property_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
                    AND l.deleted_at IS NULL
-                   AND CONCAT_WS(" ", l.contact_name, l.contact_email, l.contact_phone) LIKE :search',
+                   AND CONCAT_WS(" ", l.contact_name, l.contact_email, l.contact_phone, c.name, assigned.name, loc.name, p.title, p.reference_code) LIKE :search',
                 ['user_id' => $userId, 'search' => $search],
             ],
             'viewings' => [
                 'SELECT v.id, v.status, v.preferred_date, v.preferred_time_window,
-                        v.scheduled_for, v.updated_at,
+                        v.alternate_date, v.alternate_time_window,
+                        v.scheduled_for, v.company_note, v.created_at, v.updated_at,
                         u.name AS customer_name, u.email AS customer_email,
-                        p.title AS property_title, c.name AS company_name
+                        p.title AS property_title, p.reference_code,
+                        p.property_type, p.location_id,
+                        loc.name AS location_name,
+                        c.name AS company_name,
+                        l.transaction_type, l.price, l.currency
                  FROM viewing_requests v
                  INNER JOIN company_members cm ON cm.company_id = v.company_id
                  INNER JOIN users u ON u.id = v.user_id
                  INNER JOIN listings l ON l.id = v.listing_id
                  INNER JOIN properties p ON p.id = l.property_id
                  INNER JOIN companies c ON c.id = v.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
-                   AND CONCAT_WS(" ", u.name, u.email, p.title, c.name) LIKE :search
+                   AND CONCAT_WS(" ", u.name, u.email, p.title, p.reference_code, c.name, loc.name) LIKE :search
                  ORDER BY v.updated_at DESC',
                 'SELECT COUNT(*)
                  FROM viewing_requests v
@@ -319,9 +385,10 @@ final class WorkspaceReadRepository
                  INNER JOIN listings l ON l.id = v.listing_id
                  INNER JOIN properties p ON p.id = l.property_id
                  INNER JOIN companies c ON c.id = v.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
-                   AND CONCAT_WS(" ", u.name, u.email, p.title, c.name) LIKE :search',
+                   AND CONCAT_WS(" ", u.name, u.email, p.title, p.reference_code, c.name, loc.name) LIKE :search',
                 ['user_id' => $userId, 'search' => $search],
             ],
             'team' => [
@@ -329,13 +396,15 @@ final class WorkspaceReadRepository
                  FROM (
                     SELECT "member" AS row_type, u.id, u.name, u.email,
                            cm.member_role, cm.status, cm.joined_at,
-                           c.id AS company_id, c.name AS company_name
+                           NULL AS expires_at,
+                           c.id AS company_id, c.name AS company_name,
+                           viewer.member_role AS viewer_role
                     FROM company_members cm
                     INNER JOIN companies c ON c.id = cm.company_id
                     INNER JOIN users u ON u.id = cm.user_id
                     INNER JOIN company_members viewer
                        ON viewer.company_id = cm.company_id
-                      AND viewer.user_id = :user_id
+                      AND viewer.user_id = :team_user_member
                       AND viewer.status = "active"
                     WHERE c.deleted_at IS NULL
 
@@ -344,12 +413,14 @@ final class WorkspaceReadRepository
                     SELECT "invitation" AS row_type, i.id,
                            "Pending invitation" AS name, i.email,
                            i.member_role, i.status, i.created_at AS joined_at,
-                           c.id AS company_id, c.name AS company_name
+                           i.expires_at,
+                           c.id AS company_id, c.name AS company_name,
+                           viewer.member_role AS viewer_role
                     FROM company_invitations i
                     INNER JOIN companies c ON c.id = i.company_id
                     INNER JOIN company_members viewer
                        ON viewer.company_id = i.company_id
-                      AND viewer.user_id = :user_id
+                      AND viewer.user_id = :team_user_invite
                       AND viewer.status = "active"
                     WHERE i.status = "pending"
                       AND i.expires_at > CURRENT_TIMESTAMP
@@ -365,7 +436,7 @@ final class WorkspaceReadRepository
                     INNER JOIN users u ON u.id = cm.user_id
                     INNER JOIN company_members viewer
                        ON viewer.company_id = cm.company_id
-                      AND viewer.user_id = :user_id
+                      AND viewer.user_id = :team_user_member
                       AND viewer.status = "active"
                     WHERE c.deleted_at IS NULL
 
@@ -377,25 +448,113 @@ final class WorkspaceReadRepository
                     INNER JOIN companies c ON c.id = i.company_id
                     INNER JOIN company_members viewer
                        ON viewer.company_id = i.company_id
-                      AND viewer.user_id = :user_id
+                      AND viewer.user_id = :team_user_invite
                       AND viewer.status = "active"
                     WHERE i.status = "pending"
                       AND i.expires_at > CURRENT_TIMESTAMP
                       AND c.deleted_at IS NULL
                  ) team_rows
                  WHERE CONCAT_WS(" ", name, email, company_name) LIKE :search',
-                ['user_id' => $userId, 'search' => $search],
+                [
+                    'team_user_member' => $userId,
+                    'team_user_invite' => $userId,
+                    'search' => $search,
+                ],
             ],
             'media' => [
-                'SELECT m.id, m.original_name, m.mime_type, m.size_bytes,
-                        m.width_px, m.height_px, m.created_at
-                 FROM media_assets m
-                 WHERE m.created_by_user_id = :user_id
-                   AND m.original_name LIKE :search
-                 ORDER BY m.created_at DESC',
+                'SELECT ma.id, m.id AS media_id, m.uuid, m.original_name,
+                        m.mime_type, m.size_bytes, m.width_px, m.height_px,
+                        m.alt_text, m.created_at,
+                        ma.entity_type, ma.entity_id, ma.collection,
+                        ma.position, ma.is_primary,
+                        CASE ma.entity_type
+                            WHEN "company" THEN company_target.name
+                            WHEN "project" THEN project_target.name
+                            WHEN "property" THEN property_target.title
+                            WHEN "listing" THEN listing_property.title
+                            ELSE NULL
+                        END AS target_title,
+                        COALESCE(
+                            company_target.name,
+                            project_company.name,
+                            property_company.name,
+                            listing_company.name
+                        ) AS company_name,
+                        CASE ma.entity_type
+                            WHEN "company" THEN company_target.status
+                            WHEN "project" THEN project_target.status
+                            WHEN "property" THEN property_target.status
+                            WHEN "listing" THEN listing_target.status
+                            ELSE NULL
+                        END AS target_status
+                 FROM media_attachments ma
+                 INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                 LEFT JOIN companies company_target
+                    ON ma.entity_type = "company" AND company_target.id = ma.entity_id
+                 LEFT JOIN projects project_target
+                    ON ma.entity_type = "project" AND project_target.id = ma.entity_id
+                 LEFT JOIN companies project_company
+                    ON project_company.id = project_target.company_id
+                 LEFT JOIN properties property_target
+                    ON ma.entity_type = "property" AND property_target.id = ma.entity_id
+                 LEFT JOIN companies property_company
+                    ON property_company.id = property_target.company_id
+                 LEFT JOIN listings listing_target
+                    ON ma.entity_type = "listing" AND listing_target.id = ma.entity_id
+                 LEFT JOIN properties listing_property
+                    ON listing_property.id = listing_target.property_id
+                 LEFT JOIN companies listing_company
+                    ON listing_company.id = listing_property.company_id
+                 WHERE EXISTS (
+                    SELECT 1
+                    FROM company_members viewer
+                    WHERE viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                      AND viewer.company_id = COALESCE(
+                        company_target.id,
+                        project_target.company_id,
+                        property_target.company_id,
+                        listing_property.company_id
+                      )
+                 )
+                   AND CONCAT_WS(
+                        " ",
+                        m.original_name,
+                        m.alt_text,
+                        company_target.name,
+                        project_target.name,
+                        property_target.title,
+                        listing_property.title,
+                        project_company.name,
+                        property_company.name,
+                        listing_company.name
+                   ) LIKE :search
+                 ORDER BY m.created_at DESC, ma.id DESC',
                 'SELECT COUNT(*)
-                 FROM media_assets m
-                 WHERE m.created_by_user_id = :user_id
+                 FROM media_attachments ma
+                 INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                 LEFT JOIN companies company_target
+                    ON ma.entity_type = "company" AND company_target.id = ma.entity_id
+                 LEFT JOIN projects project_target
+                    ON ma.entity_type = "project" AND project_target.id = ma.entity_id
+                 LEFT JOIN properties property_target
+                    ON ma.entity_type = "property" AND property_target.id = ma.entity_id
+                 LEFT JOIN listings listing_target
+                    ON ma.entity_type = "listing" AND listing_target.id = ma.entity_id
+                 LEFT JOIN properties listing_property
+                    ON listing_property.id = listing_target.property_id
+                 WHERE EXISTS (
+                    SELECT 1
+                    FROM company_members viewer
+                    WHERE viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                      AND viewer.company_id = COALESCE(
+                        company_target.id,
+                        project_target.company_id,
+                        property_target.company_id,
+                        listing_property.company_id
+                      )
+                 )
                    AND m.original_name LIKE :search',
                 ['user_id' => $userId, 'search' => $search],
             ],
@@ -412,6 +571,280 @@ final class WorkspaceReadRepository
         );
 
         return $this->paginate($sql, $countSql, $params, $page, $perPage);
+    }
+
+    /** @return array<string,int> */
+    public function developerWorkspaceManagementSummary(int $userId, string $section): array
+    {
+        $pdo = Database::connection();
+
+        if ($section === 'team') {
+            $statement = $pdo->prepare(
+                'SELECT
+                    (
+                        SELECT COUNT(*)
+                        FROM company_members cm
+                        WHERE cm.status = "active"
+                          AND EXISTS (
+                            SELECT 1 FROM company_members viewer
+                            WHERE viewer.company_id = cm.company_id
+                              AND viewer.user_id = :user_id
+                              AND viewer.status = "active"
+                          )
+                    )
+                    +
+                    (
+                        SELECT COUNT(*)
+                        FROM company_invitations i
+                        WHERE i.status = "pending"
+                          AND i.expires_at > CURRENT_TIMESTAMP
+                          AND EXISTS (
+                            SELECT 1 FROM company_members viewer
+                            WHERE viewer.company_id = i.company_id
+                              AND viewer.user_id = :user_id2
+                              AND viewer.status = "active"
+                          )
+                    ) AS total,
+                    (
+                        SELECT COUNT(*)
+                        FROM company_members cm
+                        WHERE cm.status = "active"
+                          AND EXISTS (
+                            SELECT 1 FROM company_members viewer
+                            WHERE viewer.company_id = cm.company_id
+                              AND viewer.user_id = :user_id3
+                              AND viewer.status = "active"
+                          )
+                    ) AS active_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM company_members cm
+                        WHERE cm.status = "active"
+                          AND cm.member_role = "manager"
+                          AND EXISTS (
+                            SELECT 1 FROM company_members viewer
+                            WHERE viewer.company_id = cm.company_id
+                              AND viewer.user_id = :user_id4
+                              AND viewer.status = "active"
+                          )
+                    ) AS managers_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM company_members cm
+                        WHERE cm.status = "active"
+                          AND cm.member_role = "agent"
+                          AND EXISTS (
+                            SELECT 1 FROM company_members viewer
+                            WHERE viewer.company_id = cm.company_id
+                              AND viewer.user_id = :user_id5
+                              AND viewer.status = "active"
+                          )
+                    ) AS agents_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM company_invitations i
+                        WHERE i.status = "pending"
+                          AND i.expires_at > CURRENT_TIMESTAMP
+                          AND EXISTS (
+                            SELECT 1 FROM company_members viewer
+                            WHERE viewer.company_id = i.company_id
+                              AND viewer.user_id = :user_id6
+                              AND viewer.status = "active"
+                          )
+                    ) AS pending_count'
+            );
+            $statement->execute([
+                'user_id' => $userId,
+                'user_id2' => $userId,
+                'user_id3' => $userId,
+                'user_id4' => $userId,
+                'user_id5' => $userId,
+                'user_id6' => $userId,
+            ]);
+        } elseif ($section === 'media') {
+            $statement = $pdo->prepare(
+                'SELECT
+                    COUNT(*) AS total,
+                    SUM(m.mime_type LIKE "image/%") AS images_count,
+                    SUM(m.mime_type = "application/pdf") AS pdfs_count,
+                    SUM(ma.is_primary = 1) AS primary_count,
+                    SUM(
+                        CASE ma.entity_type
+                            WHEN "company" THEN company_target.status NOT IN ("draft", "rejected")
+                            WHEN "project" THEN project_target.status NOT IN ("draft", "rejected")
+                            WHEN "property" THEN property_target.status NOT IN ("draft", "rejected")
+                            WHEN "listing" THEN listing_target.status NOT IN ("draft", "rejected")
+                            ELSE 1
+                        END
+                    ) AS locked_count
+                 FROM media_attachments ma
+                 INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                 LEFT JOIN companies company_target
+                    ON ma.entity_type = "company" AND company_target.id = ma.entity_id
+                 LEFT JOIN projects project_target
+                    ON ma.entity_type = "project" AND project_target.id = ma.entity_id
+                 LEFT JOIN properties property_target
+                    ON ma.entity_type = "property" AND property_target.id = ma.entity_id
+                 LEFT JOIN listings listing_target
+                    ON ma.entity_type = "listing" AND listing_target.id = ma.entity_id
+                 LEFT JOIN properties listing_property
+                    ON listing_property.id = listing_target.property_id
+                 WHERE EXISTS (
+                    SELECT 1
+                    FROM company_members viewer
+                    WHERE viewer.user_id = :user_id
+                      AND viewer.status = "active"
+                      AND viewer.company_id = COALESCE(
+                        company_target.id,
+                        project_target.company_id,
+                        property_target.company_id,
+                        listing_property.company_id
+                      )
+                 )'
+            );
+            $statement->execute(['user_id' => $userId]);
+        } else {
+            return [];
+        }
+
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($row)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($row as $key => $value) {
+            $key = str_ends_with((string) $key, '_count')
+                ? substr((string) $key, 0, -6)
+                : (string) $key;
+            $result[$key] = (int) ($value ?? 0);
+        }
+
+        return $result;
+    }
+
+    /** @return array<string,int> */
+    public function developerCustomerOperationsSummary(int $userId, string $section): array
+    {
+        $pdo = Database::connection();
+
+        $sql = match ($section) {
+            'inquiries' => 'SELECT
+                COUNT(*) AS total,
+                SUM(i.status = "new") AS new_count,
+                SUM(i.status = "read") AS read_count,
+                SUM(i.status = "replied") AS replied_count,
+                SUM(i.status = "closed") AS closed_count,
+                SUM(EXISTS(
+                    SELECT 1 FROM leads ld
+                    WHERE ld.inquiry_id = i.id AND ld.deleted_at IS NULL
+                )) AS converted_count
+             FROM inquiries i
+             WHERE EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = i.company_id
+                  AND cm.user_id = :user_id
+                  AND cm.status = "active"
+             )',
+            'viewings' => 'SELECT
+                COUNT(*) AS total,
+                SUM(v.status = "pending") AS pending_count,
+                SUM(v.status = "confirmed") AS confirmed_count,
+                SUM(v.status = "rescheduled") AS rescheduled_count,
+                SUM(v.status = "completed") AS completed_count,
+                SUM(v.status = "declined") AS declined_count,
+                SUM(v.status = "cancelled") AS cancelled_count
+             FROM viewing_requests v
+             WHERE EXISTS (
+                SELECT 1 FROM company_members cm
+                WHERE cm.company_id = v.company_id
+                  AND cm.user_id = :user_id
+                  AND cm.status = "active"
+             )',
+            'leads' => 'SELECT
+                COUNT(*) AS total,
+                SUM(l.stage = "new") AS new_count,
+                SUM(l.stage = "contacted") AS contacted_count,
+                SUM(l.stage = "qualified") AS qualified_count,
+                SUM(l.stage = "viewing") AS viewing_count,
+                SUM(l.stage = "negotiation") AS negotiation_count,
+                SUM(l.stage = "won") AS won_count,
+                SUM(l.stage = "lost") AS lost_count
+             FROM leads l
+             WHERE l.deleted_at IS NULL
+               AND EXISTS (
+                    SELECT 1 FROM company_members cm
+                    WHERE cm.company_id = l.company_id
+                      AND cm.user_id = :user_id
+                      AND cm.status = "active"
+               )',
+            default => null,
+        };
+
+        if ($sql === null) {
+            return [];
+        }
+
+        $statement = $pdo->prepare($sql);
+        $statement->execute(['user_id' => $userId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($row)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($row as $key => $value) {
+            $key = str_ends_with((string) $key, '_count')
+                ? substr((string) $key, 0, -6)
+                : (string) $key;
+            $result[$key] = (int) ($value ?? 0);
+        }
+
+        return $result;
+    }
+
+    /** @return array<string,int> */
+    public function developerPortfolioSummary(int $userId, string $section): array
+    {
+        $definition = match ($section) {
+            'company' => ['table' => 'companies', 'alias' => 'c', 'company' => 'c.id', 'deleted' => 'c.deleted_at'],
+            'projects' => ['table' => 'projects', 'alias' => 'p', 'company' => 'p.company_id', 'deleted' => 'p.deleted_at'],
+            'properties' => ['table' => 'properties', 'alias' => 'p', 'company' => 'p.company_id', 'deleted' => 'p.deleted_at'],
+            'listings' => ['table' => 'listings', 'alias' => 'l', 'company' => 'prop.company_id', 'deleted' => 'l.deleted_at'],
+            default => null,
+        };
+
+        if ($definition === null) {
+            return [];
+        }
+
+        $pdo = Database::connection();
+        $alias = $definition['alias'];
+        $join = $section === 'listings'
+            ? ' INNER JOIN properties prop ON prop.id = l.property_id AND prop.deleted_at IS NULL'
+            : '';
+        $sql = 'SELECT ' . $alias . '.status AS status, COUNT(*) AS total'
+            . ' FROM ' . $definition['table'] . ' ' . $alias
+            . $join
+            . ' INNER JOIN company_members cm ON cm.company_id = ' . $definition['company']
+            . ' WHERE cm.user_id = :user_id'
+            . ' AND cm.status = "active"'
+            . ' AND ' . $definition['deleted'] . ' IS NULL'
+            . ' GROUP BY ' . $alias . '.status';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['user_id' => $userId]);
+        $result = ['total' => 0];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $status = (string) $row['status'];
+            $count = (int) $row['total'];
+            $result[$status] = $count;
+            $result['total'] += $count;
+        }
+
+        return $result;
     }
 
     /** @return array<string, int> */
@@ -450,6 +883,52 @@ final class WorkspaceReadRepository
                 'SELECT COUNT(*) FROM security_audit_events'
             ),
         ];
+    }
+
+    /** @return array<string,int> */
+    public function adminMarketplaceSummary(string $section): array
+    {
+        $sql = match ($section) {
+            'approvals' => 'SELECT
+                (SELECT COUNT(*) FROM companies WHERE status = "pending" AND deleted_at IS NULL) AS companies,
+                (SELECT COUNT(*) FROM projects WHERE status = "pending" AND deleted_at IS NULL) AS projects,
+                (SELECT COUNT(*) FROM properties WHERE status = "pending" AND deleted_at IS NULL) AS properties,
+                (SELECT COUNT(*) FROM listings WHERE status = "pending" AND deleted_at IS NULL) AS listings',
+            'companies' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "pending"), 0) AS pending,
+                COALESCE(SUM(status = "approved"), 0) AS approved,
+                COALESCE(SUM(status = "suspended"), 0) AS suspended
+                FROM companies WHERE deleted_at IS NULL',
+            'projects' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "pending"), 0) AS pending,
+                COALESCE(SUM(status = "published"), 0) AS published,
+                COALESCE(SUM(completion_status = "completed"), 0) AS completed
+                FROM projects WHERE deleted_at IS NULL',
+            'properties' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "pending"), 0) AS pending,
+                COALESCE(SUM(status = "approved"), 0) AS approved,
+                COALESCE(SUM(status = "archived"), 0) AS archived
+                FROM properties WHERE deleted_at IS NULL',
+            'listings' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "pending"), 0) AS pending,
+                COALESCE(SUM(status = "published"), 0) AS published,
+                COALESCE(SUM(status = "paused"), 0) AS paused
+                FROM listings WHERE deleted_at IS NULL',
+            default => null,
+        };
+
+        if ($sql === null) {
+            return [];
+        }
+
+        $row = Database::connection()->query($sql)->fetch(PDO::FETCH_ASSOC) ?: [];
+        $summary = [];
+
+        foreach ($row as $key => $value) {
+            $summary[(string) $key] = (int) $value;
+        }
+
+        return $summary;
     }
 
     /**
@@ -525,23 +1004,29 @@ final class WorkspaceReadRepository
                 ['search' => $search],
             ],
             'companies' => [
-                'SELECT id, name, company_type, status, email, phone,
-                        location_id, verified_at, updated_at
-                 FROM companies
-                 WHERE deleted_at IS NULL
-                   AND name LIKE :search
-                 ORDER BY updated_at DESC',
+                'SELECT c.id, c.name, c.company_type, c.status, c.email, c.phone,
+                        c.location_id, c.verified_at, c.updated_at, loc.name AS location_name,
+                        (SELECT COUNT(*) FROM projects pr WHERE pr.company_id = c.id AND pr.deleted_at IS NULL) AS projects_count,
+                        (SELECT COUNT(*) FROM properties prop WHERE prop.company_id = c.id AND prop.deleted_at IS NULL) AS properties_count
+                 FROM companies c
+                 LEFT JOIN locations loc ON loc.id = c.location_id
+                 WHERE c.deleted_at IS NULL
+                   AND CONCAT_WS(" ", c.name, c.email) LIKE :search
+                 ORDER BY c.updated_at DESC',
                 'SELECT COUNT(*)
-                 FROM companies
-                 WHERE deleted_at IS NULL
-                   AND name LIKE :search',
+                 FROM companies c
+                 WHERE c.deleted_at IS NULL
+                   AND CONCAT_WS(" ", c.name, c.email) LIKE :search',
                 ['search' => $search],
             ],
             'projects' => [
                 'SELECT p.id, p.name, p.project_type, p.completion_status,
-                        p.location_id, p.status, p.updated_at, c.name AS company_name
+                        p.location_id, p.status, p.updated_at, c.name AS company_name,
+                        loc.name AS location_name,
+                        (SELECT COUNT(*) FROM properties prop WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count
                  FROM projects p
                  INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE p.deleted_at IS NULL
                    AND p.name LIKE :search
                  ORDER BY p.updated_at DESC',
@@ -553,9 +1038,12 @@ final class WorkspaceReadRepository
             ],
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.property_type,
-                        p.location_id, p.status, p.updated_at, c.name AS company_name
+                        p.location_id, p.status, p.updated_at, c.name AS company_name,
+                        loc.name AS location_name,
+                        (SELECT COUNT(*) FROM listings li WHERE li.property_id = p.id AND li.deleted_at IS NULL) AS listings_count
                  FROM properties p
                  LEFT JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE p.deleted_at IS NULL
                    AND CONCAT_WS(" ", p.title, p.reference_code) LIKE :search
                  ORDER BY p.updated_at DESC',
@@ -567,11 +1055,13 @@ final class WorkspaceReadRepository
             ],
             'listings' => [
                 'SELECT l.id, p.title AS property_title, p.reference_code,
-                        p.property_type, p.location_id,
-                        l.transaction_type, l.status, l.price, l.currency,
+                        p.property_type, p.location_id, c.name AS company_name, loc.name AS location_name,
+                        l.transaction_type, l.status, l.price, l.currency, l.expires_at,
                         l.updated_at
                  FROM listings l
                  INNER JOIN properties p ON p.id = l.property_id
+                 LEFT JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE l.deleted_at IS NULL
                    AND p.deleted_at IS NULL
                    AND CONCAT_WS(" ", p.title, p.reference_code) LIKE :search

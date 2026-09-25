@@ -32,7 +32,7 @@ $total = (int) ($inventory['total'] ?? 0);
         <?php if ($rows === []): ?>
             <div class="marketplace-empty marketplace-empty--premium"><?= app_icon('layers') ?><strong>No projects match these filters.</strong><span>Try another location, stage, or project type.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/projects')) ?>">View all projects</a></div>
         <?php else: ?>
-            <div class="inventory-grid inventory-grid--projects"><?php foreach ($rows as $project): ?><?= BaramaCoreView::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
+            <div class="inventory-grid inventory-grid--projects"><?php foreach ($rows as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
         <?php endif; ?>
 
         <?php if ($pages > 1): ?><nav class="marketplace-pagination"><span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span><div>

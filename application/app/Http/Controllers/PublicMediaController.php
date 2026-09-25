@@ -39,16 +39,61 @@ final class PublicMediaController
             return Response::html('', 404);
         }
 
+        $mimeType = (string) $media['mime_type'];
+        $size = filesize($path);
+
+        if ($size === false || $size < 1) {
+            return Response::html('', 404);
+        }
+
+        $baseHeaders = [
+            'Cache-Control' => 'public, max-age=86400, immutable',
+            'Content-Disposition' => 'inline; filename="' . rawurlencode((string) $media['original_name']) . '"',
+        ];
+
+        if (str_starts_with($mimeType, 'video/')) {
+            $baseHeaders['Accept-Ranges'] = 'bytes';
+            $range = $request->header('Range');
+
+            if (
+                is_string($range)
+                && preg_match('/^bytes=(\d*)-(\d*)$/', trim($range), $matches) === 1
+            ) {
+                $startText = $matches[1];
+                $endText = $matches[2];
+
+                if ($startText === '' && $endText !== '') {
+                    $suffixLength = min((int) $endText, $size);
+                    $start = max(0, $size - $suffixLength);
+                    $end = $size - 1;
+                } else {
+                    $start = $startText !== '' ? (int) $startText : 0;
+                    $end = $endText !== '' ? (int) $endText : $size - 1;
+                    $end = min($end, $size - 1);
+                }
+
+                if ($start >= 0 && $start <= $end && $start < $size) {
+                    $length = $end - $start + 1;
+                    $content = file_get_contents($path, false, null, $start, $length);
+
+                    if (is_string($content)) {
+                        return Response::binary($content, $mimeType, array_merge($baseHeaders, [
+                            'Content-Length' => (string) $length,
+                            'Content-Range' => 'bytes ' . $start . '-' . $end . '/' . $size,
+                        ]), 206);
+                    }
+                }
+            }
+        }
+
         $content = file_get_contents($path);
 
         if (!is_string($content)) {
             return Response::html('', 404);
         }
 
-        return Response::binary($content, (string) $media['mime_type'], [
-            'Cache-Control' => 'public, max-age=86400, immutable',
+        return Response::binary($content, $mimeType, array_merge($baseHeaders, [
             'Content-Length' => (string) strlen($content),
-            'Content-Disposition' => 'inline; filename="' . rawurlencode((string) $media['original_name']) . '"',
-        ]);
+        ]));
     }
 }

@@ -10,6 +10,7 @@ use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
+use Barama\Repositories\WorkspaceSettingsRepository;
 
 final class DashboardController
 {
@@ -132,7 +133,14 @@ final class DashboardController
             );
         }
 
-        $search = mb_substr(trim((string) $request->input('q', '')), 0, 80);
+        $settingsUser = auth_user();
+        $settingsRepository = new WorkspaceSettingsRepository();
+        $workspacePreferences = $settingsUser !== null ? $settingsRepository->get((int) $settingsUser['id'], 'dashboard') : [];
+        $rememberFilters = !empty($workspacePreferences['remember_filters']);
+        $savedFilters = is_array($workspacePreferences['last_filters'] ?? null) ? $workspacePreferences['last_filters'] : [];
+        $hasFilterQuery = isset($_GET['q']) || isset($_GET['status']) || isset($_GET['type']) || isset($_GET['location']) || isset($_GET['sort']);
+
+        $search = mb_substr(trim((string) $request->input('q', $rememberFilters && !$hasFilterQuery ? ($savedFilters['q'] ?? '') : '')), 0, 80);
         $page = filter_var(
             $request->input('page', 1),
             FILTER_VALIDATE_INT,
@@ -141,19 +149,26 @@ final class DashboardController
         $page = $page === false ? 1 : (int) $page;
 
         $filters = [
-            'status' => mb_substr(trim((string) $request->input('status', '')), 0, 40),
-            'type' => mb_substr(trim((string) $request->input('type', '')), 0, 80),
-            'location' => trim((string) $request->input('location', '')),
+            'status' => mb_substr(trim((string) $request->input('status', $rememberFilters && !$hasFilterQuery ? ($savedFilters['status'] ?? '') : '')), 0, 40),
+            'type' => mb_substr(trim((string) $request->input('type', $rememberFilters && !$hasFilterQuery ? ($savedFilters['type'] ?? '') : '')), 0, 80),
+            'location' => trim((string) $request->input('location', $rememberFilters && !$hasFilterQuery ? ($savedFilters['location'] ?? '') : '')),
         ];
-        $sort = mb_substr(trim((string) $request->input('sort', 'updated_desc')), 0, 40);
+        $sortDefault = (string) ($workspacePreferences['default_sort'] ?? 'updated_desc');
+        $sort = mb_substr(trim((string) $request->input('sort', $rememberFilters && !$hasFilterQuery ? ($savedFilters['sort'] ?? $sortDefault) : $sortDefault)), 0, 40);
+        $pageSize = in_array((int) ($workspacePreferences['page_size'] ?? 20), [10, 20, 50], true) ? (int) ($workspacePreferences['page_size'] ?? 20) : 20;
+        if ($rememberFilters && $hasFilterQuery && $settingsUser !== null) {
+            $workspacePreferences['last_filters'] = ['q'=>$search, 'status'=>$filters['status'], 'type'=>$filters['type'], 'location'=>$filters['location'], 'sort'=>$sort];
+            $settingsRepository->save((int) $settingsUser['id'], 'dashboard', $workspacePreferences);
+        }
 
         $repository = new WorkspaceReadRepository();
         $summary = $repository->adminSummary();
+        $marketplaceSummary = $repository->adminMarketplaceSummary($section);
         $records = $repository->adminSection(
             $section,
             $search,
             $page,
-            $section === 'overview' ? 8 : 20,
+            $section === 'overview' ? min(8, $pageSize) : $pageSize,
             $filters,
             $sort
         );
@@ -167,7 +182,60 @@ final class DashboardController
             'activeSection' => $section,
             'sectionTitle' => self::SECTIONS[$section]['title'],
             'sectionDescription' => self::SECTIONS[$section]['description'],
-            'stats' => [
+            'stats' => $this->statsForSection($section, $summary, $marketplaceSummary),
+            'emptyState' => $this->emptyState($section),
+            'records' => $records,
+            'columns' => $this->columns($section),
+            'search' => $search,
+            'tableFilters' => $filters,
+            'tableSort' => $sort,
+            'workspacePreferences' => $workspacePreferences,
+            'filterOptions' => $this->filterOptions($section),
+            'formOptions' => [
+                'locations' => $repository->adminLocations(),
+            ],
+        ]));
+    }
+
+    /**
+     * @param array<string,int> $summary
+     * @param array<string,int> $marketplace
+     * @return array<int,array{label:string,value:int,icon:string,href?:string}>
+     */
+    private function statsForSection(string $section, array $summary, array $marketplace): array
+    {
+        return match ($section) {
+            'approvals' => [
+                ['label' => 'Pending companies', 'value' => $marketplace['companies'] ?? 0, 'icon' => 'building', 'href' => '/dashboard/approvals?type=company'],
+                ['label' => 'Pending projects', 'value' => $marketplace['projects'] ?? 0, 'icon' => 'layers', 'href' => '/dashboard/approvals?type=project'],
+                ['label' => 'Pending properties', 'value' => $marketplace['properties'] ?? 0, 'icon' => 'home', 'href' => '/dashboard/approvals?type=property'],
+                ['label' => 'Pending listings', 'value' => $marketplace['listings'] ?? 0, 'icon' => 'tag', 'href' => '/dashboard/approvals?type=listing'],
+            ],
+            'companies' => [
+                ['label' => 'All companies', 'value' => $marketplace['total'] ?? 0, 'icon' => 'building', 'href' => '/dashboard/companies'],
+                ['label' => 'Pending', 'value' => $marketplace['pending'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/companies?status=pending'],
+                ['label' => 'Approved', 'value' => $marketplace['approved'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/companies?status=approved'],
+                ['label' => 'Suspended', 'value' => $marketplace['suspended'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/companies?status=suspended'],
+            ],
+            'projects' => [
+                ['label' => 'All projects', 'value' => $marketplace['total'] ?? 0, 'icon' => 'layers', 'href' => '/dashboard/projects'],
+                ['label' => 'Pending', 'value' => $marketplace['pending'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/projects?status=pending'],
+                ['label' => 'Published', 'value' => $marketplace['published'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/projects?status=published'],
+                ['label' => 'Completed', 'value' => $marketplace['completed'] ?? 0, 'icon' => 'home'],
+            ],
+            'properties' => [
+                ['label' => 'All properties', 'value' => $marketplace['total'] ?? 0, 'icon' => 'home', 'href' => '/dashboard/properties'],
+                ['label' => 'Pending', 'value' => $marketplace['pending'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/properties?status=pending'],
+                ['label' => 'Approved', 'value' => $marketplace['approved'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/properties?status=approved'],
+                ['label' => 'Archived', 'value' => $marketplace['archived'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/properties?status=archived'],
+            ],
+            'listings' => [
+                ['label' => 'All listings', 'value' => $marketplace['total'] ?? 0, 'icon' => 'tag', 'href' => '/dashboard/listings'],
+                ['label' => 'Pending', 'value' => $marketplace['pending'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/listings?status=pending'],
+                ['label' => 'Published', 'value' => $marketplace['published'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/listings?status=published'],
+                ['label' => 'Paused', 'value' => $marketplace['paused'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/listings?status=paused'],
+            ],
+            default => [
                 ['label' => 'Pending approval', 'value' => $summary['pending_approvals'], 'icon' => 'shield'],
                 ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building'],
                 ['label' => 'Properties', 'value' => $summary['properties'], 'icon' => 'home'],
@@ -176,34 +244,72 @@ final class DashboardController
                 ['label' => 'Users', 'value' => $summary['users'], 'icon' => 'users'],
                 ['label' => 'Security events', 'value' => $summary['security_events'], 'icon' => 'shield'],
             ],
-            'records' => $records,
-            'columns' => $this->columns($section),
-            'search' => $search,
-            'tableFilters' => $filters,
-            'tableSort' => $sort,
-            'filterOptions' => $this->filterOptions($section),
-            'formOptions' => [
-                'locations' => $repository->adminLocations(),
+        };
+    }
+
+    /** @return array{icon:string,title:string,detail:string} */
+    private function emptyState(string $section): array
+    {
+        return match ($section) {
+            'approvals' => [
+                'icon' => 'check',
+                'title' => 'Approval queue is clear',
+                'detail' => 'New Company, Project, Property and Listing submissions will appear here for review.',
             ],
-        ]));
+            'companies' => [
+                'icon' => 'building',
+                'title' => 'No companies match this view',
+                'detail' => 'Try another status, company type, location or search term.',
+            ],
+            'projects' => [
+                'icon' => 'layers',
+                'title' => 'No projects match this view',
+                'detail' => 'Adjust the project status, type, location or search filters.',
+            ],
+            'properties' => [
+                'icon' => 'home',
+                'title' => 'No properties match this view',
+                'detail' => 'Adjust the property status, type, location or search filters.',
+            ],
+            'listings' => [
+                'icon' => 'tag',
+                'title' => 'No listings match this view',
+                'detail' => 'Adjust offer type, publication status, location or search filters.',
+            ],
+            default => [
+                'icon' => 'search',
+                'title' => 'No records found',
+                'detail' => 'Records matching this section and search will appear here.',
+            ],
+        };
     }
 
     /** @return array<int, array{label:string,path:string,icon:string}> */
     private function navigation(): array
     {
         return [
+            ['heading' => 'Operations'],
             ['label' => 'Overview', 'path' => '/dashboard', 'icon' => 'grid'],
             ['label' => 'Approvals', 'path' => '/dashboard/approvals', 'icon' => 'shield'],
+            ['heading' => 'Marketplace'],
             ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
             ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
             ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
             ['label' => 'Listings', 'path' => '/dashboard/listings', 'icon' => 'tag'],
+            ['heading' => 'Customer Operations'],
             ['label' => 'Inquiries', 'path' => '/dashboard/inquiries', 'icon' => 'message'],
             ['label' => 'Leads', 'path' => '/dashboard/leads', 'icon' => 'pipeline'],
+            ['heading' => 'Platform Data'],
             ['label' => 'Catalog', 'path' => '/dashboard/catalog', 'icon' => 'map'],
             ['label' => 'Media', 'path' => '/dashboard/media', 'icon' => 'image'],
+            ['heading' => 'Administration'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
             ['label' => 'Security Audit', 'path' => '/dashboard/audit', 'icon' => 'shield'],
+            ['heading' => 'Settings'],
+            ['label' => 'Basic', 'path' => '/dashboard/settings', 'icon' => 'settings'],
+            ['label' => 'Profile', 'path' => '/dashboard/settings/profile', 'icon' => 'user'],
+            ['label' => 'Privacy', 'path' => '/dashboard/settings/privacy', 'icon' => 'shield'],
+            ['label' => 'Security', 'path' => '/dashboard/settings/security', 'icon' => 'lock'],
         ];
     }
 
@@ -360,7 +466,9 @@ final class DashboardController
             'companies' => [
                 'name' => 'Company',
                 'company_type' => 'Type',
-                'email' => 'Email',
+                'location_name' => 'Location',
+                'projects_count' => 'Projects',
+                'properties_count' => 'Properties',
                 'status' => 'Status',
                 'updated_at' => 'Updated',
             ],
@@ -368,6 +476,8 @@ final class DashboardController
                 'name' => 'Project',
                 'company_name' => 'Company',
                 'project_type' => 'Type',
+                'location_name' => 'Location',
+                'properties_count' => 'Properties',
                 'completion_status' => 'Completion',
                 'status' => 'Status',
                 'updated_at' => 'Updated',
@@ -376,15 +486,20 @@ final class DashboardController
                 'reference_code' => 'Reference',
                 'title' => 'Property',
                 'company_name' => 'Company',
+                'location_name' => 'Location',
                 'property_type' => 'Type',
+                'listings_count' => 'Listings',
                 'status' => 'Status',
                 'updated_at' => 'Updated',
             ],
             'listings' => [
                 'property_title' => 'Property',
+                'company_name' => 'Company',
                 'transaction_type' => 'Offer',
                 'price' => 'Price',
+                'location_name' => 'Location',
                 'status' => 'Status',
+                'expires_at' => 'Expires',
                 'updated_at' => 'Updated',
             ],
             'inquiries' => [

@@ -445,6 +445,123 @@ final class CustomerEngagementRepository
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function savedSearchesForAccount(
+        int $userId,
+        string $search = '',
+        string $state = '',
+        string $frequency = '',
+        string $sort = 'updated_desc',
+        int $limit = 100
+    ): array {
+        $where = [
+            's.user_id = :user_id',
+            'CONCAT_WS(" ", s.name, s.query_text, s.transaction_type, s.property_type, loc.name) LIKE :search',
+        ];
+        $params = [
+            'user_id' => $userId,
+            'search' => '%' . trim($search) . '%',
+        ];
+
+        if ($state === 'enabled') {
+            $where[] = 's.alerts_enabled = 1';
+        } elseif ($state === 'paused') {
+            $where[] = 's.alerts_enabled = 0';
+        }
+
+        if (in_array($frequency, ['daily', 'weekly'], true)) {
+            $where[] = 's.alert_frequency = :frequency';
+            $params['frequency'] = $frequency;
+        }
+
+        $order = [
+            'updated_desc' => 's.updated_at DESC, s.id DESC',
+            'name_asc' => 's.name ASC, s.updated_at DESC',
+        ][$sort] ?? 's.updated_at DESC, s.id DESC';
+
+        $statement = Database::connection()->prepare(
+            'SELECT s.*, loc.name AS location_name
+             FROM saved_searches s
+             LEFT JOIN locations loc ON loc.id = s.location_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY ' . $order . '
+             LIMIT :limit'
+        );
+
+        foreach ($params as $key => $value) {
+            $statement->bindValue(
+                ':' . $key,
+                $value,
+                $key === 'user_id' ? PDO::PARAM_INT : PDO::PARAM_STR
+            );
+        }
+        $statement->bindValue(':limit', max(1, min(100, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function recentViewsForAccount(
+        int $userId,
+        string $search = '',
+        string $sort = 'recent_desc',
+        int $limit = 100
+    ): array {
+        $order = [
+            'recent_desc' => 'rv.last_viewed_at DESC',
+            'most_viewed' => 'rv.view_count DESC, rv.last_viewed_at DESC',
+            'title_asc' => 'p.title ASC, rv.last_viewed_at DESC',
+        ][$sort] ?? 'rv.last_viewed_at DESC';
+
+        $statement = Database::connection()->prepare(
+            'SELECT l.id, l.slug, l.transaction_type, l.price, l.currency,
+                    l.pricing_period, p.title, p.reference_code, p.property_type,
+                    p.bedrooms, p.bathrooms, p.area_value, p.area_unit,
+                    c.name AS company_name, loc.name AS location_name,
+                    rv.first_viewed_at, rv.last_viewed_at, rv.view_count,
+                    (
+                        SELECT m.uuid
+                        FROM media_attachments ma
+                        INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                        WHERE ma.entity_type = "listing"
+                          AND ma.entity_id = l.id
+                          AND m.mime_type LIKE "image/%"
+                        ORDER BY ma.is_primary DESC, ma.position ASC, ma.id ASC
+                        LIMIT 1
+                    ) AS primary_media_uuid
+             FROM recent_listing_views rv
+             INNER JOIN listings l ON l.id = rv.listing_id
+             INNER JOIN properties p ON p.id = l.property_id
+             INNER JOIN companies c ON c.id = p.company_id
+             LEFT JOIN locations loc ON loc.id = p.location_id
+             WHERE rv.user_id = :user_id
+               AND CONCAT_WS(" ", p.title, p.reference_code, c.name, loc.name) LIKE :search
+               AND l.status = "published"
+               AND l.published_at IS NOT NULL
+               AND l.deleted_at IS NULL
+               AND (l.expires_at IS NULL OR l.expires_at > CURRENT_TIMESTAMP)
+               AND p.status = "approved"
+               AND p.deleted_at IS NULL
+               AND c.status = "approved"
+               AND c.published_at IS NOT NULL
+               AND c.deleted_at IS NULL
+             ORDER BY ' . $order . '
+             LIMIT :limit'
+        );
+
+        $statement->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $statement->bindValue(':search', '%' . trim($search) . '%', PDO::PARAM_STR);
+        $statement->bindValue(':limit', max(1, min(100, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** @return array<int,array<string,mixed>> */
     public function viewingRequests(int $userId): array
     {
@@ -461,6 +578,162 @@ final class CustomerEngagementRepository
         );
         $statement->execute(['user_id' => $userId]);
 
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function savedListingsForAccount(
+        int $userId,
+        string $search = '',
+        string $offer = '',
+        string $propertyType = '',
+        string $sort = 'saved_desc',
+        int $limit = 100
+    ): array {
+        $where = [
+            'sl.user_id = :user_id',
+            'CONCAT_WS(" ", p.title, p.reference_code, c.name, loc.name) LIKE :search',
+            'l.status = "published"',
+            'l.published_at IS NOT NULL',
+            'l.deleted_at IS NULL',
+            '(l.expires_at IS NULL OR l.expires_at > CURRENT_TIMESTAMP)',
+            'p.status = "approved"',
+            'p.deleted_at IS NULL',
+            'c.status = "approved"',
+            'c.published_at IS NOT NULL',
+            'c.deleted_at IS NULL',
+        ];
+        $params = ['user_id' => $userId, 'search' => '%' . trim($search) . '%'];
+
+        if (in_array($offer, ['sale', 'rent'], true)) {
+            $where[] = 'l.transaction_type = :offer';
+            $params['offer'] = $offer;
+        }
+        if ($propertyType !== '') {
+            $where[] = 'p.property_type = :property_type';
+            $params['property_type'] = mb_substr($propertyType, 0, 50);
+        }
+
+        $order = [
+            'saved_desc' => 'sl.created_at DESC',
+            'price_asc' => 'l.price ASC, sl.created_at DESC',
+            'price_desc' => 'l.price DESC, sl.created_at DESC',
+            'title_asc' => 'p.title ASC, sl.created_at DESC',
+        ][$sort] ?? 'sl.created_at DESC';
+
+        $statement = Database::connection()->prepare(
+            'SELECT l.id, l.slug, l.transaction_type, l.price, l.currency,
+                    l.pricing_period, l.expires_at,
+                    p.title, p.reference_code, p.property_type,
+                    p.bedrooms, p.bathrooms, p.area_value, p.area_unit,
+                    c.name AS company_name, loc.name AS location_name,
+                    sl.created_at AS saved_at,
+                    (
+                        SELECT m.uuid
+                        FROM media_attachments ma
+                        INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                        WHERE ma.entity_type = "listing"
+                          AND ma.entity_id = l.id
+                          AND m.mime_type LIKE "image/%"
+                        ORDER BY ma.is_primary DESC, ma.position ASC, ma.id ASC
+                        LIMIT 1
+                    ) AS primary_media_uuid
+             FROM saved_listings sl
+             INNER JOIN listings l ON l.id = sl.listing_id
+             INNER JOIN properties p ON p.id = l.property_id
+             INNER JOIN companies c ON c.id = p.company_id
+             LEFT JOIN locations loc ON loc.id = p.location_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY ' . $order . '
+             LIMIT :limit'
+        );
+        foreach ($params as $key => $value) {
+            $statement->bindValue(':' . $key, $value, $key === 'user_id' ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $statement->bindValue(':limit', max(1, min(100, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function inquiriesForAccount(
+        int $userId,
+        string $search = '',
+        string $status = '',
+        string $sort = 'newest',
+        int $limit = 200
+    ): array {
+        $where = [
+            'i.user_id = :user_id',
+            'CONCAT_WS(" ", i.subject, i.message, c.name, p.title) LIKE :search',
+        ];
+        $params = ['user_id' => $userId, 'search' => '%' . trim($search) . '%'];
+        if ($status !== '') {
+            $where[] = 'i.status = :status';
+            $params['status'] = mb_substr($status, 0, 40);
+        }
+        $order = [
+            'newest' => 'i.created_at DESC',
+            'oldest' => 'i.created_at ASC',
+            'property_asc' => 'COALESCE(p.title, c.name, i.subject) ASC, i.created_at DESC',
+        ][$sort] ?? 'i.created_at DESC';
+        $statement = Database::connection()->prepare(
+            'SELECT i.id, i.status, i.subject, i.message, i.created_at, i.responded_at,
+                    c.name AS company_name, p.title AS property_title, l.slug AS listing_slug
+             FROM inquiries i
+             LEFT JOIN companies c ON c.id = i.company_id
+             LEFT JOIN properties p ON p.id = i.property_id
+             LEFT JOIN listings l ON l.id = i.listing_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY ' . $order . '
+             LIMIT :limit'
+        );
+        foreach ($params as $key => $value) {
+            $statement->bindValue(':' . $key, $value, $key === 'user_id' ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $statement->bindValue(':limit', max(1, min(200, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function viewingRequestsForAccount(
+        int $userId,
+        string $search = '',
+        string $status = '',
+        string $sort = 'newest',
+        int $limit = 100
+    ): array {
+        $where = [
+            'v.user_id = :user_id',
+            'CONCAT_WS(" ", p.title, c.name, v.message, v.company_note) LIKE :search',
+        ];
+        $params = ['user_id' => $userId, 'search' => '%' . trim($search) . '%'];
+        if ($status !== '') {
+            $where[] = 'v.status = :status';
+            $params['status'] = mb_substr($status, 0, 40);
+        }
+        $order = [
+            'newest' => 'v.created_at DESC',
+            'oldest' => 'v.created_at ASC',
+            'scheduled_asc' => 'COALESCE(v.scheduled_for, "9999-12-31 23:59:59") ASC, v.created_at DESC',
+            'property_asc' => 'p.title ASC, v.created_at DESC',
+        ][$sort] ?? 'v.created_at DESC';
+        $statement = Database::connection()->prepare(
+            'SELECT v.*, l.slug AS listing_slug, p.title AS property_title, c.name AS company_name
+             FROM viewing_requests v
+             INNER JOIN listings l ON l.id = v.listing_id
+             INNER JOIN properties p ON p.id = l.property_id
+             INNER JOIN companies c ON c.id = v.company_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY ' . $order . '
+             LIMIT :limit'
+        );
+        foreach ($params as $key => $value) {
+            $statement->bindValue(':' . $key, $value, $key === 'user_id' ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $statement->bindValue(':limit', max(1, min(100, $limit)), PDO::PARAM_INT);
+        $statement->execute();
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 

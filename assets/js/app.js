@@ -1021,54 +1021,122 @@
 /* Barama compact auth field labels — keep in canonical app.js */
 (() => {
     const enhanceAuthFields = () => {
-        document.querySelectorAll('.auth-premium--standalone .auth-form__field').forEach((field) => {
-            const label = field.querySelector('.auth-label');
-            const input = field.querySelector('input, textarea');
-            if (!label || !input) return;
-            const labelText = (label.textContent || '').trim();
-            if (labelText && !input.getAttribute('placeholder')) input.setAttribute('placeholder', labelText);
-            if (input.type === 'email' && (input.value || '').trim().toLowerCase() === 'you@example.com') input.value = '';
-            label.classList.add('auth-label--field-placeholder');
-        });
+        document
+            .querySelectorAll('.auth-premium--standalone .auth-form__field')
+            .forEach((field) => {
+                const label = field.querySelector('.auth-label');
+                const input = field.querySelector('input, textarea');
+
+                if (!label || !input) {
+                    return;
+                }
+
+                const labelText = (label.textContent || '').trim();
+
+                if (labelText && !input.getAttribute('placeholder')) {
+                    input.setAttribute('placeholder', labelText);
+                }
+
+                if (
+                    input.type === 'email'
+                    && (input.value || '').trim().toLowerCase() === 'you@example.com'
+                ) {
+                    input.value = '';
+                }
+
+                label.classList.add('auth-label--field-placeholder');
+            });
     };
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceAuthFields, { once: true });
-    else enhanceAuthFields();
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enhanceAuthFields, { once: true });
+    } else {
+        enhanceAuthFields();
+    }
 })();
+
 
 
 /* Barama auth floating labels — canonical app.js only */
 (() => {
     const selector = '.auth-premium--standalone .auth-field';
+
     const hasValue = (input) => {
-        if ((input.value || '').trim() !== '') return true;
-        try { return input.matches(':-webkit-autofill'); } catch (error) { return false; }
+        if ((input.value || '').trim() !== '') {
+            return true;
+        }
+
+        try {
+            return input.matches(':-webkit-autofill');
+        } catch (error) {
+            return false;
+        }
     };
+
     const updateField = (field, input) => {
-        field.classList.toggle('is-floating', document.activeElement === input || hasValue(input));
+        field.classList.toggle(
+            'is-floating',
+            document.activeElement === input || hasValue(input)
+        );
     };
+
     const enhanceField = (field) => {
-        if (field.dataset.authFloatingReady === '1') return;
+        if (field.dataset.authFloatingReady === '1') {
+            return;
+        }
+
         const inputWrap = field.querySelector('.auth-input');
-        const input = inputWrap ? inputWrap.querySelector('input, textarea, select') : null;
+        const input = inputWrap
+            ? inputWrap.querySelector('input, textarea, select')
+            : null;
+
         const children = Array.from(field.children);
-        const labelTextNode = children.find((child) => child !== inputWrap && child.tagName === 'SPAN' && !child.classList.contains('auth-input'));
-        if (!inputWrap || !input || !labelTextNode) return;
+        const labelTextNode = children.find((child) => {
+            return (
+                child !== inputWrap
+                && child.tagName === 'SPAN'
+                && !child.classList.contains('auth-input')
+            );
+        });
+
+        if (!inputWrap || !input || !labelTextNode) {
+            return;
+        }
+
         labelTextNode.classList.add('auth-floating-label');
+
+        /* Move the existing visible label into the existing input shell.
+           No PHP markup is changed. */
         inputWrap.insertBefore(labelTextNode, input);
+
+        /* The floating label becomes the visual placeholder. */
         input.setAttribute('placeholder', ' ');
+
         field.dataset.authFloatingReady = '1';
+
         const refresh = () => updateField(field, input);
+
         input.addEventListener('focus', refresh);
         input.addEventListener('blur', refresh);
         input.addEventListener('input', refresh);
         input.addEventListener('change', refresh);
+
         refresh();
+
+        /* Password managers/autofill can populate shortly after DOM ready. */
         window.setTimeout(refresh, 80);
         window.setTimeout(refresh, 350);
     };
-    const enhanceAll = () => document.querySelectorAll(selector).forEach(enhanceField);
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
-    else enhanceAll();
+
+    const enhanceAll = () => {
+        document.querySelectorAll(selector).forEach(enhanceField);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
+    } else {
+        enhanceAll();
+    }
 })();
 
 /* BARAMA_PUBLIC_UI_HEADER_HERO_FOOTER_V100 */
@@ -1282,6 +1350,221 @@
             if (event.key === 'Escape' && !menu.hidden) {
                 setOpen(false);
                 trigger.focus();
+            }
+        });
+    });
+})();
+
+/* BARAMA_SINGLE_DETAIL_PAGES_V100 */
+(() => {
+    'use strict';
+
+    const stages = document.querySelectorAll('[data-detail-media-stage]');
+
+    stages.forEach((stage) => {
+        const slides = Array.from(stage.querySelectorAll('[data-detail-media-slide]'));
+        const thumbs = Array.from(stage.querySelectorAll('[data-detail-media-thumb]'));
+
+        if (slides.length < 1 || thumbs.length < 1) {
+            return;
+        }
+
+        let activeIndex = Math.max(
+            0,
+            slides.findIndex((slide) => slide.classList.contains('is-active'))
+        );
+
+        const activate = (index, focusThumb = false) => {
+            if (!Number.isInteger(index) || index < 0 || index >= slides.length) {
+                return;
+            }
+
+            slides.forEach((slide, slideIndex) => {
+                const active = slideIndex === index;
+                slide.hidden = !active;
+                slide.classList.toggle('is-active', active);
+
+                if (!active) {
+                    slide.querySelectorAll('video').forEach((video) => {
+                        try {
+                            video.pause();
+                        } catch (_) {
+                            // Ignore media pause failures.
+                        }
+                    });
+                }
+            });
+
+            thumbs.forEach((thumb, thumbIndex) => {
+                const active = thumbIndex === index;
+                thumb.classList.toggle('is-active', active);
+                thumb.setAttribute('aria-selected', active ? 'true' : 'false');
+                thumb.tabIndex = active ? 0 : -1;
+            });
+
+            activeIndex = index;
+
+            if (focusThumb) {
+                thumbs[index]?.focus();
+            }
+        };
+
+        thumbs.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => activate(index));
+
+            thumb.addEventListener('keydown', (event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                let next = activeIndex;
+
+                if (event.key === 'ArrowRight') {
+                    next = (activeIndex + 1) % thumbs.length;
+                } else if (event.key === 'ArrowLeft') {
+                    next = (activeIndex - 1 + thumbs.length) % thumbs.length;
+                } else if (event.key === 'Home') {
+                    next = 0;
+                } else if (event.key === 'End') {
+                    next = thumbs.length - 1;
+                }
+
+                activate(next, true);
+            });
+        });
+
+        activate(activeIndex);
+    });
+})();
+
+/* BARAMA_WORKSPACE_NAV_TOGGLE_V100 */
+(() => {
+    'use strict';
+
+    const root = document.documentElement;
+    const button = document.querySelector('[data-workspace-sidebar-toggle]');
+    if (!button) return;
+
+    const desktop = window.matchMedia('(min-width: 992px)');
+    const storageKey = 'barama.workspace.sidebar.collapsed';
+
+    const readStored = () => {
+        try { return window.localStorage.getItem(storageKey) === '1'; }
+        catch (_) { return false; }
+    };
+
+    const writeStored = (collapsed) => {
+        try { window.localStorage.setItem(storageKey, collapsed ? '1' : '0'); }
+        catch (_) { /* storage may be unavailable; UI still works for this page */ }
+    };
+
+    const applyDesktopState = (collapsed, persist = false) => {
+        if (!desktop.matches) {
+            root.classList.remove('workspace-sidebar-is-collapsed');
+            return;
+        }
+
+        root.classList.toggle('workspace-sidebar-is-collapsed', collapsed);
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        if (persist) writeStored(collapsed);
+    };
+
+    applyDesktopState(readStored());
+
+    button.addEventListener('click', (event) => {
+        if (!desktop.matches) return; // Existing mobile drawer handler remains authoritative.
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const nextCollapsed = !root.classList.contains('workspace-sidebar-is-collapsed');
+        applyDesktopState(nextCollapsed, true);
+    }, true);
+
+    const handleBreakpointChange = () => {
+        if (desktop.matches) {
+            applyDesktopState(readStored());
+        } else {
+            root.classList.remove('workspace-sidebar-is-collapsed');
+        }
+    };
+
+    if (typeof desktop.addEventListener === 'function') {
+        desktop.addEventListener('change', handleBreakpointChange);
+    } else if (typeof desktop.addListener === 'function') {
+        desktop.addListener(handleBreakpointChange);
+    }
+})();
+
+/* BARAMA_WORKSPACE_SIDEBAR_NAV_REFINEMENT_V100 */
+(() => {
+    'use strict';
+
+    const sidebar = document.querySelector('.workspace-sidebar');
+    if (!sidebar) return;
+
+    sidebar.setAttribute('data-workspace-nav-refined', 'v1.0.0');
+
+    const nav = sidebar.querySelector('nav');
+    if (!nav) return;
+
+    nav.classList.add('workspace-sidebar__navigation-refined');
+
+    const links = Array.from(nav.querySelectorAll('a[href]'));
+    if (!links.length) return;
+
+    const currentPath = (() => {
+        try {
+            const path = new URL(window.location.href).pathname;
+            return path.length > 1 ? path.replace(/\/+$/, '') : '/';
+        } catch (_) {
+            return window.location.pathname || '/';
+        }
+    })();
+
+    let current = links.find((link) => link.getAttribute('aria-current') === 'page');
+
+    if (!current) {
+        current = links.find((link) => {
+            try {
+                const path = new URL(link.href, window.location.origin).pathname;
+                const normalized = path.length > 1 ? path.replace(/\/+$/, '') : '/';
+                return normalized === currentPath;
+            } catch (_) {
+                return false;
+            }
+        });
+    }
+
+    if (current) {
+        current.classList.add('is-current');
+        if (!current.hasAttribute('aria-current')) current.setAttribute('aria-current', 'page');
+    }
+
+    // Preserve server-rendered labels while giving icon-only/short links useful tooltips.
+    links.forEach((link) => {
+        if (link.hasAttribute('title')) return;
+        const text = (link.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text) link.setAttribute('title', text);
+    });
+})();
+
+/* BARAMA_WORKSPACE_HEADER_UTILITY_ICON_FIX_V100
+   Locale forms apply immediately after selection. Existing public-header binding
+   is respected through the shared data-auto-submit-bound guard.
+*/
+(() => {
+    document.querySelectorAll('form[data-locale-switch]').forEach((form) => {
+        const select = form.querySelector('[data-locale-select]');
+        if (!(select instanceof HTMLSelectElement)) return;
+        if (select.dataset.autoSubmitBound === '1') return;
+        select.dataset.autoSubmitBound = '1';
+        select.addEventListener('change', () => {
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
             }
         });
     });
