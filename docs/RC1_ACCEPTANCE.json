@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "target_version": "1.0.0-RC1",
-  "updated_at": "2026-09-26T06:29:57Z",
+  "updated_at": "2026-09-26T07:04:14Z",
   "automated": {
     "foundation_qa": {
       "status": "pending",
@@ -38,8 +38,8 @@
       "evidence": ""
     },
     "administrator_auth_workspace_acceptance": {
-      "status": "pending",
-      "evidence": ""
+      "status": "pass",
+      "evidence": "Administrator auth/workspace revalidation passed on 0.9.22-dev candidate 5881de9536a4 @ 1a7af5ba2044; secure cookie, CSRF, canonical Admin/Account routes, logout/validation/privacy checks passed; user/admin counts unchanged."
     },
     "disposable_customer_lifecycle_acceptance": {
       "status": "pass",
