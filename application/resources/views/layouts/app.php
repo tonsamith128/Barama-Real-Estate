@@ -330,7 +330,7 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
 
                 <div class="workspace-sidebar__footer">
                     <span>Barama</span>
-                    <small>v0.99.22</small>
+                    <small>v<?= e(APP_VERSION) ?></small>
                 </div>
             </aside>
 

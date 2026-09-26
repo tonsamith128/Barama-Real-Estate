@@ -77,7 +77,7 @@ if (!function_exists('url')) {
 
         $routingMode = (string) config('app.routing_mode', 'clean');
 
-        if ($routingMode === 'query' && $path !== '/') {
+        if ($routingMode === 'query') {
             $pathOnly = (string) (parse_url($path, PHP_URL_PATH) ?: '/');
             $query = (string) (parse_url($path, PHP_URL_QUERY) ?? '');
             $route = rawurlencode('/' . ltrim($pathOnly, '/'));

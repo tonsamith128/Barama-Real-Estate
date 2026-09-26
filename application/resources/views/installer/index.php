@@ -1022,13 +1022,13 @@ $jsAssetVersion = (string) (
                     <div class="installer-finish__actions">
                         <a
                             class="btn btn-primary"
-                            href="<?= e((string) ($health['site_url'] ?? $siteUrl)) ?>"
+                            href="<?= e(url('/')) ?>"
                         >
                             Homepage
                         </a>
                         <a
                             class="btn btn-outline-secondary"
-                            href="<?= e(rtrim((string) ($health['site_url'] ?? $siteUrl), '/') . '/login') ?>"
+                            href="<?= e(url('/login')) ?>"
                         >
                             Sign In
                         </a>
