@@ -71,6 +71,7 @@ final class AuthController
         $destination = is_string($intended)
             && str_starts_with($intended, '/')
             && !str_starts_with($intended, '//')
+            && $this->canAccessIntendedPath($auth, $intended)
                 ? $intended
                 : $auth->homePath();
 
@@ -282,6 +283,25 @@ final class AuthController
         }
 
         return Response::redirect(url('/login?reset=1'));
+    }
+
+    private function canAccessIntendedPath(
+        AuthService $auth,
+        string $path
+    ): bool {
+        if ($path === '/account' || str_starts_with($path, '/account/')) {
+            return $auth->canAccessWorkspace('account');
+        }
+
+        if ($path === '/developer' || str_starts_with($path, '/developer/')) {
+            return $auth->canAccessWorkspace('developer');
+        }
+
+        if ($path === '/dashboard' || str_starts_with($path, '/dashboard/')) {
+            return $auth->canAccessWorkspace('dashboard');
+        }
+
+        return false;
     }
 
     /** @param array<string, mixed> $data */
