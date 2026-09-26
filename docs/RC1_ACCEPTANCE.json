@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "target_version": "1.0.0-RC1",
-  "updated_at": "2026-09-26T10:18:11Z",
+  "updated_at": "2026-09-26T10:34:56Z",
   "automated": {
     "foundation_qa": {
       "status": "pending",
@@ -18,8 +18,8 @@
   },
   "live_server": {
     "direct_license_activation": {
-      "status": "pending",
-      "evidence": ""
+      "status": "pass",
+      "evidence": "Direct License Manager activation passed on 0.9.22-dev candidate 5881de9536a4 @ 1a7af5ba2044; invalid credential rejection, automatic Direct routing, active product/domain/installation binding, remote revalidation, same-domain license identity preservation with opaque token rotation, no raw-key persistence, unchanged local protected state/business data, and /health HTTP 200 passed."
     },
     "envato_purchase_activation": {
       "status": "pending",
