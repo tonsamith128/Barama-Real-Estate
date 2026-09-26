@@ -13,7 +13,13 @@ if ($appBasePath !== '/' && str_starts_with($localeReturn, $appBasePath)) {
     $localeReturn = substr($localeReturn, strlen($appBasePath)) ?: '/';
 }
 
-$authRoutePath = '/' . trim($localeReturn, '/');
+$queryRoutePath = trim((string) ($_GET['_route'] ?? ''), '/');
+$authRoutePath = $queryRoutePath !== ''
+    ? '/' . $queryRoutePath
+    : '/' . trim($localeReturn, '/');
+$authRoutePath = (string) (
+    parse_url($authRoutePath, PHP_URL_PATH) ?: '/'
+);
 
 if ($authRoutePath === '') {
     $authRoutePath = '/';
@@ -21,9 +27,10 @@ if ($authRoutePath === '') {
 
 $isStandaloneAuthPage = in_array(
     $authRoutePath,
-    ['/login', '/register', '/forgot-password'],
+    ['/login', '/register', '/forgot-password', '/verify-email'],
     true
-);
+) || str_starts_with($authRoutePath, '/reset-password/')
+    || str_starts_with($authRoutePath, '/verify-email/');
 
 $queryString = (string) (parse_url($requestUri, PHP_URL_QUERY) ?? '');
 
@@ -164,9 +171,6 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
                                     <span><?= e(t('Sign out')) ?></span>
                                 </button>
                             </form>
-                        <?php else: ?>
-                            <a class="header-auth__signin" href="<?= e(url('/login')) ?>"><?= e(t('Sign in')) ?></a>
-                            <a class="btn btn-primary btn-sm header-auth__register" href="<?= e(url('/register')) ?>"><?= e(t('Create account')) ?></a>
                         <?php endif; ?>
 
                         <form class="header-locale" action="<?= e(url('/locale')) ?>" method="post" data-locale-switch>
@@ -181,6 +185,7 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
                             </select>
                         </form>
 
+                        <?php if ($isAuthenticated): ?>
                         <button
                             class="theme-toggle"
                             type="button"
@@ -192,6 +197,70 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
                                 <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Z"/>
                             </svg>
                         </button>
+                        <?php else: ?>
+                            <!-- BARAMA_PUBLIC_ACCOUNT_MENU_SERVER_V100 -->
+                            <div class="barama-user-menu-wrap" data-public-user-menu>
+                                <button
+                                    class="barama-user-trigger"
+                                    type="button"
+                                    data-public-user-trigger
+                                    aria-label="<?= e(t('Account menu')) ?>"
+                                    aria-haspopup="menu"
+                                    aria-expanded="false"
+                                >
+                                    <?= app_icon('user') ?>
+                                </button>
+
+                                <div class="barama-user-menu" data-public-user-panel role="menu" hidden>
+                                    <div class="barama-user-menu__head">
+                                        <strong><?= e(t('Account')) ?></strong>
+                                        <small><?= e(t('Sign in or create an account to manage your Barama activity.')) ?></small>
+                                    </div>
+
+                                    <div class="barama-user-menu__actions">
+                                        <a class="barama-user-action" href="<?= e(url('/login')) ?>" role="menuitem">
+                                            <span class="barama-user-action__icon"><?= app_icon('key') ?></span>
+                                            <span>
+                                                <strong><?= e(t('Sign in')) ?></strong>
+                                                <small><?= e(t('Access saved properties and your account activity.')) ?></small>
+                                            </span>
+                                            <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+                                        </a>
+
+                                        <a class="barama-user-action" href="<?= e(url('/register')) ?>" role="menuitem">
+                                            <span class="barama-user-action__icon"><?= app_icon('user') ?></span>
+                                            <span>
+                                                <strong><?= e(t('Create account')) ?></strong>
+                                                <small><?= e(t('Create an account to save and manage your activity.')) ?></small>
+                                            </span>
+                                            <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+                                        </a>
+                                    </div>
+
+                                    <div class="barama-user-menu__footer">
+                                        <div class="barama-user-menu__theme">
+                                            <button
+                                    class="theme-toggle"
+                                    type="button"
+                                    data-theme-toggle
+                                    aria-label="<?= e(t('Toggle light and dark mode')) ?>"
+                                    title="<?= e(t('Toggle theme')) ?>"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 1 1 1-1Z"/>
+                                    </svg>
+                                </button>
+                                            <span class="barama-user-menu__theme-label"><?= e(t('Theme')) ?></span>
+                                        </div>
+                                        <div class="barama-user-menu__legal">
+                                            <a href="<?= e(url('/account/privacy')) ?>"><?= e(t('Privacy')) ?></a>
+                                            <span><?= e(t('Terms')) ?></span>
+                                            <span><?= e(t('Disclaimer')) ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

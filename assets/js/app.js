@@ -1239,128 +1239,32 @@
             });
         }
 
-        const themeToggle = header.querySelector('[data-theme-toggle]');
-        const loginSource = Array.from(header.querySelectorAll('a[href]'))
-            .find((a) => normalizePath(a.href) === '/login');
-        const registerSource = Array.from(header.querySelectorAll('a[href]'))
-            .find((a) => normalizePath(a.href) === '/register');
+        const wrap = header.querySelector('[data-public-user-menu]');
+        const trigger = wrap?.querySelector('[data-public-user-trigger]');
+        const menu = wrap?.querySelector('[data-public-user-panel]');
 
-        /* Place the new user button beside the existing locale control.
-           No logo, routing, auth or theme logic is replaced. */
-        const preferredHost = (themeToggle && themeToggle.parentElement)
-            || (localeForm && localeForm.parentElement)
-            || header.querySelector('.container')
-            || header;
+        if (wrap && trigger && menu) {
+            const setOpen = (open) => {
+                menu.hidden = !open;
+                trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            };
 
-        const wrap = document.createElement('div');
-        wrap.className = 'barama-user-menu-wrap';
+            trigger.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setOpen(menu.hidden);
+            });
 
-        const trigger = document.createElement('button');
-        trigger.type = 'button';
-        trigger.className = 'barama-user-trigger';
-        trigger.setAttribute('aria-label', 'Account menu');
-        trigger.setAttribute('aria-haspopup', 'menu');
-        trigger.setAttribute('aria-expanded', 'false');
-        trigger.innerHTML = svg('user');
+            document.addEventListener('click', (event) => {
+                if (!wrap.contains(event.target)) setOpen(false);
+            });
 
-        const menu = document.createElement('div');
-        menu.className = 'barama-user-menu';
-        menu.hidden = true;
-        menu.setAttribute('role', 'menu');
-        menu.innerHTML = `
-            <div class="barama-user-menu__head">
-                <strong>Account</strong>
-                <small>Sign in or create an account to manage your Barama activity.</small>
-            </div>
-            <div class="barama-user-menu__actions" data-barama-user-actions></div>
-            <div class="barama-user-menu__footer">
-                <div class="barama-user-menu__theme" data-barama-theme-slot>
-                    <span class="barama-user-menu__theme-label">Theme</span>
-                </div>
-                <div class="barama-user-menu__legal">
-                    <a href="/account/privacy">Privacy</a>
-                    <span title="Public Terms page is not configured yet.">Terms</span>
-                    <span title="Public Disclaimer page is not configured yet.">Disclaimer</span>
-                </div>
-            </div>
-        `;
-
-        const actions = menu.querySelector('[data-barama-user-actions]');
-
-        const addAction = (source, href, title, helper, iconName) => {
-            if (source) source.classList.add('barama-account-source-hidden');
-            const a = document.createElement('a');
-            a.className = 'barama-user-action';
-            a.href = source ? source.href : href;
-            a.setAttribute('role', 'menuitem');
-            a.innerHTML = `
-                <span class="barama-user-action__icon">${svg(iconName)}</span>
-                <span><strong>${title}</strong><small>${helper}</small></span>
-                <span class="barama-user-action__arrow" aria-hidden="true">→</span>
-            `;
-            actions.appendChild(a);
-        };
-
-        if (loginSource || registerSource) {
-            addAction(
-                loginSource,
-                '/login',
-                'Sign in',
-                'Access saved properties and your account activity.',
-                'login'
-            );
-            addAction(
-                registerSource,
-                '/register',
-                'Create account',
-                'Create an account to save and manage your activity.',
-                'register'
-            );
-        } else {
-            const accountSource = Array.from(header.querySelectorAll('a[href]'))
-                .find((a) => {
-                    const path = normalizePath(a.href);
-                    return path === '/account' || path.startsWith('/account/');
-                });
-            if (accountSource) {
-                addAction(
-                    accountSource,
-                    '/account',
-                    'My account',
-                    'Open your profile, settings and saved activity.',
-                    'user'
-                );
-            }
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !menu.hidden) {
+                    setOpen(false);
+                    trigger.focus();
+                }
+            });
         }
-
-        wrap.append(trigger, menu);
-        preferredHost.appendChild(wrap);
-
-        const themeSlot = menu.querySelector('[data-barama-theme-slot]');
-        if (themeToggle && themeSlot) {
-            themeSlot.prepend(themeToggle);
-        }
-
-        const setOpen = (open) => {
-            menu.hidden = !open;
-            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-        };
-
-        trigger.addEventListener('click', (event) => {
-            event.stopPropagation();
-            setOpen(menu.hidden);
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!wrap.contains(event.target)) setOpen(false);
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !menu.hidden) {
-                setOpen(false);
-                trigger.focus();
-            }
-        });
     });
 })();
 
