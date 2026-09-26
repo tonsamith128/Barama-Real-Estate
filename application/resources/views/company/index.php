@@ -9,7 +9,7 @@ $total = (int) ($inventory['total'] ?? 0);
 <section class="marketplace-hero marketplace-hero--discovery marketplace-hero--companies">
     <div class="container app-container">
         <div class="marketplace-hero__grid">
-            <div><span class="eyebrow">Company Directory</span><h1>Discover approved developers, agencies, and property companies.</h1><p>Explore public profiles with published projects and active marketplace inventory.</p></div>
+            <div><span class="eyebrow">Company Directory</span><h1>Discover Approved Companies</h1><p>Explore public profiles with published projects and active marketplace inventory.</p></div>
             <div class="marketplace-hero__count"><strong><?= e(number_format($total)) ?></strong><span>Approved compan<?= $total === 1 ? 'y' : 'ies' ?></span></div>
         </div>
 

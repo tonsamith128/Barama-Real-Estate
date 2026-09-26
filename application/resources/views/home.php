@@ -8,7 +8,7 @@ $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
         <div class="market-home__hero">
             <div class="market-home__copy">
                 <span class="eyebrow">Barama Real Estate</span>
-                <h1>Property discovery built around what you want to do.</h1>
+                <h1>Property Discovery Simplified</h1>
                 <p>Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.</p>
 
                 <form class="market-searchbar" action="<?= e(url('/properties')) ?>" method="get" data-marketplace-filter>

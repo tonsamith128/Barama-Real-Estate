@@ -1165,8 +1165,17 @@
     const normalizePath = (value) => {
         try {
             const url = new URL(value, window.location.origin);
-            let path = url.pathname || '/';
-            if (path.length > 1) path = path.replace(/\/+$/, '');
+            const routedPath = url.searchParams.get('_route');
+            let path = routedPath || url.pathname || '/';
+
+            if (!path.startsWith('/')) {
+                path = '/' + path;
+            }
+
+            if (path.length > 1) {
+                path = path.replace(/\/+$/, '');
+            }
+
             return path;
         } catch (_) {
             return '/';
@@ -1303,7 +1312,7 @@
             addAction(
                 registerSource,
                 '/register',
-                'Register',
+                'Create account',
                 'Create an account to save and manage your activity.',
                 'register'
             );

@@ -19,7 +19,7 @@ $activeFilters = array_filter([
         <div class="marketplace-hero__grid">
             <div>
                 <span class="eyebrow">Property Marketplace</span>
-                <h1>Find the right property without the noise.</h1>
+                <h1>Find Your Property</h1>
                 <p>Search approved sale and rental listings by location, property type, bedrooms, and budget.</p>
             </div>
             <div class="marketplace-hero__count"><strong><?= e(number_format($total)) ?></strong><span>Published listing<?= $total === 1 ? '' : 's' ?></span></div>
