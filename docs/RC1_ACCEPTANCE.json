@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "target_version": "1.0.0-RC1",
-  "updated_at": "2026-09-26T07:04:14Z",
+  "updated_at": "2026-09-26T09:15:37Z",
   "automated": {
     "foundation_qa": {
       "status": "pending",
@@ -46,8 +46,8 @@
       "evidence": "Disposable customer lifecycle passed on 0.9.22-dev candidate 5881de9536a4 @ 1a7af5ba2044; registration/verification, Account-only access, suspend/restore, admin grant/revoke, intended-route handling, cleanup and baseline restoration passed."
     },
     "production_mail_delivery": {
-      "status": "pending",
-      "evidence": ""
+      "status": "pass",
+      "evidence": "Production mail delivery passed on 0.9.22-dev candidate 5881de9536a4 @ 1a7af5ba2044; authenticated SMTP transport accepted the message and external inbox receipt was confirmed using the delivered acceptance code."
     },
     "updater_acceptance": {
       "status": "pending",
