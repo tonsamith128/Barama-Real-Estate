@@ -57,6 +57,7 @@ $required = [
     'application/database/migrations/0008_create_application_settings.php',
     'application/database/migrations/0009_create_account_onboarding.php',
     'application/database/migrations/0010_release_security_hardening.php',
+    'application/database/migrations/0011_create_workspace_preferences.php',
     'application/app/Domain/RealEstate/DomainRules.php',
     'application/app/Repositories/LocationRepository.php',
     'application/app/Repositories/CompanyRepository.php',
@@ -80,6 +81,7 @@ $required = [
     'application/app/Services/MailService.php',
     'application/app/Services/InstallerService.php',
     'application/app/Services/UpgradeService.php',
+    'application/app/Support/MigrationCatalog.php',
     'application/app/Services/LicenseManagerClient.php',
     'application/app/Services/CompanyManagementService.php',
     'application/app/Services/MembershipService.php',
@@ -296,6 +298,33 @@ $migrationNames === $sortedMigrationNames
 count($migrationNames) === count(array_unique($migrationNames))
     ? $pass('Database migration filenames are unique.')
     : $fail('Duplicate database migration filenames detected.');
+
+$expectedMigrationNames = [
+    '0001_create_auth_core.php',
+    '0002_seed_auth_roles_permissions.php',
+    '0003_create_real_estate_domain.php',
+    '0004_seed_real_estate_permissions.php',
+    '0005_create_domain_workflow_support.php',
+    '0006_create_customer_engagement.php',
+    '0007_create_notification_delivery.php',
+    '0008_create_application_settings.php',
+    '0009_create_account_onboarding.php',
+    '0010_release_security_hardening.php',
+    '0011_create_workspace_preferences.php',
+];
+
+$migrationNames === $expectedMigrationNames
+    ? $pass('Database migration sequence matches canonical 0001-0011.')
+    : $fail('Database migration sequence drift detected: ' . implode(', ', $migrationNames));
+
+$migrationPrefixes = array_map(
+    static fn (string $name): string => substr($name, 0, 4),
+    $migrationNames
+);
+
+count($migrationPrefixes) === count(array_unique($migrationPrefixes))
+    ? $pass('Database migration numeric prefixes are unique.')
+    : $fail('Duplicate numeric migration prefix detected.');
 
 fwrite(
     STDOUT,

@@ -173,6 +173,9 @@ foreach ([
     'documentation/index.html',
     'README.md',
     'VERSION',
+    'application/app/Support/MigrationCatalog.php',
+    'application/database/migrations/0010_release_security_hardening.php',
+    'application/database/migrations/0011_create_workspace_preferences.php',
 ] as $required) {
     if (!in_array($required, $entries, true)) {
         throw new RuntimeException('Customer package compliance file is missing: ' . $required);
@@ -258,6 +261,55 @@ if ($firstPartyJs !== ['assets/js/app.js']) {
     );
 }
 
+$expectedMigrationEntries = [
+    'application/database/migrations/0001_create_auth_core.php',
+    'application/database/migrations/0002_seed_auth_roles_permissions.php',
+    'application/database/migrations/0003_create_real_estate_domain.php',
+    'application/database/migrations/0004_seed_real_estate_permissions.php',
+    'application/database/migrations/0005_create_domain_workflow_support.php',
+    'application/database/migrations/0006_create_customer_engagement.php',
+    'application/database/migrations/0007_create_notification_delivery.php',
+    'application/database/migrations/0008_create_application_settings.php',
+    'application/database/migrations/0009_create_account_onboarding.php',
+    'application/database/migrations/0010_release_security_hardening.php',
+    'application/database/migrations/0011_create_workspace_preferences.php',
+];
+
+$migrationEntries = array_values(array_filter(
+    $entries,
+    static fn (string $entry): bool =>
+        preg_match('#^application/database/migrations/\d{4}_[^/]+\.php$#', $entry) === 1
+));
+sort($migrationEntries, SORT_STRING);
+
+if ($migrationEntries !== $expectedMigrationEntries) {
+    throw new RuntimeException(
+        'Customer package canonical migration sequence mismatch: '
+        . implode(', ', $migrationEntries)
+    );
+}
+
+$migrationPrefixes = array_map(
+    static fn (string $entry): string => substr(basename($entry), 0, 4),
+    $migrationEntries
+);
+
+if (count($migrationPrefixes) !== count(array_unique($migrationPrefixes))) {
+    throw new RuntimeException(
+        'Customer package contains duplicate numeric migration prefixes.'
+    );
+}
+
+if (in_array(
+    'application/database/migrations/0010_create_workspace_preferences.php',
+    $entries,
+    true
+)) {
+    throw new RuntimeException(
+        'Historical duplicate 0010 workspace migration is still packaged.'
+    );
+}
+
 $allowedHosts = [
     'cdn.jsdelivr.net',
     'getbootstrap.com',
@@ -328,6 +380,19 @@ foreach ($entries as $entry) {
     }
 
     if (
+        str_starts_with(
+            $entry,
+            'application/database/migrations/'
+        )
+        && preg_match('/^use\s+(?:PDO|RuntimeException);\s*$/m', $content) === 1
+    ) {
+        throw new RuntimeException(
+            'Production migration contains redundant global namespace import: '
+            . $entry
+        );
+    }
+
+    if (
         preg_match_all(
             '#https://([A-Za-z0-9.-]+)#i',
             $content,
@@ -362,6 +427,27 @@ foreach ($entries as $entry) {
             );
         }
     }
+}
+
+$migrationCatalog = (string) $zip->getFromName(
+    'application/app/Support/MigrationCatalog.php'
+);
+$installerMigrationContract = (string) $zip->getFromName(
+    'application/app/Services/InstallerService.php'
+);
+$upgradeMigrationContract = (string) $zip->getFromName(
+    'application/app/Services/UpgradeService.php'
+);
+
+if (
+    !str_contains($migrationCatalog, '0011_create_workspace_preferences.php')
+    || !str_contains($migrationCatalog, '0010_create_workspace_preferences.php')
+    || !str_contains($installerMigrationContract, 'MigrationCatalog::appliedLookup')
+    || !str_contains($upgradeMigrationContract, 'MigrationCatalog::pending')
+) {
+    throw new RuntimeException(
+        'Customer package installer/updater migration compatibility contract is incomplete.'
+    );
 }
 
 $notices = (string) $zip->getFromName('THIRD_PARTY_NOTICES.md');

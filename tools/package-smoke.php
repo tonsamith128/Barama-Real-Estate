@@ -78,7 +78,10 @@ foreach ([
     'application/app/Core/Request.php',
     'application/app/Http/Controllers/UpgradeController.php',
     'application/app/Services/UpgradeService.php',
+    'application/app/Support/MigrationCatalog.php',
     'application/resources/views/updater/index.php',
+    'application/database/migrations/0010_release_security_hardening.php',
+    'application/database/migrations/0011_create_workspace_preferences.php',
     'application/app/Services/InstallerService.php',
     'application/app/Services/MailService.php',
     'application/app/Services/LicenseManagerClient.php',
@@ -151,6 +154,65 @@ $js = glob($temporaryRoot . '/assets/js/*.js') ?: [];
 
 if (in_array('tools/localization-smoke.php', $entries, true)) {
     throw new RuntimeException('Internal localization QA script leaked into customer package.');
+}
+
+$expectedPackageMigrations = [
+    'application/database/migrations/0001_create_auth_core.php',
+    'application/database/migrations/0002_seed_auth_roles_permissions.php',
+    'application/database/migrations/0003_create_real_estate_domain.php',
+    'application/database/migrations/0004_seed_real_estate_permissions.php',
+    'application/database/migrations/0005_create_domain_workflow_support.php',
+    'application/database/migrations/0006_create_customer_engagement.php',
+    'application/database/migrations/0007_create_notification_delivery.php',
+    'application/database/migrations/0008_create_application_settings.php',
+    'application/database/migrations/0009_create_account_onboarding.php',
+    'application/database/migrations/0010_release_security_hardening.php',
+    'application/database/migrations/0011_create_workspace_preferences.php',
+];
+
+$packageMigrations = array_values(array_filter(
+    $entries,
+    static fn (string $entry): bool =>
+        preg_match('#^application/database/migrations/\d{4}_[^/]+\.php$#', $entry) === 1
+));
+sort($packageMigrations, SORT_STRING);
+
+if ($packageMigrations !== $expectedPackageMigrations) {
+    throw new RuntimeException(
+        'Exact customer ZIP migration sequence drift detected: '
+        . implode(', ', $packageMigrations)
+    );
+}
+
+if (in_array(
+    'application/database/migrations/0010_create_workspace_preferences.php',
+    $entries,
+    true
+)) {
+    throw new RuntimeException(
+        'Historical duplicate 0010 workspace migration leaked into customer package.'
+    );
+}
+
+$migrationCatalogSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Support/MigrationCatalog.php'
+);
+$installerMigrationSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/InstallerService.php'
+);
+$upgradeMigrationSource = (string) file_get_contents(
+    $temporaryRoot . '/application/app/Services/UpgradeService.php'
+);
+
+if (
+    !str_contains($migrationCatalogSource, '0011_create_workspace_preferences.php')
+    || !str_contains($migrationCatalogSource, '0010_create_workspace_preferences.php')
+    || !str_contains($installerMigrationSource, 'MigrationCatalog::appliedLookup')
+    || !str_contains($upgradeMigrationSource, 'MigrationCatalog::pending')
+) {
+    throw new RuntimeException(
+        'Installer/updater migration compatibility contract is incomplete.'
+    );
 }
 
 if (
