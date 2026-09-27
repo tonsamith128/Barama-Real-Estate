@@ -64,6 +64,7 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                 <label><span>Unit amount</span><input class="form-control" name="unit_amount" type="number" min="0" step="0.01" required></label>
                 <label><span>Currency</span><input class="form-control" name="currency" maxlength="3" value="USD" required></label>
                 <label><span>Coupon code <small>Optional</small></span><input class="form-control" name="coupon_code" maxlength="64" placeholder="WELCOME10"></label>
+                <label><span>Tax rule code <small>Optional</small></span><input class="form-control" name="tax_rule_code" maxlength="64" placeholder="VAT10"></label>
                 <label><span>Due at</span><input class="form-control" name="due_at" type="datetime-local"></label>
                 <label class="workspace-form__span-2"><span>Internal notes</span><textarea class="form-control" name="notes" rows="3" maxlength="5000"></textarea></label>
             </div>
@@ -90,6 +91,9 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                         <th>Subtotal</th>
                         <th>Discount</th>
                         <th>Coupon</th>
+                        <th>Taxable</th>
+                        <th>Tax</th>
+                        <th>Tax rule</th>
                         <th>Total</th>
                         <th>Settled</th>
                         <th>Status</th>
@@ -102,7 +106,7 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                 </thead>
                 <tbody>
                     <?php if ($invoices === []): ?>
-                        <tr><td colspan="14"><div class="workspace-record-empty">No invoices have been created yet.</div></td></tr>
+                        <tr><td colspan="17"><div class="workspace-record-empty">No invoices have been created yet.</div></td></tr>
                     <?php endif; ?>
 
                     <?php foreach ($invoices as $invoice): ?>
@@ -119,6 +123,9 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                             <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['subtotal'], 2)) ?></td>
                             <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['discount_total'] ?? 0), 2)) ?></td>
                             <td><?= e((string) ($invoice['coupon_code'] ?? '—')) ?></td>
+                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['taxable_total'] ?? 0), 2)) ?></td>
+                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['tax_total'] ?? 0), 2)) ?><small><?= e(number_format((float) ($invoice['tax_rate'] ?? 0), 4)) ?>%</small></td>
+                            <td><?= e((string) ($invoice['tax_rule_code'] ?? '—')) ?></td>
                             <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['total'], 2)) ?></td>
                             <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['settled_amount'] ?? 0), 2)) ?></td>
                             <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span></td>
