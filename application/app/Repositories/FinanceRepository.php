@@ -257,6 +257,253 @@ final class FinanceRepository
         ]);
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function invoices(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT i.*, c.name AS company_name,
+                        p.name AS plan_name,
+                        (SELECT COUNT(*)
+                         FROM billing_invoice_items item
+                         WHERE item.invoice_id = i.id) AS item_count,
+                        (
+                            SELECT COALESCE(SUM(
+                                CASE
+                                    WHEN t.status <> "succeeded" THEN 0
+                                    WHEN t.transaction_type IN ("payment", "credit") THEN t.amount
+                                    WHEN t.transaction_type = "refund" THEN -t.amount
+                                    ELSE 0
+                                END
+                            ), 0)
+                            FROM billing_transactions t
+                            WHERE t.invoice_id = i.id
+                        ) AS settled_amount
+                 FROM billing_invoices i
+                 INNER JOIN companies c ON c.id = i.company_id
+                 LEFT JOIN company_subscriptions s ON s.id = i.subscription_id
+                 LEFT JOIN subscription_plans p ON p.id = s.plan_id
+                 ORDER BY i.created_at DESC, i.id DESC
+                 LIMIT 1000'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function transactions(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT t.*, c.name AS company_name,
+                        i.invoice_number,
+                        p.name AS plan_name
+                 FROM billing_transactions t
+                 INNER JOIN companies c ON c.id = t.company_id
+                 LEFT JOIN billing_invoices i ON i.id = t.invoice_id
+                 LEFT JOIN company_subscriptions s ON s.id = t.subscription_id
+                 LEFT JOIN subscription_plans p ON p.id = s.plan_id
+                 ORDER BY t.processed_at DESC, t.id DESC
+                 LIMIT 1500'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function invoice(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT i.*, c.name AS company_name,
+                    p.name AS plan_name
+             FROM billing_invoices i
+             INNER JOIN companies c ON c.id = i.company_id
+             LEFT JOIN company_subscriptions s ON s.id = i.subscription_id
+             LEFT JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE i.id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function subscriptionBelongsToCompany(
+        int $subscriptionId,
+        int $companyId
+    ): bool {
+        $statement = Database::connection()->prepare(
+            'SELECT 1
+             FROM company_subscriptions
+             WHERE id = :id
+               AND company_id = :company_id
+             LIMIT 1'
+        );
+        $statement->execute([
+            'id' => $subscriptionId,
+            'company_id' => $companyId,
+        ]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createInvoice(array $data): int
+    {
+        $uuid = IdGenerator::uuid();
+        $invoiceNumber = 'INV-' . strtoupper(substr(str_replace('-', '', $uuid), 0, 16));
+
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_invoices
+                (uuid, invoice_number, company_id, subscription_id, status,
+                 currency, subtotal, total, due_at, notes,
+                 created_by_user_id, updated_by_user_id)
+             VALUES
+                (:uuid, :invoice_number, :company_id, :subscription_id, "draft",
+                 :currency, :subtotal, :total, :due_at, :notes,
+                 :actor_id, :actor_id)'
+        );
+        $statement->execute([
+            'uuid' => $uuid,
+            'invoice_number' => $invoiceNumber,
+            'company_id' => $data['company_id'],
+            'subscription_id' => $data['subscription_id'],
+            'currency' => $data['currency'],
+            'subtotal' => $data['subtotal'],
+            'total' => $data['total'],
+            'due_at' => $data['due_at'],
+            'notes' => $data['notes'],
+            'actor_id' => $data['actor_id'],
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createInvoiceItem(int $invoiceId, array $data): void
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_invoice_items
+                (invoice_id, description, quantity, unit_amount, line_total)
+             VALUES
+                (:invoice_id, :description, :quantity, :unit_amount, :line_total)'
+        );
+        $statement->execute([
+            'invoice_id' => $invoiceId,
+            'description' => $data['description'],
+            'quantity' => $data['quantity'],
+            'unit_amount' => $data['unit_amount'],
+            'line_total' => $data['line_total'],
+        ]);
+    }
+
+    public function setInvoiceStatus(
+        int $id,
+        string $status,
+        int $actorId
+    ): void {
+        $statement = Database::connection()->prepare(
+            'UPDATE billing_invoices
+             SET status = :status,
+                 issued_at = CASE
+                    WHEN :issued_status = "open" AND issued_at IS NULL
+                        THEN CURRENT_TIMESTAMP
+                    ELSE issued_at
+                 END,
+                 paid_at = CASE
+                    WHEN :paid_status = "paid" THEN CURRENT_TIMESTAMP
+                    ELSE paid_at
+                 END,
+                 updated_by_user_id = :actor_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'status' => $status,
+            'issued_status' => $status,
+            'paid_status' => $status,
+            'actor_id' => $actorId,
+            'id' => $id,
+        ]);
+    }
+
+    public function invoiceSettledAmount(int $invoiceId): float
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT COALESCE(SUM(
+                CASE
+                    WHEN status <> "succeeded" THEN 0
+                    WHEN transaction_type IN ("payment", "credit") THEN amount
+                    WHEN transaction_type = "refund" THEN -amount
+                    ELSE 0
+                END
+             ), 0)
+             FROM billing_transactions
+             WHERE invoice_id = :invoice_id'
+        );
+        $statement->execute(['invoice_id' => $invoiceId]);
+
+        return (float) $statement->fetchColumn();
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createTransaction(array $data): int
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_transactions
+                (uuid, company_id, subscription_id, invoice_id,
+                 transaction_type, status, source, reference,
+                 amount, currency, processed_at, notes, created_by_user_id)
+             VALUES
+                (:uuid, :company_id, :subscription_id, :invoice_id,
+                 :transaction_type, :status, "admin", :reference,
+                 :amount, :currency, :processed_at, :notes, :actor_id)'
+        );
+        $statement->execute([
+            'uuid' => IdGenerator::uuid(),
+            'company_id' => $data['company_id'],
+            'subscription_id' => $data['subscription_id'],
+            'invoice_id' => $data['invoice_id'],
+            'transaction_type' => $data['transaction_type'],
+            'status' => $data['status'],
+            'reference' => $data['reference'],
+            'amount' => $data['amount'],
+            'currency' => $data['currency'],
+            'processed_at' => $data['processed_at'],
+            'notes' => $data['notes'],
+            'actor_id' => $data['actor_id'],
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    /** @return array<string,mixed> */
+    public function ledgerSummary(): array
+    {
+        $row = Database::connection()->query(
+            'SELECT
+                (SELECT COUNT(*) FROM billing_invoices) AS invoices,
+                (SELECT COUNT(*) FROM billing_invoices WHERE status = "draft") AS draft_invoices,
+                (SELECT COUNT(*) FROM billing_invoices WHERE status = "open") AS open_invoices,
+                (SELECT COUNT(*) FROM billing_invoices WHERE status = "paid") AS paid_invoices,
+                (SELECT COUNT(*) FROM billing_transactions) AS transactions,
+                (SELECT COUNT(*) FROM billing_transactions WHERE status = "succeeded") AS succeeded_transactions,
+                (
+                    SELECT COALESCE(SUM(
+                        CASE
+                            WHEN status <> "succeeded" THEN 0
+                            WHEN transaction_type IN ("payment", "credit") THEN amount
+                            WHEN transaction_type = "refund" THEN -amount
+                            ELSE 0
+                        END
+                    ), 0)
+                    FROM billing_transactions
+                ) AS net_recorded
+            '
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : [];
+    }
+
     /** @return array<string,int> */
     public function summary(): array
     {
