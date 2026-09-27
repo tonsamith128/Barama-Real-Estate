@@ -11,6 +11,7 @@ use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
 use Barama\Services\PageManagementService;
+use Barama\Services\SiteContentManagementService;
 use Barama\Services\UserAdministrationService;
 use DomainException;
 use InvalidArgumentException;
@@ -63,6 +64,17 @@ final class AdminManagementController
                 'amenity_id' => (int) $id,
                 'status' => $status,
                 'message' => 'Amenity status updated.',
+            ];
+        });
+    }
+
+    public function updateSiteContent(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new SiteContentManagementService())->update($request->all());
+
+            return [
+                'message' => 'Homepage and primary navigation updated.',
             ];
         });
     }
