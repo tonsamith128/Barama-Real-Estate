@@ -108,6 +108,131 @@ final class FinanceRepository
         return is_array($row) ? $row : null;
     }
 
+    /** @return array<string,mixed>|null */
+    public function companyEntitlementSubscription(int $companyId): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT s.*, p.name AS plan_name, p.slug AS plan_slug,
+                    p.billing_interval, p.price, p.currency,
+                    p.listing_limit, p.property_limit, p.project_limit,
+                    p.team_member_limit, p.featured_listing_limit
+             FROM company_subscriptions s
+             INNER JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE s.company_id = :company_id
+             ORDER BY
+                CASE
+                    WHEN s.status = "active" THEN 0
+                    WHEN s.status = "paused" THEN 1
+                    ELSE 2
+                END,
+                s.updated_at DESC,
+                s.id DESC
+             LIMIT 1'
+        );
+        $statement->execute(['company_id' => $companyId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,int> */
+    public function companyEntitlementUsage(int $companyId): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT
+                (
+                    SELECT COUNT(*)
+                    FROM projects p
+                    WHERE p.company_id = :company_id1
+                      AND p.deleted_at IS NULL
+                ) AS projects,
+                (
+                    SELECT COUNT(*)
+                    FROM properties p
+                    WHERE p.company_id = :company_id2
+                      AND p.deleted_at IS NULL
+                ) AS properties,
+                (
+                    SELECT COUNT(*)
+                    FROM listings l
+                    INNER JOIN properties p ON p.id = l.property_id
+                    WHERE p.company_id = :company_id3
+                      AND p.deleted_at IS NULL
+                      AND l.deleted_at IS NULL
+                ) AS listings,
+                (
+                    SELECT COUNT(*)
+                    FROM company_members cm
+                    WHERE cm.company_id = :company_id4
+                      AND cm.status = "active"
+                ) AS active_team_members,
+                (
+                    SELECT COUNT(*)
+                    FROM company_invitations ci
+                    WHERE ci.company_id = :company_id5
+                      AND ci.status = "pending"
+                      AND ci.expires_at > CURRENT_TIMESTAMP
+                ) AS pending_team_invitations'
+        );
+        $statement->execute([
+            'company_id1' => $companyId,
+            'company_id2' => $companyId,
+            'company_id3' => $companyId,
+            'company_id4' => $companyId,
+            'company_id5' => $companyId,
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($row)) {
+            return [
+                'projects' => 0,
+                'properties' => 0,
+                'listings' => 0,
+                'active_team_members' => 0,
+                'pending_team_invitations' => 0,
+                'team_seats' => 0,
+            ];
+        }
+
+        $usage = array_map(
+            static fn (mixed $value): int => (int) ($value ?? 0),
+            $row
+        );
+        $usage['team_seats'] = $usage['active_team_members']
+            + $usage['pending_team_invitations'];
+
+        return $usage;
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function developerBillingCompanies(int $userId): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT c.id, c.name, c.slug, c.status AS company_status,
+                    cm.member_role
+             FROM companies c
+             INNER JOIN company_members cm ON cm.company_id = c.id
+             WHERE cm.user_id = :user_id
+               AND cm.status = "active"
+               AND c.deleted_at IS NULL
+             ORDER BY c.name ASC'
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        $companies = [];
+
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $company) {
+            $companyId = (int) $company['id'];
+            $company['subscription'] = $this->companyEntitlementSubscription(
+                $companyId
+            );
+            $company['usage'] = $this->companyEntitlementUsage($companyId);
+            $companies[] = $company;
+        }
+
+        return $companies;
+    }
+
     public function planSlugExists(string $slug): bool
     {
         $statement = Database::connection()->prepare(
