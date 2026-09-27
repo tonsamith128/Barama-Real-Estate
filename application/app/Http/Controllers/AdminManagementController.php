@@ -7,6 +7,7 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Services\AdminMediaManagementService;
+use Barama\Services\BillingOperationsService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
@@ -195,6 +196,37 @@ final class AdminManagementController
                 'payment_provider_id' => (int) $id,
                 'status' => $status,
                 'message' => 'Payment provider status updated.',
+            ];
+        });
+    }
+
+    public function retryBillingWebhook(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid webhook event ID is required.');
+            }
+
+            $result = (new BillingOperationsService())->retryWebhookEvent((int) $id);
+            $result['message'] = 'Webhook event retry completed.';
+
+            return $result;
+        });
+    }
+
+    public function ignoreBillingWebhook(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid webhook event ID is required.');
+            }
+
+            (new BillingOperationsService())->ignoreWebhookEvent((int) $id);
+
+            return [
+                'webhook_event_id' => (int) $id,
+                'status' => 'ignored',
+                'message' => 'Webhook event ignored.',
             ];
         });
     }
