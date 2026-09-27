@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
@@ -102,6 +103,40 @@ final class DashboardController
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => 'homepage',
             'siteContent' => (new SiteContentRepository())->get(),
+        ]));
+    }
+
+    public function plans(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-plans', [
+            'pageTitle' => 'Plans & Packages · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'plans',
+            'plans' => $finance->plans(),
+            'financeSummary' => $finance->summary(),
+        ]));
+    }
+
+    public function subscriptions(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-subscriptions', [
+            'pageTitle' => 'Subscriptions · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'subscriptions',
+            'subscriptions' => $finance->subscriptions(),
+            'plans' => $finance->activePlans(),
+            'companies' => $finance->companies(),
+            'financeSummary' => $finance->summary(),
         ]));
     }
 
@@ -492,6 +527,10 @@ final class DashboardController
             ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
             ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],
+
+            ['heading' => 'Finance'],
+            ['label' => 'Plans & Packages', 'path' => '/dashboard/plans', 'icon' => 'layers'],
+            ['label' => 'Subscriptions', 'path' => '/dashboard/subscriptions', 'icon' => 'building'],
 
             ['heading' => 'Users & Security'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
