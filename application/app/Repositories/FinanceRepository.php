@@ -127,7 +127,8 @@ final class FinanceRepository
                 END,
                 s.updated_at DESC,
                 s.id DESC
-             LIMIT 1'
+             LIMIT 1
+             FOR UPDATE'
         );
         $statement->execute(['company_id' => $companyId]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
@@ -145,12 +146,14 @@ final class FinanceRepository
                     FROM projects p
                     WHERE p.company_id = :company_id1
                       AND p.deleted_at IS NULL
+                      AND p.status <> "archived"
                 ) AS projects,
                 (
                     SELECT COUNT(*)
                     FROM properties p
                     WHERE p.company_id = :company_id2
                       AND p.deleted_at IS NULL
+                      AND p.status <> "archived"
                 ) AS properties,
                 (
                     SELECT COUNT(*)
@@ -159,6 +162,7 @@ final class FinanceRepository
                     WHERE p.company_id = :company_id3
                       AND p.deleted_at IS NULL
                       AND l.deleted_at IS NULL
+                      AND l.status NOT IN ("closed", "expired")
                 ) AS listings,
                 (
                     SELECT COUNT(*)
