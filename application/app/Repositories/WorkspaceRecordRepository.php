@@ -244,6 +244,20 @@ final class WorkspaceRecordRepository
                           LEFT JOIN users assigned ON assigned.id = i.assigned_user_id
                           LEFT JOIN leads converted_lead ON converted_lead.inquiry_id = i.id AND converted_lead.deleted_at IS NULL
                           WHERE i.id = :id LIMIT 1',
+            'viewing' => 'SELECT v.*, c.name AS company_name,
+                                 l.slug AS listing_slug, l.transaction_type,
+                                 l.price, l.currency,
+                                 p.title AS property_title, p.reference_code,
+                                 p.property_type, p.location_id,
+                                 loc.name AS location_name,
+                                 u.name AS customer_name, u.email AS customer_email
+                          FROM viewing_requests v
+                          INNER JOIN companies c ON c.id = v.company_id
+                          INNER JOIN listings l ON l.id = v.listing_id
+                          INNER JOIN properties p ON p.id = l.property_id
+                          LEFT JOIN locations loc ON loc.id = p.location_id
+                          INNER JOIN users u ON u.id = v.user_id
+                          WHERE v.id = :id LIMIT 1',
             'lead' => 'SELECT l.*, c.name AS company_name,
                               assigned.name AS assigned_user_name,
                               loc.name AS preferred_location_name,
