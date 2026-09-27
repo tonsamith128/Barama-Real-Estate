@@ -103,6 +103,7 @@ $sectionPath = match ($recordResource) {
     'inquiry' => $workspaceType === 'admin' ? '/dashboard/inquiries' : '/developer/inquiries',
     'viewing' => $workspaceType === 'admin' ? '/dashboard/viewings' : '/developer/viewings',
     'lead' => $workspaceType === 'admin' ? '/dashboard/leads' : '/developer/leads',
+    'page' => '/dashboard/pages',
     'user' => '/dashboard/users',
     'audit' => '/dashboard/audit',
     default => $workspaceType === 'admin' ? '/dashboard' : '/developer',
@@ -200,6 +201,34 @@ if ($workspaceType === 'developer') {
         $actions[] = $workflowButton('closed', 'Close', 'danger');
     } elseif ($recordResource === 'listing' && in_array($status, ['rejected', 'expired'], true)) {
         $actions[] = $workflowButton('draft', 'Restore to draft');
+    } elseif ($recordResource === 'page') {
+        if ($status === 'draft') {
+            $actions[] = '<form action="' . e(url('/dashboard/pages/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="published">'
+                . '<button class="btn btn-sm btn-primary" type="submit">Publish</button></form>';
+            $actions[] = '<form action="' . e(url('/dashboard/pages/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="archived">'
+                . '<button class="btn btn-sm btn-outline-danger" type="submit">Archive</button></form>';
+        } elseif ($status === 'published') {
+            $actions[] = '<a class="btn btn-sm btn-outline-secondary" href="' . e(url(
+                '/pages/' . rawurlencode((string) $record['slug'])
+            )) . '" target="_blank" rel="noopener noreferrer">View public page</a>';
+            $actions[] = '<form action="' . e(url('/dashboard/pages/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="draft">'
+                . '<button class="btn btn-sm btn-outline-secondary" type="submit">Unpublish</button></form>';
+            $actions[] = '<form action="' . e(url('/dashboard/pages/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="archived">'
+                . '<button class="btn btn-sm btn-outline-danger" type="submit">Archive</button></form>';
+        } elseif ($status === 'archived') {
+            $actions[] = '<form action="' . e(url('/dashboard/pages/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="draft">'
+                . '<button class="btn btn-sm btn-primary" type="submit">Restore draft</button></form>';
+        }
     } elseif ($recordResource === 'user') {
         $roles = array_filter(array_map(
             'trim',
@@ -384,6 +413,15 @@ $details = match ($recordResource) {
             : null,
         'Last contact' => $record['last_contact_at'] ?? null,
         'Next follow-up' => $record['next_follow_up_at'] ?? null,
+    ],
+    'page' => [
+        'URL' => '/pages/' . (string) ($record['slug'] ?? ''),
+        'Robots' => $record['robots_directive'] ?? null,
+        'Published' => $record['published_at'] ?? null,
+        'Created by' => $record['created_by_name'] ?? null,
+        'Updated by' => $record['updated_by_name'] ?? null,
+        'Created' => $record['created_at'] ?? null,
+        'Updated' => $record['updated_at'] ?? null,
     ],
     'user' => [
         'Email' => $record['email'] ?? null,
