@@ -79,6 +79,17 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
             . '</span>';
     }
 
+    if (in_array($key, ['issue_state', 'description_state', 'image_state', 'alt_state', 'index_state'], true)) {
+        $normalizedValue = strtolower((string) $value);
+        $tone = in_array($normalizedValue, ['ready', 'indexable'], true)
+            ? 'approved'
+            : (in_array($normalizedValue, ['attention', 'missing'], true) ? 'pending' : 'neutral');
+
+        return '<span class="status-badge status-badge--' . e($tone) . '">'
+            . e($humanize($value))
+            . '</span>';
+    }
+
     if ($key === 'size_bytes') {
         $bytes = (int) $value;
         if ($bytes >= 1048576) {
@@ -194,7 +205,9 @@ $renderActions = static function (array $row) use (
             'inquiries' => 'inquiry',
             'leads' => 'lead',
             'viewings' => 'viewing',
+            'media' => 'media',
             'pages' => 'page',
+            'seo' => (string) ($row['entity_type'] ?? ''),
             'users' => 'user',
             'verification' => 'user',
             'audit' => 'audit',
@@ -538,7 +551,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'pages', 'users', 'verification', 'audit'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'pages', 'seo', 'users', 'verification', 'audit'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -583,6 +596,11 @@ $renderActions = static function (array $row) use (
             <span class="workspace-context-note">
                 <?= app_icon('globe') ?>
                 Public content · controlled publishing
+            </span>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'seo'): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('search') ?>
+                Public discovery · read-only governance
             </span>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'users'): ?>
             <span class="workspace-context-note">
