@@ -414,7 +414,9 @@ $renderActions = static function (array $row) use (
                 $buttons[] = $actionButton('project', $id, 'archived', 'Archive');
             }
         } elseif ($activeSection === 'properties' && $status === 'approved') {
-            $buttons[] = $actionButton('property', $id, 'archived', 'Archive');
+            $buttons[] = $actionButton('property', $id, 'archived', 'Archive', 'danger');
+        } elseif ($activeSection === 'properties' && $status === 'archived') {
+            $buttons[] = $actionButton('property', $id, 'draft', 'Restore to draft');
         } elseif ($activeSection === 'listings') {
             if ($status === 'published') {
                 $buttons[] = $actionButton('listing', $id, 'paused', 'Pause');
@@ -999,7 +1001,7 @@ $renderActions = static function (array $row) use (
                         <option value="approve">Approve selected</option>
                         <option value="reject">Reject selected</option>
                     </select>
-                    <input name="note" maxlength="500" placeholder="Optional moderation note">
+                    <input name="note" maxlength="500" placeholder="Decision note · required when rejecting">
                     <button type="submit" disabled data-bulk-submit>Apply action</button>
                 </form>
             </div>
