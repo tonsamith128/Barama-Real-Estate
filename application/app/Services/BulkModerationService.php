@@ -34,6 +34,18 @@ final class BulkModerationService
             throw new InvalidArgumentException('Bulk moderation decision must be approve or reject.');
         }
 
+        $note = $note !== null ? trim($note) : null;
+
+        if ($decision === 'reject' && ($note === null || $note === '')) {
+            throw new InvalidArgumentException(
+                'A rejection reason is required before returning selected records for correction.'
+            );
+        }
+
+        if ($note !== null && mb_strlen($note) > 500) {
+            $note = mb_substr($note, 0, 500);
+        }
+
         $normalized = $this->normalizeRecords($records);
 
         if ($normalized === []) {

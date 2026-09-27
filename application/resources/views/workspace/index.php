@@ -42,12 +42,34 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
         return e($currency . ' ' . number_format((float) $value, 2));
     }
 
-    if (in_array($key, ['usage_count', 'children_count', 'attachment_count', 'primary_count', 'company_count', 'owned_company_count', 'security_events_count'], true)) {
+    if (in_array($key, [
+        'usage_count',
+        'children_count',
+        'attachment_count',
+        'primary_count',
+        'company_count',
+        'owned_company_count',
+        'security_events_count',
+        'projects_count',
+        'published_projects_count',
+        'properties_count',
+        'approved_properties_count',
+        'listings_count',
+        'published_listings_count',
+        'members_count',
+    ], true)) {
         return e(number_format((int) $value));
     }
 
     if (in_array($key, ['original_name', 'target_title', 'parent_name', 'uploaded_by'], true)) {
         return e((string) $value);
+    }
+
+    if (in_array($key, ['readiness', 'marketplace_readiness'], true)) {
+        $ready = strtolower((string) $value) === 'ready';
+        return '<span class="status-badge status-badge--' . ($ready ? 'approved' : 'pending') . '">'
+            . e($ready ? 'Ready' : 'Blocked')
+            . '</span>';
     }
 
     if ($key === 'attachment_state') {
@@ -391,17 +413,25 @@ $renderActions = static function (array $row) use (
         } elseif ($activeSection === 'projects') {
             if ($status === 'approved') {
                 $buttons[] = $actionButton('project', $id, 'published', 'Publish', 'primary');
+                $buttons[] = $actionButton('project', $id, 'archived', 'Archive', 'danger');
             } elseif ($status === 'published') {
-                $buttons[] = $actionButton('project', $id, 'archived', 'Archive');
+                $buttons[] = $actionButton('project', $id, 'archived', 'Archive', 'danger');
+            } elseif ($status === 'archived') {
+                $buttons[] = $actionButton('project', $id, 'draft', 'Restore to draft');
             }
         } elseif ($activeSection === 'properties' && $status === 'approved') {
-            $buttons[] = $actionButton('property', $id, 'archived', 'Archive');
+            $buttons[] = $actionButton('property', $id, 'archived', 'Archive', 'danger');
+        } elseif ($activeSection === 'properties' && $status === 'archived') {
+            $buttons[] = $actionButton('property', $id, 'draft', 'Restore to draft');
         } elseif ($activeSection === 'listings') {
             if ($status === 'published') {
                 $buttons[] = $actionButton('listing', $id, 'paused', 'Pause');
                 $buttons[] = $actionButton('listing', $id, 'closed', 'Close', 'danger');
             } elseif ($status === 'paused') {
                 $buttons[] = $actionButton('listing', $id, 'published', 'Resume', 'primary');
+                $buttons[] = $actionButton('listing', $id, 'closed', 'Close', 'danger');
+            } elseif (in_array($status, ['rejected', 'expired'], true)) {
+                $buttons[] = $actionButton('listing', $id, 'draft', 'Restore to draft');
             }
         } elseif ($activeSection === 'catalog') {
             $entityType = (string) ($row['entity_type'] ?? '');
@@ -980,7 +1010,7 @@ $renderActions = static function (array $row) use (
                         <option value="approve">Approve selected</option>
                         <option value="reject">Reject selected</option>
                     </select>
-                    <input name="note" maxlength="500" placeholder="Optional moderation note">
+                    <input name="note" maxlength="500" placeholder="Decision note · required when rejecting">
                     <button type="submit" disabled data-bulk-submit>Apply action</button>
                 </form>
             </div>

@@ -41,6 +41,52 @@ $editable = $workspaceType === 'developer'
     && in_array($recordResource, ['company', 'project', 'property', 'listing'], true)
     && in_array($status, ['draft', 'rejected'], true);
 
+$moderationBlockers = [];
+
+if ($workspaceType === 'admin') {
+    if ($recordResource === 'project') {
+        if ((string) ($record['company_status'] ?? '') !== 'approved') {
+            $moderationBlockers[] = 'The parent company must be approved first.';
+        }
+    } elseif ($recordResource === 'property') {
+        if ((string) ($record['company_status'] ?? '') !== 'approved') {
+            $moderationBlockers[] = 'The parent company must be approved first.';
+        }
+
+        if (
+            !empty($record['project_id'])
+            && !in_array(
+                (string) ($record['project_status'] ?? ''),
+                ['approved', 'published'],
+                true
+            )
+        ) {
+            $moderationBlockers[] = 'The linked project must be approved first.';
+        }
+    } elseif ($recordResource === 'listing') {
+        if ((string) ($record['property_status'] ?? '') !== 'approved') {
+            $moderationBlockers[] = 'The parent property must be approved first.';
+        }
+
+        if ((string) ($record['company_status'] ?? '') !== 'approved') {
+            $moderationBlockers[] = 'The parent company must currently be approved.';
+        }
+
+        if (
+            !empty($record['project_id'])
+            && !in_array(
+                (string) ($record['project_status'] ?? ''),
+                ['approved', 'published'],
+                true
+            )
+        ) {
+            $moderationBlockers[] = 'The linked project must currently be approved.';
+        }
+    }
+}
+
+$moderationReady = $moderationBlockers === [];
+
 $mediaPublic = match ($recordResource) {
     'company' => $status === 'approved',
     'project' => $status === 'published',
@@ -137,11 +183,23 @@ if ($workspaceType === 'developer') {
         $actions[] = $workflowButton('approved', 'Restore', 'primary');
     } elseif ($recordResource === 'project' && $status === 'approved') {
         $actions[] = $workflowButton('published', 'Publish', 'primary');
+        $actions[] = $workflowButton('archived', 'Archive', 'danger');
+    } elseif ($recordResource === 'project' && $status === 'published') {
+        $actions[] = $workflowButton('archived', 'Archive', 'danger');
+    } elseif ($recordResource === 'project' && $status === 'archived') {
+        $actions[] = $workflowButton('draft', 'Restore to draft');
+    } elseif ($recordResource === 'property' && $status === 'approved') {
+        $actions[] = $workflowButton('archived', 'Archive', 'danger');
+    } elseif ($recordResource === 'property' && $status === 'archived') {
+        $actions[] = $workflowButton('draft', 'Restore to draft');
     } elseif ($recordResource === 'listing' && $status === 'published') {
         $actions[] = $workflowButton('paused', 'Pause');
         $actions[] = $workflowButton('closed', 'Close', 'danger');
     } elseif ($recordResource === 'listing' && $status === 'paused') {
         $actions[] = $workflowButton('published', 'Resume', 'primary');
+        $actions[] = $workflowButton('closed', 'Close', 'danger');
+    } elseif ($recordResource === 'listing' && in_array($status, ['rejected', 'expired'], true)) {
+        $actions[] = $workflowButton('draft', 'Restore to draft');
     } elseif ($recordResource === 'inquiry' && $status === 'new') {
         $actions[] = $workflowButton('read', 'Mark read', 'primary');
         $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
@@ -204,14 +262,22 @@ $details = match ($recordResource) {
         'Phone' => $record['phone'] ?? null,
         'Website' => $record['website'] ?? null,
         'Registration' => $record['registration_number'] ?? null,
+        'Members' => $record['members_count'] ?? 0,
+        'Projects' => $record['projects_count'] ?? 0,
+        'Properties' => $record['properties_count'] ?? 0,
+        'Published listings' => $record['published_listings_count'] ?? 0,
         'Verified' => $record['verified_at'] ?? null,
         'Published' => $record['published_at'] ?? null,
     ],
     'project' => [
         'Company' => $record['company_name'] ?? null,
+        'Company status' => $record['company_status'] ?? null,
         'Project type' => $record['project_type'] ?? null,
         'Completion' => $record['completion_status'] ?? null,
         'Location' => $record['location_name'] ?? null,
+        'Properties' => $record['properties_count'] ?? 0,
+        'Approved properties' => $record['approved_properties_count'] ?? 0,
+        'Media assets' => $record['media_count'] ?? 0,
         'Launch date' => $record['launch_date'] ?? null,
         'Expected completion' => $record['expected_completion_date'] ?? null,
         'Published' => $record['published_at'] ?? null,
@@ -219,24 +285,46 @@ $details = match ($recordResource) {
     'property' => [
         'Reference' => $record['reference_code'] ?? null,
         'Company' => $record['company_name'] ?? null,
+        'Company status' => $record['company_status'] ?? null,
         'Project' => $record['project_name'] ?? null,
+        'Project status' => !empty($record['project_id'])
+            ? ($record['project_status'] ?? 'unavailable')
+            : 'standalone',
         'Type' => $record['property_type'] ?? null,
         'Location' => $record['location_name'] ?? null,
         'Bedrooms' => $record['bedrooms'] ?? null,
         'Bathrooms' => $record['bathrooms'] ?? null,
+        'Parking spaces' => $record['parking_spaces'] ?? null,
+        'Floor number' => $record['floor_number'] ?? null,
+        'Total floors' => $record['total_floors'] ?? null,
         'Area' => trim((string) ($record['area_value'] ?? '') . ' ' . (string) ($record['area_unit'] ?? '')),
+        'Land area' => trim((string) ($record['land_area_value'] ?? '') . ' ' . (string) ($record['land_area_unit'] ?? '')),
+        'Furnishing' => $record['furnishing_status'] ?? null,
+        'Year built' => $record['year_built'] ?? null,
+        'Address' => $record['address_line'] ?? null,
+        'Listings' => $record['listings_count'] ?? 0,
+        'Published listings' => $record['published_listings_count'] ?? 0,
+        'Media assets' => $record['media_count'] ?? 0,
     ],
     'listing' => [
         'Property' => $record['property_title'] ?? null,
         'Reference' => $record['reference_code'] ?? null,
+        'Property status' => $record['property_status'] ?? null,
         'Company' => $record['company_name'] ?? null,
+        'Company status' => $record['company_status'] ?? null,
+        'Project' => $record['project_name'] ?? null,
+        'Project status' => !empty($record['project_id'])
+            ? ($record['project_status'] ?? 'unavailable')
+            : 'standalone',
         'Offer' => $record['transaction_type'] ?? null,
         'Price' => ($record['price'] ?? null) !== null
             ? (string) ($record['currency'] ?? 'USD') . ' ' . number_format((float) $record['price'], 2)
             : null,
         'Pricing period' => $record['pricing_period'] ?? null,
+        'Media assets' => $record['media_count'] ?? 0,
         'Published' => $record['published_at'] ?? null,
         'Expires' => $record['expires_at'] ?? null,
+        'Closed' => $record['closed_at'] ?? null,
     ],
     'inquiry' => [
         'Company' => $record['company_name'] ?? null,
@@ -360,13 +448,26 @@ $details = match ($recordResource) {
                     <p>Confirm the record details and attached media. A rejection reason is required so the submitter knows what must be corrected.</p>
                 </div>
             </div>
+            <?php if (!$moderationReady): ?>
+                <div class="workspace-lock-note">
+                    <?= app_icon('alert') ?>
+                    <div>
+                        <strong>Approval is blocked by parent lifecycle state</strong>
+                        <span><?= e(implode(' ', $moderationBlockers)) ?> You can still reject the record with correction instructions.</span>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <form action="<?= e(url('/dashboard/workflow/' . rawurlencode($recordResource) . '/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-admin-moderation__form">
                 <?= csrf_field() ?>
                 <label>
                     <span>Decision</span>
                     <select class="form-select" name="status" required>
                         <option value="">Choose a decision</option>
-                        <option value="<?= $recordResource === 'listing' ? 'published' : 'approved' ?>"><?= $recordResource === 'listing' ? 'Approve & publish' : 'Approve' ?></option>
+                        <option
+                            value="<?= $recordResource === 'listing' ? 'published' : 'approved' ?>"
+                            <?= !$moderationReady ? 'disabled' : '' ?>
+                        ><?= $recordResource === 'listing' ? 'Approve & publish' : 'Approve' ?></option>
                         <option value="rejected">Reject and return for correction</option>
                     </select>
                 </label>

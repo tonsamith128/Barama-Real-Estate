@@ -145,36 +145,87 @@ final class WorkspaceRecordRepository
     public function adminRecord(string $resource, int $id): ?array
     {
         $sql = match ($resource) {
-            'company' => 'SELECT c.*, loc.name AS location_name
+            'company' => 'SELECT c.*, loc.name AS location_name,
+                                 (SELECT COUNT(*) FROM company_members cm
+                                  WHERE cm.company_id = c.id AND cm.status = "active") AS members_count,
+                                 (SELECT COUNT(*) FROM projects pr
+                                  WHERE pr.company_id = c.id AND pr.deleted_at IS NULL) AS projects_count,
+                                 (SELECT COUNT(*) FROM properties p
+                                  WHERE p.company_id = c.id AND p.deleted_at IS NULL) AS properties_count,
+                                 (SELECT COUNT(*)
+                                  FROM listings l
+                                  INNER JOIN properties p ON p.id = l.property_id
+                                  WHERE p.company_id = c.id
+                                    AND p.deleted_at IS NULL
+                                    AND l.status = "published"
+                                    AND l.deleted_at IS NULL) AS published_listings_count
                           FROM companies c
                           LEFT JOIN locations loc ON loc.id = c.location_id
                           WHERE c.id = :id AND c.deleted_at IS NULL LIMIT 1',
             'project' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
-                                 loc.name AS location_name
+                                 c.status AS company_status, loc.name AS location_name,
+                                 (SELECT COUNT(*) FROM properties prop
+                                  WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count,
+                                 (SELECT COUNT(*) FROM properties prop
+                                  WHERE prop.project_id = p.id
+                                    AND prop.status = "approved"
+                                    AND prop.deleted_at IS NULL) AS approved_properties_count,
+                                 (SELECT COUNT(*) FROM media_attachments ma
+                                  WHERE ma.entity_type = "project" AND ma.entity_id = p.id) AS media_count
                           FROM projects p
                           INNER JOIN companies c ON c.id = p.company_id
                           LEFT JOIN locations loc ON loc.id = p.location_id
                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
-            'property' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
-                                  pr.name AS project_name, pr.slug AS project_slug,
-                                  loc.name AS location_name
+            'property' => 'SELECT p.*,
+                                  c.name AS company_name,
+                                  c.slug AS company_slug,
+                                  c.status AS company_status,
+                                  pr.name AS project_name,
+                                  pr.slug AS project_slug,
+                                  pr.status AS project_status,
+                                  loc.name AS location_name,
+                                  (SELECT COUNT(*)
+                                   FROM listings li
+                                   WHERE li.property_id = p.id
+                                     AND li.deleted_at IS NULL) AS listings_count,
+                                  (SELECT COUNT(*)
+                                   FROM listings li
+                                   WHERE li.property_id = p.id
+                                     AND li.status = "published"
+                                     AND li.deleted_at IS NULL) AS published_listings_count,
+                                  (SELECT COUNT(*)
+                                   FROM media_attachments ma
+                                   WHERE ma.entity_type = "property"
+                                     AND ma.entity_id = p.id) AS media_count
                            FROM properties p
-                           LEFT JOIN companies c ON c.id = p.company_id
-                           LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
+                           LEFT JOIN companies c
+                              ON c.id = p.company_id
+                             AND c.deleted_at IS NULL
+                           LEFT JOIN projects pr
+                              ON pr.id = p.project_id
+                             AND pr.deleted_at IS NULL
                            LEFT JOIN locations loc ON loc.id = p.location_id
-                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
+                           WHERE p.id = :id
+                             AND p.deleted_at IS NULL
+                           LIMIT 1',
             'listing' => 'SELECT l.*, p.company_id, p.title AS property_title,
                                  p.reference_code, p.property_type,
-                                 p.status AS property_status,
+                                 p.status AS property_status, p.project_id,
                                  c.name AS company_name, c.slug AS company_slug,
-                                 loc.name AS location_name
+                                 c.status AS company_status,
+                                 pr.name AS project_name, pr.status AS project_status,
+                                 loc.name AS location_name,
+                                 (SELECT COUNT(*) FROM media_attachments ma
+                                  WHERE ma.entity_type = "listing" AND ma.entity_id = l.id) AS media_count
                           FROM listings l
                           INNER JOIN properties p ON p.id = l.property_id
-                          LEFT JOIN companies c ON c.id = p.company_id
+                          INNER JOIN companies c ON c.id = p.company_id
+                          LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
                           LEFT JOIN locations loc ON loc.id = p.location_id
                           WHERE l.id = :id
                             AND l.deleted_at IS NULL
                             AND p.deleted_at IS NULL
+                            AND c.deleted_at IS NULL
                           LIMIT 1',
             'inquiry' => 'SELECT i.*, c.name AS company_name,
                                  p.title AS property_title, p.reference_code,
