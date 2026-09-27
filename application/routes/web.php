@@ -382,6 +382,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/media/{id}/alt-text',
+    [AdminManagementController::class, 'updateMediaAltText'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/dashboard/media/{id}/orphan',
     [AdminManagementController::class, 'deleteOrphanMedia'],
     [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
