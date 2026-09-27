@@ -47,7 +47,10 @@ final class SubscriptionEntitlementService
         $finance = new FinanceRepository();
         $finance->lockCompany($companyId);
 
-        $subscription = $finance->companyEntitlementSubscription($companyId);
+        $subscription = $finance->companyEntitlementSubscription(
+            $companyId,
+            true
+        );
 
         if ($subscription === null) {
             // Legacy compatibility: companies never enrolled in billing remain
