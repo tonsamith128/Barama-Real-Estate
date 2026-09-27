@@ -274,6 +274,8 @@ final class DashboardController
                 ['label' => 'Awaiting response', 'value' => $marketplace['read'] ?? 0, 'icon' => 'eye', 'href' => '/dashboard/inquiries?status=read'],
                 ['label' => 'Replied', 'value' => $marketplace['replied'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/inquiries?status=replied'],
                 ['label' => 'Converted to lead', 'value' => $marketplace['converted'] ?? 0, 'icon' => 'pipeline'],
+                ['label' => 'Unassigned', 'value' => $marketplace['unassigned'] ?? 0, 'icon' => 'users'],
+                ['label' => 'Waiting 24h+', 'value' => $marketplace['awaiting_24h'] ?? 0, 'icon' => 'alert'],
                 ['label' => 'Closed / spam', 'value' => ($marketplace['closed'] ?? 0) + ($marketplace['spam'] ?? 0), 'icon' => 'shield'],
             ],
             'leads' => [
