@@ -85,6 +85,15 @@ final class SiteContentManagementService
             $orderMap[$section] = $position === false ? 99 : (int) $position;
         }
 
+        if (
+            in_array(99, $orderMap, true)
+            || count(array_unique(array_values($orderMap))) !== count($knownSections)
+        ) {
+            throw new InvalidArgumentException(
+                'Choose a unique homepage position from 1 to 3 for every section.'
+            );
+        }
+
         uasort(
             $orderMap,
             static fn (int $left, int $right): int => $left <=> $right
@@ -217,6 +226,7 @@ final class SiteContentManagementService
             $path === ''
             || !str_starts_with($path, '/')
             || str_starts_with($path, '//')
+            || str_contains($path, '\\')
             || preg_match('/[\x00-\x1F\x7F]/', $path) === 1
         ) {
             throw new InvalidArgumentException(
