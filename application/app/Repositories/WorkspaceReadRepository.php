@@ -1005,23 +1005,42 @@ final class WorkspaceReadRepository
             'overview', 'approvals' => [
                 'SELECT *
                  FROM (
-                    SELECT "company" AS entity_type, id, name AS title,
-                           status, updated_at, company_type AS context
-                    FROM companies
-                    WHERE status = "pending" AND deleted_at IS NULL
+                    SELECT "company" AS entity_type, c.id, c.name AS title,
+                           c.status, c.updated_at, c.company_type AS context,
+                           "ready" AS readiness
+                    FROM companies c
+                    WHERE c.status = "pending"
+                      AND c.deleted_at IS NULL
                     UNION ALL
-                    SELECT "project" AS entity_type, id, name AS title,
-                           status, updated_at, project_type AS context
-                    FROM projects
-                    WHERE status = "pending" AND deleted_at IS NULL
+                    SELECT "project" AS entity_type, p.id, p.name AS title,
+                           p.status, p.updated_at, p.project_type AS context,
+                           CASE WHEN c.status = "approved" THEN "ready" ELSE "blocked" END AS readiness
+                    FROM projects p
+                    INNER JOIN companies c ON c.id = p.company_id
+                    WHERE p.status = "pending"
+                      AND p.deleted_at IS NULL
+                      AND c.deleted_at IS NULL
                     UNION ALL
-                    SELECT "property" AS entity_type, id, title,
-                           status, updated_at, property_type AS context
-                    FROM properties
-                    WHERE status = "pending" AND deleted_at IS NULL
+                    SELECT "property" AS entity_type, p.id, p.title,
+                           p.status, p.updated_at, p.property_type AS context,
+                           CASE
+                               WHEN c.status = "approved"
+                                AND (p.project_id IS NULL OR pr.status IN ("approved", "published"))
+                               THEN "ready"
+                               ELSE "blocked"
+                           END AS readiness
+                    FROM properties p
+                    INNER JOIN companies c ON c.id = p.company_id
+                    LEFT JOIN projects pr
+                       ON pr.id = p.project_id
+                      AND pr.deleted_at IS NULL
+                    WHERE p.status = "pending"
+                      AND p.deleted_at IS NULL
+                      AND c.deleted_at IS NULL
                     UNION ALL
                     SELECT "listing" AS entity_type, l.id, p.title,
-                           l.status, l.updated_at, l.transaction_type AS context
+                           l.status, l.updated_at, l.transaction_type AS context,
+                           CASE WHEN p.status = "approved" THEN "ready" ELSE "blocked" END AS readiness
                     FROM listings l
                     INNER JOIN properties p ON p.id = l.property_id
                     WHERE l.status = "pending"
@@ -1089,14 +1108,38 @@ final class WorkspaceReadRepository
             ],
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.property_type,
-                        p.location_id, p.status, p.updated_at, c.name AS company_name,
+                        p.location_id, p.status, p.updated_at,
+                        c.name AS company_name, c.status AS company_status,
+                        pr.name AS project_name, pr.status AS project_status,
                         loc.name AS location_name,
-                        (SELECT COUNT(*) FROM listings li WHERE li.property_id = p.id AND li.deleted_at IS NULL) AS listings_count
+                        CASE
+                            WHEN c.status = "approved"
+                             AND (p.project_id IS NULL OR pr.status IN ("approved", "published"))
+                            THEN "ready"
+                            ELSE "blocked"
+                        END AS marketplace_readiness,
+                        (SELECT COUNT(*) FROM listings li
+                         WHERE li.property_id = p.id AND li.deleted_at IS NULL) AS listings_count,
+                        (SELECT COUNT(*) FROM listings li
+                         WHERE li.property_id = p.id
+                           AND li.status = "published"
+                           AND li.deleted_at IS NULL) AS published_listings_count
                  FROM properties p
-                 LEFT JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN companies c
+                    ON c.id = p.company_id
+                   AND c.deleted_at IS NULL
+                 LEFT JOIN projects pr
+                    ON pr.id = p.project_id
+                   AND pr.deleted_at IS NULL
                  LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE p.deleted_at IS NULL
-                   AND CONCAT_WS(" ", p.title, p.reference_code) LIKE :search
+                   AND CONCAT_WS(
+                        " ",
+                        p.title,
+                        p.reference_code,
+                        c.name,
+                        pr.name
+                   ) LIKE :search
                  ORDER BY p.updated_at DESC',
                 'SELECT COUNT(*)
                  FROM properties
