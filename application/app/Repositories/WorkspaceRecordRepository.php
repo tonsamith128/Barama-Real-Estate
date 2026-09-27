@@ -155,14 +155,38 @@ final class WorkspaceRecordRepository
                           INNER JOIN companies c ON c.id = p.company_id
                           LEFT JOIN locations loc ON loc.id = p.location_id
                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
-            'property' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
-                                  pr.name AS project_name, pr.slug AS project_slug,
-                                  loc.name AS location_name
+            'property' => 'SELECT p.*,
+                                  c.name AS company_name,
+                                  c.slug AS company_slug,
+                                  c.status AS company_status,
+                                  pr.name AS project_name,
+                                  pr.slug AS project_slug,
+                                  pr.status AS project_status,
+                                  loc.name AS location_name,
+                                  (SELECT COUNT(*)
+                                   FROM listings li
+                                   WHERE li.property_id = p.id
+                                     AND li.deleted_at IS NULL) AS listings_count,
+                                  (SELECT COUNT(*)
+                                   FROM listings li
+                                   WHERE li.property_id = p.id
+                                     AND li.status = "published"
+                                     AND li.deleted_at IS NULL) AS published_listings_count,
+                                  (SELECT COUNT(*)
+                                   FROM media_attachments ma
+                                   WHERE ma.entity_type = "property"
+                                     AND ma.entity_id = p.id) AS media_count
                            FROM properties p
-                           LEFT JOIN companies c ON c.id = p.company_id
-                           LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
+                           LEFT JOIN companies c
+                              ON c.id = p.company_id
+                             AND c.deleted_at IS NULL
+                           LEFT JOIN projects pr
+                              ON pr.id = p.project_id
+                             AND pr.deleted_at IS NULL
                            LEFT JOIN locations loc ON loc.id = p.location_id
-                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
+                           WHERE p.id = :id
+                             AND p.deleted_at IS NULL
+                           LIMIT 1',
             'listing' => 'SELECT l.*, p.company_id, p.title AS property_title,
                                  p.reference_code, p.property_type,
                                  p.status AS property_status,
