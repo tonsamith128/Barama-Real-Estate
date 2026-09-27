@@ -133,6 +133,22 @@ final class FinanceRepository
         return $statement->fetchColumn() !== false;
     }
 
+    public function lockCompany(int $companyId): void
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT id
+             FROM companies
+             WHERE id = :id
+               AND deleted_at IS NULL
+             FOR UPDATE'
+        );
+        $statement->execute(['id' => $companyId]);
+
+        if ($statement->fetchColumn() === false) {
+            throw new \InvalidArgumentException('Company is unavailable for subscription assignment.');
+        }
+    }
+
     public function hasCurrentSubscription(int $companyId): bool
     {
         $statement = Database::connection()->prepare(
