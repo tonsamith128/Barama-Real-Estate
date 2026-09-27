@@ -101,7 +101,7 @@ $sectionPath = match ($recordResource) {
     'property' => $workspaceType === 'admin' ? '/dashboard/properties' : '/developer/properties',
     'listing' => $workspaceType === 'admin' ? '/dashboard/listings' : '/developer/listings',
     'inquiry' => $workspaceType === 'admin' ? '/dashboard/inquiries' : '/developer/inquiries',
-    'viewing' => '/developer/viewings',
+    'viewing' => $workspaceType === 'admin' ? '/dashboard/viewings' : '/developer/viewings',
     'lead' => $workspaceType === 'admin' ? '/dashboard/leads' : '/developer/leads',
     'user' => '/dashboard/users',
     'audit' => '/dashboard/audit',
@@ -200,15 +200,6 @@ if ($workspaceType === 'developer') {
         $actions[] = $workflowButton('closed', 'Close', 'danger');
     } elseif ($recordResource === 'listing' && in_array($status, ['rejected', 'expired'], true)) {
         $actions[] = $workflowButton('draft', 'Restore to draft');
-    } elseif ($recordResource === 'inquiry' && $status === 'new') {
-        $actions[] = $workflowButton('read', 'Mark read', 'primary');
-        $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
-    } elseif ($recordResource === 'inquiry' && $status === 'read') {
-        $actions[] = $workflowButton('replied', 'Mark replied', 'primary');
-        $actions[] = $workflowButton('closed', 'Close');
-        $actions[] = $workflowButton('spam', 'Mark spam', 'danger');
-    } elseif ($recordResource === 'inquiry' && $status === 'replied') {
-        $actions[] = $workflowButton('closed', 'Close');
     } elseif ($recordResource === 'user') {
         $roles = array_filter(array_map(
             'trim',
@@ -514,6 +505,23 @@ $details = match ($recordResource) {
                 <?php if (!empty($record['source_inquiry_id'])): ?>
                     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/dashboard/manage/inquiry/' . (int) $record['source_inquiry_id'])) ?>">Open source inquiry</a>
                 <?php endif; ?>
+            </div>
+        </section>
+    <?php elseif ($workspaceType === 'admin' && $recordResource === 'viewing'): ?>
+        <section class="workspace-record-panel workspace-customer-operation-panel">
+            <div class="workspace-record-panel__head">
+                <h2>Company-managed viewing appointment</h2>
+                <span>Administrator access is oversight-only. Confirmation, rescheduling, completion, and decline decisions remain with the company team.</span>
+            </div>
+            <div class="workspace-operation-ready">
+                <span class="workspace-operation-ready__icon"><?= app_icon('calendar') ?></span>
+                <div>
+                    <strong><?= e((string) ($record['company_name'] ?? 'Company')) ?> appointment</strong>
+                    <span>
+                        Current status: <?= e($humanize($record['status'] ?? 'pending')) ?>
+                        <?= !empty($record['scheduled_for']) ? ' · Scheduled ' . e((string) $record['scheduled_for']) : '' ?>.
+                    </span>
+                </div>
             </div>
         </section>
     <?php endif; ?>
