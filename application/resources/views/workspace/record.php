@@ -208,6 +208,17 @@ if ($workspaceType === 'developer') {
         $isAdministrator = in_array('administrator', $roles, true);
         $isSelf = (int) $record['id'] === $currentUserId;
         $verified = !empty($record['email_verified_at']);
+        $accessVerificationState = (string) ($record['access_verification_state'] ?? 'clear');
+
+        if (in_array(
+            $accessVerificationState,
+            ['developer_access_missing', 'developer_access_orphan'],
+            true
+        )) {
+            $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/developer-access/reconcile')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="btn btn-sm btn-primary" type="submit">Reconcile developer access</button></form>';
+        }
 
         if (!$isSelf) {
             if ($status === 'active') {
@@ -378,6 +389,8 @@ $details = match ($recordResource) {
         'Email' => $record['email'] ?? null,
         'Primary access' => $record['account_role'] ?? null,
         'Roles' => $record['roles'] ?? null,
+        'Permissions' => $record['permissions'] ?? null,
+        'Access verification' => $record['access_verification_state'] ?? 'clear',
         'Active companies' => $record['company_count'] ?? 0,
         'Company owner of' => $record['owned_company_count'] ?? 0,
         'Company access' => $record['company_access'] ?? null,
@@ -539,6 +552,11 @@ $details = match ($recordResource) {
                     <span><?= (int) ($record['owned_company_count'] ?? 0) > 0
                         ? e(number_format((int) $record['owned_company_count']) . ' company ownership assignment(s). Sole owners must transfer ownership before account disablement.')
                         : 'No active company ownership blocks account disablement.' ?></span>
+                    <?php if (($record['access_verification_state'] ?? 'clear') !== 'clear'): ?>
+                        <span>Verification attention: <?= e($humanize($record['access_verification_state'])) ?>.</span>
+                    <?php else: ?>
+                        <span>Email and membership-derived workspace access are consistent.</span>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
