@@ -175,6 +175,19 @@ if ($adminPagePermissionCount !== 1) {
     $failures[] = 'Administrator CMS page permission assignment is incomplete.';
 }
 
+$developerPagePermissionCount = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM role_permissions
+     INNER JOIN roles ON roles.id = role_permissions.role_id
+     INNER JOIN permissions ON permissions.id = role_permissions.permission_id
+     WHERE roles.slug = 'developer'
+       AND permissions.slug = 'page.manage'"
+)->fetchColumn();
+
+if ($developerPagePermissionCount !== 0) {
+    $failures[] = 'CMS page management must not be assigned to the Developer role.';
+}
+
 if (!DomainRules::canTransition('listing', 'pending', 'published')) {
     $failures[] = 'Expected listing pending -> published transition is unavailable.';
 }
