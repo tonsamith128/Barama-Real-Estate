@@ -9,6 +9,7 @@ use Barama\Http\Controllers\AccountManagementController;
 use Barama\Http\Controllers\AdminManagementController;
 use Barama\Http\Controllers\AuthController;
 use Barama\Http\Controllers\CompanyController;
+use Barama\Http\Controllers\CmsController;
 use Barama\Http\Controllers\DashboardController;
 use Barama\Http\Controllers\DeveloperController;
 use Barama\Http\Controllers\DeveloperManagementController;
@@ -42,6 +43,7 @@ $router->get('/media/{uuid}', [PublicMediaController::class, 'show']);
 
 $router->get('/company', [CompanyController::class, 'index']);
 $router->get('/company/{slug}', [CompanyController::class, 'show']);
+$router->get('/pages/{slug}', [CmsController::class, 'show']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
 
@@ -363,6 +365,21 @@ $router->post(
     '/dashboard/amenities/{id}/status',
     [AdminManagementController::class, 'updateAmenityStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/pages',
+    [AdminManagementController::class, 'createPage'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/pages/{id}',
+    [AdminManagementController::class, 'updatePage'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/pages/{id}/status',
+    [AdminManagementController::class, 'updatePageStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 $router->post(
     '/dashboard/media/{id}/orphan',
