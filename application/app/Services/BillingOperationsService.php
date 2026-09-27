@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Repositories\FinanceRepository;
 use DateTimeImmutable;
 use DomainException;
 use InvalidArgumentException;
+use Throwable;
 
 final class BillingOperationsService
 {
@@ -45,15 +47,44 @@ final class BillingOperationsService
     public function ignoreWebhookEvent(int $eventId): void
     {
         $actor = $this->administrator();
-        $repository = new FinanceRepository();
-        $event = $this->actionableEvent($repository, $eventId);
 
-        $repository->completeWebhookEvent(
-            $eventId,
-            'ignored',
-            null,
-            null
-        );
+        if ($eventId < 1) {
+            throw new InvalidArgumentException(
+                'A valid webhook event ID is required.'
+            );
+        }
+
+        $repository = new FinanceRepository();
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            $event = $repository->lockWebhookEventById($eventId);
+
+            if ($event === null) {
+                throw new InvalidArgumentException(
+                    'Webhook event was not found.'
+                );
+            }
+
+            $this->assertActionableEvent($event);
+
+            $repository->completeWebhookEvent(
+                $eventId,
+                'ignored',
+                null,
+                null
+            );
+
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
 
         (new SecurityAuditService())->record(
             'admin.billing_webhook_ignored',
@@ -85,10 +116,18 @@ final class BillingOperationsService
             throw new InvalidArgumentException('Webhook event was not found.');
         }
 
+        $this->assertActionableEvent($event);
+
+        return $event;
+    }
+
+    /** @param array<string,mixed> $event */
+    private function assertActionableEvent(array $event): void
+    {
         $status = (string) $event['status'];
 
         if ($status === 'failed') {
-            return $event;
+            return;
         }
 
         if ($status === 'received') {
@@ -96,7 +135,7 @@ final class BillingOperationsService
             $staleBefore = new DateTimeImmutable('-10 minutes');
 
             if ($receivedAt <= $staleBefore) {
-                return $event;
+                return;
             }
 
             throw new DomainException(
