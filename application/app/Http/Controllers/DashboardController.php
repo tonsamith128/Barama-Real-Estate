@@ -16,8 +16,8 @@ final class DashboardController
 {
     private const SECTIONS = [
         'overview' => [
-            'title' => 'Admin Overview',
-            'description' => 'Monitor marketplace moderation, inventory, inquiries, and lead activity from one operational view.',
+            'title' => 'Admin Control Center',
+            'description' => 'Operate marketplace moderation, customer activity, platform data, users, and security from one focused administration workspace.',
         ],
         'approvals' => [
             'title' => 'Approval Queue',
@@ -112,7 +112,7 @@ final class DashboardController
             'pageTitle' => $title . ' · Admin',
             'activeArea' => 'dashboard',
             'workspaceType' => 'admin',
-            'workspaceLabel' => 'Admin Dashboard',
+            'workspaceLabel' => 'Admin Control Center',
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => $this->sectionForResource($resource),
             'recordResource' => $resource,
@@ -178,13 +178,14 @@ final class DashboardController
             'pageTitle' => self::SECTIONS[$section]['title'] . ' · Admin',
             'activeArea' => 'dashboard',
             'workspaceType' => 'admin',
-            'workspaceLabel' => 'Admin Dashboard',
+            'workspaceLabel' => 'Admin Control Center',
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => $section,
             'sectionTitle' => self::SECTIONS[$section]['title'],
             'sectionDescription' => self::SECTIONS[$section]['description'],
             'stats' => $this->statsForSection($section, $summary, $marketplaceSummary),
             'emptyState' => $this->emptyState($section),
+            'sectionGuide' => $this->sectionGuide($section),
             'records' => $records,
             'columns' => $this->columns($section),
             'search' => $search,
@@ -280,13 +281,14 @@ final class DashboardController
                 ['label' => 'Last 24 hours', 'value' => $marketplace['recent_24h'] ?? 0, 'icon' => 'clock'],
             ],
             default => [
-                ['label' => 'Pending approval', 'value' => $summary['pending_approvals'], 'icon' => 'shield'],
-                ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building'],
-                ['label' => 'Properties', 'value' => $summary['properties'], 'icon' => 'home'],
-                ['label' => 'Published', 'value' => $summary['published_listings'], 'icon' => 'tag'],
-                ['label' => 'Open inquiries', 'value' => $summary['open_inquiries'], 'icon' => 'message'],
-                ['label' => 'Users', 'value' => $summary['users'], 'icon' => 'users'],
-                ['label' => 'Security events', 'value' => $summary['security_events'], 'icon' => 'shield'],
+                ['label' => 'Pending approval', 'value' => $summary['pending_approvals'], 'icon' => 'shield', 'href' => '/dashboard/approvals'],
+                ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building', 'href' => '/dashboard/companies'],
+                ['label' => 'Properties', 'value' => $summary['properties'], 'icon' => 'home', 'href' => '/dashboard/properties'],
+                ['label' => 'Published listings', 'value' => $summary['published_listings'], 'icon' => 'tag', 'href' => '/dashboard/listings?status=published'],
+                ['label' => 'Open inquiries', 'value' => $summary['open_inquiries'], 'icon' => 'message', 'href' => '/dashboard/inquiries'],
+                ['label' => 'Active leads', 'value' => $summary['active_leads'], 'icon' => 'pipeline', 'href' => '/dashboard/leads'],
+                ['label' => 'Users', 'value' => $summary['users'], 'icon' => 'users', 'href' => '/dashboard/users'],
+                ['label' => 'Security events', 'value' => $summary['security_events'], 'icon' => 'shield', 'href' => '/dashboard/audit'],
             ],
         };
     }
@@ -358,32 +360,55 @@ final class DashboardController
         };
     }
 
-    /** @return array<int, array{label:string,path:string,icon:string}> */
+    /** @return array<int, array<string,string>> */
     private function navigation(): array
     {
         return [
-            ['heading' => 'Operations'],
+            ['heading' => 'Control Center'],
             ['label' => 'Overview', 'path' => '/dashboard', 'icon' => 'grid'],
-            ['label' => 'Approvals', 'path' => '/dashboard/approvals', 'icon' => 'shield'],
+            ['label' => 'Approval Queue', 'path' => '/dashboard/approvals', 'icon' => 'shield'],
+
             ['heading' => 'Marketplace'],
-            ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
+            ['label' => 'Companies / Developers', 'path' => '/dashboard/companies', 'icon' => 'building'],
             ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
             ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
             ['label' => 'Listings', 'path' => '/dashboard/listings', 'icon' => 'tag'],
-            ['heading' => 'Customer Operations'],
+
+            ['heading' => 'CRM'],
             ['label' => 'Inquiries', 'path' => '/dashboard/inquiries', 'icon' => 'message'],
-            ['label' => 'Leads', 'path' => '/dashboard/leads', 'icon' => 'pipeline'],
+            ['label' => 'Property Leads', 'path' => '/dashboard/leads', 'icon' => 'pipeline'],
+
             ['heading' => 'Platform Data'],
-            ['label' => 'Catalog', 'path' => '/dashboard/catalog', 'icon' => 'map'],
-            ['label' => 'Media', 'path' => '/dashboard/media', 'icon' => 'image'],
-            ['heading' => 'Administration'],
+            ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
+            ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
+
+            ['heading' => 'Users & Security'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
             ['label' => 'Security Audit', 'path' => '/dashboard/audit', 'icon' => 'shield'],
-            ['heading' => 'Settings'],
-            ['label' => 'Basic', 'path' => '/dashboard/settings', 'icon' => 'settings'],
-            ['label' => 'Profile', 'path' => '/dashboard/settings/profile', 'icon' => 'user'],
-            ['label' => 'Privacy', 'path' => '/dashboard/settings/privacy', 'icon' => 'shield'],
-            ['label' => 'Security', 'path' => '/dashboard/settings/security', 'icon' => 'lock'],
+
+            ['heading' => 'Workspace'],
+            ['label' => 'Settings', 'path' => '/dashboard/settings', 'icon' => 'settings'],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function sectionGuide(string $section): array
+    {
+        if ($section !== 'overview') {
+            return [];
+        }
+
+        return [
+            'aria_label' => 'Admin control center workflow',
+            'title' => 'Control center workflow',
+            'subtitle' => 'A focused operating sequence for the live marketplace',
+            'steps' => [
+                'Review pending marketplace submissions and moderation history',
+                'Monitor customer inquiries and active property lead pipelines',
+                'Maintain canonical catalog, media, user access, and security evidence',
+                'Use workspace settings only after operational changes are reviewed',
+            ],
+            'note' => 'Phase 1 shows only functioning administration modules. New controls will appear only when their routes, permissions, data model, and QA are implemented.',
         ];
     }
 
