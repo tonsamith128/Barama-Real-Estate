@@ -149,6 +149,79 @@ final class UserAdministrationService
         );
     }
 
+    /** @return array{developer:bool,company_memberships:int,changed:bool} */
+    public function reconcileDeveloperAccess(int $targetUserId): array
+    {
+        $actor = $this->administrator();
+        $users = new UserRepository();
+        $target = $users->findById($targetUserId);
+
+        if ($target === null) {
+            throw new InvalidArgumentException('User account was not found.');
+        }
+
+        $roles = new RoleRepository();
+        $memberships = $users->activeCompanyMembershipCount($targetUserId);
+        $hasDeveloper = $roles->userHasRole($targetUserId, 'developer');
+        $shouldDeveloper = $memberships > 0;
+
+        if ($shouldDeveloper && (string) $target['status'] !== 'active') {
+            throw new DomainException(
+                'Restore the user account before reconciling developer workspace access.'
+            );
+        }
+
+        if ($shouldDeveloper && empty($target['email_verified_at'])) {
+            throw new DomainException(
+                'The user must verify their email before developer workspace access can be restored.'
+            );
+        }
+
+        if ($hasDeveloper === $shouldDeveloper) {
+            return [
+                'developer' => $hasDeveloper,
+                'company_memberships' => $memberships,
+                'changed' => false,
+            ];
+        }
+
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            if ($shouldDeveloper) {
+                $roles->assignRole($targetUserId, 'developer');
+            } else {
+                $roles->removeRole($targetUserId, 'developer');
+            }
+
+            $users->incrementAuthVersion($targetUserId);
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
+
+        (new SecurityAuditService())->record(
+            'admin.developer_access_reconciled',
+            (int) $actor['id'],
+            $targetUserId,
+            [
+                'developer' => $shouldDeveloper,
+                'company_memberships' => $memberships,
+            ]
+        );
+
+        return [
+            'developer' => $shouldDeveloper,
+            'company_memberships' => $memberships,
+            'changed' => true,
+        ];
+    }
+
     public function revokeSessions(int $targetUserId): void
     {
         $actor = $this->administrator();
