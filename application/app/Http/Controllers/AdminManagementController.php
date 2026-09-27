@@ -147,6 +147,32 @@ final class AdminManagementController
         });
     }
 
+    public function createTaxRule(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'tax_rule_id' => (new FinanceManagementService())->createTaxRule($request->all()),
+            'message' => 'Tax rule created as inactive.',
+        ], 201);
+    }
+
+    public function updateTaxRuleStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid tax rule ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new FinanceManagementService())->setTaxRuleStatus((int) $id, $status);
+
+            return [
+                'tax_rule_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Tax rule status updated.',
+            ];
+        });
+    }
+
     public function createInvoice(Request $request): Response
     {
         return $this->execute(fn (): array => [
