@@ -12,6 +12,53 @@ use Throwable;
 
 final class AdminMediaManagementService
 {
+    public function updateAltText(int $mediaId, ?string $altText): void
+    {
+        $auth = new AuthService();
+        $actor = $auth->user();
+
+        if (
+            $actor === null
+            || !$auth->hasRole('administrator')
+            || !$auth->can('media.manage')
+        ) {
+            throw new DomainException('Administrator media management permission is required.');
+        }
+
+        $media = new MediaRepository();
+        $asset = $media->asset($mediaId);
+
+        if ($asset === null) {
+            throw new InvalidArgumentException('Media asset was not found.');
+        }
+
+        if (!str_starts_with((string) $asset['mime_type'], 'image/')) {
+            throw new DomainException('Alt text can only be managed for image media.');
+        }
+
+        $altText = $altText !== null ? trim($altText) : null;
+
+        if ($altText === '') {
+            $altText = null;
+        }
+
+        if ($altText !== null && mb_strlen($altText) > 255) {
+            throw new InvalidArgumentException('Alt text cannot exceed 255 characters.');
+        }
+
+        $media->updateAltText($mediaId, $altText);
+
+        (new SecurityAuditService())->record(
+            'admin.media_alt_text_updated',
+            (int) $actor['id'],
+            null,
+            [
+                'media_id' => $mediaId,
+                'has_alt_text' => $altText !== null,
+            ]
+        );
+    }
+
     public function deleteOrphanAsset(int $mediaId): void
     {
         $auth = new AuthService();
