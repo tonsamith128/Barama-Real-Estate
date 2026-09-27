@@ -56,7 +56,8 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
 });
 
 $seoTitle = trim((string) ($pageTitle ?? config('app.name')));
-$seoDescription = trim((string) ($metaDescription ?? 'Barama Real Estate marketplace and property management platform.'));
+$seoDescription = trim(strip_tags((string) ($metaDescription ?? 'Barama Real Estate marketplace and property management platform.')));
+$seoDescription = (string) preg_replace('/\s+/u', ' ', $seoDescription);
 $seoDescription = mb_substr($seoDescription, 0, 300);
 $seoCanonical = trim((string) ($canonicalUrl ?? ''));
 
