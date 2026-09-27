@@ -109,27 +109,32 @@ final class FinanceRepository
     }
 
     /** @return array<string,mixed>|null */
-    public function companyEntitlementSubscription(int $companyId): ?array
-    {
-        $statement = Database::connection()->prepare(
-            'SELECT s.*, p.name AS plan_name, p.slug AS plan_slug,
-                    p.billing_interval, p.price, p.currency,
-                    p.listing_limit, p.property_limit, p.project_limit,
-                    p.team_member_limit, p.featured_listing_limit
-             FROM company_subscriptions s
-             INNER JOIN subscription_plans p ON p.id = s.plan_id
-             WHERE s.company_id = :company_id
-             ORDER BY
-                CASE
-                    WHEN s.status = "active" THEN 0
-                    WHEN s.status = "paused" THEN 1
-                    ELSE 2
-                END,
-                s.updated_at DESC,
-                s.id DESC
-             LIMIT 1
-             FOR UPDATE'
-        );
+    public function companyEntitlementSubscription(
+        int $companyId,
+        bool $forUpdate = false
+    ): ?array {
+        $sql = 'SELECT s.*, p.name AS plan_name, p.slug AS plan_slug,
+                       p.billing_interval, p.price, p.currency,
+                       p.listing_limit, p.property_limit, p.project_limit,
+                       p.team_member_limit, p.featured_listing_limit
+                FROM company_subscriptions s
+                INNER JOIN subscription_plans p ON p.id = s.plan_id
+                WHERE s.company_id = :company_id
+                ORDER BY
+                    CASE
+                        WHEN s.status = "active" THEN 0
+                        WHEN s.status = "paused" THEN 1
+                        ELSE 2
+                    END,
+                    s.updated_at DESC,
+                    s.id DESC
+                LIMIT 1';
+
+        if ($forUpdate) {
+            $sql .= ' FOR UPDATE';
+        }
+
+        $statement = Database::connection()->prepare($sql);
         $statement->execute(['company_id' => $companyId]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
