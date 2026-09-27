@@ -264,6 +264,7 @@ final class FinanceRepository
             ->query(
                 'SELECT i.*, c.name AS company_name,
                         p.name AS plan_name,
+                        coupon.code AS coupon_code,
                         (SELECT COUNT(*)
                          FROM billing_invoice_items item
                          WHERE item.invoice_id = i.id) AS item_count,
@@ -283,6 +284,7 @@ final class FinanceRepository
                  INNER JOIN companies c ON c.id = i.company_id
                  LEFT JOIN company_subscriptions s ON s.id = i.subscription_id
                  LEFT JOIN subscription_plans p ON p.id = s.plan_id
+                 LEFT JOIN billing_coupons coupon ON coupon.id = i.coupon_id
                  ORDER BY i.created_at DESC, i.id DESC
                  LIMIT 1000'
             )
@@ -313,11 +315,13 @@ final class FinanceRepository
     {
         $statement = Database::connection()->prepare(
             'SELECT i.*, c.name AS company_name,
-                    p.name AS plan_name
+                    p.name AS plan_name,
+                    coupon.code AS coupon_code
              FROM billing_invoices i
              INNER JOIN companies c ON c.id = i.company_id
              LEFT JOIN company_subscriptions s ON s.id = i.subscription_id
              LEFT JOIN subscription_plans p ON p.id = s.plan_id
+             LEFT JOIN billing_coupons coupon ON coupon.id = i.coupon_id
              WHERE i.id = :id
              LIMIT 1'
         );
@@ -354,12 +358,12 @@ final class FinanceRepository
 
         $statement = Database::connection()->prepare(
             'INSERT INTO billing_invoices
-                (uuid, invoice_number, company_id, subscription_id, status,
-                 currency, subtotal, total, due_at, notes,
+                (uuid, invoice_number, company_id, subscription_id, coupon_id, status,
+                 currency, subtotal, discount_total, total, due_at, notes,
                  created_by_user_id, updated_by_user_id)
              VALUES
-                (:uuid, :invoice_number, :company_id, :subscription_id, "draft",
-                 :currency, :subtotal, :total, :due_at, :notes,
+                (:uuid, :invoice_number, :company_id, :subscription_id, :coupon_id, "draft",
+                 :currency, :subtotal, :discount_total, :total, :due_at, :notes,
                  :actor_id, :actor_id)'
         );
         $statement->execute([
@@ -367,8 +371,10 @@ final class FinanceRepository
             'invoice_number' => $invoiceNumber,
             'company_id' => $data['company_id'],
             'subscription_id' => $data['subscription_id'],
+            'coupon_id' => $data['coupon_id'],
             'currency' => $data['currency'],
             'subtotal' => $data['subtotal'],
+            'discount_total' => $data['discount_total'],
             'total' => $data['total'],
             'due_at' => $data['due_at'],
             'notes' => $data['notes'],
@@ -474,6 +480,183 @@ final class FinanceRepository
         ]);
 
         return (int) Database::connection()->lastInsertId();
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function coupons(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT c.*,
+                        (
+                            SELECT COUNT(*)
+                            FROM billing_coupon_redemptions r
+                            INNER JOIN billing_invoices i ON i.id = r.invoice_id
+                            WHERE r.coupon_id = c.id
+                              AND i.status <> "void"
+                        ) AS effective_redemptions
+                 FROM billing_coupons c
+                 ORDER BY c.created_at DESC, c.id DESC
+                 LIMIT 1000'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function coupon(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT * FROM billing_coupons WHERE id = :id LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,mixed>|null */
+    public function lockCouponByCode(string $code): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT *
+             FROM billing_coupons
+             WHERE code = :code
+             LIMIT 1
+             FOR UPDATE'
+        );
+        $statement->execute(['code' => $code]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function couponCodeExists(string $code): bool
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT 1 FROM billing_coupons WHERE code = :code LIMIT 1'
+        );
+        $statement->execute(['code' => $code]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createCoupon(array $data): int
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_coupons
+                (uuid, code, name, description, discount_type, discount_value,
+                 currency, max_redemptions, per_company_limit,
+                 starts_at, ends_at, status,
+                 created_by_user_id, updated_by_user_id)
+             VALUES
+                (:uuid, :code, :name, :description, :discount_type, :discount_value,
+                 :currency, :max_redemptions, :per_company_limit,
+                 :starts_at, :ends_at, "inactive",
+                 :actor_id, :actor_id)'
+        );
+        $statement->execute([
+            'uuid' => IdGenerator::uuid(),
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'description' => $data['description'],
+            'discount_type' => $data['discount_type'],
+            'discount_value' => $data['discount_value'],
+            'currency' => $data['currency'],
+            'max_redemptions' => $data['max_redemptions'],
+            'per_company_limit' => $data['per_company_limit'],
+            'starts_at' => $data['starts_at'],
+            'ends_at' => $data['ends_at'],
+            'actor_id' => $data['actor_id'],
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    public function setCouponStatus(int $id, string $status, int $actorId): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE billing_coupons
+             SET status = :status,
+                 updated_by_user_id = :actor_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'status' => $status,
+            'actor_id' => $actorId,
+            'id' => $id,
+        ]);
+    }
+
+    public function effectiveCouponRedemptions(
+        int $couponId,
+        ?int $companyId = null
+    ): int {
+        $sql =
+            'SELECT COUNT(*)
+             FROM billing_coupon_redemptions r
+             INNER JOIN billing_invoices i ON i.id = r.invoice_id
+             WHERE r.coupon_id = :coupon_id
+               AND i.status <> "void"';
+
+        $params = ['coupon_id' => $couponId];
+
+        if ($companyId !== null) {
+            $sql .= ' AND r.company_id = :company_id';
+            $params['company_id'] = $companyId;
+        }
+
+        $statement = Database::connection()->prepare($sql);
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function createCouponRedemption(
+        int $couponId,
+        int $invoiceId,
+        int $companyId,
+        string $discountAmount,
+        string $currency,
+        int $actorId
+    ): void {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_coupon_redemptions
+                (coupon_id, invoice_id, company_id,
+                 discount_amount, currency, created_by_user_id)
+             VALUES
+                (:coupon_id, :invoice_id, :company_id,
+                 :discount_amount, :currency, :actor_id)'
+        );
+        $statement->execute([
+            'coupon_id' => $couponId,
+            'invoice_id' => $invoiceId,
+            'company_id' => $companyId,
+            'discount_amount' => $discountAmount,
+            'currency' => $currency,
+            'actor_id' => $actorId,
+        ]);
+    }
+
+    /** @return array<string,int> */
+    public function couponSummary(): array
+    {
+        $row = Database::connection()->query(
+            'SELECT
+                (SELECT COUNT(*) FROM billing_coupons) AS coupons,
+                (SELECT COUNT(*) FROM billing_coupons WHERE status = "active") AS active_coupons,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_coupon_redemptions r
+                    INNER JOIN billing_invoices i ON i.id = r.invoice_id
+                    WHERE i.status <> "void"
+                ) AS effective_redemptions'
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row)
+            ? array_map(static fn (mixed $value): int => (int) $value, $row)
+            : [];
     }
 
     /** @return array<string,mixed> */
