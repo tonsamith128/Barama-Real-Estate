@@ -140,6 +140,22 @@ final class DashboardController
         ]));
     }
 
+    public function coupons(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-coupons', [
+            'pageTitle' => 'Coupons · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'coupons',
+            'coupons' => $finance->coupons(),
+            'couponSummary' => $finance->couponSummary(),
+        ]));
+    }
+
     public function invoices(Request $request): Response
     {
         $finance = new FinanceRepository();
@@ -568,6 +584,7 @@ final class DashboardController
             ['heading' => 'Finance'],
             ['label' => 'Plans & Packages', 'path' => '/dashboard/plans', 'icon' => 'layers'],
             ['label' => 'Subscriptions', 'path' => '/dashboard/subscriptions', 'icon' => 'building'],
+            ['label' => 'Coupons', 'path' => '/dashboard/coupons', 'icon' => 'edit'],
             ['label' => 'Invoices', 'path' => '/dashboard/invoices', 'icon' => 'edit'],
             ['label' => 'Transactions', 'path' => '/dashboard/transactions', 'icon' => 'pipeline'],
 
