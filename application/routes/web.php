@@ -19,6 +19,7 @@ use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
 use Barama\Http\Controllers\MarketplaceController;
 use Barama\Http\Controllers\PublicMediaController;
+use Barama\Http\Controllers\PaymentWebhookController;
 use Barama\Http\Controllers\SeoController;
 use Barama\Http\Middleware\AuthMiddleware;
 use Barama\Http\Middleware\CsrfMiddleware;
@@ -46,6 +47,10 @@ $router->get('/company/{slug}', [CompanyController::class, 'show']);
 $router->get('/pages/{slug}', [CmsController::class, 'show']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
+$router->post(
+    '/payments/webhooks/{provider}',
+    [PaymentWebhookController::class, 'receive']
+);
 
 $router->get('/login', [AuthController::class, 'showLogin'], $guest);
 $router->post('/login', [AuthController::class, 'login'], $guestPost);
@@ -395,6 +400,21 @@ $router->post(
 $router->post(
     '/dashboard/taxes/{id}/status',
     [AdminManagementController::class, 'updateTaxRuleStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/payment-providers',
+    [DashboardController::class, 'paymentProviders'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/payment-providers',
+    [AdminManagementController::class, 'createPaymentProvider'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/payment-providers/{id}/status',
+    [AdminManagementController::class, 'updatePaymentProviderStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
