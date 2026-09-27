@@ -140,6 +140,43 @@ final class DashboardController
         ]));
     }
 
+    public function invoices(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-invoices', [
+            'pageTitle' => 'Invoices · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'invoices',
+            'invoices' => $finance->invoices(),
+            'companies' => $finance->companies(),
+            'subscriptions' => $finance->subscriptions(),
+            'ledgerSummary' => $finance->ledgerSummary(),
+        ]));
+    }
+
+    public function transactions(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-transactions', [
+            'pageTitle' => 'Transactions · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'transactions',
+            'transactions' => $finance->transactions(),
+            'companies' => $finance->companies(),
+            'subscriptions' => $finance->subscriptions(),
+            'invoices' => $finance->invoices(),
+            'ledgerSummary' => $finance->ledgerSummary(),
+        ]));
+    }
+
     public function record(Request $request, string $resource, string $id): Response
     {
         $resource = strtolower(trim($resource));
@@ -531,6 +568,8 @@ final class DashboardController
             ['heading' => 'Finance'],
             ['label' => 'Plans & Packages', 'path' => '/dashboard/plans', 'icon' => 'layers'],
             ['label' => 'Subscriptions', 'path' => '/dashboard/subscriptions', 'icon' => 'building'],
+            ['label' => 'Invoices', 'path' => '/dashboard/invoices', 'icon' => 'edit'],
+            ['label' => 'Transactions', 'path' => '/dashboard/transactions', 'icon' => 'pipeline'],
 
             ['heading' => 'Users & Security'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
