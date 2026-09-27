@@ -338,6 +338,36 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
 );
 $router->get(
+    '/dashboard/plans',
+    [DashboardController::class, 'plans'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/plans',
+    [AdminManagementController::class, 'createPlan'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/plans/{id}/status',
+    [AdminManagementController::class, 'updatePlanStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/subscriptions',
+    [DashboardController::class, 'subscriptions'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/subscriptions',
+    [AdminManagementController::class, 'assignSubscription'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/subscriptions/{id}/status',
+    [AdminManagementController::class, 'updateSubscriptionStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/homepage',
     [DashboardController::class, 'homepage'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
