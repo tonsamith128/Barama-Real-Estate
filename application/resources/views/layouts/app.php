@@ -50,7 +50,7 @@ $workspaceHeaderRole = match ($workspaceHeaderArea) {
     default => t('Customer'),
 };
 $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea) {
-    'dashboard' => t('Admin Dashboard'),
+    'dashboard' => t('Admin Control Center'),
     'developer' => t('Company / Vendor Workspace'),
     default => t('Customer Account'),
 });
@@ -290,7 +290,7 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
                     role="search"
                     method="get"
                     action="<?= e(url(match ($workspaceHeaderArea) { 'dashboard' => '/dashboard', 'developer' => '/developer', default => '/account' })) ?>"
-                    aria-label="<?= e(match ($workspaceHeaderArea) { 'dashboard' => t('Search Admin Dashboard'), 'developer' => t('Search Vendor/Developer'), default => t('Search Customer Account') }) ?>"
+                    aria-label="<?= e(match ($workspaceHeaderArea) { 'dashboard' => t('Search Admin Control Center'), 'developer' => t('Search Vendor/Developer'), default => t('Search Customer Account') }) ?>"
                 >
                     <span class="workspace-topbar__search-icon" aria-hidden="true"><?= app_icon('search') ?></span>
                     <label class="visually-hidden" for="workspace-header-search"><?= e(t('Search')) ?></label>
@@ -299,7 +299,7 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
                         type="search"
                         name="q"
                         value="<?= e((string) ($_GET['q'] ?? '')) ?>"
-                        placeholder="<?= e(match ($workspaceHeaderArea) { 'dashboard' => t('Search Admin Dashboard'), 'developer' => t('Search Vendor/Developer'), default => t('Search Customer Account') }) ?>"
+                        placeholder="<?= e(match ($workspaceHeaderArea) { 'dashboard' => t('Search Admin Control Center'), 'developer' => t('Search Vendor/Developer'), default => t('Search Customer Account') }) ?>"
                         autocomplete="off"
                     >
                 </form>
