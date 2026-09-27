@@ -418,6 +418,21 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
+    '/dashboard/billing-operations',
+    [DashboardController::class, 'billingOperations'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/billing-operations/webhooks/{id}/retry',
+    [AdminManagementController::class, 'retryBillingWebhook'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/billing-operations/webhooks/{id}/ignore',
+    [AdminManagementController::class, 'ignoreBillingWebhook'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/invoices',
     [DashboardController::class, 'invoices'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
