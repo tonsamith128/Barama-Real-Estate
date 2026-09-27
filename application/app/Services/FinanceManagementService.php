@@ -404,6 +404,128 @@ final class FinanceManagementService
     }
 
     /** @param array<string,mixed> $input */
+    public function createTaxRule(array $input): int
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+
+        $code = strtoupper(trim((string) ($input['code'] ?? '')));
+        $name = trim((string) ($input['name'] ?? ''));
+        $description = trim((string) ($input['description'] ?? ''));
+        $rate = $this->percentageRate($input['rate_percent'] ?? '', 'Tax rate');
+        $country = strtoupper(trim((string) ($input['country_code'] ?? '')));
+        $region = trim((string) ($input['region_code'] ?? ''));
+
+        if (
+            mb_strlen($code) < 2
+            || mb_strlen($code) > 64
+            || preg_match('/^[A-Z0-9][A-Z0-9_-]*$/', $code) !== 1
+        ) {
+            throw new InvalidArgumentException(
+                'Tax rule code must contain 2 to 64 uppercase letters, numbers, underscores, or hyphens.'
+            );
+        }
+
+        if ($repository->taxRuleCodeExists($code)) {
+            throw new InvalidArgumentException('This tax rule code is already in use.');
+        }
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 160) {
+            throw new InvalidArgumentException(
+                'Tax rule name must contain between 2 and 160 characters.'
+            );
+        }
+
+        if (mb_strlen($description) > 5000) {
+            throw new InvalidArgumentException(
+                'Tax rule description cannot exceed 5,000 characters.'
+            );
+        }
+
+        if ($country !== '' && preg_match('/^[A-Z]{2}$/', $country) !== 1) {
+            throw new InvalidArgumentException(
+                'Country code must use two uppercase ISO letters.'
+            );
+        }
+
+        if (mb_strlen($region) > 64) {
+            throw new InvalidArgumentException('Region code cannot exceed 64 characters.');
+        }
+
+        $startsAt = $this->dateTime($input['starts_at'] ?? null, 'Start date');
+        $endsAt = $this->dateTime($input['ends_at'] ?? null, 'End date');
+
+        if ($startsAt !== null && $endsAt !== null && $endsAt <= $startsAt) {
+            throw new InvalidArgumentException('Tax rule end date must be after its start date.');
+        }
+
+        $id = $repository->createTaxRule([
+            'code' => $code,
+            'name' => $name,
+            'description' => $description !== '' ? $description : null,
+            'rate_percent' => $rate,
+            'country_code' => $country !== '' ? $country : null,
+            'region_code' => $region !== '' ? $region : null,
+            'starts_at' => $startsAt?->format('Y-m-d H:i:s'),
+            'ends_at' => $endsAt?->format('Y-m-d H:i:s'),
+            'actor_id' => (int) $actor['id'],
+        ]);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_tax_rule_created',
+            (int) $actor['id'],
+            null,
+            [
+                'tax_rule_id' => $id,
+                'code' => $code,
+                'rate_percent' => $rate,
+                'country_code' => $country !== '' ? $country : null,
+                'region_code' => $region !== '' ? $region : null,
+            ]
+        );
+
+        return $id;
+    }
+
+    public function setTaxRuleStatus(int $id, string $status): void
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+        $rule = $repository->taxRule($id);
+
+        if ($rule === null) {
+            throw new InvalidArgumentException('Tax rule was not found.');
+        }
+
+        $current = (string) $rule['status'];
+        $status = strtolower(trim($status));
+
+        $transitions = [
+            'inactive' => ['active', 'archived'],
+            'active' => ['inactive'],
+            'archived' => [],
+        ];
+
+        if (!in_array($status, $transitions[$current] ?? [], true)) {
+            throw new DomainException('This tax rule status transition is not allowed.');
+        }
+
+        $repository->setTaxRuleStatus($id, $status, (int) $actor['id']);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_tax_rule_status_changed',
+            (int) $actor['id'],
+            null,
+            [
+                'tax_rule_id' => $id,
+                'code' => (string) $rule['code'],
+                'from_status' => $current,
+                'to_status' => $status,
+            ]
+        );
+    }
+
+    /** @param array<string,mixed> $input */
     public function createInvoice(array $input): int
     {
         $actor = $this->administrator();
@@ -452,11 +574,16 @@ final class FinanceManagementService
         );
 
         $couponCode = strtoupper(trim((string) ($input['coupon_code'] ?? '')));
+        $taxRuleCode = strtoupper(trim((string) ($input['tax_rule_code'] ?? '')));
         $dueAt = $this->dateTime($input['due_at'] ?? null, 'Due date');
         $notes = trim((string) ($input['notes'] ?? ''));
 
         if (mb_strlen($couponCode) > 64) {
             throw new InvalidArgumentException('Coupon code cannot exceed 64 characters.');
+        }
+
+        if (mb_strlen($taxRuleCode) > 64) {
+            throw new InvalidArgumentException('Tax rule code cannot exceed 64 characters.');
         }
 
         if (mb_strlen($notes) > 5000) {
@@ -465,7 +592,11 @@ final class FinanceManagementService
 
         $pdo = Database::connection();
         $coupon = null;
+        $taxRule = null;
         $discountTotal = '0.00';
+        $taxableTotal = $lineTotal;
+        $taxRate = '0.0000';
+        $taxTotal = '0.00';
         $invoiceTotal = $lineTotal;
 
         try {
@@ -536,21 +667,57 @@ final class FinanceManagementService
 
                 $discount = min((float) $lineTotal, round($discount, 2));
                 $discountTotal = number_format($discount, 2, '.', '');
-                $invoiceTotal = number_format(
-                    max(0, (float) $lineTotal - $discount),
-                    2,
-                    '.',
-                    ''
-                );
             }
+
+            $taxable = max(0, (float) $lineTotal - (float) $discountTotal);
+            $taxableTotal = number_format($taxable, 2, '.', '');
+
+            if ($taxRuleCode !== '') {
+                $taxRule = $repository->lockTaxRuleByCode($taxRuleCode);
+
+                if ($taxRule === null || (string) $taxRule['status'] !== 'active') {
+                    throw new InvalidArgumentException('Tax rule is unavailable or inactive.');
+                }
+
+                $now = new DateTimeImmutable();
+                $startsAt = !empty($taxRule['starts_at'])
+                    ? new DateTimeImmutable((string) $taxRule['starts_at'])
+                    : null;
+                $endsAt = !empty($taxRule['ends_at'])
+                    ? new DateTimeImmutable((string) $taxRule['ends_at'])
+                    : null;
+
+                if ($startsAt !== null && $now < $startsAt) {
+                    throw new DomainException('Tax rule is not active yet.');
+                }
+
+                if ($endsAt !== null && $now >= $endsAt) {
+                    throw new DomainException('Tax rule has expired.');
+                }
+
+                $taxRate = number_format((float) $taxRule['rate_percent'], 4, '.', '');
+                $tax = round($taxable * ((float) $taxRate / 100), 2);
+                $taxTotal = number_format($tax, 2, '.', '');
+            }
+
+            $invoiceTotal = number_format(
+                $taxable + (float) $taxTotal,
+                2,
+                '.',
+                ''
+            );
 
             $invoiceId = $repository->createInvoice([
                 'company_id' => $companyId,
                 'subscription_id' => $subscriptionId,
                 'coupon_id' => $coupon !== null ? (int) $coupon['id'] : null,
+                'tax_rule_id' => $taxRule !== null ? (int) $taxRule['id'] : null,
                 'currency' => $currency,
                 'subtotal' => $lineTotal,
                 'discount_total' => $discountTotal,
+                'taxable_total' => $taxableTotal,
+                'tax_rate' => $taxRate,
+                'tax_total' => $taxTotal,
                 'total' => $invoiceTotal,
                 'due_at' => $dueAt?->format('Y-m-d H:i:s'),
                 'notes' => $notes !== '' ? $notes : null,
@@ -593,8 +760,13 @@ final class FinanceManagementService
                 'subscription_id' => $subscriptionId,
                 'coupon_id' => $coupon !== null ? (int) $coupon['id'] : null,
                 'coupon_code' => $coupon !== null ? (string) $coupon['code'] : null,
+                'tax_rule_id' => $taxRule !== null ? (int) $taxRule['id'] : null,
+                'tax_rule_code' => $taxRule !== null ? (string) $taxRule['code'] : null,
                 'subtotal' => $lineTotal,
                 'discount_total' => $discountTotal,
+                'taxable_total' => $taxableTotal,
+                'tax_rate' => $taxRate,
+                'tax_total' => $taxTotal,
                 'total' => $invoiceTotal,
                 'currency' => $currency,
             ]
@@ -870,6 +1042,25 @@ final class FinanceManagementService
         }
 
         return number_format((float) $value, 2, '.', '');
+    }
+
+    private function percentageRate(mixed $value, string $label): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || !preg_match('/^\\d{1,3}(?:\\.\\d{1,4})?$/', $value)) {
+            throw new InvalidArgumentException(
+                $label . ' must be a valid percentage with up to four decimal places.'
+            );
+        }
+
+        if ((float) $value <= 0 || (float) $value > 100) {
+            throw new InvalidArgumentException(
+                $label . ' must be greater than zero and no more than 100.'
+            );
+        }
+
+        return number_format((float) $value, 4, '.', '');
     }
 
     private function decimal(mixed $value, string $label): string
