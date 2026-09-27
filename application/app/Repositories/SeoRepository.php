@@ -51,6 +51,14 @@ final class SeoRepository
                             AND c.published_at IS NOT NULL
                             AND c.deleted_at IS NULL',
             ],
+            [
+                'sql' => 'SELECT CONCAT("/pages/", p.slug) AS path,
+                                 p.updated_at AS last_modified
+                          FROM cms_pages p
+                          WHERE p.status = "published"
+                            AND p.published_at IS NOT NULL
+                            AND p.robots_directive = "index,follow"',
+            ],
         ];
 
         foreach ($queries as $query) {
