@@ -42,12 +42,31 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
         return e($currency . ' ' . number_format((float) $value, 2));
     }
 
-    if (in_array($key, ['usage_count', 'children_count', 'attachment_count', 'primary_count', 'company_count', 'owned_company_count', 'security_events_count'], true)) {
+    if (in_array($key, [
+        'usage_count',
+        'children_count',
+        'attachment_count',
+        'primary_count',
+        'company_count',
+        'owned_company_count',
+        'security_events_count',
+        'projects_count',
+        'properties_count',
+        'listings_count',
+        'published_listings_count',
+    ], true)) {
         return e(number_format((int) $value));
     }
 
     if (in_array($key, ['original_name', 'target_title', 'parent_name', 'uploaded_by'], true)) {
         return e((string) $value);
+    }
+
+    if (in_array($key, ['readiness', 'marketplace_readiness'], true)) {
+        $ready = strtolower((string) $value) === 'ready';
+        return '<span class="status-badge status-badge--' . ($ready ? 'approved' : 'pending') . '">'
+            . e($ready ? 'Ready' : 'Blocked')
+            . '</span>';
     }
 
     if ($key === 'attachment_state') {
