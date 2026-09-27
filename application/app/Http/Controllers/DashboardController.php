@@ -172,6 +172,23 @@ final class DashboardController
         ]));
     }
 
+    public function paymentProviders(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-payment-providers', [
+            'pageTitle' => 'Payment Providers · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'payment-providers',
+            'paymentProviders' => $finance->paymentProviders(),
+            'webhookEvents' => $finance->webhookEvents(),
+            'paymentProviderSummary' => $finance->paymentProviderSummary(),
+        ]));
+    }
+
     public function invoices(Request $request): Response
     {
         $finance = new FinanceRepository();
@@ -602,6 +619,7 @@ final class DashboardController
             ['label' => 'Subscriptions', 'path' => '/dashboard/subscriptions', 'icon' => 'building'],
             ['label' => 'Coupons', 'path' => '/dashboard/coupons', 'icon' => 'edit'],
             ['label' => 'Tax Rules', 'path' => '/dashboard/taxes', 'icon' => 'shield'],
+            ['label' => 'Payment Providers', 'path' => '/dashboard/payment-providers', 'icon' => 'settings'],
             ['label' => 'Invoices', 'path' => '/dashboard/invoices', 'icon' => 'edit'],
             ['label' => 'Transactions', 'path' => '/dashboard/transactions', 'icon' => 'pipeline'],
 
