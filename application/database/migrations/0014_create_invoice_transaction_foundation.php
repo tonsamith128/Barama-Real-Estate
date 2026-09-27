@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS billing_transactions (
     KEY billing_transactions_company_status_index (company_id, status),
     KEY billing_transactions_subscription_index (subscription_id),
     KEY billing_transactions_invoice_index (invoice_id),
-    KEY billing_transactions_reference_index (reference),
+    UNIQUE KEY billing_transactions_source_reference_unique (source, reference),
     KEY billing_transactions_processed_index (processed_at),
     CONSTRAINT billing_transactions_company_fk
         FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE RESTRICT,
