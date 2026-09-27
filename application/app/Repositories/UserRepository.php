@@ -161,6 +161,21 @@ final class UserRepository
         );
     }
 
+    public function activeCompanyMembershipCount(int $userId): int
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT COUNT(DISTINCT cm.company_id)
+             FROM company_members cm
+             INNER JOIN companies c ON c.id = cm.company_id
+             WHERE cm.user_id = :user_id
+               AND cm.status = "active"
+               AND c.deleted_at IS NULL'
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        return (int) $statement->fetchColumn();
+    }
+
     private function authVersion(int $userId): int
     {
         $statement = Database::connection()->prepare(
