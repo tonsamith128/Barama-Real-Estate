@@ -7,7 +7,6 @@ namespace Barama\Services;
 use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\InquiryRepository;
-use Barama\Repositories\ListingWriteRepository;
 use Barama\Repositories\RoleRepository;
 use Barama\Repositories\WorkflowRepository;
 use DomainException;
@@ -70,10 +69,16 @@ final class DomainWorkflowService
 
         $isAdmin = $auth->hasRole('administrator');
 
-        if ($isAdmin && $resource === 'project' && $toStatus === 'approved') {
+        if (
+            $isAdmin
+            && $resource === 'project'
+            && in_array($toStatus, ['approved', 'published'], true)
+        ) {
             if ((string) ($context['company_status'] ?? '') !== 'approved') {
                 throw new DomainException(
-                    'A project cannot be approved until its company is approved.'
+                    $toStatus === 'published'
+                        ? 'A project cannot be published unless its company is currently approved.'
+                        : 'A project cannot be approved until its company is approved.'
                 );
             }
         }
@@ -129,10 +134,29 @@ final class DomainWorkflowService
         }
 
         if ($resource === 'listing' && $toStatus === 'published') {
-            $listing = (new ListingWriteRepository())->findById($entityId);
+            if ((string) ($context['property_status'] ?? '') !== 'approved') {
+                throw new DomainException(
+                    'A listing cannot be published until its property is approved.'
+                );
+            }
 
-            if ($listing === null || (string) $listing['property_status'] !== 'approved') {
-                throw new DomainException('A listing cannot be published until its property is approved.');
+            if ((string) ($context['company_status'] ?? '') !== 'approved') {
+                throw new DomainException(
+                    'A listing cannot be published unless its company is currently approved.'
+                );
+            }
+
+            if (
+                !empty($context['project_id'])
+                && !in_array(
+                    (string) ($context['project_status'] ?? ''),
+                    ['approved', 'published'],
+                    true
+                )
+            ) {
+                throw new DomainException(
+                    'A listing cannot be published while its linked project is not approved.'
+                );
             }
         }
 
