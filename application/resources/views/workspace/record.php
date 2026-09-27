@@ -480,6 +480,14 @@ $details = match ($recordResource) {
 
     <div data-workspace-notice hidden></div>
 
+    <?php if ($workspaceType === 'admin' && $recordResource === 'page'): ?>
+        <?= \Barama\Core\View::partial('workspace/page-editor', [
+            'workspaceType' => $workspaceType,
+            'recordResource' => $recordResource,
+            'record' => $record,
+        ]) ?>
+    <?php endif; ?>
+
     <?php if ($workspaceType === 'admin' && $status === 'pending' && in_array($recordResource, ['company','project','property','listing'], true)): ?>
         <section class="workspace-admin-moderation" aria-labelledby="admin-moderation-title">
             <div class="workspace-admin-moderation__intro">
