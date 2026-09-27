@@ -258,6 +258,293 @@ final class FinanceManagementService
         );
     }
 
+    /** @param array<string,mixed> $input */
+    public function createInvoice(array $input): int
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+
+        $companyId = $this->positiveId($input['company_id'] ?? null, 'Company');
+
+        if (!$repository->companyExists($companyId)) {
+            throw new InvalidArgumentException('Company is unavailable for invoicing.');
+        }
+
+        $subscriptionId = null;
+        if (trim((string) ($input['subscription_id'] ?? '')) !== '') {
+            $subscriptionId = $this->positiveId(
+                $input['subscription_id'],
+                'Subscription'
+            );
+
+            if (!$repository->subscriptionBelongsToCompany($subscriptionId, $companyId)) {
+                throw new InvalidArgumentException(
+                    'The selected subscription does not belong to this company.'
+                );
+            }
+        }
+
+        $currency = strtoupper(trim((string) ($input['currency'] ?? 'USD')));
+
+        if (preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
+            throw new InvalidArgumentException('Currency must use a three-letter ISO code.');
+        }
+
+        $description = trim((string) ($input['description'] ?? ''));
+        if ($description === '' || mb_strlen($description) > 255) {
+            throw new InvalidArgumentException(
+                'Invoice line description is required and cannot exceed 255 characters.'
+            );
+        }
+
+        $quantity = $this->quantity($input['quantity'] ?? '1');
+        $unitAmount = $this->decimal($input['unit_amount'] ?? '0', 'Unit amount');
+        $lineTotal = number_format(
+            round(((float) $quantity) * ((float) $unitAmount), 2),
+            2,
+            '.',
+            ''
+        );
+
+        $dueAt = $this->dateTime($input['due_at'] ?? null, 'Due date');
+        $notes = trim((string) ($input['notes'] ?? ''));
+
+        if (mb_strlen($notes) > 5000) {
+            throw new InvalidArgumentException('Invoice notes cannot exceed 5,000 characters.');
+        }
+
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            $invoiceId = $repository->createInvoice([
+                'company_id' => $companyId,
+                'subscription_id' => $subscriptionId,
+                'currency' => $currency,
+                'subtotal' => $lineTotal,
+                'total' => $lineTotal,
+                'due_at' => $dueAt?->format('Y-m-d H:i:s'),
+                'notes' => $notes !== '' ? $notes : null,
+                'actor_id' => (int) $actor['id'],
+            ]);
+
+            $repository->createInvoiceItem($invoiceId, [
+                'description' => $description,
+                'quantity' => $quantity,
+                'unit_amount' => $unitAmount,
+                'line_total' => $lineTotal,
+            ]);
+
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
+
+        (new SecurityAuditService())->record(
+            'admin.billing_invoice_created',
+            (int) $actor['id'],
+            null,
+            [
+                'invoice_id' => $invoiceId,
+                'company_id' => $companyId,
+                'subscription_id' => $subscriptionId,
+                'total' => $lineTotal,
+                'currency' => $currency,
+            ]
+        );
+
+        return $invoiceId;
+    }
+
+    public function setInvoiceStatus(int $id, string $status): void
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+        $invoice = $repository->invoice($id);
+
+        if ($invoice === null) {
+            throw new InvalidArgumentException('Invoice was not found.');
+        }
+
+        $current = (string) $invoice['status'];
+        $status = strtolower(trim($status));
+
+        $transitions = [
+            'draft' => ['open', 'void'],
+            'open' => ['paid', 'void'],
+            'paid' => [],
+            'void' => [],
+        ];
+
+        if (!in_array($status, $transitions[$current] ?? [], true)) {
+            throw new DomainException('This invoice status transition is not allowed.');
+        }
+
+        $settled = $repository->invoiceSettledAmount($id);
+
+        if ($status === 'paid' && $settled + 0.00001 < (float) $invoice['total']) {
+            throw new DomainException(
+                'Record sufficient successful payment or credit transactions before marking this invoice paid.'
+            );
+        }
+
+        if ($status === 'void' && $settled > 0.00001) {
+            throw new DomainException(
+                'An invoice with recorded settlement cannot be voided. Record any required refund first.'
+            );
+        }
+
+        $repository->setInvoiceStatus($id, $status, (int) $actor['id']);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_invoice_status_changed',
+            (int) $actor['id'],
+            null,
+            [
+                'invoice_id' => $id,
+                'from_status' => $current,
+                'to_status' => $status,
+                'settled_amount' => number_format($settled, 2, '.', ''),
+            ]
+        );
+    }
+
+    /** @param array<string,mixed> $input */
+    public function createTransaction(array $input): int
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+
+        $companyId = $this->positiveId($input['company_id'] ?? null, 'Company');
+
+        if (!$repository->companyExists($companyId)) {
+            throw new InvalidArgumentException('Company is unavailable for transaction recording.');
+        }
+
+        $subscriptionId = null;
+        if (trim((string) ($input['subscription_id'] ?? '')) !== '') {
+            $subscriptionId = $this->positiveId(
+                $input['subscription_id'],
+                'Subscription'
+            );
+
+            if (!$repository->subscriptionBelongsToCompany($subscriptionId, $companyId)) {
+                throw new InvalidArgumentException(
+                    'The selected subscription does not belong to this company.'
+                );
+            }
+        }
+
+        $invoiceId = null;
+        $invoice = null;
+        if (trim((string) ($input['invoice_id'] ?? '')) !== '') {
+            $invoiceId = $this->positiveId($input['invoice_id'], 'Invoice');
+            $invoice = $repository->invoice($invoiceId);
+
+            if ($invoice === null || (int) $invoice['company_id'] !== $companyId) {
+                throw new InvalidArgumentException(
+                    'The selected invoice does not belong to this company.'
+                );
+            }
+        }
+
+        $type = strtolower(trim((string) ($input['transaction_type'] ?? 'payment')));
+        $status = strtolower(trim((string) ($input['status'] ?? 'succeeded')));
+
+        if (!in_array($type, ['payment', 'refund', 'credit'], true)) {
+            throw new InvalidArgumentException('Choose a supported transaction type.');
+        }
+
+        if (!in_array($status, ['pending', 'succeeded', 'failed'], true)) {
+            throw new InvalidArgumentException('Choose a supported transaction status.');
+        }
+
+        if ($type === 'refund' && $invoice === null) {
+            throw new InvalidArgumentException(
+                'Refund transactions must be linked to an invoice.'
+            );
+        }
+
+        $amount = $this->decimal($input['amount'] ?? '', 'Transaction amount');
+
+        if ((float) $amount <= 0) {
+            throw new InvalidArgumentException('Transaction amount must be greater than zero.');
+        }
+
+        $currency = strtoupper(trim((string) ($input['currency'] ?? 'USD')));
+
+        if (preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
+            throw new InvalidArgumentException('Currency must use a three-letter ISO code.');
+        }
+
+        if ($invoice !== null && strtoupper((string) $invoice['currency']) !== $currency) {
+            throw new InvalidArgumentException(
+                'Transaction currency must match the linked invoice currency.'
+            );
+        }
+
+        if (
+            $type === 'refund'
+            && $status === 'succeeded'
+            && $invoiceId !== null
+            && $repository->invoiceSettledAmount($invoiceId) + 0.00001 < (float) $amount
+        ) {
+            throw new DomainException(
+                'Successful refunds cannot exceed the currently settled amount of the linked invoice.'
+            );
+        }
+
+        $reference = trim((string) ($input['reference'] ?? ''));
+        $notes = trim((string) ($input['notes'] ?? ''));
+        $processedAt = $this->dateTime(
+            $input['processed_at'] ?? null,
+            'Processed date'
+        ) ?? new DateTimeImmutable();
+
+        if (mb_strlen($reference) > 191) {
+            throw new InvalidArgumentException('Transaction reference cannot exceed 191 characters.');
+        }
+
+        if (mb_strlen($notes) > 5000) {
+            throw new InvalidArgumentException('Transaction notes cannot exceed 5,000 characters.');
+        }
+
+        $id = $repository->createTransaction([
+            'company_id' => $companyId,
+            'subscription_id' => $subscriptionId,
+            'invoice_id' => $invoiceId,
+            'transaction_type' => $type,
+            'status' => $status,
+            'reference' => $reference !== '' ? $reference : null,
+            'amount' => $amount,
+            'currency' => $currency,
+            'processed_at' => $processedAt->format('Y-m-d H:i:s'),
+            'notes' => $notes !== '' ? $notes : null,
+            'actor_id' => (int) $actor['id'],
+        ]);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_transaction_recorded',
+            (int) $actor['id'],
+            null,
+            [
+                'transaction_id' => $id,
+                'company_id' => $companyId,
+                'invoice_id' => $invoiceId,
+                'transaction_type' => $type,
+                'status' => $status,
+                'amount' => $amount,
+                'currency' => $currency,
+            ]
+        );
+
+        return $id;
+    }
+
     /** @return array<string,mixed> */
     private function administrator(): array
     {
@@ -314,6 +601,23 @@ final class FinanceManagementService
         }
 
         return (int) $validated;
+    }
+
+    private function quantity(mixed $value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || !preg_match('/^\\d{1,8}(?:\\.\\d{1,2})?$/', $value)) {
+            throw new InvalidArgumentException(
+                'Invoice quantity must be a positive number with up to two decimal places.'
+            );
+        }
+
+        if ((float) $value <= 0) {
+            throw new InvalidArgumentException('Invoice quantity must be greater than zero.');
+        }
+
+        return number_format((float) $value, 2, '.', '');
     }
 
     private function decimal(mixed $value, string $label): string
