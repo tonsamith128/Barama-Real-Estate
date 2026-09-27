@@ -189,6 +189,23 @@ final class DashboardController
         ]));
     }
 
+    public function billingOperations(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-billing-operations', [
+            'pageTitle' => 'Billing Operations · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'billing-operations',
+            'billingOperationsSummary' => $finance->billingOperationsSummary(),
+            'reconciliationInvoices' => $finance->reconciliationInvoices(),
+            'webhookOperationalEvents' => $finance->webhookOperationalEvents(),
+        ]));
+    }
+
     public function invoices(Request $request): Response
     {
         $finance = new FinanceRepository();
@@ -620,6 +637,7 @@ final class DashboardController
             ['label' => 'Coupons', 'path' => '/dashboard/coupons', 'icon' => 'edit'],
             ['label' => 'Tax Rules', 'path' => '/dashboard/taxes', 'icon' => 'shield'],
             ['label' => 'Payment Providers', 'path' => '/dashboard/payment-providers', 'icon' => 'settings'],
+            ['label' => 'Billing Operations', 'path' => '/dashboard/billing-operations', 'icon' => 'pipeline'],
             ['label' => 'Invoices', 'path' => '/dashboard/invoices', 'icon' => 'edit'],
             ['label' => 'Transactions', 'path' => '/dashboard/transactions', 'icon' => 'pipeline'],
 
