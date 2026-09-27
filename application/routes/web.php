@@ -383,6 +383,21 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
+    '/dashboard/taxes',
+    [DashboardController::class, 'taxes'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/taxes',
+    [AdminManagementController::class, 'createTaxRule'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/taxes/{id}/status',
+    [AdminManagementController::class, 'updateTaxRuleStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/invoices',
     [DashboardController::class, 'invoices'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
