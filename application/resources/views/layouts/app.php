@@ -54,6 +54,23 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
     'developer' => t('Company / Vendor Workspace'),
     default => t('Customer Account'),
 });
+
+$seoTitle = trim((string) ($pageTitle ?? config('app.name')));
+$seoDescription = trim((string) ($metaDescription ?? 'Barama Real Estate marketplace and property management platform.'));
+$seoDescription = mb_substr($seoDescription, 0, 300);
+$seoCanonical = trim((string) ($canonicalUrl ?? ''));
+
+if ($seoCanonical === '') {
+    $seoCanonical = url($authRoutePath);
+}
+
+$seoRobots = trim((string) ($metaRobots ?? (
+    $isStandaloneAuthPage || $isWorkspacePage
+        ? 'noindex,nofollow'
+        : 'index,follow,max-image-preview:large'
+)));
+$seoImage = trim((string) ($metaImage ?? ''));
+$seoType = trim((string) ($metaType ?? 'website'));
 ?>
 <!doctype html>
 <html lang="<?= e(app_locale()) ?>" data-bs-theme="light">
@@ -93,8 +110,20 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
     <link rel="icon" href="<?= e(asset('images/branding/favicon-16x16.png')) ?>" sizes="16x16" type="image/png">
     <link rel="shortcut icon" href="<?= e(url('/favicon.ico')) ?>">
     <link rel="apple-touch-icon" href="<?= e(asset('images/branding/apple-touch-icon.png')) ?>">
-    <title><?= e($pageTitle ?? config('app.name')) ?></title>
-    <meta name="description" content="Barama Real Estate marketplace and property management platform.">
+    <title><?= e($seoTitle) ?></title>
+    <meta name="description" content="<?= e($seoDescription) ?>">
+    <meta name="robots" content="<?= e($seoRobots) ?>">
+    <link rel="canonical" href="<?= e($seoCanonical) ?>">
+    <meta property="og:type" content="<?= e($seoType) ?>">
+    <meta property="og:site_name" content="<?= e((string) config('app.name')) ?>">
+    <meta property="og:title" content="<?= e($seoTitle) ?>">
+    <meta property="og:description" content="<?= e($seoDescription) ?>">
+    <meta property="og:url" content="<?= e($seoCanonical) ?>">
+    <?php if ($seoImage !== ''): ?><meta property="og:image" content="<?= e($seoImage) ?>"><?php endif; ?>
+    <meta name="twitter:card" content="<?= $seoImage !== '' ? 'summary_large_image' : 'summary' ?>">
+    <meta name="twitter:title" content="<?= e($seoTitle) ?>">
+    <meta name="twitter:description" content="<?= e($seoDescription) ?>">
+    <?php if ($seoImage !== ''): ?><meta name="twitter:image" content="<?= e($seoImage) ?>"><?php endif; ?>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
