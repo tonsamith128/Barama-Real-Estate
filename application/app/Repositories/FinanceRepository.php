@@ -265,6 +265,8 @@ final class FinanceRepository
                 'SELECT i.*, c.name AS company_name,
                         p.name AS plan_name,
                         coupon.code AS coupon_code,
+                        tax.code AS tax_rule_code,
+                        tax.name AS tax_rule_name,
                         (SELECT COUNT(*)
                          FROM billing_invoice_items item
                          WHERE item.invoice_id = i.id) AS item_count,
@@ -285,6 +287,7 @@ final class FinanceRepository
                  LEFT JOIN company_subscriptions s ON s.id = i.subscription_id
                  LEFT JOIN subscription_plans p ON p.id = s.plan_id
                  LEFT JOIN billing_coupons coupon ON coupon.id = i.coupon_id
+                 LEFT JOIN billing_tax_rules tax ON tax.id = i.tax_rule_id
                  ORDER BY i.created_at DESC, i.id DESC
                  LIMIT 1000'
             )
@@ -316,12 +319,15 @@ final class FinanceRepository
         $statement = Database::connection()->prepare(
             'SELECT i.*, c.name AS company_name,
                     p.name AS plan_name,
-                    coupon.code AS coupon_code
+                    coupon.code AS coupon_code,
+                    tax.code AS tax_rule_code,
+                    tax.name AS tax_rule_name
              FROM billing_invoices i
              INNER JOIN companies c ON c.id = i.company_id
              LEFT JOIN company_subscriptions s ON s.id = i.subscription_id
              LEFT JOIN subscription_plans p ON p.id = s.plan_id
              LEFT JOIN billing_coupons coupon ON coupon.id = i.coupon_id
+             LEFT JOIN billing_tax_rules tax ON tax.id = i.tax_rule_id
              WHERE i.id = :id
              LIMIT 1'
         );
@@ -358,13 +364,13 @@ final class FinanceRepository
 
         $statement = Database::connection()->prepare(
             'INSERT INTO billing_invoices
-                (uuid, invoice_number, company_id, subscription_id, coupon_id, status,
-                 currency, subtotal, discount_total, total, due_at, notes,
-                 created_by_user_id, updated_by_user_id)
+                (uuid, invoice_number, company_id, subscription_id, coupon_id, tax_rule_id, status,
+                 currency, subtotal, discount_total, taxable_total, tax_rate, tax_total,
+                 total, due_at, notes, created_by_user_id, updated_by_user_id)
              VALUES
-                (:uuid, :invoice_number, :company_id, :subscription_id, :coupon_id, "draft",
-                 :currency, :subtotal, :discount_total, :total, :due_at, :notes,
-                 :actor_id, :actor_id)'
+                (:uuid, :invoice_number, :company_id, :subscription_id, :coupon_id, :tax_rule_id, "draft",
+                 :currency, :subtotal, :discount_total, :taxable_total, :tax_rate, :tax_total,
+                 :total, :due_at, :notes, :actor_id, :actor_id)'
         );
         $statement->execute([
             'uuid' => $uuid,
@@ -372,9 +378,13 @@ final class FinanceRepository
             'company_id' => $data['company_id'],
             'subscription_id' => $data['subscription_id'],
             'coupon_id' => $data['coupon_id'],
+            'tax_rule_id' => $data['tax_rule_id'],
             'currency' => $data['currency'],
             'subtotal' => $data['subtotal'],
             'discount_total' => $data['discount_total'],
+            'taxable_total' => $data['taxable_total'],
+            'tax_rate' => $data['tax_rate'],
+            'tax_total' => $data['tax_total'],
             'total' => $data['total'],
             'due_at' => $data['due_at'],
             'notes' => $data['notes'],
@@ -652,6 +662,117 @@ final class FinanceRepository
                     INNER JOIN billing_invoices i ON i.id = r.invoice_id
                     WHERE i.status <> "void"
                 ) AS effective_redemptions'
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row)
+            ? array_map(static fn (mixed $value): int => (int) $value, $row)
+            : [];
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function taxRules(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT *
+                 FROM billing_tax_rules
+                 ORDER BY created_at DESC, id DESC
+                 LIMIT 1000'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function taxRule(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT * FROM billing_tax_rules WHERE id = :id LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,mixed>|null */
+    public function lockTaxRuleByCode(string $code): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT *
+             FROM billing_tax_rules
+             WHERE code = :code
+             LIMIT 1
+             FOR UPDATE'
+        );
+        $statement->execute(['code' => $code]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function taxRuleCodeExists(string $code): bool
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT 1 FROM billing_tax_rules WHERE code = :code LIMIT 1'
+        );
+        $statement->execute(['code' => $code]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createTaxRule(array $data): int
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_tax_rules
+                (uuid, code, name, description, rate_percent,
+                 country_code, region_code, starts_at, ends_at, status,
+                 created_by_user_id, updated_by_user_id)
+             VALUES
+                (:uuid, :code, :name, :description, :rate_percent,
+                 :country_code, :region_code, :starts_at, :ends_at, "inactive",
+                 :actor_id, :actor_id)'
+        );
+        $statement->execute([
+            'uuid' => IdGenerator::uuid(),
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'description' => $data['description'],
+            'rate_percent' => $data['rate_percent'],
+            'country_code' => $data['country_code'],
+            'region_code' => $data['region_code'],
+            'starts_at' => $data['starts_at'],
+            'ends_at' => $data['ends_at'],
+            'actor_id' => $data['actor_id'],
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    public function setTaxRuleStatus(int $id, string $status, int $actorId): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE billing_tax_rules
+             SET status = :status,
+                 updated_by_user_id = :actor_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'status' => $status,
+            'actor_id' => $actorId,
+            'id' => $id,
+        ]);
+    }
+
+    /** @return array<string,int> */
+    public function taxSummary(): array
+    {
+        $row = Database::connection()->query(
+            'SELECT
+                (SELECT COUNT(*) FROM billing_tax_rules) AS tax_rules,
+                (SELECT COUNT(*) FROM billing_tax_rules WHERE status = "active") AS active_tax_rules,
+                (SELECT COUNT(*) FROM billing_invoices WHERE tax_rule_id IS NOT NULL) AS taxed_invoices'
         )->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row)
