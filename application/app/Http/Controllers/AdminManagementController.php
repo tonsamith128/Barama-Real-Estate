@@ -109,6 +109,26 @@ final class AdminManagementController
         });
     }
 
+    public function updateMediaAltText(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid media ID is required.');
+            }
+
+            $altText = trim((string) $request->input('alt_text', ''));
+            (new AdminMediaManagementService())->updateAltText(
+                (int) $id,
+                $altText !== '' ? $altText : null
+            );
+
+            return [
+                'media_id' => (int) $id,
+                'message' => 'Media alt text updated.',
+            ];
+        });
+    }
+
     public function deleteOrphanMedia(Request $request, string $id): Response
     {
         return $this->execute(function () use ($id): array {
