@@ -259,6 +259,151 @@ final class FinanceManagementService
     }
 
     /** @param array<string,mixed> $input */
+    public function createCoupon(array $input): int
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+
+        $code = strtoupper(trim((string) ($input['code'] ?? '')));
+        $name = trim((string) ($input['name'] ?? ''));
+        $description = trim((string) ($input['description'] ?? ''));
+        $type = strtolower(trim((string) ($input['discount_type'] ?? 'percent')));
+        $value = $this->decimal($input['discount_value'] ?? '', 'Discount value');
+
+        if (
+            mb_strlen($code) < 2
+            || mb_strlen($code) > 64
+            || preg_match('/^[A-Z0-9][A-Z0-9_-]*$/', $code) !== 1
+        ) {
+            throw new InvalidArgumentException(
+                'Coupon code must contain 2 to 64 uppercase letters, numbers, underscores, or hyphens.'
+            );
+        }
+
+        if ($repository->couponCodeExists($code)) {
+            throw new InvalidArgumentException('This coupon code is already in use.');
+        }
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 160) {
+            throw new InvalidArgumentException(
+                'Coupon name must contain between 2 and 160 characters.'
+            );
+        }
+
+        if (mb_strlen($description) > 5000) {
+            throw new InvalidArgumentException(
+                'Coupon description cannot exceed 5,000 characters.'
+            );
+        }
+
+        if (!in_array($type, ['percent', 'fixed'], true)) {
+            throw new InvalidArgumentException('Choose percent or fixed discount type.');
+        }
+
+        if ((float) $value <= 0) {
+            throw new InvalidArgumentException('Discount value must be greater than zero.');
+        }
+
+        $currency = null;
+
+        if ($type === 'percent') {
+            if ((float) $value > 100) {
+                throw new InvalidArgumentException(
+                    'Percentage discounts cannot exceed 100 percent.'
+                );
+            }
+        } else {
+            $currency = strtoupper(trim((string) ($input['currency'] ?? '')));
+
+            if (preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
+                throw new InvalidArgumentException(
+                    'Fixed discounts require a three-letter currency code.'
+                );
+            }
+        }
+
+        $startsAt = $this->dateTime($input['starts_at'] ?? null, 'Start date');
+        $endsAt = $this->dateTime($input['ends_at'] ?? null, 'End date');
+
+        if ($startsAt !== null && $endsAt !== null && $endsAt <= $startsAt) {
+            throw new InvalidArgumentException('Coupon end date must be after its start date.');
+        }
+
+        $id = $repository->createCoupon([
+            'code' => $code,
+            'name' => $name,
+            'description' => $description !== '' ? $description : null,
+            'discount_type' => $type,
+            'discount_value' => $value,
+            'currency' => $currency,
+            'max_redemptions' => $this->nullablePositiveLimit(
+                $input['max_redemptions'] ?? null,
+                'Maximum redemptions'
+            ),
+            'per_company_limit' => $this->nullablePositiveLimit(
+                $input['per_company_limit'] ?? null,
+                'Per-company redemption limit'
+            ),
+            'starts_at' => $startsAt?->format('Y-m-d H:i:s'),
+            'ends_at' => $endsAt?->format('Y-m-d H:i:s'),
+            'actor_id' => (int) $actor['id'],
+        ]);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_coupon_created',
+            (int) $actor['id'],
+            null,
+            [
+                'coupon_id' => $id,
+                'code' => $code,
+                'discount_type' => $type,
+                'discount_value' => $value,
+                'currency' => $currency,
+            ]
+        );
+
+        return $id;
+    }
+
+    public function setCouponStatus(int $id, string $status): void
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+        $coupon = $repository->coupon($id);
+
+        if ($coupon === null) {
+            throw new InvalidArgumentException('Coupon was not found.');
+        }
+
+        $current = (string) $coupon['status'];
+        $status = strtolower(trim($status));
+
+        $transitions = [
+            'inactive' => ['active', 'archived'],
+            'active' => ['inactive'],
+            'archived' => [],
+        ];
+
+        if (!in_array($status, $transitions[$current] ?? [], true)) {
+            throw new DomainException('This coupon status transition is not allowed.');
+        }
+
+        $repository->setCouponStatus($id, $status, (int) $actor['id']);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_coupon_status_changed',
+            (int) $actor['id'],
+            null,
+            [
+                'coupon_id' => $id,
+                'code' => (string) $coupon['code'],
+                'from_status' => $current,
+                'to_status' => $status,
+            ]
+        );
+    }
+
+    /** @param array<string,mixed> $input */
     public function createInvoice(array $input): int
     {
         $actor = $this->administrator();
@@ -306,24 +451,107 @@ final class FinanceManagementService
             ''
         );
 
+        $couponCode = strtoupper(trim((string) ($input['coupon_code'] ?? '')));
         $dueAt = $this->dateTime($input['due_at'] ?? null, 'Due date');
         $notes = trim((string) ($input['notes'] ?? ''));
+
+        if (mb_strlen($couponCode) > 64) {
+            throw new InvalidArgumentException('Coupon code cannot exceed 64 characters.');
+        }
 
         if (mb_strlen($notes) > 5000) {
             throw new InvalidArgumentException('Invoice notes cannot exceed 5,000 characters.');
         }
 
         $pdo = Database::connection();
+        $coupon = null;
+        $discountTotal = '0.00';
+        $invoiceTotal = $lineTotal;
 
         try {
             $pdo->beginTransaction();
 
+            if ($couponCode !== '') {
+                $coupon = $repository->lockCouponByCode($couponCode);
+
+                if ($coupon === null || (string) $coupon['status'] !== 'active') {
+                    throw new InvalidArgumentException('Coupon is unavailable or inactive.');
+                }
+
+                $now = new DateTimeImmutable();
+                $startsAt = !empty($coupon['starts_at'])
+                    ? new DateTimeImmutable((string) $coupon['starts_at'])
+                    : null;
+                $endsAt = !empty($coupon['ends_at'])
+                    ? new DateTimeImmutable((string) $coupon['ends_at'])
+                    : null;
+
+                if ($startsAt !== null && $now < $startsAt) {
+                    throw new DomainException('Coupon is not active yet.');
+                }
+
+                if ($endsAt !== null && $now >= $endsAt) {
+                    throw new DomainException('Coupon has expired.');
+                }
+
+                $maxRedemptions = $coupon['max_redemptions'] !== null
+                    ? (int) $coupon['max_redemptions']
+                    : null;
+                $perCompanyLimit = $coupon['per_company_limit'] !== null
+                    ? (int) $coupon['per_company_limit']
+                    : null;
+
+                if (
+                    $maxRedemptions !== null
+                    && $repository->effectiveCouponRedemptions((int) $coupon['id'])
+                        >= $maxRedemptions
+                ) {
+                    throw new DomainException('Coupon redemption limit has been reached.');
+                }
+
+                if (
+                    $perCompanyLimit !== null
+                    && $repository->effectiveCouponRedemptions(
+                        (int) $coupon['id'],
+                        $companyId
+                    ) >= $perCompanyLimit
+                ) {
+                    throw new DomainException(
+                        'This company has reached the coupon redemption limit.'
+                    );
+                }
+
+                if ((string) $coupon['discount_type'] === 'fixed') {
+                    if (strtoupper((string) $coupon['currency']) !== $currency) {
+                        throw new DomainException(
+                            'Fixed coupon currency must match the invoice currency.'
+                        );
+                    }
+
+                    $discount = (float) $coupon['discount_value'];
+                } else {
+                    $discount = ((float) $lineTotal)
+                        * ((float) $coupon['discount_value'] / 100);
+                }
+
+                $discount = min((float) $lineTotal, round($discount, 2));
+                $discountTotal = number_format($discount, 2, '.', '');
+                $invoiceTotal = number_format(
+                    max(0, (float) $lineTotal - $discount),
+                    2,
+                    '.',
+                    ''
+                );
+            }
+
             $invoiceId = $repository->createInvoice([
                 'company_id' => $companyId,
                 'subscription_id' => $subscriptionId,
+                'coupon_id' => $coupon !== null ? (int) $coupon['id'] : null,
                 'currency' => $currency,
                 'subtotal' => $lineTotal,
-                'total' => $lineTotal,
+                'discount_total' => $discountTotal,
+                'total' => $invoiceTotal,
                 'due_at' => $dueAt?->format('Y-m-d H:i:s'),
                 'notes' => $notes !== '' ? $notes : null,
                 'actor_id' => (int) $actor['id'],
@@ -335,6 +563,17 @@ final class FinanceManagementService
                 'unit_amount' => $unitAmount,
                 'line_total' => $lineTotal,
             ]);
+
+            if ($coupon !== null) {
+                $repository->createCouponRedemption(
+                    (int) $coupon['id'],
+                    $invoiceId,
+                    $companyId,
+                    $discountTotal,
+                    $currency,
+                    (int) $actor['id']
+                );
+            }
 
             $pdo->commit();
         } catch (Throwable $exception) {
@@ -352,7 +591,11 @@ final class FinanceManagementService
                 'invoice_id' => $invoiceId,
                 'company_id' => $companyId,
                 'subscription_id' => $subscriptionId,
-                'total' => $lineTotal,
+                'coupon_id' => $coupon !== null ? (int) $coupon['id'] : null,
+                'coupon_code' => $coupon !== null ? (string) $coupon['code'] : null,
+                'subtotal' => $lineTotal,
+                'discount_total' => $discountTotal,
+                'total' => $invoiceTotal,
                 'currency' => $currency,
             ]
         );
@@ -575,6 +818,15 @@ final class FinanceManagementService
         }
 
         return (int) $validated;
+    }
+
+    private function nullablePositiveLimit(mixed $value, string $label): ?int
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        return $this->integer($value, $label, 1, 1000000);
     }
 
     private function nullableLimit(mixed $value, string $label): ?int
