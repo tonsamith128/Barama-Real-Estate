@@ -26,7 +26,8 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
     <div class="workspace-stat-grid">
         <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['transactions'] ?? 0))) ?></strong><small>Transactions</small></div>
         <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['succeeded_transactions'] ?? 0))) ?></strong><small>Succeeded</small></div>
-        <div class="workspace-stat"><span><?= app_icon('building') ?></span><strong><?= e(number_format((float) ($summary['net_recorded'] ?? 0), 2)) ?></strong><small>Net recorded</small></div>
+        <div class="workspace-stat"><span><?= app_icon('alert') ?></span><strong><?= e(number_format((int) ($summary['pending_transactions'] ?? 0))) ?></strong><small>Pending</small></div>
+        <div class="workspace-stat"><span><?= app_icon('shield') ?></span><strong><?= e(number_format((int) ($summary['failed_transactions'] ?? 0))) ?></strong><small>Failed</small></div>
     </div>
 
     <details class="workspace-create">
