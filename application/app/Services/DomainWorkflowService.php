@@ -70,6 +70,35 @@ final class DomainWorkflowService
 
         $isAdmin = $auth->hasRole('administrator');
 
+        if ($isAdmin && $resource === 'project' && $toStatus === 'approved') {
+            if ((string) ($context['company_status'] ?? '') !== 'approved') {
+                throw new DomainException(
+                    'A project cannot be approved until its company is approved.'
+                );
+            }
+        }
+
+        if ($isAdmin && $resource === 'property' && $toStatus === 'approved') {
+            if ((string) ($context['company_status'] ?? '') !== 'approved') {
+                throw new DomainException(
+                    'A property cannot be approved until its company is approved.'
+                );
+            }
+
+            if (
+                !empty($context['project_id'])
+                && !in_array(
+                    (string) ($context['project_status'] ?? ''),
+                    ['approved', 'published'],
+                    true
+                )
+            ) {
+                throw new DomainException(
+                    'A property linked to a project cannot be approved until that project is approved.'
+                );
+            }
+        }
+
         if (!$isAdmin) {
             if (!in_array($toStatus, self::DEVELOPER_TARGETS[$resource], true)) {
                 throw new DomainException('This status transition requires administrator review.');
