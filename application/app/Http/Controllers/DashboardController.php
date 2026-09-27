@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\WorkspaceSettingsRepository;
@@ -89,6 +90,19 @@ final class DashboardController
     public function section(Request $request, string $section): Response
     {
         return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    public function homepage(Request $request): Response
+    {
+        return Response::html(View::render('workspace/site-content', [
+            'pageTitle' => 'Homepage & Navigation · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'homepage',
+            'siteContent' => (new SiteContentRepository())->get(),
+        ]));
     }
 
     public function record(Request $request, string $resource, string $id): Response
@@ -474,6 +488,7 @@ final class DashboardController
             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
 
             ['heading' => 'Content & Discovery'],
+            ['label' => 'Homepage & Navigation', 'path' => '/dashboard/homepage', 'icon' => 'home'],
             ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
             ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],
