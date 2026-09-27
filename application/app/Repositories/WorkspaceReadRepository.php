@@ -1016,6 +1016,12 @@ final class WorkspaceReadRepository
                     SELECT 1 FROM media_attachments ma WHERE ma.media_asset_id = m.id
                 ) THEN 1 ELSE 0 END), 0) AS orphaned
                 FROM media_assets m',
+            'pages' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "draft"), 0) AS draft,
+                COALESCE(SUM(status = "published"), 0) AS published,
+                COALESCE(SUM(status = "archived"), 0) AS archived,
+                COALESCE(SUM(status = "published" AND robots_directive = "index,follow"), 0) AS indexable
+                FROM cms_pages',
             'inquiries' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(status = "new"), 0) AS new,
                 COALESCE(SUM(status = "read"), 0) AS `read`,
@@ -1558,6 +1564,36 @@ final class WorkspaceReadRepository
                 'SELECT COUNT(*) FROM media_assets',
                 ['search' => $search],
             ],
+            'pages' => [
+                'SELECT p.id, p.title, p.slug, p.status, p.robots_directive,
+                        p.published_at, p.updated_at,
+                        COALESCE(updated_by.name, "System") AS updated_by_name
+                 FROM cms_pages p
+                 LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+                 WHERE CONCAT_WS(
+                    " ",
+                    p.title,
+                    p.slug,
+                    p.excerpt,
+                    p.seo_title,
+                    p.seo_description,
+                    updated_by.name
+                 ) LIKE :search
+                 ORDER BY p.updated_at DESC',
+                'SELECT COUNT(*)
+                 FROM cms_pages p
+                 LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+                 WHERE CONCAT_WS(
+                    " ",
+                    p.title,
+                    p.slug,
+                    p.excerpt,
+                    p.seo_title,
+                    p.seo_description,
+                    updated_by.name
+                 ) LIKE :search',
+                ['search' => $search],
+            ],
             'users' => [
                 'SELECT u.id, u.name, u.email, u.status,
                         CASE WHEN u.email_verified_at IS NULL
@@ -1870,6 +1906,15 @@ final class WorkspaceReadRepository
                     'name_asc' => 'original_name ASC',
                     'size_desc' => 'size_bytes DESC',
                     'size_asc' => 'size_bytes ASC',
+                ],
+            ],
+            'admin:pages' => [
+                'filters' => ['status' => 'status', 'type' => 'robots_directive'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'title ASC',
+                    'name_desc' => 'title DESC',
                 ],
             ],
             'admin:users' => [
