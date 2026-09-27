@@ -114,6 +114,15 @@ final class AdminManagementController
     public function workflow(Request $request, string $resource, string $id): Response
     {
         return $this->execute(function () use ($request, $resource, $id): array {
+            $resource = strtolower(trim($resource));
+
+            if (!in_array($resource, ['company', 'project', 'property', 'listing'], true)) {
+                throw new DomainException(
+                    'Administrator workflow changes are limited to marketplace moderation. '
+                    . 'Inquiry, lead, and viewing operations remain company-owned.'
+                );
+            }
+
             if (!ctype_digit($id) || (int) $id < 1) {
                 throw new InvalidArgumentException('A valid resource ID is required.');
             }

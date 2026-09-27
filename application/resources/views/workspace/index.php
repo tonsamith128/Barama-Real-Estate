@@ -193,6 +193,7 @@ $renderActions = static function (array $row) use (
             'listings' => 'listing',
             'inquiries' => 'inquiry',
             'leads' => 'lead',
+            'viewings' => 'viewing',
             'users' => 'user',
             'audit' => 'audit',
             default => null,
@@ -476,23 +477,10 @@ $renderActions = static function (array $row) use (
                     . csrf_field()
                     . '<button class="table-action table-action--danger" type="submit">Delete orphan</button></form>';
             }
-        } elseif ($activeSection === 'inquiries') {
-            if ($status === 'new') {
-                $buttons[] = $actionButton('inquiry', $id, 'read', 'Mark read', 'primary');
-                $buttons[] = $actionButton('inquiry', $id, 'spam', 'Mark spam', 'danger');
-            } elseif ($status === 'read') {
-                $buttons[] = $actionButton('inquiry', $id, 'replied', 'Mark replied', 'primary');
-                $buttons[] = $actionButton('inquiry', $id, 'closed', 'Close');
-                $buttons[] = $actionButton('inquiry', $id, 'spam', 'Mark spam', 'danger');
-            } elseif ($status === 'replied') {
-                $buttons[] = $actionButton('inquiry', $id, 'closed', 'Close');
-            }
-
-            if (!empty($row['converted_lead_id'])) {
-                $buttons[] = '<a class="table-action" href="' . e(url(
-                    '/dashboard/manage/lead/' . (int) $row['converted_lead_id']
-                )) . '">Open linked lead</a>';
-            }
+        } elseif ($activeSection === 'inquiries' && !empty($row['converted_lead_id'])) {
+            $buttons[] = '<a class="table-action" href="' . e(url(
+                '/dashboard/manage/lead/' . (int) $row['converted_lead_id']
+            )) . '">Open linked lead</a>';
         }
     }
 
@@ -502,7 +490,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'catalog', 'media', 'users', 'audit'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'users', 'audit'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -533,7 +521,7 @@ $renderActions = static function (array $row) use (
                 <?= app_icon('shield') ?>
                 Company-scoped access enforced
             </span>
-        <?php elseif ($workspaceType === 'admin' && in_array($activeSection, ['inquiries', 'leads'], true)): ?>
+        <?php elseif ($workspaceType === 'admin' && in_array($activeSection, ['inquiries', 'leads', 'viewings'], true)): ?>
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Platform oversight · company-owned operations

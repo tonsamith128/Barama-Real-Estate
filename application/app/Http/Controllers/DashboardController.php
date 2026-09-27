@@ -47,6 +47,10 @@ final class DashboardController
             'title' => 'Property Leads',
             'description' => 'Monitor company-owned property lead pipelines, source inquiries, property interest, assignment, and outcomes without taking over follow-up.',
         ],
+        'viewings' => [
+            'title' => 'Viewing Appointments',
+            'description' => 'Monitor viewing requests, company scheduling state, customer preferences, and appointment outcomes without replacing company scheduling ownership.',
+        ],
         'catalog' => [
             'title' => 'Locations & Amenities',
             'description' => 'Maintain the canonical real-estate location hierarchy and amenity catalog with guarded deactivation for data already in use.',
@@ -79,7 +83,7 @@ final class DashboardController
     {
         $resource = strtolower(trim($resource));
 
-        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'user', 'audit'], true)
+        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'viewing', 'user', 'audit'], true)
             || !ctype_digit($id)
             || (int) $id < 1
         ) {
@@ -270,6 +274,8 @@ final class DashboardController
                 ['label' => 'Awaiting response', 'value' => $marketplace['read'] ?? 0, 'icon' => 'eye', 'href' => '/dashboard/inquiries?status=read'],
                 ['label' => 'Replied', 'value' => $marketplace['replied'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/inquiries?status=replied'],
                 ['label' => 'Converted to lead', 'value' => $marketplace['converted'] ?? 0, 'icon' => 'pipeline'],
+                ['label' => 'Unassigned', 'value' => $marketplace['unassigned'] ?? 0, 'icon' => 'users'],
+                ['label' => 'Waiting 24h+', 'value' => $marketplace['awaiting_24h'] ?? 0, 'icon' => 'alert'],
                 ['label' => 'Closed / spam', 'value' => ($marketplace['closed'] ?? 0) + ($marketplace['spam'] ?? 0), 'icon' => 'shield'],
             ],
             'leads' => [
@@ -279,6 +285,18 @@ final class DashboardController
                 ['label' => 'Negotiation', 'value' => $marketplace['negotiation'] ?? 0, 'icon' => 'message', 'href' => '/dashboard/leads?status=negotiation'],
                 ['label' => 'Won', 'value' => $marketplace['won'] ?? 0, 'icon' => 'home', 'href' => '/dashboard/leads?status=won'],
                 ['label' => 'Lost', 'value' => $marketplace['lost'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/leads?status=lost'],
+                ['label' => 'Unassigned', 'value' => $marketplace['unassigned'] ?? 0, 'icon' => 'users'],
+                ['label' => 'Follow-up due', 'value' => $marketplace['follow_up_due'] ?? 0, 'icon' => 'clock'],
+            ],
+            'viewings' => [
+                ['label' => 'All viewings', 'value' => $marketplace['total'] ?? 0, 'icon' => 'calendar', 'href' => '/dashboard/viewings'],
+                ['label' => 'Pending', 'value' => $marketplace['pending'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/viewings?status=pending'],
+                ['label' => 'Confirmed', 'value' => $marketplace['confirmed'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/viewings?status=confirmed'],
+                ['label' => 'Rescheduled', 'value' => $marketplace['rescheduled'] ?? 0, 'icon' => 'calendar', 'href' => '/dashboard/viewings?status=rescheduled'],
+                ['label' => 'Upcoming', 'value' => $marketplace['upcoming'] ?? 0, 'icon' => 'calendar'],
+                ['label' => 'Completed', 'value' => $marketplace['completed'] ?? 0, 'icon' => 'home', 'href' => '/dashboard/viewings?status=completed'],
+                ['label' => 'Declined', 'value' => $marketplace['declined'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/viewings?status=declined'],
+                ['label' => 'Cancelled', 'value' => $marketplace['cancelled'] ?? 0, 'icon' => 'shield', 'href' => '/dashboard/viewings?status=cancelled'],
             ],
             'users' => [
                 ['label' => 'All users', 'value' => $marketplace['total'] ?? 0, 'icon' => 'users', 'href' => '/dashboard/users'],
@@ -357,6 +375,11 @@ final class DashboardController
                 'title' => 'No property leads match this view',
                 'detail' => 'Adjust pipeline stage, property interest, preferred location, or customer search filters.',
             ],
+            'viewings' => [
+                'icon' => 'calendar',
+                'title' => 'No viewing appointments match this view',
+                'detail' => 'Adjust viewing status or search by customer, company, property, or listing reference.',
+            ],
             'users' => [
                 'icon' => 'users',
                 'title' => 'No user accounts match this view',
@@ -392,6 +415,7 @@ final class DashboardController
             ['heading' => 'CRM'],
             ['label' => 'Inquiries', 'path' => '/dashboard/inquiries', 'icon' => 'message'],
             ['label' => 'Property Leads', 'path' => '/dashboard/leads', 'icon' => 'pipeline'],
+            ['label' => 'Viewing Appointments', 'path' => '/dashboard/viewings', 'icon' => 'calendar'],
 
             ['heading' => 'Platform Data'],
             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
@@ -436,6 +460,7 @@ final class DashboardController
             'listing' => 'listings',
             'inquiry' => 'inquiries',
             'lead' => 'leads',
+            'viewing' => 'viewings',
             'user' => 'users',
             'audit' => 'audit',
             default => 'overview',
@@ -521,6 +546,16 @@ final class DashboardController
                     'price_asc' => 'Budget low to high',
                     'price_desc' => 'Budget high to low',
                     'name_asc' => 'Contact A–Z',
+                ],
+            ],
+            'viewings' => [
+                'statuses' => DomainRules::VIEWING_STATUSES,
+                'types' => [],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Customer A–Z',
                 ],
             ],
             'catalog' => [
@@ -654,6 +689,17 @@ final class DashboardController
                 'budget_max' => 'Budget',
                 'assigned_user_name' => 'Assigned to',
                 'stage' => 'Stage',
+                'next_follow_up_at' => 'Next follow-up',
+                'updated_at' => 'Updated',
+            ],
+            'viewings' => [
+                'customer_name' => 'Customer',
+                'company_name' => 'Company',
+                'reference_code' => 'Property',
+                'transaction_type' => 'Offer',
+                'preferred_date' => 'Preferred date',
+                'scheduled_for' => 'Scheduled for',
+                'status' => 'Status',
                 'updated_at' => 'Updated',
             ],
             'catalog' => [
