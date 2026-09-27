@@ -1055,16 +1055,63 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "suspended"), 0) AS suspended,
                 COALESCE(SUM(status = "deactivated"), 0) AS deactivated,
                 COALESCE(SUM(email_verified_at IS NOT NULL), 0) AS verified,
+                COALESCE(SUM(email_verified_at IS NULL AND status = "active"), 0) AS unverified,
                 (SELECT COUNT(DISTINCT ur.user_id)
                  FROM user_roles ur
                  INNER JOIN roles r ON r.id = ur.role_id
                  WHERE r.slug = "administrator") AS administrators,
+                (SELECT COUNT(DISTINCT ur.user_id)
+                 FROM user_roles ur
+                 INNER JOIN roles r ON r.id = ur.role_id
+                 WHERE r.slug = "developer") AS developers,
                 (SELECT COUNT(DISTINCT cm.user_id)
                  FROM company_members cm
                  INNER JOIN companies c ON c.id = cm.company_id
                  WHERE cm.status = "active"
                    AND c.deleted_at IS NULL) AS company_members
                 FROM users',
+            'verification' => 'SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(verification_state = "attention"), 0) AS attention,
+                COALESCE(SUM(issue_type = "email_unverified"), 0) AS unverified,
+                COALESCE(SUM(issue_type = "developer_access_missing"), 0) AS missing_developer,
+                COALESCE(SUM(issue_type = "developer_access_orphan"), 0) AS orphan_developer
+                FROM (
+                    SELECT u.id,
+                           CASE
+                               WHEN u.status = "active" AND u.email_verified_at IS NULL
+                                   THEN "email_unverified"
+                               WHEN COALESCE(access.company_count, 0) > 0
+                                    AND COALESCE(roles.is_developer, 0) = 0
+                                   THEN "developer_access_missing"
+                               WHEN COALESCE(access.company_count, 0) = 0
+                                    AND COALESCE(roles.is_developer, 0) = 1
+                                   THEN "developer_access_orphan"
+                               ELSE "clear"
+                           END AS issue_type,
+                           CASE
+                               WHEN (u.status = "active" AND u.email_verified_at IS NULL)
+                                 OR (COALESCE(access.company_count, 0) > 0 AND COALESCE(roles.is_developer, 0) = 0)
+                                 OR (COALESCE(access.company_count, 0) = 0 AND COALESCE(roles.is_developer, 0) = 1)
+                               THEN "attention"
+                               ELSE "clear"
+                           END AS verification_state
+                    FROM users u
+                    LEFT JOIN (
+                        SELECT cm.user_id, COUNT(DISTINCT cm.company_id) AS company_count
+                        FROM company_members cm
+                        INNER JOIN companies c ON c.id = cm.company_id
+                        WHERE cm.status = "active" AND c.deleted_at IS NULL
+                        GROUP BY cm.user_id
+                    ) access ON access.user_id = u.id
+                    LEFT JOIN (
+                        SELECT ur.user_id,
+                               MAX(r.slug = "developer") AS is_developer
+                        FROM user_roles ur
+                        INNER JOIN roles r ON r.id = ur.role_id
+                        GROUP BY ur.user_id
+                    ) roles ON roles.user_id = u.id
+                ) verification_rows',
             'audit' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(event_type LIKE "auth.%"), 0) AS auth_events,
                 COALESCE(SUM(event_type LIKE "account.%"), 0) AS account_events,
@@ -1559,6 +1606,55 @@ final class WorkspaceReadRepository
                  WHERE CONCAT_WS(" ", u.name, u.email) LIKE :search',
                 ['search' => $search],
             ],
+            'verification' => [
+                'SELECT u.id, u.name, u.email, u.status, u.email_verified_at,
+                        u.last_login_at, u.updated_at,
+                        COALESCE(role_summary.roles, "user") AS roles,
+                        CASE WHEN COALESCE(role_summary.is_developer, 0) = 1 THEN "yes" ELSE "no" END AS developer_role,
+                        COALESCE(company_access.company_count, 0) AS company_count,
+                        CASE
+                            WHEN u.status = "active" AND u.email_verified_at IS NULL
+                                THEN "email_unverified"
+                            WHEN COALESCE(company_access.company_count, 0) > 0
+                                 AND COALESCE(role_summary.is_developer, 0) = 0
+                                THEN "developer_access_missing"
+                            WHEN COALESCE(company_access.company_count, 0) = 0
+                                 AND COALESCE(role_summary.is_developer, 0) = 1
+                                THEN "developer_access_orphan"
+                            ELSE "clear"
+                        END AS issue_type,
+                        CASE
+                            WHEN (u.status = "active" AND u.email_verified_at IS NULL)
+                              OR (COALESCE(company_access.company_count, 0) > 0 AND COALESCE(role_summary.is_developer, 0) = 0)
+                              OR (COALESCE(company_access.company_count, 0) = 0 AND COALESCE(role_summary.is_developer, 0) = 1)
+                            THEN "attention"
+                            ELSE "clear"
+                        END AS verification_state
+                 FROM users u
+                 LEFT JOIN (
+                    SELECT ur.user_id,
+                           GROUP_CONCAT(DISTINCT r.slug ORDER BY r.slug SEPARATOR ", ") AS roles,
+                           MAX(r.slug = "developer") AS is_developer
+                    FROM user_roles ur
+                    INNER JOIN roles r ON r.id = ur.role_id
+                    GROUP BY ur.user_id
+                 ) role_summary ON role_summary.user_id = u.id
+                 LEFT JOIN (
+                    SELECT cm.user_id,
+                           COUNT(DISTINCT cm.company_id) AS company_count
+                    FROM company_members cm
+                    INNER JOIN companies c ON c.id = cm.company_id
+                    WHERE cm.status = "active"
+                      AND c.deleted_at IS NULL
+                    GROUP BY cm.user_id
+                 ) company_access ON company_access.user_id = u.id
+                 WHERE CONCAT_WS(" ", u.name, u.email, role_summary.roles) LIKE :search
+                 ORDER BY verification_state DESC, u.updated_at DESC',
+                'SELECT COUNT(*)
+                 FROM users u
+                 WHERE CONCAT_WS(" ", u.name, u.email) LIKE :search',
+                ['search' => $search],
+            ],
             'audit' => [
                 'SELECT e.id, e.event_type,
                         SUBSTRING_INDEX(e.event_type, ".", 1) AS event_family,
@@ -1784,6 +1880,15 @@ final class WorkspaceReadRepository
                     'name_asc' => 'name ASC',
                     'name_desc' => 'name DESC',
                     'company_desc' => 'company_count DESC',
+                ],
+            ],
+            'admin:verification' => [
+                'filters' => ['status' => 'verification_state', 'type' => 'issue_type'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'name ASC',
+                    'name_desc' => 'name DESC',
                 ],
             ],
             'admin:audit' => [
