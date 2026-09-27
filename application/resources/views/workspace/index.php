@@ -553,11 +553,17 @@ $renderActions = static function (array $row) use (
         <?php endforeach; ?>
     </div>
 
-    <?php if ($workspaceType === 'developer' && !empty($sectionGuide['steps'])): ?>
-        <section class="workspace-portfolio-lifecycle" aria-label="Portfolio workflow">
+    <?php if (!empty($sectionGuide['steps'])): ?>
+        <section
+            class="workspace-portfolio-lifecycle"
+            aria-label="<?= e((string) ($sectionGuide['aria_label'] ?? 'Workspace workflow')) ?>"
+        >
             <div class="workspace-portfolio-lifecycle__head">
                 <span><?= app_icon('shield') ?></span>
-                <div><strong>Portfolio workflow</strong><small>Canonical review lifecycle for this module</small></div>
+                <div>
+                    <strong><?= e((string) ($sectionGuide['title'] ?? 'Workspace workflow')) ?></strong>
+                    <small><?= e((string) ($sectionGuide['subtitle'] ?? 'Canonical workflow for this module')) ?></small>
+                </div>
             </div>
             <ol>
                 <?php foreach ((array) $sectionGuide['steps'] as $index => $step): ?>
