@@ -337,6 +337,16 @@ $router->get(
     [DashboardController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
 );
+$router->get(
+    '/dashboard/homepage',
+    [DashboardController::class, 'homepage'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/homepage',
+    [AdminManagementController::class, 'updateSiteContent'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
 $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
