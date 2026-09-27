@@ -368,6 +368,31 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
+    '/dashboard/invoices',
+    [DashboardController::class, 'invoices'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/invoices',
+    [AdminManagementController::class, 'createInvoice'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/invoices/{id}/status',
+    [AdminManagementController::class, 'updateInvoiceStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/transactions',
+    [DashboardController::class, 'transactions'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/transactions',
+    [AdminManagementController::class, 'createTransaction'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/homepage',
     [DashboardController::class, 'homepage'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
