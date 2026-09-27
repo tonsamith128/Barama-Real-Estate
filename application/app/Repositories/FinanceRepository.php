@@ -1016,6 +1016,189 @@ final class FinanceRepository
             : [];
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function reconciliationInvoices(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT x.*,
+                        ROUND(x.total - x.settled_amount, 2) AS settlement_delta,
+                        CASE
+                            WHEN x.settled_amount > x.total + 0.005 THEN "overpaid"
+                            WHEN x.status = "paid" AND x.settled_amount < x.total - 0.005 THEN "paid_mismatch"
+                            WHEN x.status = "open"
+                                 AND x.due_at IS NOT NULL
+                                 AND x.due_at < CURRENT_TIMESTAMP
+                                 AND x.settled_amount < x.total - 0.005 THEN "overdue"
+                            WHEN x.status = "open"
+                                 AND x.settled_amount > 0.005
+                                 AND x.settled_amount < x.total - 0.005 THEN "partial"
+                            WHEN x.status = "open"
+                                 AND x.settled_amount <= 0.005 THEN "unpaid"
+                            WHEN ABS(x.settled_amount - x.total) <= 0.005 THEN "balanced"
+                            WHEN x.status IN ("draft", "void")
+                                 AND ABS(x.settled_amount) > 0.005 THEN "unexpected_settlement"
+                            ELSE "review"
+                        END AS reconciliation_state
+                 FROM (
+                    SELECT i.*, c.name AS company_name,
+                           COALESCE((
+                               SELECT SUM(
+                                   CASE
+                                       WHEN t.status <> "succeeded" THEN 0
+                                       WHEN t.transaction_type IN ("payment", "credit") THEN t.amount
+                                       WHEN t.transaction_type = "refund" THEN -t.amount
+                                       ELSE 0
+                                   END
+                               )
+                               FROM billing_transactions t
+                               WHERE t.invoice_id = i.id
+                           ), 0) AS settled_amount
+                    FROM billing_invoices i
+                    INNER JOIN companies c ON c.id = i.company_id
+                 ) x
+                 WHERE x.status IN ("open", "paid")
+                    OR ABS(x.settled_amount) > 0.005
+                 ORDER BY
+                    CASE
+                        WHEN x.settled_amount > x.total + 0.005 THEN 0
+                        WHEN x.status = "paid" AND x.settled_amount < x.total - 0.005 THEN 1
+                        WHEN x.status = "open"
+                             AND x.due_at IS NOT NULL
+                             AND x.due_at < CURRENT_TIMESTAMP
+                             AND x.settled_amount < x.total - 0.005 THEN 2
+                        WHEN x.status IN ("draft", "void")
+                             AND ABS(x.settled_amount) > 0.005 THEN 3
+                        ELSE 4
+                    END,
+                    x.due_at ASC,
+                    x.created_at DESC
+                 LIMIT 1000'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function webhookOperationalEvents(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT e.*, p.code AS provider_code, p.name AS provider_name,
+                        p.status AS provider_status
+                 FROM billing_webhook_events e
+                 INNER JOIN billing_payment_providers p ON p.id = e.provider_id
+                 WHERE e.status = "failed"
+                    OR (
+                        e.status = "received"
+                        AND e.received_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 10 MINUTE)
+                    )
+                 ORDER BY
+                    CASE WHEN e.status = "failed" THEN 0 ELSE 1 END,
+                    e.received_at ASC,
+                    e.id ASC
+                 LIMIT 1000'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function webhookEventById(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT e.*, p.code AS provider_code, p.name AS provider_name,
+                    p.status AS provider_status, p.adapter_key, p.environment
+             FROM billing_webhook_events e
+             INNER JOIN billing_payment_providers p ON p.id = e.provider_id
+             WHERE e.id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,int> */
+    public function billingOperationsSummary(): array
+    {
+        $row = Database::connection()->query(
+            'SELECT
+                (SELECT COUNT(*) FROM billing_invoices WHERE status = "open") AS open_invoices,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_invoices i
+                    WHERE i.status = "open"
+                      AND i.due_at IS NOT NULL
+                      AND i.due_at < CURRENT_TIMESTAMP
+                      AND COALESCE((
+                          SELECT SUM(
+                              CASE
+                                  WHEN t.status <> "succeeded" THEN 0
+                                  WHEN t.transaction_type IN ("payment", "credit") THEN t.amount
+                                  WHEN t.transaction_type = "refund" THEN -t.amount
+                                  ELSE 0
+                              END
+                          )
+                          FROM billing_transactions t
+                          WHERE t.invoice_id = i.id
+                      ), 0) < i.total - 0.005
+                ) AS overdue_invoices,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_invoices i
+                    WHERE COALESCE((
+                        SELECT SUM(
+                            CASE
+                                WHEN t.status <> "succeeded" THEN 0
+                                WHEN t.transaction_type IN ("payment", "credit") THEN t.amount
+                                WHEN t.transaction_type = "refund" THEN -t.amount
+                                ELSE 0
+                            END
+                        )
+                        FROM billing_transactions t
+                        WHERE t.invoice_id = i.id
+                    ), 0) > i.total + 0.005
+                ) AS overpaid_invoices,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_invoices i
+                    WHERE i.status = "paid"
+                      AND COALESCE((
+                          SELECT SUM(
+                              CASE
+                                  WHEN t.status <> "succeeded" THEN 0
+                                  WHEN t.transaction_type IN ("payment", "credit") THEN t.amount
+                                  WHEN t.transaction_type = "refund" THEN -t.amount
+                                  ELSE 0
+                              END
+                          )
+                          FROM billing_transactions t
+                          WHERE t.invoice_id = i.id
+                      ), 0) < i.total - 0.005
+                ) AS paid_mismatches,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_transactions
+                    WHERE status = "pending"
+                ) AS pending_transactions,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_webhook_events
+                    WHERE status = "failed"
+                ) AS failed_webhooks,
+                (
+                    SELECT COUNT(*)
+                    FROM billing_webhook_events
+                    WHERE status = "received"
+                      AND received_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 10 MINUTE)
+                ) AS stale_webhooks'
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row)
+            ? array_map(static fn (mixed $value): int => (int) $value, $row)
+            : [];
+    }
+
     /** @return array<string,mixed> */
     public function ledgerSummary(): array
     {
