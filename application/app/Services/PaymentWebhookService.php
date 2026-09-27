@@ -131,6 +131,72 @@ final class PaymentWebhookService
         );
     }
 
+    /** @return array<string,mixed> */
+    public function retryStoredEvent(int $eventId): array
+    {
+        if ($eventId < 1) {
+            throw new InvalidArgumentException('A valid webhook event ID is required.');
+        }
+
+        $repository = new FinanceRepository();
+        $event = $repository->webhookEventById($eventId);
+
+        if ($event === null) {
+            throw new InvalidArgumentException('Webhook event was not found.');
+        }
+
+        if (!in_array((string) $event['status'], ['failed', 'received'], true)) {
+            throw new DomainException(
+                'Only failed or unprocessed webhook events can be retried.'
+            );
+        }
+
+        if ((string) $event['provider_status'] !== 'active') {
+            throw new DomainException(
+                'The payment provider must be active before retrying this event.'
+            );
+        }
+
+        if ((string) $event['adapter_key'] !== 'generic_token') {
+            throw new DomainException(
+                'This webhook event requires a provider-specific adapter.'
+            );
+        }
+
+        $payloadJson = (string) $event['payload_json'];
+
+        if (!hash_equals(
+            (string) $event['payload_sha256'],
+            hash('sha256', $payloadJson)
+        )) {
+            throw new DomainException(
+                'Stored webhook payload integrity verification failed.'
+            );
+        }
+
+        $payload = json_decode(
+            $payloadJson,
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        if (!is_array($payload)) {
+            throw new DomainException('Stored webhook payload is invalid.');
+        }
+
+        return $this->process(
+            [
+                'id' => (int) $event['provider_id'],
+                'code' => (string) $event['provider_code'],
+            ],
+            (string) $event['event_id'],
+            (string) $event['event_type'],
+            $payload,
+            (string) $event['payload_sha256']
+        );
+    }
+
     /**
      * @param array<string,mixed> $provider
      * @param array<string,mixed> $payload
