@@ -15,6 +15,7 @@ $currentUserId = (int) (auth_user()['id'] ?? 0);
 $title = (string) (
     $record['name']
     ?? $record['title']
+    ?? $record['original_name']
     ?? $record['property_title']
     ?? $record['contact_name']
     ?? $record['event_type']
@@ -103,6 +104,7 @@ $sectionPath = match ($recordResource) {
     'inquiry' => $workspaceType === 'admin' ? '/dashboard/inquiries' : '/developer/inquiries',
     'viewing' => $workspaceType === 'admin' ? '/dashboard/viewings' : '/developer/viewings',
     'lead' => $workspaceType === 'admin' ? '/dashboard/leads' : '/developer/leads',
+    'media' => '/dashboard/media',
     'page' => '/dashboard/pages',
     'user' => '/dashboard/users',
     'audit' => '/dashboard/audit',
@@ -201,6 +203,12 @@ if ($workspaceType === 'developer') {
         $actions[] = $workflowButton('closed', 'Close', 'danger');
     } elseif ($recordResource === 'listing' && in_array($status, ['rejected', 'expired'], true)) {
         $actions[] = $workflowButton('draft', 'Restore to draft');
+    } elseif ($recordResource === 'media') {
+        if ((int) ($record['attachment_count'] ?? 0) === 0) {
+            $actions[] = '<form action="' . e(url('/dashboard/media/' . (int) $record['id'] . '/orphan')) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="btn btn-sm btn-outline-danger" type="submit">Delete orphan</button></form>';
+        }
     } elseif ($recordResource === 'page') {
         if ($status === 'draft') {
             $actions[] = '<form action="' . e(url('/dashboard/pages/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
@@ -414,6 +422,24 @@ $details = match ($recordResource) {
         'Last contact' => $record['last_contact_at'] ?? null,
         'Next follow-up' => $record['next_follow_up_at'] ?? null,
     ],
+    'media' => [
+        'UUID' => $record['uuid'] ?? null,
+        'Type' => $record['mime_type'] ?? null,
+        'Dimensions' => !empty($record['width_px'])
+            ? (string) $record['width_px'] . ' × ' . (string) ($record['height_px'] ?? '?') . ' px'
+            : null,
+        'Size' => !empty($record['size_bytes'])
+            ? number_format(((int) $record['size_bytes']) / 1024, 1) . ' KB'
+            : null,
+        'Alt text' => $record['alt_text'] ?? null,
+        'Attachments' => $record['attachment_count'] ?? 0,
+        'Primary uses' => $record['primary_count'] ?? 0,
+        'Attachment context' => $record['attachment_context'] ?? null,
+        'Uploaded by' => $record['uploaded_by'] ?? null,
+        'Checksum SHA-256' => $record['checksum_sha256'] ?? null,
+        'Created' => $record['created_at'] ?? null,
+        'Updated' => $record['updated_at'] ?? null,
+    ],
     'page' => [
         'URL' => '/pages/' . (string) ($record['slug'] ?? ''),
         'Robots' => $record['robots_directive'] ?? null,
@@ -479,6 +505,28 @@ $details = match ($recordResource) {
     </div>
 
     <div data-workspace-notice hidden></div>
+
+    <?php if ($workspaceType === 'admin' && $recordResource === 'media'): ?>
+        <section class="workspace-record-panel">
+            <div class="workspace-record-panel__head">
+                <h2>Media metadata</h2>
+                <span>Administrators may correct accessibility alt text without changing company-owned gallery ordering or primary-image state.</span>
+            </div>
+
+            <?php if (str_starts_with((string) ($record['mime_type'] ?? ''), 'image/')): ?>
+                <form action="<?= e(url('/dashboard/media/' . (int) $record['id'] . '/alt-text')) ?>" method="post" data-workspace-form class="workspace-admin-moderation__form">
+                    <?= csrf_field() ?>
+                    <label class="workspace-admin-moderation__note">
+                        <span>Alt text <small>Describe the image for accessibility and discovery</small></span>
+                        <textarea class="form-control" name="alt_text" rows="3" maxlength="255" placeholder="Describe the property, project, company, or scene shown."><?= e((string) ($record['alt_text'] ?? '')) ?></textarea>
+                    </label>
+                    <button class="btn btn-primary" type="submit"><?= app_icon('check') ?> Save alt text</button>
+                </form>
+            <?php else: ?>
+                <div class="workspace-record-empty">Alt text management applies to image media only.</div>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
 
     <?php if ($workspaceType === 'admin' && $recordResource === 'page'): ?>
         <?= \Barama\Core\View::partial('workspace/page-editor', [
