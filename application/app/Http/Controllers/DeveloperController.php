@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\WorkspaceSettingsRepository;
@@ -65,6 +66,26 @@ final class DeveloperController
     public function section(Request $request, string $section): Response
     {
         return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    public function billing(Request $request): Response
+    {
+        $user = auth_user();
+
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+
+        return Response::html(View::render('workspace/developer-billing', [
+            'pageTitle' => 'Billing & Plan · Company / Vendor',
+            'activeArea' => 'developer',
+            'workspaceType' => 'developer',
+            'workspaceLabel' => 'Company / Vendor Workspace',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'billing',
+            'billingCompanies' => (new FinanceRepository())
+                ->developerBillingCompanies((int) $user['id']),
+        ]));
     }
 
     public function record(Request $request, string $resource, string $id): Response
@@ -352,6 +373,7 @@ final class DeveloperController
             ['heading' => 'Workspace Management'],
             ['label' => 'Team', 'path' => '/developer/team', 'icon' => 'users'],
             ['label' => 'Media', 'path' => '/developer/media', 'icon' => 'image'],
+            ['label' => 'Billing & Plan', 'path' => '/developer/billing', 'icon' => 'layers'],
             ['heading' => 'Settings'],
             ['label' => 'Basic', 'path' => '/developer/settings', 'icon' => 'settings'],
             ['label' => 'Profile', 'path' => '/developer/settings/profile', 'icon' => 'user'],
