@@ -21,6 +21,8 @@ final class HomeController
 
         return Response::html(View::render('home', [
             'pageTitle' => 'Barama Real Estate',
+            'metaDescription' => 'Discover homes, land, commercial property, new developments, and verified real-estate companies on Barama Real Estate.',
+            'canonicalUrl' => url('/'),
             'activeArea' => 'home',
             'latestListings' => $repository->listings([], 1, 6)['rows'],
             'latestProjects' => $repository->projects([], 1, 3)['rows'],
