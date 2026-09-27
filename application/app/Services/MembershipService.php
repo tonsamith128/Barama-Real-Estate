@@ -47,21 +47,50 @@ final class MembershipService
 
         $users = new UserRepository();
         $target = $users->findByEmail($email);
+        $memberships = new CompanyMembershipRepository();
 
         if (
             $target !== null
-            && (new CompanyMembershipRepository())->isActiveMember($companyId, (int) $target['id'])
+            && $memberships->isActiveMember($companyId, (int) $target['id'])
         ) {
             throw new InvalidArgumentException('This user is already an active company member.');
         }
 
-        $invitationId = (new AccountSettingsRepository())->createInvitation(
-            $companyId,
-            (int) $actor['id'],
-            $email,
-            $memberRole,
-            date('Y-m-d H:i:s', time() + 7 * 86400)
-        );
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            (new SubscriptionEntitlementService())->assertCanConsume(
+                $companyId,
+                'team_seat'
+            );
+
+            if (
+                $target !== null
+                && $memberships->isActiveMember($companyId, (int) $target['id'])
+            ) {
+                throw new InvalidArgumentException(
+                    'This user is already an active company member.'
+                );
+            }
+
+            $invitationId = (new AccountSettingsRepository())->createInvitation(
+                $companyId,
+                (int) $actor['id'],
+                $email,
+                $memberRole,
+                date('Y-m-d H:i:s', time() + 7 * 86400)
+            );
+
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
 
         (new NotificationService())->notifyAddress($email, [
             'subject' => 'Company invitation · Barama Real Estate',
