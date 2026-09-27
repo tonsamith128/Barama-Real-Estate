@@ -2,14 +2,28 @@
 declare(strict_types=1);
 
 $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
+$homepageContent = is_array($homepageContent ?? null) ? $homepageContent : [];
+$homeSections = is_array($homepageContent['sections'] ?? null)
+    ? $homepageContent['sections']
+    : [];
+$homeOrder = is_array($homepageContent['section_order'] ?? null)
+    ? array_values($homepageContent['section_order'])
+    : ['listings', 'projects', 'companies'];
+
+$heroEyebrow = trim((string) ($homepageContent['hero_eyebrow'] ?? 'Barama Real Estate'));
+$heroTitle = trim((string) ($homepageContent['hero_title'] ?? 'Property Discovery Simplified'));
+$heroDescription = trim((string) (
+    $homepageContent['hero_description']
+    ?? 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.'
+));
 ?>
 <section class="market-home">
     <div class="container app-container">
         <div class="market-home__hero">
             <div class="market-home__copy">
-                <span class="eyebrow">Barama Real Estate</span>
-                <h1>Property Discovery Simplified</h1>
-                <p>Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.</p>
+                <span class="eyebrow"><?= e($heroEyebrow) ?></span>
+                <h1><?= e($heroTitle) ?></h1>
+                <p><?= e($heroDescription) ?></p>
 
                 <form class="market-searchbar" action="<?= e(url('/properties')) ?>" method="get" data-marketplace-filter>
                     <label class="market-searchbar__query">
@@ -86,46 +100,65 @@ $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
     </div>
 </section>
 
-<?php if ($latestListings !== []): ?>
-<section class="marketplace-section marketplace-section--home">
-    <div class="container app-container">
-        <div class="section-heading-row section-heading-row--compact">
-            <div><span class="eyebrow">Latest inventory</span><h2>Fresh on the marketplace</h2></div>
-            <a href="<?= e(url('/properties')) ?>">View all properties</a>
-        </div>
-        <div class="inventory-grid">
-            <?php foreach ($latestListings as $listing): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $listing]) ?><?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
+<?php foreach ($homeOrder as $homeSectionKey): ?>
+    <?php
+    $homeSection = is_array($homeSections[$homeSectionKey] ?? null)
+        ? $homeSections[$homeSectionKey]
+        : [];
+    $homeEnabled = !array_key_exists('enabled', $homeSection)
+        || !empty($homeSection['enabled']);
+    ?>
 
-<?php if ($latestProjects !== [] || $featuredCompanies !== []): ?>
-<section class="marketplace-section marketplace-section--home marketplace-section--soft">
-    <div class="container app-container marketplace-duo">
-        <?php if ($latestProjects !== []): ?>
-            <div>
+    <?php if ($homeSectionKey === 'listings' && $homeEnabled && $latestListings !== []): ?>
+        <section class="marketplace-section marketplace-section--home">
+            <div class="container app-container">
                 <div class="section-heading-row section-heading-row--compact">
-                    <div><span class="eyebrow">Developments</span><h2>Published projects</h2></div>
-                    <a href="<?= e(url('/projects')) ?>">View projects</a>
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Latest inventory')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'Fresh on the marketplace')) ?></h2>
+                    </div>
+                    <a href="<?= e(url('/properties')) ?>"><?= e((string) ($homeSection['link_label'] ?? 'View all properties')) ?></a>
+                </div>
+                <div class="inventory-grid">
+                    <?php foreach ($latestListings as $listing): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $listing]) ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($homeSectionKey === 'projects' && $homeEnabled && $latestProjects !== []): ?>
+        <section class="marketplace-section marketplace-section--home marketplace-section--soft">
+            <div class="container app-container">
+                <div class="section-heading-row section-heading-row--compact">
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Developments')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'Published projects')) ?></h2>
+                    </div>
+                    <a href="<?= e(url('/projects')) ?>"><?= e((string) ($homeSection['link_label'] ?? 'View projects')) ?></a>
                 </div>
                 <div class="inventory-grid inventory-grid--projects">
-                    <?php foreach ($latestProjects as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?>
+                    <?php foreach ($latestProjects as $project): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?>
+                    <?php endforeach; ?>
                 </div>
             </div>
-        <?php endif; ?>
-
-        <?php if ($featuredCompanies !== []): ?>
-            <div>
+        </section>
+    <?php elseif ($homeSectionKey === 'companies' && $homeEnabled && $featuredCompanies !== []): ?>
+        <section class="marketplace-section marketplace-section--home">
+            <div class="container app-container">
                 <div class="section-heading-row section-heading-row--compact">
-                    <div><span class="eyebrow">Companies</span><h2>Approved professionals</h2></div>
-                    <a href="<?= e(url('/company')) ?>">View directory</a>
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Companies')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'Approved professionals')) ?></h2>
+                    </div>
+                    <a href="<?= e(url('/company')) ?>"><?= e((string) ($homeSection['link_label'] ?? 'View directory')) ?></a>
                 </div>
                 <div class="inventory-grid inventory-grid--companies">
-                    <?php foreach ($featuredCompanies as $company): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?><?php endforeach; ?>
+                    <?php foreach ($featuredCompanies as $company): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?>
+                    <?php endforeach; ?>
                 </div>
             </div>
-        <?php endif; ?>
-    </div>
-</section>
-<?php endif; ?>
+        </section>
+    <?php endif; ?>
+<?php endforeach; ?>
