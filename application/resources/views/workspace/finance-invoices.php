@@ -63,6 +63,7 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                 <label><span>Quantity</span><input class="form-control" name="quantity" type="number" min="0.01" step="0.01" value="1.00" required></label>
                 <label><span>Unit amount</span><input class="form-control" name="unit_amount" type="number" min="0" step="0.01" required></label>
                 <label><span>Currency</span><input class="form-control" name="currency" maxlength="3" value="USD" required></label>
+                <label><span>Coupon code <small>Optional</small></span><input class="form-control" name="coupon_code" maxlength="64" placeholder="WELCOME10"></label>
                 <label><span>Due at</span><input class="form-control" name="due_at" type="datetime-local"></label>
                 <label class="workspace-form__span-2"><span>Internal notes</span><textarea class="form-control" name="notes" rows="3" maxlength="5000"></textarea></label>
             </div>
@@ -86,6 +87,9 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                         <th>Invoice</th>
                         <th>Company</th>
                         <th>Plan</th>
+                        <th>Subtotal</th>
+                        <th>Discount</th>
+                        <th>Coupon</th>
                         <th>Total</th>
                         <th>Settled</th>
                         <th>Status</th>
@@ -98,7 +102,7 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                 </thead>
                 <tbody>
                     <?php if ($invoices === []): ?>
-                        <tr><td colspan="11"><div class="workspace-record-empty">No invoices have been created yet.</div></td></tr>
+                        <tr><td colspan="14"><div class="workspace-record-empty">No invoices have been created yet.</div></td></tr>
                     <?php endif; ?>
 
                     <?php foreach ($invoices as $invoice): ?>
@@ -112,6 +116,9 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                             <td><strong><?= e((string) $invoice['invoice_number']) ?></strong><small><?= e(number_format((int) ($invoice['item_count'] ?? 0))) ?> item(s)</small></td>
                             <td><?= e((string) $invoice['company_name']) ?></td>
                             <td><?= e((string) ($invoice['plan_name'] ?? '—')) ?></td>
+                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['subtotal'], 2)) ?></td>
+                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['discount_total'] ?? 0), 2)) ?></td>
+                            <td><?= e((string) ($invoice['coupon_code'] ?? '—')) ?></td>
                             <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['total'], 2)) ?></td>
                             <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['settled_amount'] ?? 0), 2)) ?></td>
                             <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span></td>
