@@ -40,6 +40,9 @@ if ($queryString !== '') {
 /* BARAMA_WORKSPACE_HEADER_V100 */
 /* BARAMA_WORKSPACE_BOUNDARY_HEADER_V100 */
 $isWorkspacePage = isset($workspaceNavigation) && is_array($workspaceNavigation);
+$publicNavigation = (!$isStandaloneAuthPage && !$isWorkspacePage)
+    ? (new \Barama\Repositories\SiteContentRepository())->navigation()
+    : [];
 $workspaceHeaderUserName = trim((string) ($headerUser['name'] ?? ''));
 $workspaceHeaderUserName = $workspaceHeaderUserName !== '' ? $workspaceHeaderUserName : t('My account');
 $workspaceHeaderUserEmail = trim((string) ($headerUser['email'] ?? ''));
@@ -160,10 +163,16 @@ $seoType = trim((string) ($metaType ?? 'website'));
 
                 <div class="site-navigation" id="site-navigation" data-site-navigation>
                     <nav class="main-nav" aria-label="<?= e(t('Primary navigation')) ?>">
-                        <a class="<?= ($activeArea ?? '') === 'home' ? 'is-active' : '' ?>" href="<?= e(url('/')) ?>"><?= e(t('Home')) ?></a>
-                        <a class="<?= ($activeArea ?? '') === 'properties' ? 'is-active' : '' ?>" href="<?= e(url('/properties')) ?>"><?= e(t('Properties')) ?></a>
-                        <a class="<?= ($activeArea ?? '') === 'projects' ? 'is-active' : '' ?>" href="<?= e(url('/projects')) ?>"><?= e(t('Projects')) ?></a>
-                        <a class="<?= ($activeArea ?? '') === 'company' ? 'is-active' : '' ?>" href="<?= e(url('/company')) ?>"><?= e(t('Companies')) ?></a>
+                        <?php foreach ($publicNavigation as $navigationItem): ?>
+                            <?php
+                            $navigationArea = (string) ($navigationItem['active_area'] ?? '');
+                            $navigationPath = (string) ($navigationItem['path'] ?? '/');
+                            ?>
+                            <a
+                                class="<?= $navigationArea !== '' && ($activeArea ?? '') === $navigationArea ? 'is-active' : '' ?>"
+                                href="<?= e(url($navigationPath)) ?>"
+                            ><?= e(t((string) ($navigationItem['label'] ?? 'Link'))) ?></a>
+                        <?php endforeach; ?>
                     </nav>
 
                     <div class="header-auth">
@@ -466,9 +475,14 @@ $seoType = trim((string) ($metaType ?? 'website'));
 
                 <nav aria-label="<?= e(t('Marketplace links')) ?>">
                     <strong><?= e(t('Marketplace')) ?></strong>
-                    <a href="<?= e(url('/properties')) ?>"><?= e(t('Properties')) ?></a>
-                    <a href="<?= e(url('/projects')) ?>"><?= e(t('Projects')) ?></a>
-                    <a href="<?= e(url('/company')) ?>"><?= e(t('Companies')) ?></a>
+                    <?php foreach ($publicNavigation as $navigationItem): ?>
+                        <?php if ((string) ($navigationItem['path'] ?? '/') === '/'): ?>
+                            <?php continue; ?>
+                        <?php endif; ?>
+                        <a href="<?= e(url((string) ($navigationItem['path'] ?? '/'))) ?>">
+                            <?= e(t((string) ($navigationItem['label'] ?? 'Link'))) ?>
+                        </a>
+                    <?php endforeach; ?>
                 </nav>
 
                 <nav aria-label="<?= e(t('Account links')) ?>">
