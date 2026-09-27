@@ -890,10 +890,87 @@ final class WorkspaceReadRepository
     {
         $sql = match ($section) {
             'approvals' => 'SELECT
-                (SELECT COUNT(*) FROM companies WHERE status = "pending" AND deleted_at IS NULL) AS companies,
-                (SELECT COUNT(*) FROM projects WHERE status = "pending" AND deleted_at IS NULL) AS projects,
-                (SELECT COUNT(*) FROM properties WHERE status = "pending" AND deleted_at IS NULL) AS properties,
-                (SELECT COUNT(*) FROM listings WHERE status = "pending" AND deleted_at IS NULL) AS listings',
+                (SELECT COUNT(*) FROM companies
+                 WHERE status = "pending" AND deleted_at IS NULL) AS companies,
+                (SELECT COUNT(*) FROM projects
+                 WHERE status = "pending" AND deleted_at IS NULL) AS projects,
+                (SELECT COUNT(*) FROM properties
+                 WHERE status = "pending" AND deleted_at IS NULL) AS properties,
+                (SELECT COUNT(*) FROM listings
+                 WHERE status = "pending" AND deleted_at IS NULL) AS listings,
+                (
+                    (SELECT COUNT(*) FROM companies
+                     WHERE status = "pending" AND deleted_at IS NULL)
+                    +
+                    (SELECT COUNT(*)
+                     FROM projects p
+                     INNER JOIN companies c ON c.id = p.company_id
+                     WHERE p.status = "pending"
+                       AND p.deleted_at IS NULL
+                       AND c.deleted_at IS NULL
+                       AND c.status = "approved")
+                    +
+                    (SELECT COUNT(*)
+                     FROM properties p
+                     INNER JOIN companies c ON c.id = p.company_id
+                     LEFT JOIN projects pr
+                        ON pr.id = p.project_id
+                       AND pr.deleted_at IS NULL
+                     WHERE p.status = "pending"
+                       AND p.deleted_at IS NULL
+                       AND c.deleted_at IS NULL
+                       AND c.status = "approved"
+                       AND (p.project_id IS NULL OR pr.status IN ("approved", "published")))
+                    +
+                    (SELECT COUNT(*)
+                     FROM listings l
+                     INNER JOIN properties p ON p.id = l.property_id
+                     WHERE l.status = "pending"
+                       AND l.deleted_at IS NULL
+                       AND p.deleted_at IS NULL
+                       AND p.status = "approved")
+                ) AS ready,
+                (
+                    (SELECT COUNT(*) FROM companies
+                     WHERE status = "pending" AND deleted_at IS NULL)
+                    + (SELECT COUNT(*) FROM projects
+                       WHERE status = "pending" AND deleted_at IS NULL)
+                    + (SELECT COUNT(*) FROM properties
+                       WHERE status = "pending" AND deleted_at IS NULL)
+                    + (SELECT COUNT(*) FROM listings
+                       WHERE status = "pending" AND deleted_at IS NULL)
+                ) - (
+                    (SELECT COUNT(*) FROM companies
+                     WHERE status = "pending" AND deleted_at IS NULL)
+                    +
+                    (SELECT COUNT(*)
+                     FROM projects p
+                     INNER JOIN companies c ON c.id = p.company_id
+                     WHERE p.status = "pending"
+                       AND p.deleted_at IS NULL
+                       AND c.deleted_at IS NULL
+                       AND c.status = "approved")
+                    +
+                    (SELECT COUNT(*)
+                     FROM properties p
+                     INNER JOIN companies c ON c.id = p.company_id
+                     LEFT JOIN projects pr
+                        ON pr.id = p.project_id
+                       AND pr.deleted_at IS NULL
+                     WHERE p.status = "pending"
+                       AND p.deleted_at IS NULL
+                       AND c.deleted_at IS NULL
+                       AND c.status = "approved"
+                       AND (p.project_id IS NULL OR pr.status IN ("approved", "published")))
+                    +
+                    (SELECT COUNT(*)
+                     FROM listings l
+                     INNER JOIN properties p ON p.id = l.property_id
+                     WHERE l.status = "pending"
+                       AND l.deleted_at IS NULL
+                       AND p.deleted_at IS NULL
+                       AND p.status = "approved")
+                ) AS blocked',
             'companies' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(status = "pending"), 0) AS pending,
                 COALESCE(SUM(status = "approved"), 0) AS approved,
@@ -905,8 +982,10 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(completion_status = "completed"), 0) AS completed
                 FROM projects WHERE deleted_at IS NULL',
             'properties' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "draft"), 0) AS draft,
                 COALESCE(SUM(status = "pending"), 0) AS pending,
                 COALESCE(SUM(status = "approved"), 0) AS approved,
+                COALESCE(SUM(status = "rejected"), 0) AS rejected,
                 COALESCE(SUM(status = "archived"), 0) AS archived
                 FROM properties WHERE deleted_at IS NULL',
             'listings' => 'SELECT COUNT(*) AS total,
