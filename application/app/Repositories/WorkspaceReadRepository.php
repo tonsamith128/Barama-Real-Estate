@@ -972,13 +972,20 @@ final class WorkspaceReadRepository
                        AND p.status = "approved")
                 ) AS blocked',
             'companies' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "draft"), 0) AS draft,
                 COALESCE(SUM(status = "pending"), 0) AS pending,
                 COALESCE(SUM(status = "approved"), 0) AS approved,
-                COALESCE(SUM(status = "suspended"), 0) AS suspended
+                COALESCE(SUM(status = "rejected"), 0) AS rejected,
+                COALESCE(SUM(status = "suspended"), 0) AS suspended,
+                COALESCE(SUM(status = "archived"), 0) AS archived
                 FROM companies WHERE deleted_at IS NULL',
             'projects' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "draft"), 0) AS draft,
                 COALESCE(SUM(status = "pending"), 0) AS pending,
+                COALESCE(SUM(status = "approved"), 0) AS approved,
                 COALESCE(SUM(status = "published"), 0) AS published,
+                COALESCE(SUM(status = "rejected"), 0) AS rejected,
+                COALESCE(SUM(status = "archived"), 0) AS archived,
                 COALESCE(SUM(completion_status = "completed"), 0) AS completed
                 FROM projects WHERE deleted_at IS NULL',
             'properties' => 'SELECT COUNT(*) AS total,
@@ -989,9 +996,13 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "archived"), 0) AS archived
                 FROM properties WHERE deleted_at IS NULL',
             'listings' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "draft"), 0) AS draft,
                 COALESCE(SUM(status = "pending"), 0) AS pending,
                 COALESCE(SUM(status = "published"), 0) AS published,
-                COALESCE(SUM(status = "paused"), 0) AS paused
+                COALESCE(SUM(status = "paused"), 0) AS paused,
+                COALESCE(SUM(status = "rejected"), 0) AS rejected,
+                COALESCE(SUM(status = "closed"), 0) AS closed,
+                COALESCE(SUM(status = "expired"), 0) AS expired
                 FROM listings WHERE deleted_at IS NULL',
             'catalog' => 'SELECT
                 (SELECT COUNT(*) FROM locations) AS locations,
@@ -1155,8 +1166,23 @@ final class WorkspaceReadRepository
             'companies' => [
                 'SELECT c.id, c.name, c.company_type, c.status, c.email, c.phone,
                         c.location_id, c.verified_at, c.updated_at, loc.name AS location_name,
-                        (SELECT COUNT(*) FROM projects pr WHERE pr.company_id = c.id AND pr.deleted_at IS NULL) AS projects_count,
-                        (SELECT COUNT(*) FROM properties prop WHERE prop.company_id = c.id AND prop.deleted_at IS NULL) AS properties_count
+                        (SELECT COUNT(*) FROM company_members cm
+                         WHERE cm.company_id = c.id AND cm.status = "active") AS members_count,
+                        (SELECT COUNT(*) FROM projects pr
+                         WHERE pr.company_id = c.id AND pr.deleted_at IS NULL) AS projects_count,
+                        (SELECT COUNT(*) FROM projects pr
+                         WHERE pr.company_id = c.id AND pr.status = "published" AND pr.deleted_at IS NULL) AS published_projects_count,
+                        (SELECT COUNT(*) FROM properties prop
+                         WHERE prop.company_id = c.id AND prop.deleted_at IS NULL) AS properties_count,
+                        (SELECT COUNT(*) FROM properties prop
+                         WHERE prop.company_id = c.id AND prop.status = "approved" AND prop.deleted_at IS NULL) AS approved_properties_count,
+                        (SELECT COUNT(*)
+                         FROM listings li
+                         INNER JOIN properties prop ON prop.id = li.property_id
+                         WHERE prop.company_id = c.id
+                           AND prop.deleted_at IS NULL
+                           AND li.status = "published"
+                           AND li.deleted_at IS NULL) AS published_listings_count
                  FROM companies c
                  LEFT JOIN locations loc ON loc.id = c.location_id
                  WHERE c.deleted_at IS NULL
@@ -1170,19 +1196,27 @@ final class WorkspaceReadRepository
             ],
             'projects' => [
                 'SELECT p.id, p.name, p.project_type, p.completion_status,
-                        p.location_id, p.status, p.updated_at, c.name AS company_name,
+                        p.location_id, p.status, p.updated_at,
+                        c.name AS company_name, c.status AS company_status,
                         loc.name AS location_name,
-                        (SELECT COUNT(*) FROM properties prop WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count
+                        CASE WHEN c.status = "approved" THEN "ready" ELSE "blocked" END AS marketplace_readiness,
+                        (SELECT COUNT(*) FROM properties prop
+                         WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count,
+                        (SELECT COUNT(*) FROM properties prop
+                         WHERE prop.project_id = p.id
+                           AND prop.status = "approved"
+                           AND prop.deleted_at IS NULL) AS approved_properties_count
                  FROM projects p
                  INNER JOIN companies c ON c.id = p.company_id
                  LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE p.deleted_at IS NULL
-                   AND p.name LIKE :search
+                   AND CONCAT_WS(" ", p.name, c.name) LIKE :search
                  ORDER BY p.updated_at DESC',
                 'SELECT COUNT(*)
-                 FROM projects
-                 WHERE deleted_at IS NULL
-                   AND name LIKE :search',
+                 FROM projects p
+                 INNER JOIN companies c ON c.id = p.company_id
+                 WHERE p.deleted_at IS NULL
+                   AND CONCAT_WS(" ", p.name, c.name) LIKE :search',
                 ['search' => $search],
             ],
             'properties' => [
@@ -1228,23 +1262,38 @@ final class WorkspaceReadRepository
             ],
             'listings' => [
                 'SELECT l.id, p.title AS property_title, p.reference_code,
-                        p.property_type, p.location_id, c.name AS company_name, loc.name AS location_name,
-                        l.transaction_type, l.status, l.price, l.currency, l.expires_at,
-                        l.updated_at
+                        p.property_type, p.location_id, p.status AS property_status,
+                        p.project_id, c.name AS company_name, c.status AS company_status,
+                        pr.name AS project_name, pr.status AS project_status,
+                        loc.name AS location_name,
+                        l.transaction_type, l.status, l.price, l.currency,
+                        l.published_at, l.expires_at, l.closed_at, l.updated_at,
+                        CASE
+                            WHEN p.status = "approved"
+                             AND c.status = "approved"
+                             AND (p.project_id IS NULL OR pr.status IN ("approved", "published"))
+                            THEN "ready"
+                            ELSE "blocked"
+                        END AS marketplace_readiness
                  FROM listings l
                  INNER JOIN properties p ON p.id = l.property_id
-                 LEFT JOIN companies c ON c.id = p.company_id
+                 INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
                  LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE l.deleted_at IS NULL
                    AND p.deleted_at IS NULL
-                   AND CONCAT_WS(" ", p.title, p.reference_code) LIKE :search
+                   AND c.deleted_at IS NULL
+                   AND CONCAT_WS(" ", p.title, p.reference_code, c.name, pr.name) LIKE :search
                  ORDER BY l.updated_at DESC',
                 'SELECT COUNT(*)
                  FROM listings l
                  INNER JOIN properties p ON p.id = l.property_id
+                 INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
                  WHERE l.deleted_at IS NULL
                    AND p.deleted_at IS NULL
-                   AND CONCAT_WS(" ", p.title, p.reference_code) LIKE :search',
+                   AND c.deleted_at IS NULL
+                   AND CONCAT_WS(" ", p.title, p.reference_code, c.name, pr.name) LIKE :search',
                 ['search' => $search],
             ],
             'inquiries' => [
