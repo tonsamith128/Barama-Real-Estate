@@ -118,6 +118,15 @@ final class DomainRules
         'lost',
     ];
 
+    public const VIEWING_STATUSES = [
+        'pending',
+        'confirmed',
+        'rescheduled',
+        'completed',
+        'declined',
+        'cancelled',
+    ];
+
     public const MEDIA_ENTITY_TYPES = [
         'company',
         'project',
