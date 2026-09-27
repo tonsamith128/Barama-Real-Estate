@@ -156,6 +156,22 @@ final class DashboardController
         ]));
     }
 
+    public function taxes(Request $request): Response
+    {
+        $finance = new FinanceRepository();
+
+        return Response::html(View::render('workspace/finance-taxes', [
+            'pageTitle' => 'Tax Rules · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'taxes',
+            'taxRules' => $finance->taxRules(),
+            'taxSummary' => $finance->taxSummary(),
+        ]));
+    }
+
     public function invoices(Request $request): Response
     {
         $finance = new FinanceRepository();
@@ -585,6 +601,7 @@ final class DashboardController
             ['label' => 'Plans & Packages', 'path' => '/dashboard/plans', 'icon' => 'layers'],
             ['label' => 'Subscriptions', 'path' => '/dashboard/subscriptions', 'icon' => 'building'],
             ['label' => 'Coupons', 'path' => '/dashboard/coupons', 'icon' => 'edit'],
+            ['label' => 'Tax Rules', 'path' => '/dashboard/taxes', 'icon' => 'shield'],
             ['label' => 'Invoices', 'path' => '/dashboard/invoices', 'icon' => 'edit'],
             ['label' => 'Transactions', 'path' => '/dashboard/transactions', 'icon' => 'pipeline'],
 
