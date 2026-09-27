@@ -368,6 +368,21 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
+    '/dashboard/coupons',
+    [DashboardController::class, 'coupons'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/coupons',
+    [AdminManagementController::class, 'createCoupon'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/coupons/{id}/status',
+    [AdminManagementController::class, 'updateCouponStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/invoices',
     [DashboardController::class, 'invoices'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
