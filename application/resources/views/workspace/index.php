@@ -195,6 +195,7 @@ $renderActions = static function (array $row) use (
             'leads' => 'lead',
             'viewings' => 'viewing',
             'users' => 'user',
+            'verification' => 'user',
             'audit' => 'audit',
             default => null,
         };
@@ -481,6 +482,19 @@ $renderActions = static function (array $row) use (
             $buttons[] = '<a class="table-action" href="' . e(url(
                 '/dashboard/manage/lead/' . (int) $row['converted_lead_id']
             )) . '">Open linked lead</a>';
+        } elseif (
+            $activeSection === 'verification'
+            && in_array(
+                (string) ($row['issue_type'] ?? ''),
+                ['developer_access_missing', 'developer_access_orphan'],
+                true
+            )
+        ) {
+            $buttons[] = '<form action="' . e(url(
+                '/dashboard/users/' . $id . '/developer-access/reconcile'
+            )) . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="table-action table-action--primary" type="submit">Reconcile developer access</button></form>';
         }
     }
 
@@ -490,7 +504,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'users', 'audit'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'users', 'verification', 'audit'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -535,6 +549,11 @@ $renderActions = static function (array $row) use (
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Account security · real-estate access context
+            </span>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'verification'): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('check') ?>
+                Identity verification · access consistency
             </span>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'audit'): ?>
             <span class="workspace-context-note">

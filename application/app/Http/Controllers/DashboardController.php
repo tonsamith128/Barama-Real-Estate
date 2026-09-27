@@ -63,6 +63,10 @@ final class DashboardController
             'title' => 'Users',
             'description' => 'Manage account status and administrator access without bypassing the canonical role system.',
         ],
+        'verification' => [
+            'title' => 'Verification Center',
+            'description' => 'Review email verification and membership-derived Developer access consistency without manually overriding identity verification.',
+        ],
         'audit' => [
             'title' => 'Security Audit',
             'description' => 'Review immutable authentication and account-security events with hashed client-origin metadata.',
@@ -303,8 +307,17 @@ final class DashboardController
                 ['label' => 'Active', 'value' => $marketplace['active'] ?? 0, 'icon' => 'check', 'href' => '/dashboard/users?status=active'],
                 ['label' => 'Suspended', 'value' => $marketplace['suspended'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/users?status=suspended'],
                 ['label' => 'Verified email', 'value' => $marketplace['verified'] ?? 0, 'icon' => 'mail'],
+                ['label' => 'Unverified active', 'value' => $marketplace['unverified'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/verification?type=email_unverified'],
+                ['label' => 'Developers', 'value' => $marketplace['developers'] ?? 0, 'icon' => 'building', 'href' => '/dashboard/users?type=developer'],
                 ['label' => 'Administrators', 'value' => $marketplace['administrators'] ?? 0, 'icon' => 'shield', 'href' => '/dashboard/users?type=administrator'],
                 ['label' => 'Company access', 'value' => $marketplace['company_members'] ?? 0, 'icon' => 'building'],
+            ],
+            'verification' => [
+                ['label' => 'All accounts', 'value' => $marketplace['total'] ?? 0, 'icon' => 'users', 'href' => '/dashboard/verification'],
+                ['label' => 'Attention required', 'value' => $marketplace['attention'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/verification?status=attention'],
+                ['label' => 'Unverified email', 'value' => $marketplace['unverified'] ?? 0, 'icon' => 'mail', 'href' => '/dashboard/verification?type=email_unverified'],
+                ['label' => 'Missing developer access', 'value' => $marketplace['missing_developer'] ?? 0, 'icon' => 'building', 'href' => '/dashboard/verification?type=developer_access_missing'],
+                ['label' => 'Orphan developer access', 'value' => $marketplace['orphan_developer'] ?? 0, 'icon' => 'shield', 'href' => '/dashboard/verification?type=developer_access_orphan'],
             ],
             'audit' => [
                 ['label' => 'All events', 'value' => $marketplace['total'] ?? 0, 'icon' => 'shield', 'href' => '/dashboard/audit'],
@@ -385,6 +398,11 @@ final class DashboardController
                 'title' => 'No user accounts match this view',
                 'detail' => 'Adjust account status, role or search by user, email, or company access.',
             ],
+            'verification' => [
+                'icon' => 'check',
+                'title' => 'No verification records match this view',
+                'detail' => 'Identity and Developer access consistency records will appear here when they match the selected verification filters.',
+            ],
             'audit' => [
                 'icon' => 'shield',
                 'title' => 'No security events match this view',
@@ -423,6 +441,7 @@ final class DashboardController
 
             ['heading' => 'Users & Security'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
+            ['label' => 'Verification Center', 'path' => '/dashboard/verification', 'icon' => 'check'],
             ['label' => 'Security Audit', 'path' => '/dashboard/audit', 'icon' => 'shield'],
 
             ['heading' => 'Workspace'],
@@ -593,6 +612,17 @@ final class DashboardController
                     'company_desc' => 'Most company access',
                 ],
             ],
+            'verification' => [
+                'statuses' => ['attention', 'clear'],
+                'types' => ['email_unverified', 'developer_access_missing', 'developer_access_orphan', 'clear'],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Name A–Z',
+                    'name_desc' => 'Name Z–A',
+                ],
+            ],
             'audit' => [
                 'statuses' => [],
                 'types' => ['auth', 'account', 'admin'],
@@ -731,6 +761,16 @@ final class DashboardController
                 'email_state' => 'Email',
                 'status' => 'Status',
                 'last_login_at' => 'Last login',
+            ],
+            'verification' => [
+                'name' => 'User',
+                'email' => 'Email',
+                'roles' => 'Roles',
+                'company_count' => 'Companies',
+                'developer_role' => 'Developer role',
+                'verification_state' => 'State',
+                'issue_type' => 'Issue',
+                'updated_at' => 'Updated',
             ],
             'audit' => [
                 'event_type' => 'Event',

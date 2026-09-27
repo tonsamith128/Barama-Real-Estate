@@ -286,9 +286,28 @@ final class WorkspaceRecordRepository
                                   WHEN COALESCE(role_summary.is_developer, 0) = 1 THEN "developer"
                                   ELSE "user"
                               END AS account_role,
+                              COALESCE(role_summary.is_developer, 0) AS has_developer_role,
                               COALESCE(company_access.company_count, 0) AS company_count,
                               COALESCE(company_access.owned_company_count, 0) AS owned_company_count,
                               COALESCE(company_access.company_access, "") AS company_access,
+                              (
+                                  SELECT GROUP_CONCAT(DISTINCT p.slug ORDER BY p.slug SEPARATOR ", ")
+                                  FROM user_roles urp
+                                  INNER JOIN role_permissions rp ON rp.role_id = urp.role_id
+                                  INNER JOIN permissions p ON p.id = rp.permission_id
+                                  WHERE urp.user_id = u.id
+                              ) AS permissions,
+                              CASE
+                                  WHEN u.status = "active" AND u.email_verified_at IS NULL
+                                      THEN "email_unverified"
+                                  WHEN COALESCE(company_access.company_count, 0) > 0
+                                       AND COALESCE(role_summary.is_developer, 0) = 0
+                                      THEN "developer_access_missing"
+                                  WHEN COALESCE(company_access.company_count, 0) = 0
+                                       AND COALESCE(role_summary.is_developer, 0) = 1
+                                      THEN "developer_access_orphan"
+                                  ELSE "clear"
+                              END AS access_verification_state,
                               (
                                   SELECT COUNT(*)
                                   FROM security_audit_events user_events

@@ -192,6 +192,23 @@ final class AdminManagementController
         });
     }
 
+    public function reconcileDeveloperAccess(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid user ID is required.');
+            }
+
+            $result = (new UserAdministrationService())->reconcileDeveloperAccess((int) $id);
+            $result['user_id'] = (int) $id;
+            $result['message'] = $result['changed']
+                ? 'Developer workspace access was reconciled with active company membership.'
+                : 'Developer workspace access already matches active company membership.';
+
+            return $result;
+        });
+    }
+
     public function revokeUserSessions(Request $request, string $id): Response
     {
         return $this->execute(function () use ($id): array {
