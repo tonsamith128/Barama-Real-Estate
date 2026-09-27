@@ -121,6 +121,32 @@ final class AdminManagementController
         });
     }
 
+    public function createCoupon(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'coupon_id' => (new FinanceManagementService())->createCoupon($request->all()),
+            'message' => 'Coupon created as inactive.',
+        ], 201);
+    }
+
+    public function updateCouponStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid coupon ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new FinanceManagementService())->setCouponStatus((int) $id, $status);
+
+            return [
+                'coupon_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Coupon status updated.',
+            ];
+        });
+    }
+
     public function createInvoice(Request $request): Response
     {
         return $this->execute(fn (): array => [
