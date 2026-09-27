@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\ListingWriteRepository;
 use Barama\Repositories\PropertyWriteRepository;
@@ -11,6 +12,7 @@ use Barama\Support\DomainInput;
 use Barama\Support\Slugger;
 use DomainException;
 use InvalidArgumentException;
+use Throwable;
 
 final class ListingManagementService
 {
@@ -31,9 +33,28 @@ final class ListingManagementService
             throw new InvalidArgumentException('Property was not found.');
         }
 
-        (new CompanyAccessService())->assertCanManage((int) $property['company_id']);
+        $companyId = (int) $property['company_id'];
+        (new CompanyAccessService())->assertCanManage($companyId);
 
-        return $this->persist(null, $property, (int) $user['id'], $input);
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+            (new SubscriptionEntitlementService())->assertCanConsume(
+                $companyId,
+                'listing'
+            );
+            $id = $this->persist(null, $property, (int) $user['id'], $input);
+            $pdo->commit();
+
+            return $id;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     /** @param array<string, mixed> $input */
