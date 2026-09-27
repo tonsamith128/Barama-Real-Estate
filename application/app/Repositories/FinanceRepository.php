@@ -935,6 +935,26 @@ final class FinanceRepository
         return is_array($row) ? $row : null;
     }
 
+    /** @return array<string,mixed>|null */
+    public function lockWebhookEvent(int $providerId, string $eventId): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT *
+             FROM billing_webhook_events
+             WHERE provider_id = :provider_id
+               AND event_id = :event_id
+             LIMIT 1
+             FOR UPDATE'
+        );
+        $statement->execute([
+            'provider_id' => $providerId,
+            'event_id' => $eventId,
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     /** @param array<string,mixed> $data */
     public function createWebhookEvent(array $data): int
     {
