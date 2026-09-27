@@ -172,6 +172,7 @@ final class FinanceManagementService
 
         try {
             $pdo->beginTransaction();
+            $repository->lockCompany($companyId);
 
             if ($repository->hasCurrentSubscription($companyId)) {
                 throw new DomainException('A current subscription was created concurrently for this company.');
