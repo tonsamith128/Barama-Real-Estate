@@ -337,6 +337,22 @@ final class FinanceRepository
         return is_array($row) ? $row : null;
     }
 
+    /** @return array<string,mixed>|null */
+    public function invoiceByNumber(string $invoiceNumber): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT i.*, c.name AS company_name
+             FROM billing_invoices i
+             INNER JOIN companies c ON c.id = i.company_id
+             WHERE i.invoice_number = :invoice_number
+             LIMIT 1'
+        );
+        $statement->execute(['invoice_number' => $invoiceNumber]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function subscriptionBelongsToCompany(
         int $subscriptionId,
         int $companyId
@@ -471,7 +487,7 @@ final class FinanceRepository
                  amount, currency, processed_at, notes, created_by_user_id)
              VALUES
                 (:uuid, :company_id, :subscription_id, :invoice_id,
-                 :transaction_type, :status, "admin", :reference,
+                 :transaction_type, :status, :source, :reference,
                  :amount, :currency, :processed_at, :notes, :actor_id)'
         );
         $statement->execute([
@@ -481,6 +497,7 @@ final class FinanceRepository
             'invoice_id' => $data['invoice_id'],
             'transaction_type' => $data['transaction_type'],
             'status' => $data['status'],
+            'source' => $data['source'] ?? 'admin',
             'reference' => $data['reference'],
             'amount' => $data['amount'],
             'currency' => $data['currency'],
@@ -773,6 +790,205 @@ final class FinanceRepository
                 (SELECT COUNT(*) FROM billing_tax_rules) AS tax_rules,
                 (SELECT COUNT(*) FROM billing_tax_rules WHERE status = "active") AS active_tax_rules,
                 (SELECT COUNT(*) FROM billing_invoices WHERE tax_rule_id IS NOT NULL) AS taxed_invoices'
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row)
+            ? array_map(static fn (mixed $value): int => (int) $value, $row)
+            : [];
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function paymentProviders(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT p.*,
+                        (
+                            SELECT COUNT(*)
+                            FROM billing_webhook_events e
+                            WHERE e.provider_id = p.id
+                        ) AS webhook_events,
+                        (
+                            SELECT COUNT(*)
+                            FROM billing_webhook_events e
+                            WHERE e.provider_id = p.id
+                              AND e.status = "failed"
+                        ) AS failed_events
+                 FROM billing_payment_providers p
+                 ORDER BY p.created_at DESC, p.id DESC
+                 LIMIT 500'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function paymentProvider(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT * FROM billing_payment_providers WHERE id = :id LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,mixed>|null */
+    public function paymentProviderByCode(string $code): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT * FROM billing_payment_providers WHERE code = :code LIMIT 1'
+        );
+        $statement->execute(['code' => $code]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function paymentProviderCodeExists(string $code): bool
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT 1 FROM billing_payment_providers WHERE code = :code LIMIT 1'
+        );
+        $statement->execute(['code' => $code]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createPaymentProvider(array $data): int
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_payment_providers
+                (uuid, code, name, adapter_key, environment,
+                 webhook_token_hash, status,
+                 created_by_user_id, updated_by_user_id)
+             VALUES
+                (:uuid, :code, :name, :adapter_key, :environment,
+                 :webhook_token_hash, "inactive",
+                 :actor_id, :actor_id)'
+        );
+        $statement->execute([
+            'uuid' => IdGenerator::uuid(),
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'adapter_key' => $data['adapter_key'],
+            'environment' => $data['environment'],
+            'webhook_token_hash' => $data['webhook_token_hash'],
+            'actor_id' => $data['actor_id'],
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    public function setPaymentProviderStatus(
+        int $id,
+        string $status,
+        int $actorId
+    ): void {
+        $statement = Database::connection()->prepare(
+            'UPDATE billing_payment_providers
+             SET status = :status,
+                 updated_by_user_id = :actor_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'status' => $status,
+            'actor_id' => $actorId,
+            'id' => $id,
+        ]);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function webhookEvents(): array
+    {
+        return Database::connection()
+            ->query(
+                'SELECT e.*, p.code AS provider_code, p.name AS provider_name,
+                        t.reference AS transaction_reference
+                 FROM billing_webhook_events e
+                 INNER JOIN billing_payment_providers p ON p.id = e.provider_id
+                 LEFT JOIN billing_transactions t ON t.id = e.transaction_id
+                 ORDER BY e.received_at DESC, e.id DESC
+                 LIMIT 1500'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function webhookEvent(int $providerId, string $eventId): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT *
+             FROM billing_webhook_events
+             WHERE provider_id = :provider_id
+               AND event_id = :event_id
+             LIMIT 1'
+        );
+        $statement->execute([
+            'provider_id' => $providerId,
+            'event_id' => $eventId,
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @param array<string,mixed> $data */
+    public function createWebhookEvent(array $data): int
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO billing_webhook_events
+                (uuid, provider_id, event_id, event_type, status,
+                 payload_json, payload_sha256, received_at)
+             VALUES
+                (:uuid, :provider_id, :event_id, :event_type, "received",
+                 :payload_json, :payload_sha256, CURRENT_TIMESTAMP)'
+        );
+        $statement->execute([
+            'uuid' => IdGenerator::uuid(),
+            'provider_id' => $data['provider_id'],
+            'event_id' => $data['event_id'],
+            'event_type' => $data['event_type'],
+            'payload_json' => $data['payload_json'],
+            'payload_sha256' => $data['payload_sha256'],
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    public function completeWebhookEvent(
+        int $id,
+        string $status,
+        ?int $transactionId = null,
+        ?string $errorMessage = null
+    ): void {
+        $statement = Database::connection()->prepare(
+            'UPDATE billing_webhook_events
+             SET status = :status,
+                 transaction_id = :transaction_id,
+                 error_message = :error_message,
+                 processed_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'status' => $status,
+            'transaction_id' => $transactionId,
+            'error_message' => $errorMessage,
+            'id' => $id,
+        ]);
+    }
+
+    /** @return array<string,int> */
+    public function paymentProviderSummary(): array
+    {
+        $row = Database::connection()->query(
+            'SELECT
+                (SELECT COUNT(*) FROM billing_payment_providers) AS providers,
+                (SELECT COUNT(*) FROM billing_payment_providers WHERE status = "active") AS active_providers,
+                (SELECT COUNT(*) FROM billing_webhook_events) AS webhook_events,
+                (SELECT COUNT(*) FROM billing_webhook_events WHERE status = "failed") AS failed_events'
         )->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row)
