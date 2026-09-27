@@ -526,6 +526,115 @@ final class FinanceManagementService
     }
 
     /** @param array<string,mixed> $input */
+    public function createPaymentProvider(array $input): int
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+
+        $code = strtolower(trim((string) ($input['code'] ?? '')));
+        $name = trim((string) ($input['name'] ?? ''));
+        $environment = strtolower(trim((string) ($input['environment'] ?? 'sandbox')));
+        $token = trim((string) ($input['webhook_token'] ?? ''));
+
+        if (
+            mb_strlen($code) < 2
+            || mb_strlen($code) > 24
+            || preg_match('/^[a-z0-9][a-z0-9_-]*$/', $code) !== 1
+        ) {
+            throw new InvalidArgumentException(
+                'Provider code must contain 2 to 24 lowercase letters, numbers, underscores, or hyphens.'
+            );
+        }
+
+        if ($repository->paymentProviderCodeExists($code)) {
+            throw new InvalidArgumentException('This payment provider code is already in use.');
+        }
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 160) {
+            throw new InvalidArgumentException(
+                'Payment provider name must contain between 2 and 160 characters.'
+            );
+        }
+
+        if (!in_array($environment, ['sandbox', 'live'], true)) {
+            throw new InvalidArgumentException('Choose sandbox or live provider environment.');
+        }
+
+        if (strlen($token) < 32 || strlen($token) > 191) {
+            throw new InvalidArgumentException(
+                'Webhook token must contain between 32 and 191 characters.'
+            );
+        }
+
+        $tokenHash = password_hash($token, PASSWORD_DEFAULT);
+
+        if (!is_string($tokenHash) || $tokenHash === '') {
+            throw new DomainException('Webhook token hashing failed.');
+        }
+
+        $id = $repository->createPaymentProvider([
+            'code' => $code,
+            'name' => $name,
+            'adapter_key' => 'generic_token',
+            'environment' => $environment,
+            'webhook_token_hash' => $tokenHash,
+            'actor_id' => (int) $actor['id'],
+        ]);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_payment_provider_created',
+            (int) $actor['id'],
+            null,
+            [
+                'payment_provider_id' => $id,
+                'code' => $code,
+                'environment' => $environment,
+                'adapter_key' => 'generic_token',
+            ]
+        );
+
+        return $id;
+    }
+
+    public function setPaymentProviderStatus(int $id, string $status): void
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+        $provider = $repository->paymentProvider($id);
+
+        if ($provider === null) {
+            throw new InvalidArgumentException('Payment provider was not found.');
+        }
+
+        $current = (string) $provider['status'];
+        $status = strtolower(trim($status));
+
+        $transitions = [
+            'inactive' => ['active', 'archived'],
+            'active' => ['inactive'],
+            'archived' => [],
+        ];
+
+        if (!in_array($status, $transitions[$current] ?? [], true)) {
+            throw new DomainException('This payment provider status transition is not allowed.');
+        }
+
+        $repository->setPaymentProviderStatus($id, $status, (int) $actor['id']);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_payment_provider_status_changed',
+            (int) $actor['id'],
+            null,
+            [
+                'payment_provider_id' => $id,
+                'code' => (string) $provider['code'],
+                'from_status' => $current,
+                'to_status' => $status,
+            ]
+        );
+    }
+
+    /** @param array<string,mixed> $input */
     public function createInvoice(array $input): int
     {
         $actor = $this->administrator();
