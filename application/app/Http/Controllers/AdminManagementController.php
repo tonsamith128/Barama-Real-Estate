@@ -10,6 +10,7 @@ use Barama\Services\AdminMediaManagementService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
+use Barama\Services\FinanceManagementService;
 use Barama\Services\PageManagementService;
 use Barama\Services\SiteContentManagementService;
 use Barama\Services\UserAdministrationService;
@@ -64,6 +65,58 @@ final class AdminManagementController
                 'amenity_id' => (int) $id,
                 'status' => $status,
                 'message' => 'Amenity status updated.',
+            ];
+        });
+    }
+
+    public function createPlan(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'plan_id' => (new FinanceManagementService())->createPlan($request->all()),
+            'message' => 'Subscription plan created as inactive.',
+        ], 201);
+    }
+
+    public function updatePlanStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid plan ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new FinanceManagementService())->setPlanStatus((int) $id, $status);
+
+            return [
+                'plan_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Plan status updated.',
+            ];
+        });
+    }
+
+    public function assignSubscription(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'subscription_id' => (new FinanceManagementService())->assignSubscription($request->all()),
+            'message' => 'Company subscription assigned.',
+        ], 201);
+    }
+
+    public function updateSubscriptionStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid subscription ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new FinanceManagementService())->setSubscriptionStatus((int) $id, $status);
+
+            return [
+                'subscription_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Subscription status updated.',
             ];
         });
     }
