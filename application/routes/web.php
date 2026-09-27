@@ -389,6 +389,12 @@ $router->post(
 );
 
 $router->post(
+    '/dashboard/users/{id}/developer-access/reconcile',
+    [AdminManagementController::class, 'reconcileDeveloperAccess'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
+$router->post(
     '/dashboard/users/{id}/sessions/revoke',
     [AdminManagementController::class, 'revokeUserSessions'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
