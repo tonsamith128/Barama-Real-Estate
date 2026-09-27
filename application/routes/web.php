@@ -226,6 +226,11 @@ $router->get(
     [DeveloperController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
 );
+$router->get(
+    '/developer/billing',
+    [DeveloperController::class, 'billing'],
+    [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
+);
 $router->get('/developer/settings', [WorkspaceSettingsController::class, 'developerIndex'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
 $router->get('/developer/settings/{section}', [WorkspaceSettingsController::class, 'developer'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
 $router->post('/developer/settings/{section}', [WorkspaceSettingsController::class, 'saveDeveloper'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]);
