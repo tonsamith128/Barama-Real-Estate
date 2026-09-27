@@ -1022,6 +1022,8 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "replied"), 0) AS replied,
                 COALESCE(SUM(status = "closed"), 0) AS closed,
                 COALESCE(SUM(status = "spam"), 0) AS spam,
+                COALESCE(SUM(assigned_user_id IS NULL AND status IN ("new", "read")), 0) AS unassigned,
+                COALESCE(SUM(status IN ("new", "read") AND created_at < (CURRENT_TIMESTAMP - INTERVAL 1 DAY)), 0) AS awaiting_24h,
                 (SELECT COUNT(*) FROM leads l WHERE l.inquiry_id IS NOT NULL AND l.deleted_at IS NULL) AS converted
                 FROM inquiries',
             'leads' => 'SELECT COUNT(*) AS total,
@@ -1032,8 +1034,22 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(stage = "viewing"), 0) AS viewing,
                 COALESCE(SUM(stage = "negotiation"), 0) AS negotiation,
                 COALESCE(SUM(stage = "won"), 0) AS won,
-                COALESCE(SUM(stage = "lost"), 0) AS lost
+                COALESCE(SUM(stage = "lost"), 0) AS lost,
+                COALESCE(SUM(assigned_user_id IS NULL AND stage NOT IN ("won", "lost")), 0) AS unassigned,
+                COALESCE(SUM(next_follow_up_at IS NOT NULL
+                    AND next_follow_up_at <= CURRENT_TIMESTAMP
+                    AND stage NOT IN ("won", "lost")), 0) AS follow_up_due
                 FROM leads WHERE deleted_at IS NULL',
+            'viewings' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = "pending"), 0) AS pending,
+                COALESCE(SUM(status = "confirmed"), 0) AS confirmed,
+                COALESCE(SUM(status = "rescheduled"), 0) AS rescheduled,
+                COALESCE(SUM(status = "completed"), 0) AS completed,
+                COALESCE(SUM(status = "declined"), 0) AS declined,
+                COALESCE(SUM(status = "cancelled"), 0) AS cancelled,
+                COALESCE(SUM(status IN ("confirmed", "rescheduled")
+                    AND scheduled_for >= CURRENT_TIMESTAMP), 0) AS upcoming
+                FROM viewing_requests',
             'users' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(status = "active"), 0) AS active,
                 COALESCE(SUM(status = "suspended"), 0) AS suspended,
@@ -1369,6 +1385,47 @@ final class WorkspaceReadRepository
                    ) LIKE :search',
                 ['search' => $search],
             ],
+            'viewings' => [
+                'SELECT v.id, v.status, v.preferred_date, v.preferred_time_window,
+                        v.alternate_date, v.alternate_time_window,
+                        v.scheduled_for, v.updated_at,
+                        u.name AS customer_name, u.email AS customer_email,
+                        c.name AS company_name,
+                        p.title AS property_title, p.reference_code,
+                        p.property_type, p.location_id,
+                        l.transaction_type, l.price, l.currency,
+                        loc.name AS location_name
+                 FROM viewing_requests v
+                 INNER JOIN users u ON u.id = v.user_id
+                 INNER JOIN companies c ON c.id = v.company_id
+                 INNER JOIN listings l ON l.id = v.listing_id
+                 INNER JOIN properties p ON p.id = l.property_id
+                 LEFT JOIN locations loc ON loc.id = p.location_id
+                 WHERE CONCAT_WS(
+                    " ",
+                    u.name,
+                    u.email,
+                    c.name,
+                    p.title,
+                    p.reference_code
+                 ) LIKE :search
+                 ORDER BY v.updated_at DESC',
+                'SELECT COUNT(*)
+                 FROM viewing_requests v
+                 INNER JOIN users u ON u.id = v.user_id
+                 INNER JOIN companies c ON c.id = v.company_id
+                 INNER JOIN listings l ON l.id = v.listing_id
+                 INNER JOIN properties p ON p.id = l.property_id
+                 WHERE CONCAT_WS(
+                    " ",
+                    u.name,
+                    u.email,
+                    c.name,
+                    p.title,
+                    p.reference_code
+                 ) LIKE :search',
+                ['search' => $search],
+            ],
             'catalog' => [
                 'SELECT *
                  FROM (
@@ -1695,6 +1752,10 @@ final class WorkspaceReadRepository
             'admin:leads' => [
                 'filters' => ['status' => 'stage', 'type' => 'transaction_type', 'location' => 'preferred_location_id'],
                 'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'price_asc' => 'budget_max ASC', 'price_desc' => 'budget_max DESC', 'name_asc' => 'contact_name ASC'],
+            ],
+            'admin:viewings' => [
+                'filters' => ['status' => 'status'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'customer_name ASC'],
             ],
             'admin:catalog' => [
                 'filters' => ['status' => 'status', 'type' => 'entity_type'],
