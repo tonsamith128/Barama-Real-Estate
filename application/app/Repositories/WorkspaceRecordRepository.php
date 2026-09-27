@@ -278,6 +278,14 @@ final class WorkspaceRecordRepository
                        LEFT JOIN properties p ON p.id = inquiry.property_id AND p.deleted_at IS NULL
                        LEFT JOIN listings listing ON listing.id = inquiry.listing_id AND listing.deleted_at IS NULL
                        WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
+            'page' => 'SELECT p.*,
+                              COALESCE(created_by.name, "System") AS created_by_name,
+                              COALESCE(updated_by.name, "System") AS updated_by_name
+                       FROM cms_pages p
+                       LEFT JOIN users created_by ON created_by.id = p.created_by_user_id
+                       LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+                       WHERE p.id = :id
+                       LIMIT 1',
             'user' => 'SELECT u.id, u.uuid, u.name, u.email, u.status, u.auth_version,
                               u.email_verified_at, u.last_login_at, u.created_at, u.updated_at,
                               COALESCE(role_summary.roles, "user") AS roles,
@@ -372,7 +380,7 @@ final class WorkspaceRecordRepository
 
         return [
             'record' => $record,
-            'history' => in_array($resource, ['user', 'audit'], true)
+            'history' => in_array($resource, ['page', 'user', 'audit'], true)
                 ? []
                 : $this->history($resource, $id),
             'media' => in_array($resource, ['company', 'project', 'property', 'listing'], true)
