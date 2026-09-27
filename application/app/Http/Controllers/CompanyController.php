@@ -27,12 +27,21 @@ final class CompanyController
             ['options' => ['min_range' => 1]]
         );
 
+        $currentPage = $page === false ? 1 : (int) $page;
+        $isFiltered = $currentPage > 1
+            || (string) ($filters['q'] ?? '') !== ''
+            || (string) ($filters['type'] ?? '') !== ''
+            || (string) ($filters['location'] ?? '') !== '';
+
         return Response::html(View::render('company/index', [
             'pageTitle' => 'Real Estate Developers',
+            'metaDescription' => 'Browse approved real-estate developers, agencies, property companies, and marketplace vendors on Barama Real Estate.',
+            'canonicalUrl' => url('/company'),
+            'metaRobots' => $isFiltered ? 'noindex,follow' : 'index,follow,max-image-preview:large',
             'activeArea' => 'company',
             'inventory' => $repository->companies(
                 $filters,
-                $page === false ? 1 : (int) $page
+                $currentPage
             ),
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
@@ -52,11 +61,36 @@ final class CompanyController
             );
         }
 
+        $gallery = $repository->gallery('company', (int) $company['id']);
+        $metaImage = '';
+
+        foreach ($gallery as $media) {
+            if (
+                str_starts_with((string) ($media['mime_type'] ?? ''), 'image/')
+                && !empty($media['uuid'])
+            ) {
+                $metaImage = url('/media/' . rawurlencode((string) $media['uuid']));
+                break;
+            }
+        }
+
+        $metaDescription = trim((string) ($company['description'] ?? ''));
+
+        if ($metaDescription === '') {
+            $metaDescription = (string) $company['name']
+                . (!empty($company['location_name']) ? ' in ' . (string) $company['location_name'] : '')
+                . ' · approved real-estate company on Barama Real Estate.';
+        }
+
         return Response::html(View::render('company/show', [
             'pageTitle' => (string) $company['name'],
+            'metaDescription' => mb_substr($metaDescription, 0, 280),
+            'canonicalUrl' => url('/company/' . rawurlencode((string) $company['slug'])),
+            'metaImage' => $metaImage,
+            'metaType' => 'profile',
             'activeArea' => 'company',
             'company' => $company,
-            'gallery' => $repository->gallery('company', (int) $company['id']),
+            'gallery' => $gallery,
             'projects' => $repository->companyProjects((int) $company['id'], 6),
             'listings' => $repository->companyListings((int) $company['id'], 6),
             'viewer' => auth_user(),
