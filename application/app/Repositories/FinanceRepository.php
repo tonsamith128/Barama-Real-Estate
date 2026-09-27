@@ -487,17 +487,8 @@ final class FinanceRepository
                 (SELECT COUNT(*) FROM billing_invoices WHERE status = "paid") AS paid_invoices,
                 (SELECT COUNT(*) FROM billing_transactions) AS transactions,
                 (SELECT COUNT(*) FROM billing_transactions WHERE status = "succeeded") AS succeeded_transactions,
-                (
-                    SELECT COALESCE(SUM(
-                        CASE
-                            WHEN status <> "succeeded" THEN 0
-                            WHEN transaction_type IN ("payment", "credit") THEN amount
-                            WHEN transaction_type = "refund" THEN -amount
-                            ELSE 0
-                        END
-                    ), 0)
-                    FROM billing_transactions
-                ) AS net_recorded
+                (SELECT COUNT(*) FROM billing_transactions WHERE status = "pending") AS pending_transactions,
+                (SELECT COUNT(*) FROM billing_transactions WHERE status = "failed") AS failed_transactions
             '
         )->fetch(PDO::FETCH_ASSOC);
 
