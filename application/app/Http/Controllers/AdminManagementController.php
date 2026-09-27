@@ -173,6 +173,32 @@ final class AdminManagementController
         });
     }
 
+    public function createPaymentProvider(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'payment_provider_id' => (new FinanceManagementService())->createPaymentProvider($request->all()),
+            'message' => 'Payment provider created as inactive.',
+        ], 201);
+    }
+
+    public function updatePaymentProviderStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid payment provider ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new FinanceManagementService())->setPaymentProviderStatus((int) $id, $status);
+
+            return [
+                'payment_provider_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Payment provider status updated.',
+            ];
+        });
+    }
+
     public function createInvoice(Request $request): Response
     {
         return $this->execute(fn (): array => [
