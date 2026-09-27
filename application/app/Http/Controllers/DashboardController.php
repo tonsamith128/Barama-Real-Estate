@@ -59,6 +59,10 @@ final class DashboardController
             'title' => 'Real Estate Media',
             'description' => 'Inspect listing media attachment context, primary-image usage, storage metadata, and safe orphan cleanup across the platform.',
         ],
+        'pages' => [
+            'title' => 'Page Manager',
+            'description' => 'Create and maintain public content pages with controlled publishing and SEO metadata.',
+        ],
         'users' => [
             'title' => 'Users',
             'description' => 'Manage account status and administrator access without bypassing the canonical role system.',
@@ -87,7 +91,7 @@ final class DashboardController
     {
         $resource = strtolower(trim($resource));
 
-        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'viewing', 'user', 'audit'], true)
+        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'viewing', 'page', 'user', 'audit'], true)
             || !ctype_digit($id)
             || (int) $id < 1
         ) {
@@ -272,6 +276,13 @@ final class DashboardController
                 ['label' => 'PDF documents', 'value' => $marketplace['pdfs'] ?? 0, 'icon' => 'layers'],
                 ['label' => 'Orphaned assets', 'value' => $marketplace['orphaned'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/media?status=orphan'],
             ],
+            'pages' => [
+                ['label' => 'All pages', 'value' => $marketplace['total'] ?? 0, 'icon' => 'edit', 'href' => '/dashboard/pages'],
+                ['label' => 'Draft', 'value' => $marketplace['draft'] ?? 0, 'icon' => 'edit', 'href' => '/dashboard/pages?status=draft'],
+                ['label' => 'Published', 'value' => $marketplace['published'] ?? 0, 'icon' => 'globe', 'href' => '/dashboard/pages?status=published'],
+                ['label' => 'Archived', 'value' => $marketplace['archived'] ?? 0, 'icon' => 'layers', 'href' => '/dashboard/pages?status=archived'],
+                ['label' => 'Indexable', 'value' => $marketplace['indexable'] ?? 0, 'icon' => 'search'],
+            ],
             'inquiries' => [
                 ['label' => 'All inquiries', 'value' => $marketplace['total'] ?? 0, 'icon' => 'message', 'href' => '/dashboard/inquiries'],
                 ['label' => 'New', 'value' => $marketplace['new'] ?? 0, 'icon' => 'clock', 'href' => '/dashboard/inquiries?status=new'],
@@ -358,6 +369,11 @@ final class DashboardController
                 'title' => 'No media assets match this view',
                 'detail' => 'Real-estate listing images and documents will appear here with their attachment context.',
             ],
+            'pages' => [
+                'icon' => 'edit',
+                'title' => 'No CMS pages match this view',
+                'detail' => 'Create a page or adjust status, title, slug, or SEO search filters.',
+            ],
             'companies' => [
                 'icon' => 'building',
                 'title' => 'No companies match this view',
@@ -437,6 +453,9 @@ final class DashboardController
 
             ['heading' => 'Platform Data'],
             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
+
+            ['heading' => 'Content & Discovery'],
+            ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
 
             ['heading' => 'Users & Security'],
@@ -480,6 +499,7 @@ final class DashboardController
             'inquiry' => 'inquiries',
             'lead' => 'leads',
             'viewing' => 'viewings',
+            'page' => 'pages',
             'user' => 'users',
             'audit' => 'audit',
             default => 'overview',
@@ -598,6 +618,17 @@ final class DashboardController
                     'name_asc' => 'Filename A–Z',
                     'size_desc' => 'Largest files',
                     'size_asc' => 'Smallest files',
+                ],
+            ],
+            'pages' => [
+                'statuses' => ['draft', 'published', 'archived'],
+                'types' => ['index,follow', 'noindex,follow', 'noindex,nofollow'],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Title A–Z',
+                    'name_desc' => 'Title Z–A',
                 ],
             ],
             'users' => [
@@ -751,6 +782,15 @@ final class DashboardController
                 'mime_type' => 'Type',
                 'size_bytes' => 'Size',
                 'created_at' => 'Uploaded',
+            ],
+            'pages' => [
+                'title' => 'Page',
+                'slug' => 'URL slug',
+                'robots_directive' => 'Robots',
+                'status' => 'Status',
+                'published_at' => 'Published',
+                'updated_by_name' => 'Updated by',
+                'updated_at' => 'Updated',
             ],
             'users' => [
                 'name' => 'User',
