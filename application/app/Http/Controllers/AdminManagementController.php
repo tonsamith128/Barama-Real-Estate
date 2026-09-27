@@ -121,6 +121,40 @@ final class AdminManagementController
         });
     }
 
+    public function createInvoice(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'invoice_id' => (new FinanceManagementService())->createInvoice($request->all()),
+            'message' => 'Draft invoice created.',
+        ], 201);
+    }
+
+    public function updateInvoiceStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid invoice ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new FinanceManagementService())->setInvoiceStatus((int) $id, $status);
+
+            return [
+                'invoice_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Invoice status updated.',
+            ];
+        });
+    }
+
+    public function createTransaction(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'transaction_id' => (new FinanceManagementService())->createTransaction($request->all()),
+            'message' => 'Immutable transaction recorded.',
+        ], 201);
+    }
+
     public function updateSiteContent(Request $request): Response
     {
         return $this->execute(function () use ($request): array {
