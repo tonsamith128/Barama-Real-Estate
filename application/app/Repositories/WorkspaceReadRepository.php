@@ -1012,6 +1012,8 @@ final class WorkspaceReadRepository
             'media' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(m.mime_type LIKE "image/%"), 0) AS images,
                 COALESCE(SUM(m.mime_type = "application/pdf"), 0) AS pdfs,
+                COALESCE(SUM(m.mime_type LIKE "image/%"
+                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")), 0) AS missing_alt,
                 COALESCE(SUM(CASE WHEN NOT EXISTS (
                     SELECT 1 FROM media_attachments ma WHERE ma.media_asset_id = m.id
                 ) THEN 1 ELSE 0 END), 0) AS orphaned
@@ -1022,6 +1024,211 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "archived"), 0) AS archived,
                 COALESCE(SUM(status = "published" AND robots_directive = "index,follow"), 0) AS indexable
                 FROM cms_pages',
+            'seo' => 'SELECT COUNT(*) AS total,
+                COALESCE(SUM(issue_state = "attention"), 0) AS attention,
+                COALESCE(SUM(index_state = "indexable"), 0) AS indexable,
+                COALESCE(SUM(description_state = "missing"), 0) AS missing_description,
+                COALESCE(SUM(image_state = "missing"), 0) AS missing_social_image,
+                COALESCE(SUM(alt_state = "missing"), 0) AS missing_alt_text
+                FROM (
+                    SELECT "listing" AS entity_type,
+                           CASE WHEN TRIM(COALESCE(p.description, "")) = ""
+                                THEN "missing" ELSE "ready" END AS description_state,
+                           CASE WHEN EXISTS (
+                                SELECT 1 FROM media_attachments ma
+                                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                WHERE ma.entity_type = "listing"
+                                  AND ma.entity_id = l.id
+                                  AND m.mime_type LIKE "image/%"
+                           ) THEN "ready" ELSE "missing" END AS image_state,
+                           CASE
+                               WHEN NOT EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "listing"
+                                    AND ma.entity_id = l.id
+                                    AND m.mime_type LIKE "image/%"
+                               ) THEN "n/a"
+                               WHEN EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "listing"
+                                    AND ma.entity_id = l.id
+                                    AND m.mime_type LIKE "image/%"
+                                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                               ) THEN "missing"
+                               ELSE "ready"
+                           END AS alt_state,
+                           "indexable" AS index_state,
+                           CASE
+                               WHEN TRIM(COALESCE(p.description, "")) = ""
+                                 OR NOT EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "listing"
+                                      AND ma.entity_id = l.id
+                                      AND m.mime_type LIKE "image/%"
+                                 )
+                                 OR EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "listing"
+                                      AND ma.entity_id = l.id
+                                      AND m.mime_type LIKE "image/%"
+                                      AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                                 )
+                               THEN "attention" ELSE "ready"
+                           END AS issue_state
+                    FROM listings l
+                    INNER JOIN properties p ON p.id = l.property_id
+                    INNER JOIN companies c ON c.id = p.company_id
+                    WHERE l.status = "published"
+                      AND l.published_at IS NOT NULL
+                      AND l.deleted_at IS NULL
+                      AND (l.expires_at IS NULL OR l.expires_at > CURRENT_TIMESTAMP)
+                      AND p.status = "approved"
+                      AND p.deleted_at IS NULL
+                      AND c.status = "approved"
+                      AND c.published_at IS NOT NULL
+                      AND c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT "project",
+                           CASE WHEN TRIM(COALESCE(p.description, "")) = ""
+                                THEN "missing" ELSE "ready" END,
+                           CASE WHEN EXISTS (
+                                SELECT 1 FROM media_attachments ma
+                                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                WHERE ma.entity_type = "project"
+                                  AND ma.entity_id = p.id
+                                  AND m.mime_type LIKE "image/%"
+                           ) THEN "ready" ELSE "missing" END,
+                           CASE
+                               WHEN NOT EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "project"
+                                    AND ma.entity_id = p.id
+                                    AND m.mime_type LIKE "image/%"
+                               ) THEN "n/a"
+                               WHEN EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "project"
+                                    AND ma.entity_id = p.id
+                                    AND m.mime_type LIKE "image/%"
+                                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                               ) THEN "missing"
+                               ELSE "ready"
+                           END,
+                           "indexable",
+                           CASE
+                               WHEN TRIM(COALESCE(p.description, "")) = ""
+                                 OR NOT EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "project"
+                                      AND ma.entity_id = p.id
+                                      AND m.mime_type LIKE "image/%"
+                                 )
+                                 OR EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "project"
+                                      AND ma.entity_id = p.id
+                                      AND m.mime_type LIKE "image/%"
+                                      AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                                 )
+                               THEN "attention" ELSE "ready"
+                           END
+                    FROM projects p
+                    INNER JOIN companies c ON c.id = p.company_id
+                    WHERE p.status = "published"
+                      AND p.published_at IS NOT NULL
+                      AND p.deleted_at IS NULL
+                      AND c.status = "approved"
+                      AND c.published_at IS NOT NULL
+                      AND c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT "company",
+                           CASE WHEN TRIM(COALESCE(c.description, "")) = ""
+                                THEN "missing" ELSE "ready" END,
+                           CASE WHEN EXISTS (
+                                SELECT 1 FROM media_attachments ma
+                                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                WHERE ma.entity_type = "company"
+                                  AND ma.entity_id = c.id
+                                  AND m.mime_type LIKE "image/%"
+                           ) THEN "ready" ELSE "missing" END,
+                           CASE
+                               WHEN NOT EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "company"
+                                    AND ma.entity_id = c.id
+                                    AND m.mime_type LIKE "image/%"
+                               ) THEN "n/a"
+                               WHEN EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "company"
+                                    AND ma.entity_id = c.id
+                                    AND m.mime_type LIKE "image/%"
+                                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                               ) THEN "missing"
+                               ELSE "ready"
+                           END,
+                           "indexable",
+                           CASE
+                               WHEN TRIM(COALESCE(c.description, "")) = ""
+                                 OR NOT EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "company"
+                                      AND ma.entity_id = c.id
+                                      AND m.mime_type LIKE "image/%"
+                                 )
+                                 OR EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "company"
+                                      AND ma.entity_id = c.id
+                                      AND m.mime_type LIKE "image/%"
+                                      AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                                 )
+                               THEN "attention" ELSE "ready"
+                           END
+                    FROM companies c
+                    WHERE c.status = "approved"
+                      AND c.published_at IS NOT NULL
+                      AND c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT "page",
+                           CASE
+                               WHEN TRIM(COALESCE(p.seo_description, "")) <> ""
+                                 OR TRIM(COALESCE(p.excerpt, "")) <> ""
+                                 OR TRIM(COALESCE(p.content_text, "")) <> ""
+                               THEN "ready" ELSE "missing"
+                           END,
+                           "n/a",
+                           "n/a",
+                           CASE WHEN p.robots_directive = "index,follow"
+                                THEN "indexable" ELSE "noindex" END,
+                           CASE
+                               WHEN TRIM(COALESCE(p.seo_description, "")) = ""
+                                AND TRIM(COALESCE(p.excerpt, "")) = ""
+                                AND TRIM(COALESCE(p.content_text, "")) = ""
+                               THEN "attention" ELSE "ready"
+                           END
+                    FROM cms_pages p
+                    WHERE p.status = "published"
+                      AND p.published_at IS NOT NULL
+                ) seo_rows',
             'inquiries' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(status = "new"), 0) AS new,
                 COALESCE(SUM(status = "read"), 0) AS `read`,
@@ -1564,6 +1771,221 @@ final class WorkspaceReadRepository
                 'SELECT COUNT(*) FROM media_assets',
                 ['search' => $search],
             ],
+            'seo' => [
+                'SELECT *
+                 FROM (
+                    SELECT l.id, "listing" AS entity_type,
+                           p.title AS title,
+                           CONCAT("/properties/", l.slug) AS path,
+                           "indexable" AS index_state,
+                           CASE WHEN TRIM(COALESCE(p.description, "")) = ""
+                                THEN "missing" ELSE "ready" END AS description_state,
+                           CASE WHEN EXISTS (
+                                SELECT 1 FROM media_attachments ma
+                                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                WHERE ma.entity_type = "listing"
+                                  AND ma.entity_id = l.id
+                                  AND m.mime_type LIKE "image/%"
+                           ) THEN "ready" ELSE "missing" END AS image_state,
+                           CASE
+                               WHEN NOT EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "listing"
+                                    AND ma.entity_id = l.id
+                                    AND m.mime_type LIKE "image/%"
+                               ) THEN "n/a"
+                               WHEN EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "listing"
+                                    AND ma.entity_id = l.id
+                                    AND m.mime_type LIKE "image/%"
+                                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                               ) THEN "missing"
+                               ELSE "ready"
+                           END AS alt_state,
+                           CASE
+                               WHEN TRIM(COALESCE(p.description, "")) = ""
+                                 OR NOT EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "listing"
+                                      AND ma.entity_id = l.id
+                                      AND m.mime_type LIKE "image/%"
+                                 )
+                                 OR EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "listing"
+                                      AND ma.entity_id = l.id
+                                      AND m.mime_type LIKE "image/%"
+                                      AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                                 )
+                               THEN "attention" ELSE "ready"
+                           END AS issue_state,
+                           l.updated_at
+                    FROM listings l
+                    INNER JOIN properties p ON p.id = l.property_id
+                    INNER JOIN companies c ON c.id = p.company_id
+                    WHERE l.status = "published"
+                      AND l.published_at IS NOT NULL
+                      AND l.deleted_at IS NULL
+                      AND (l.expires_at IS NULL OR l.expires_at > CURRENT_TIMESTAMP)
+                      AND p.status = "approved"
+                      AND p.deleted_at IS NULL
+                      AND c.status = "approved"
+                      AND c.published_at IS NOT NULL
+                      AND c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT p.id, "project", p.name,
+                           CONCAT("/projects/", p.slug),
+                           "indexable",
+                           CASE WHEN TRIM(COALESCE(p.description, "")) = ""
+                                THEN "missing" ELSE "ready" END,
+                           CASE WHEN EXISTS (
+                                SELECT 1 FROM media_attachments ma
+                                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                WHERE ma.entity_type = "project"
+                                  AND ma.entity_id = p.id
+                                  AND m.mime_type LIKE "image/%"
+                           ) THEN "ready" ELSE "missing" END,
+                           CASE
+                               WHEN NOT EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "project"
+                                    AND ma.entity_id = p.id
+                                    AND m.mime_type LIKE "image/%"
+                               ) THEN "n/a"
+                               WHEN EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "project"
+                                    AND ma.entity_id = p.id
+                                    AND m.mime_type LIKE "image/%"
+                                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                               ) THEN "missing"
+                               ELSE "ready"
+                           END,
+                           CASE
+                               WHEN TRIM(COALESCE(p.description, "")) = ""
+                                 OR NOT EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "project"
+                                      AND ma.entity_id = p.id
+                                      AND m.mime_type LIKE "image/%"
+                                 )
+                                 OR EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "project"
+                                      AND ma.entity_id = p.id
+                                      AND m.mime_type LIKE "image/%"
+                                      AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                                 )
+                               THEN "attention" ELSE "ready"
+                           END,
+                           p.updated_at
+                    FROM projects p
+                    INNER JOIN companies c ON c.id = p.company_id
+                    WHERE p.status = "published"
+                      AND p.published_at IS NOT NULL
+                      AND p.deleted_at IS NULL
+                      AND c.status = "approved"
+                      AND c.published_at IS NOT NULL
+                      AND c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT c.id, "company", c.name,
+                           CONCAT("/company/", c.slug),
+                           "indexable",
+                           CASE WHEN TRIM(COALESCE(c.description, "")) = ""
+                                THEN "missing" ELSE "ready" END,
+                           CASE WHEN EXISTS (
+                                SELECT 1 FROM media_attachments ma
+                                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                WHERE ma.entity_type = "company"
+                                  AND ma.entity_id = c.id
+                                  AND m.mime_type LIKE "image/%"
+                           ) THEN "ready" ELSE "missing" END,
+                           CASE
+                               WHEN NOT EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "company"
+                                    AND ma.entity_id = c.id
+                                    AND m.mime_type LIKE "image/%"
+                               ) THEN "n/a"
+                               WHEN EXISTS (
+                                  SELECT 1 FROM media_attachments ma
+                                  INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                  WHERE ma.entity_type = "company"
+                                    AND ma.entity_id = c.id
+                                    AND m.mime_type LIKE "image/%"
+                                    AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                               ) THEN "missing"
+                               ELSE "ready"
+                           END,
+                           CASE
+                               WHEN TRIM(COALESCE(c.description, "")) = ""
+                                 OR NOT EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "company"
+                                      AND ma.entity_id = c.id
+                                      AND m.mime_type LIKE "image/%"
+                                 )
+                                 OR EXISTS (
+                                    SELECT 1 FROM media_attachments ma
+                                    INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                                    WHERE ma.entity_type = "company"
+                                      AND ma.entity_id = c.id
+                                      AND m.mime_type LIKE "image/%"
+                                      AND (m.alt_text IS NULL OR TRIM(m.alt_text) = "")
+                                 )
+                               THEN "attention" ELSE "ready"
+                           END,
+                           c.updated_at
+                    FROM companies c
+                    WHERE c.status = "approved"
+                      AND c.published_at IS NOT NULL
+                      AND c.deleted_at IS NULL
+
+                    UNION ALL
+
+                    SELECT p.id, "page", p.title,
+                           CONCAT("/pages/", p.slug),
+                           CASE WHEN p.robots_directive = "index,follow"
+                                THEN "indexable" ELSE "noindex" END,
+                           CASE
+                               WHEN TRIM(COALESCE(p.seo_description, "")) <> ""
+                                 OR TRIM(COALESCE(p.excerpt, "")) <> ""
+                                 OR TRIM(COALESCE(p.content_text, "")) <> ""
+                               THEN "ready" ELSE "missing"
+                           END,
+                           "n/a",
+                           "n/a",
+                           CASE
+                               WHEN TRIM(COALESCE(p.seo_description, "")) = ""
+                                AND TRIM(COALESCE(p.excerpt, "")) = ""
+                                AND TRIM(COALESCE(p.content_text, "")) = ""
+                               THEN "attention" ELSE "ready"
+                           END,
+                           p.updated_at
+                    FROM cms_pages p
+                    WHERE p.status = "published"
+                      AND p.published_at IS NOT NULL
+                 ) seo_rows
+                 WHERE CONCAT_WS(" ", title, path, entity_type) LIKE :search
+                 ORDER BY updated_at DESC',
+                'SELECT COUNT(*) FROM cms_pages',
+                ['search' => $search],
+            ],
             'pages' => [
                 'SELECT p.id, p.title, p.slug, p.status, p.robots_directive,
                         p.published_at, p.updated_at,
@@ -1910,6 +2332,15 @@ final class WorkspaceReadRepository
             ],
             'admin:pages' => [
                 'filters' => ['status' => 'status', 'type' => 'robots_directive'],
+                'sorts' => [
+                    'updated_desc' => 'updated_at DESC',
+                    'updated_asc' => 'updated_at ASC',
+                    'name_asc' => 'title ASC',
+                    'name_desc' => 'title DESC',
+                ],
+            ],
+            'admin:seo' => [
+                'filters' => ['status' => 'issue_state', 'type' => 'entity_type'],
                 'sorts' => [
                     'updated_desc' => 'updated_at DESC',
                     'updated_asc' => 'updated_at ASC',
