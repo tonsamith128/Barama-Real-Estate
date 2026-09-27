@@ -174,12 +174,18 @@ final class PaymentWebhookService
             );
         }
 
-        $payload = json_decode(
-            $payloadJson,
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        try {
+            $payload = json_decode(
+                $payloadJson,
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+        } catch (Throwable) {
+            throw new DomainException(
+                'Stored webhook payload cannot be decoded.'
+            );
+        }
 
         if (!is_array($payload)) {
             throw new DomainException('Stored webhook payload is invalid.');
