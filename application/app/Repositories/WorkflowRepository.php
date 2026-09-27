@@ -21,15 +21,31 @@ final class WorkflowRepository
                 ['id' => $id],
             ],
             'project' => [
-                'SELECT id, status, company_id
-                 FROM projects
-                 WHERE id = :id AND deleted_at IS NULL LIMIT 1',
+                'SELECT p.id, p.status, p.company_id,
+                        c.status AS company_status
+                 FROM projects p
+                 INNER JOIN companies c
+                    ON c.id = p.company_id
+                   AND c.deleted_at IS NULL
+                 WHERE p.id = :id
+                   AND p.deleted_at IS NULL
+                 LIMIT 1',
                 ['id' => $id],
             ],
             'property' => [
-                'SELECT id, status, company_id
-                 FROM properties
-                 WHERE id = :id AND deleted_at IS NULL LIMIT 1',
+                'SELECT p.id, p.status, p.company_id, p.project_id,
+                        c.status AS company_status,
+                        pr.status AS project_status
+                 FROM properties p
+                 INNER JOIN companies c
+                    ON c.id = p.company_id
+                   AND c.deleted_at IS NULL
+                 LEFT JOIN projects pr
+                    ON pr.id = p.project_id
+                   AND pr.deleted_at IS NULL
+                 WHERE p.id = :id
+                   AND p.deleted_at IS NULL
+                 LIMIT 1',
                 ['id' => $id],
             ],
             'listing' => [
