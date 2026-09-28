@@ -19,6 +19,7 @@ final class CompanyController
             'q' => mb_substr(trim((string) $request->input('q', '')), 0, 100),
             'type' => trim((string) $request->input('type', '')),
             'location' => trim((string) $request->input('location', '')),
+            'sort' => trim((string) $request->input('sort', 'verified')),
         ];
 
         $page = filter_var(
@@ -31,7 +32,8 @@ final class CompanyController
         $isFiltered = $currentPage > 1
             || (string) ($filters['q'] ?? '') !== ''
             || (string) ($filters['type'] ?? '') !== ''
-            || (string) ($filters['location'] ?? '') !== '';
+            || (string) ($filters['location'] ?? '') !== ''
+            || (string) ($filters['sort'] ?? 'verified') !== 'verified';
 
         return Response::html(View::render('company/index', [
             'pageTitle' => 'Real Estate Developers',

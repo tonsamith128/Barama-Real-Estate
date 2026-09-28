@@ -12536,3 +12536,76 @@ body:not(.auth-standalone-body) textarea {
         transform: none !important;
     }
 }
+
+
+/* BARAMA_COMPANY_DIRECTORY_AUDIT_V100 */
+.company-directory-results .inventory-card--company {
+    border-color: color-mix(in srgb, var(--barama-success) 14%, var(--barama-border));
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            color-mix(in srgb, var(--barama-success) 6%, transparent),
+            transparent 44%
+        ),
+        linear-gradient(
+            150deg,
+            color-mix(in srgb, var(--barama-surface) 96%, transparent),
+            color-mix(in srgb, var(--barama-primary) 2%, var(--barama-surface))
+        );
+}
+
+.company-directory-results .inventory-card--company:hover {
+    border-color: color-mix(in srgb, var(--barama-success) 30%, var(--barama-border));
+}
+
+.company-directory-results .inventory-card--company .inventory-card__footer-icon {
+    color: var(--barama-success);
+}
+
+.company-directory-results .inventory-card--company .inventory-card__footer {
+    justify-content: flex-start;
+}
+
+.company-directory-filter .discovery-filter__links {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 991.98px) {
+    .company-directory-filter.discovery-filter--compact .discovery-filter__primary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .company-directory-filter .discovery-filter__search {
+        grid-column: 1 / -1;
+    }
+
+    .company-directory-filter .discovery-filter__primary .btn {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .company-directory-results .marketplace-results__bar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .company-directory-results .filter-chips {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .company-directory-filter.discovery-filter--compact .discovery-filter__primary {
+        grid-template-columns: 1fr;
+    }
+
+    .company-directory-filter .discovery-filter__search,
+    .company-directory-filter .discovery-filter__primary .btn {
+        grid-column: auto;
+    }
+
+    .company-directory-filter .discovery-filter__links {
+        justify-content: flex-start;
+    }
+}
