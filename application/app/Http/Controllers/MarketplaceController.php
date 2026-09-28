@@ -184,6 +184,14 @@ final class MarketplaceController
                 . ' on Barama Real Estate.';
         }
 
+        $listings = $repository->projectListings((int) $project['id'], 6);
+        $relatedProjects = $repository->companyProjects((int) $project['company_id'], 4);
+        $relatedProjects = array_values(array_filter(
+            $relatedProjects,
+            static fn (array $item): bool => (int) ($item['id'] ?? 0) !== (int) $project['id']
+        ));
+        $relatedProjects = array_slice($relatedProjects, 0, 3);
+
         return Response::html(View::render('marketplace/project', [
             'pageTitle' => (string) $project['name'],
             'metaDescription' => mb_substr($metaDescription, 0, 280),
@@ -193,7 +201,8 @@ final class MarketplaceController
             'activeArea' => 'projects',
             'project' => $project,
             'gallery' => $gallery,
-            'listings' => $repository->projectListings((int) $project['id'], 6),
+            'listings' => $listings,
+            'relatedProjects' => $relatedProjects,
             'viewer' => auth_user(),
         ]));
     }
