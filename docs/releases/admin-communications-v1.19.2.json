@@ -190,6 +190,97 @@
     ]
   },
   "live_acceptance_only_files": [
+    "tools/communications-v1192-predeploy.php",
     "tools/communications-v1192-readonly.php"
-  ]
+  ],
+  "accepted_base_files": [
+    {
+      "path": "application/app/Http/Controllers/AccountController.php",
+      "present": true,
+      "git_blob_sha": "e656091a413b42b981ad84a6bc2aea43145f4c18"
+    },
+    {
+      "path": "application/app/Http/Controllers/AdminManagementController.php",
+      "present": true,
+      "git_blob_sha": "3fe836243b915f171803d9baa110365ecde4ebf1"
+    },
+    {
+      "path": "application/app/Http/Controllers/DashboardController.php",
+      "present": true,
+      "git_blob_sha": "88a101d9bf7e6791de51127c7c2a6485b3c3949a"
+    },
+    {
+      "path": "application/app/Repositories/AnnouncementRepository.php",
+      "present": false
+    },
+    {
+      "path": "application/app/Repositories/NotificationRepository.php",
+      "present": true,
+      "git_blob_sha": "a1a31a261cab179e591febd44f33f16420bd2d6f"
+    },
+    {
+      "path": "application/app/Services/AnnouncementDeliveryService.php",
+      "present": false
+    },
+    {
+      "path": "application/app/Services/AnnouncementManagementService.php",
+      "present": false
+    },
+    {
+      "path": "application/app/Services/EmailTemplateManagementService.php",
+      "present": true,
+      "git_blob_sha": "355b493b3c98eaaef30e07443ebebf163bcba9a0"
+    },
+    {
+      "path": "application/app/Services/NotificationService.php",
+      "present": true,
+      "git_blob_sha": "3644a7a733438ecbbee4a87084d77f76b256b00c"
+    },
+    {
+      "path": "application/database/migrations/0020_create_announcement_foundation.php",
+      "present": false
+    },
+    {
+      "path": "application/resources/views/account/index.php",
+      "present": true,
+      "git_blob_sha": "b16061fc7a2e74d939f61979b4faebcbfa0f4ea6"
+    },
+    {
+      "path": "application/resources/views/workspace/communications-announcements.php",
+      "present": false
+    },
+    {
+      "path": "application/resources/views/workspace/communications-email-templates.php",
+      "present": true,
+      "git_blob_sha": "e2610bca834c29fa02780b1d4f86c07d4fa73daa"
+    },
+    {
+      "path": "application/routes/web.php",
+      "present": true,
+      "git_blob_sha": "096916beba107f89bf34885a188b00dbeb74c0ee"
+    },
+    {
+      "path": "docs/NOTIFICATIONS.md",
+      "present": true,
+      "git_blob_sha": "94c60859afadd288511ee79a99099c93f679d864"
+    },
+    {
+      "path": "tools/notifications.php",
+      "present": true,
+      "git_blob_sha": "3f1ee2fb1778cb17650e4d34d8d3f3588bd6a8d6"
+    }
+  ],
+  "predeploy_database_contract": {
+    "required_applied_migrations": [
+      "0018_create_communication_permission.php",
+      "0019_create_email_template_foundation.php"
+    ],
+    "forbidden_applied_migrations": [
+      "0020_create_announcement_foundation.php"
+    ],
+    "tables_expected_absent": [
+      "communication_announcements",
+      "communication_announcement_deliveries"
+    ]
+  }
 }
