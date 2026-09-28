@@ -74,4 +74,42 @@ final class CompanyWriteRepository
 
         return $statement->fetchColumn() !== false;
     }
+
+    public function activeProjectCount(int $companyId): int
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT COUNT(*)
+             FROM projects
+             WHERE company_id = :company_id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['company_id' => $companyId]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function activePropertyCount(int $companyId): int
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT COUNT(*)
+             FROM properties
+             WHERE company_id = :company_id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['company_id' => $companyId]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function softDelete(int $companyId): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE companies
+             SET deleted_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['id' => $companyId]);
+    }
 }
