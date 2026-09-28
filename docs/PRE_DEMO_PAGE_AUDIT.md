@@ -28,7 +28,7 @@ The demo site must not be reinstalled until every mandatory surface below is acc
 | 0 | Shared public shell | Header / footer / mobile nav | CODE READY | Guest legal links repaired; Legal footer group added; mobile footer kept two-column. |
 | 1 | Homepage | `/` | CODE READY | Search-first structure preserved; hero scale reduced; marketplace pulse softened; featured cards refined with transparent premium surfaces. |
 | 2 | Property marketplace | `/properties` | CODE READY | Filter state/counts repaired; search accessibility fixed; filtered SEO guard completed; result cards refined. |
-| 3 | Property detail | `/properties/{slug}` | TODO | Featured media, gallery/video/YouTube, pricing, publisher contact, related properties. |
+| 3 | Property detail | `/properties/{slug}` | CODE READY | Price-on-request fallback fixed; summary completed with bedrooms/bathrooms/parking/furnishing; contain-fit image/video/YouTube media and 2–6 related-card density verified. |
 | 4 | Projects marketplace | `/projects` | TODO | Search, filters, project cards, empty states. |
 | 5 | Project detail | `/projects/{slug}` | TODO | Featured media, business information, publisher contact, related projects. |
 | 6 | Companies directory | `/company` | TODO | Search/filter, company cards, responsive directory. |
