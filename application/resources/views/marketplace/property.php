@@ -1,13 +1,15 @@
 <?php
 declare(strict_types=1);
 
-$price = barama_detail_price(
-    (string) ($listing['currency'] ?? 'USD'),
-    (float) ($listing['price'] ?? 0),
-    ($listing['transaction_type'] ?? '') === 'rent'
-        ? (string) ($listing['pricing_period'] ?? '')
-        : null
-);
+$price = ($listing['price'] ?? null) !== null
+    ? barama_detail_price(
+        (string) ($listing['currency'] ?? 'USD'),
+        (float) $listing['price'],
+        ($listing['transaction_type'] ?? '') === 'rent'
+            ? (string) ($listing['pricing_period'] ?? '')
+            : null
+    )
+    : 'Price on request';
 
 $relatedListings = is_array($relatedListings ?? null) ? $relatedListings : [];
 $locationLabel = (string) ($listing['location_name'] ?? $listing['address_line'] ?? 'Location available on request');
@@ -47,6 +49,18 @@ $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($lis
                     <div><dt><?= app_icon('map') ?><span>Location</span></dt><dd><?= e($locationLabel) ?></dd></div>
                     <div><dt><?= app_icon('home') ?><span>Property type</span></dt><dd><?= e($typeLabel) ?></dd></div>
                     <div><dt><?= app_icon('layers') ?><span>Floor area</span></dt><dd><?= e($areaLabel) ?></dd></div>
+                    <?php if (($listing['bedrooms'] ?? null) !== null): ?>
+                        <div><dt><?= app_icon('home') ?><span>Bedrooms</span></dt><dd><?= e(rtrim(rtrim((string) $listing['bedrooms'], '0'), '.')) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if (($listing['bathrooms'] ?? null) !== null): ?>
+                        <div><dt><?= app_icon('grid') ?><span>Bathrooms</span></dt><dd><?= e(rtrim(rtrim((string) $listing['bathrooms'], '0'), '.')) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if (($listing['parking_spaces'] ?? null) !== null): ?>
+                        <div><dt><?= app_icon('key') ?><span>Parking</span></dt><dd><?= e((string) $listing['parking_spaces']) ?> space<?= (int) $listing['parking_spaces'] === 1 ? '' : 's' ?></dd></div>
+                    <?php endif; ?>
+                    <?php if (!empty($listing['furnishing_status'])): ?>
+                        <div><dt><?= app_icon('layers') ?><span>Furnishing</span></dt><dd><?= e($furnishingLabel) ?></dd></div>
+                    <?php endif; ?>
                     <?php if (!empty($listing['year_built'])): ?>
                         <div><dt><?= app_icon('calendar') ?><span>Year built</span></dt><dd><?= e((string) $listing['year_built']) ?></dd></div>
                     <?php endif; ?>

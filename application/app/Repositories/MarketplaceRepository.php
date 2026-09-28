@@ -596,6 +596,15 @@ final class MarketplaceRepository
                              )
                          )
                          OR (
+                             ma.entity_type = "site"
+                             AND ma.entity_id = 1
+                             AND ma.collection IN (
+                                 "homepage_hero_image",
+                                 "homepage_hero_slider",
+                                 "homepage_hero_video"
+                             )
+                         )
+                         OR (
                              ma.entity_type = "listing"
                              AND EXISTS (
                                  SELECT 1
