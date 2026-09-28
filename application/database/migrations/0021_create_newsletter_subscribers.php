@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
     email VARCHAR(191) NOT NULL,
     status ENUM("active", "unsubscribed") NOT NULL DEFAULT "active",
     source VARCHAR(60) NOT NULL DEFAULT "homepage",
-    ip_hash CHAR(64) NULL,
     subscribed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     unsubscribed_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
