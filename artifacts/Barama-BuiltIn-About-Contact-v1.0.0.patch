@@ -1,0 +1,3649 @@
+diff --git a/application/app/Http/Controllers/BuiltInPageAdminController.php b/application/app/Http/Controllers/BuiltInPageAdminController.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Http/Controllers/BuiltInPageAdminController.php
+@@ -0,0 +1,101 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Http\Controllers;
++
++use Barama\Core\Request;
++use Barama\Core\Response;
++use Barama\Services\BuiltInPageManagementService;
++use Barama\Services\ContactMessageService;
++use DomainException;
++use InvalidArgumentException;
++use Throwable;
++
++final class BuiltInPageAdminController
++{
++    public function update(Request $request, string $page, string $section): Response
++    {
++        return $this->execute(function () use ($request, $page, $section): array {
++            (new BuiltInPageManagementService())->updateSection(
++                $page,
++                $section,
++                $request->all()
++            );
++
++            return [
++                'page' => $page,
++                'section' => $section,
++                'message' => ucfirst($page) . ' configuration updated.',
++            ];
++        });
++    }
++
++    public function toggle(Request $request, string $page, string $section): Response
++    {
++        return $this->execute(function () use ($request, $page, $section): array {
++            $enabled = in_array(
++                strtolower(trim((string) $request->input('enabled', '0'))),
++                ['1', 'true', 'on', 'yes'],
++                true
++            );
++
++            (new BuiltInPageManagementService())->toggleSection(
++                $page,
++                $section,
++                $enabled
++            );
++
++            return [
++                'page' => $page,
++                'section' => $section,
++                'enabled' => $enabled,
++                'message' => ucfirst($page) . ' section visibility updated.',
++            ];
++        });
++    }
++
++    public function contactMessageStatus(Request $request, string $id): Response
++    {
++        return $this->execute(function () use ($request, $id): array {
++            if (!ctype_digit($id) || (int) $id < 1) {
++                throw new InvalidArgumentException('A valid contact message ID is required.');
++            }
++
++            $status = trim((string) $request->input('status', ''));
++            (new ContactMessageService())->setStatus((int) $id, $status);
++
++            return [
++                'contact_message_id' => (int) $id,
++                'status' => $status,
++                'message' => 'Contact message status updated.',
++            ];
++        });
++    }
++
++    /** @param callable():array<string,mixed> $operation */
++    private function execute(callable $operation, int $successStatus = 200): Response
++    {
++        try {
++            return Response::json([
++                'ok' => true,
++                'data' => $operation(),
++            ], $successStatus);
++        } catch (InvalidArgumentException $exception) {
++            return Response::json([
++                'ok' => false,
++                'message' => $exception->getMessage(),
++            ], 422);
++        } catch (DomainException $exception) {
++            return Response::json([
++                'ok' => false,
++                'message' => $exception->getMessage(),
++            ], 403);
++        } catch (Throwable) {
++            return Response::json([
++                'ok' => false,
++                'message' => 'The request could not be completed.',
++            ], 500);
++        }
++    }
++}
+diff --git a/application/app/Http/Controllers/BuiltInPageController.php b/application/app/Http/Controllers/BuiltInPageController.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Http/Controllers/BuiltInPageController.php
+@@ -0,0 +1,55 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Http\Controllers;
++
++use Barama\Core\Request;
++use Barama\Core\Response;
++use Barama\Core\View;
++use Barama\Repositories\SiteContentRepository;
++
++final class BuiltInPageController
++{
++    public function about(Request $request): Response
++    {
++        return $this->render('about');
++    }
++
++    public function contact(Request $request): Response
++    {
++        return $this->render('contact');
++    }
++
++    private function render(string $page): Response
++    {
++        $config = (new SiteContentRepository())->get();
++        $pageConfig = is_array($config[$page] ?? null) ? $config[$page] : [];
++
++        if (empty($pageConfig['enabled'])) {
++            return Response::html(
++                View::render('errors/404', ['pageTitle' => 'Page not found']),
++                404
++            );
++        }
++
++        $seo = is_array($pageConfig['seo'] ?? null) ? $pageConfig['seo'] : [];
++        $hero = is_array($pageConfig['hero'] ?? null) ? $pageConfig['hero'] : [];
++        $fallbackTitle = $page === 'about' ? 'About Us' : 'Contact Us';
++        $view = $page === 'about' ? 'public/about' : 'public/contact';
++
++        return Response::html(View::render($view, [
++            'pageTitle' => trim((string) ($seo['title'] ?? '')) !== ''
++                ? (string) $seo['title']
++                : (trim((string) ($hero['title'] ?? '')) !== '' ? (string) $hero['title'] : $fallbackTitle),
++            'metaDescription' => trim((string) ($seo['description'] ?? '')) !== ''
++                ? (string) $seo['description']
++                : (string) ($hero['description'] ?? ''),
++            'canonicalUrl' => url('/' . $page),
++            'metaRobots' => (string) ($seo['robots'] ?? 'index,follow'),
++            'metaImage' => (string) ($hero['image_url'] ?? ''),
++            'activeArea' => $page,
++            $page . 'Page' => $pageConfig,
++        ]));
++    }
++}
+diff --git a/application/app/Http/Controllers/CmsController.php b/application/app/Http/Controllers/CmsController.php
+--- a/application/app/Http/Controllers/CmsController.php
++++ b/application/app/Http/Controllers/CmsController.php
+@@ -13,6 +13,16 @@ final class CmsController
+ {
+     public function show(Request $request, string $slug): Response
+     {
++        $normalizedSlug = strtolower(trim($slug));
++
++        if (in_array($normalizedSlug, ['about', 'about-us'], true)) {
++            return Response::redirect(url('/about'), 301);
++        }
++
++        if (in_array($normalizedSlug, ['contact', 'contact-us'], true)) {
++            return Response::redirect(url('/contact'), 301);
++        }
++
+         $page = (new PageRepository())->publishedBySlug($slug);
+ 
+         if ($page === null) {
+diff --git a/application/app/Http/Controllers/ContactMessageController.php b/application/app/Http/Controllers/ContactMessageController.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Http/Controllers/ContactMessageController.php
+@@ -0,0 +1,58 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Http\Controllers;
++
++use Barama\Core\Request;
++use Barama\Core\Response;
++use Barama\Repositories\SiteContentRepository;
++use Barama\Services\ContactMessageService;
++use DomainException;
++use InvalidArgumentException;
++
++final class ContactMessageController
++{
++    public function store(Request $request): Response
++    {
++        try {
++            $user = auth_user();
++            $id = (new ContactMessageService())->capture(
++                $request->all(),
++                $request->ip(),
++                (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
++                $user !== null ? (int) $user['id'] : null
++            );
++
++            $config = (new SiteContentRepository())->get();
++            $form = is_array($config['contact']['sections']['form'] ?? null)
++                ? $config['contact']['sections']['form']
++                : [];
++            $success = trim((string) ($form['success_message'] ?? ''));
++
++            return Response::json([
++                'ok' => true,
++                'data' => [
++                    'contact_message_id' => $id,
++                    'message' => $success !== ''
++                        ? $success
++                        : 'Thank you. Your message has been received.',
++                ],
++            ], 201);
++        } catch (InvalidArgumentException $exception) {
++            return Response::json([
++                'ok' => false,
++                'message' => $exception->getMessage(),
++            ], 422);
++        } catch (DomainException $exception) {
++            $status = str_contains(strtolower($exception->getMessage()), 'too many')
++                ? 429
++                : 403;
++
++            return Response::json([
++                'ok' => false,
++                'message' => $exception->getMessage(),
++            ], $status);
++        }
++    }
++}
+diff --git a/application/app/Http/Controllers/DashboardController.php b/application/app/Http/Controllers/DashboardController.php
+--- a/application/app/Http/Controllers/DashboardController.php
++++ b/application/app/Http/Controllers/DashboardController.php
+@@ -9,6 +9,7 @@
+ use Barama\Core\View;
+ use Barama\Domain\RealEstate\DomainRules;
+ use Barama\Repositories\AppearanceRepository;
++use Barama\Repositories\ContactMessageRepository;
+ use Barama\Repositories\EmailTemplateRepository;
+ use Barama\Repositories\FinanceRepository;
+ use Barama\Repositories\NotificationRepository;
+@@ -67,7 +68,7 @@ final class DashboardController
+         ],
+         'pages' => [
+             'title' => 'Page Manager',
+-            'description' => 'Create and maintain public content pages with controlled publishing and SEO metadata.',
++            'description' => 'Create and maintain standard public CMS pages. About Us and Contact Us are managed separately as built-in structured pages.',
+         ],
+         'seo' => [
+             'title' => 'SEO Center',
+@@ -130,6 +131,47 @@ public function homepage(Request $request): Response
+         ]));
+     }
+ 
++    public function about(Request $request): Response
++    {
++        $config = (new SiteContentRepository())->get();
++
++        return Response::html(View::render('workspace/builtin-page', [
++            'pageTitle' => 'About · Admin',
++            'activeArea' => 'dashboard',
++            'workspaceType' => 'admin',
++            'workspaceLabel' => 'Admin Control Center',
++            'workspaceNavigation' => $this->navigation(),
++            'activeSection' => 'about',
++            'builtInPageType' => 'about',
++            'builtInPage' => is_array($config['about'] ?? null)
++                ? $config['about']
++                : SiteContentRepository::defaults()['about'],
++            'contactMessages' => [],
++            'contactMessageSummary' => [],
++        ]));
++    }
++
++    public function contact(Request $request): Response
++    {
++        $config = (new SiteContentRepository())->get();
++        $messages = new ContactMessageRepository();
++
++        return Response::html(View::render('workspace/builtin-page', [
++            'pageTitle' => 'Contact · Admin',
++            'activeArea' => 'dashboard',
++            'workspaceType' => 'admin',
++            'workspaceLabel' => 'Admin Control Center',
++            'workspaceNavigation' => $this->navigation(),
++            'activeSection' => 'contact',
++            'builtInPageType' => 'contact',
++            'builtInPage' => is_array($config['contact'] ?? null)
++                ? $config['contact']
++                : SiteContentRepository::defaults()['contact'],
++            'contactMessages' => $messages->recent(30),
++            'contactMessageSummary' => $messages->summary(),
++        ]));
++    }
++
+     public function navigationManager(Request $request): Response
+     {
+         $config = (new SiteContentRepository())->get();
+@@ -732,8 +774,8 @@ private function navigation(): array
+             ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
+             ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
+             ['label' => 'Navigation', 'path' => '/dashboard/navigation', 'icon' => 'menu'],
+-            ['label' => 'About', 'path' => '/dashboard/pages?q=About', 'icon' => 'users'],
+-            ['label' => 'Contact', 'path' => '/dashboard/pages?q=Contact', 'icon' => 'mail'],
++            ['label' => 'About', 'path' => '/dashboard/about', 'icon' => 'users'],
++            ['label' => 'Contact', 'path' => '/dashboard/contact', 'icon' => 'mail'],
+             ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
+             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
+             ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],
+diff --git a/application/app/Http/Controllers/SeoController.php b/application/app/Http/Controllers/SeoController.php
+--- a/application/app/Http/Controllers/SeoController.php
++++ b/application/app/Http/Controllers/SeoController.php
+@@ -7,6 +7,7 @@
+ use Barama\Core\Request;
+ use Barama\Core\Response;
+ use Barama\Repositories\SeoRepository;
++use Barama\Repositories\SiteContentRepository;
+ use DateTimeImmutable;
+ use Throwable;
+ 
+@@ -48,6 +49,25 @@ public function sitemap(Request $request): Response
+             ['path' => '/company', 'last_modified' => null],
+         ];
+ 
++        $siteContent = (new SiteContentRepository())->get();
++
++        foreach (['about', 'contact'] as $builtInPage) {
++            $config = is_array($siteContent[$builtInPage] ?? null)
++                ? $siteContent[$builtInPage]
++                : [];
++            $seo = is_array($config['seo'] ?? null) ? $config['seo'] : [];
++
++            if (
++                !empty($config['enabled'])
++                && (string) ($seo['robots'] ?? 'index,follow') === 'index,follow'
++            ) {
++                $entries[] = [
++                    'path' => '/' . $builtInPage,
++                    'last_modified' => null,
++                ];
++            }
++        }
++
+         foreach ((new SeoRepository())->sitemapEntries() as $entry) {
+             $entries[] = $entry;
+         }
+diff --git a/application/app/Repositories/ContactMessageRepository.php b/application/app/Repositories/ContactMessageRepository.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Repositories/ContactMessageRepository.php
+@@ -0,0 +1,117 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Repositories;
++
++use Barama\Core\Database;
++use Barama\Support\IdGenerator;
++use PDO;
++
++final class ContactMessageRepository
++{
++    /** @param array<string,mixed> $data */
++    public function create(array $data): int
++    {
++        $statement = Database::connection()->prepare(
++            'INSERT INTO contact_messages
++                (uuid, user_id, contact_name, contact_email, contact_phone,
++                 subject, message, source, status, ip_hash, user_agent_hash)
++             VALUES
++                (:uuid, :user_id, :contact_name, :contact_email, :contact_phone,
++                 :subject, :message, "contact_page", "new", :ip_hash, :user_agent_hash)'
++        );
++        $statement->execute([
++            'uuid' => IdGenerator::uuid(),
++            'user_id' => $data['user_id'],
++            'contact_name' => $data['contact_name'],
++            'contact_email' => $data['contact_email'],
++            'contact_phone' => $data['contact_phone'],
++            'subject' => $data['subject'],
++            'message' => $data['message'],
++            'ip_hash' => $data['ip_hash'],
++            'user_agent_hash' => $data['user_agent_hash'],
++        ]);
++
++        return (int) Database::connection()->lastInsertId();
++    }
++
++    /** @return array<string,int> */
++    public function summary(): array
++    {
++        $row = Database::connection()->query(
++            'SELECT COUNT(*) AS total,
++                    COALESCE(SUM(status = "new"), 0) AS new_count,
++                    COALESCE(SUM(status = "read"), 0) AS read_count,
++                    COALESCE(SUM(status = "resolved"), 0) AS resolved_count,
++                    COALESCE(SUM(status = "spam"), 0) AS spam_count
++             FROM contact_messages'
++        )->fetch(PDO::FETCH_ASSOC) ?: [];
++
++        return [
++            'total' => (int) ($row['total'] ?? 0),
++            'new' => (int) ($row['new_count'] ?? 0),
++            'read' => (int) ($row['read_count'] ?? 0),
++            'resolved' => (int) ($row['resolved_count'] ?? 0),
++            'spam' => (int) ($row['spam_count'] ?? 0),
++        ];
++    }
++
++    /** @return array<int,array<string,mixed>> */
++    public function recent(int $limit = 30): array
++    {
++        $limit = max(1, min(100, $limit));
++        $statement = Database::connection()->query(
++            'SELECT m.id, m.uuid, m.user_id, m.contact_name, m.contact_email,
++                    m.contact_phone, m.subject, m.message, m.status,
++                    m.created_at, m.updated_at, m.resolved_at,
++                    COALESCE(handler.name, "") AS handled_by_name
++             FROM contact_messages m
++             LEFT JOIN users handler ON handler.id = m.handled_by_user_id
++             ORDER BY
++                CASE m.status
++                    WHEN "new" THEN 0
++                    WHEN "read" THEN 1
++                    WHEN "resolved" THEN 2
++                    ELSE 3
++                END,
++                m.created_at DESC
++             LIMIT ' . $limit
++        );
++
++        return $statement->fetchAll(PDO::FETCH_ASSOC);
++    }
++
++    /** @return array<string,mixed>|null */
++    public function find(int $id): ?array
++    {
++        $statement = Database::connection()->prepare(
++            'SELECT * FROM contact_messages WHERE id = :id LIMIT 1'
++        );
++        $statement->execute(['id' => $id]);
++        $row = $statement->fetch(PDO::FETCH_ASSOC);
++
++        return is_array($row) ? $row : null;
++    }
++
++    public function setStatus(int $id, string $status, int $actorUserId): void
++    {
++        $statement = Database::connection()->prepare(
++            'UPDATE contact_messages
++             SET status = :status,
++                 handled_by_user_id = :handled_by_user_id,
++                 resolved_at = CASE
++                    WHEN :resolved_status = "resolved" THEN COALESCE(resolved_at, CURRENT_TIMESTAMP)
++                    ELSE NULL
++                 END,
++                 updated_at = CURRENT_TIMESTAMP
++             WHERE id = :id'
++        );
++        $statement->execute([
++            'status' => $status,
++            'handled_by_user_id' => $actorUserId,
++            'resolved_status' => $status,
++            'id' => $id,
++        ]);
++    }
++}
+diff --git a/application/app/Repositories/SeoRepository.php b/application/app/Repositories/SeoRepository.php
+--- a/application/app/Repositories/SeoRepository.php
++++ b/application/app/Repositories/SeoRepository.php
+@@ -57,7 +57,8 @@ public function sitemapEntries(): array
+                           FROM cms_pages p
+                           WHERE p.status = "published"
+                             AND p.published_at IS NOT NULL
+-                            AND p.robots_directive = "index,follow"',
++                            AND p.robots_directive = "index,follow"
++                            AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")',
+             ],
+         ];
+ 
+diff --git a/application/app/Repositories/SiteContentRepository.php b/application/app/Repositories/SiteContentRepository.php
+--- a/application/app/Repositories/SiteContentRepository.php
++++ b/application/app/Repositories/SiteContentRepository.php
+@@ -67,6 +67,24 @@ public function get(): array
+             $homepage['section_order'] = $defaults['homepage']['section_order'];
+         }
+ 
++        $rawAbout = is_array($decoded['about'] ?? null)
++            ? $decoded['about']
++            : [];
++        $about = array_replace_recursive($defaults['about'], $rawAbout);
++
++        if (!is_array($about['section_order'] ?? null)) {
++            $about['section_order'] = $defaults['about']['section_order'];
++        }
++
++        $rawContact = is_array($decoded['contact'] ?? null)
++            ? $decoded['contact']
++            : [];
++        $contact = array_replace_recursive($defaults['contact'], $rawContact);
++
++        if (!is_array($contact['section_order'] ?? null)) {
++            $contact['section_order'] = $defaults['contact']['section_order'];
++        }
++
+         $navigationInput = is_array($decoded['navigation'] ?? null)
+             ? array_values($decoded['navigation'])
+             : $defaults['navigation'];
+@@ -89,17 +107,31 @@ public function get(): array
+                 );
+             }
+ 
++            $activeArea = trim((string) ($item['active_area'] ?? ''));
++
++            if ($activeArea === '') {
++                $route = (string) parse_url($path, PHP_URL_PATH);
++                $activeArea = match ($route) {
++                    '/' => 'home',
++                    '/about' => 'about',
++                    '/contact' => 'contact',
++                    default => '',
++                };
++            }
++
+             $navigation[] = [
+                 'id' => $id,
+                 'label' => $label,
+                 'path' => $path,
+-                'active_area' => trim((string) ($item['active_area'] ?? '')),
++                'active_area' => $activeArea,
+                 'enabled' => !empty($item['enabled']),
+             ];
+         }
+ 
+         self::$cache = [
+             'homepage' => $homepage,
++            'about' => $about,
++            'contact' => $contact,
+             'navigation' => $navigation,
+         ];
+ 
+@@ -347,11 +379,198 @@ public static function defaults(): array
+                     ],
+                 ],
+             ],
++            'about' => [
++                'enabled' => true,
++                'seo' => [
++                    'title' => 'About Us · Barama Real Estate',
++                    'description' => 'Learn how Barama Real Estate helps people discover approved property, projects, and real-estate companies in one structured marketplace.',
++                    'robots' => 'index,follow',
++                ],
++                'hero' => [
++                    'enabled' => true,
++                    'eyebrow' => 'About Barama',
++                    'title' => 'A clearer way to discover real estate',
++                    'description' => 'Barama Real Estate brings approved marketplace inventory, development projects, and company profiles together so property discovery feels structured, transparent, and easier to navigate.',
++                    'image_url' => '',
++                ],
++                'section_order' => [
++                    'story',
++                    'mission_vision',
++                    'values',
++                    'stats',
++                    'team',
++                    'cta',
++                ],
++                'sections' => [
++                    'story' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Our story',
++                        'title' => 'Built around useful property information',
++                        'body' => 'Barama Real Estate is designed as a focused marketplace where visitors can explore approved properties, projects, and real-estate companies without unnecessary complexity. The platform connects public discovery with structured company-managed inventory and direct inquiries.',
++                        'image_url' => '',
++                    ],
++                    'mission_vision' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Purpose',
++                        'title' => 'What guides the marketplace',
++                        'mission_title' => 'Our mission',
++                        'mission_text' => 'Make real-estate discovery easier to understand by presenting approved inventory, clear context, and direct ways to connect with responsible companies.',
++                        'vision_title' => 'Our vision',
++                        'vision_text' => 'Create a dependable digital marketplace where property information is organized, accessible, and useful for customers and real-estate professionals.',
++                    ],
++                    'values' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Our values',
++                        'title' => 'Principles behind the platform',
++                        'items' => [
++                            ['title' => 'Clarity', 'description' => 'Present property and company information in a clean, understandable structure.'],
++                            ['title' => 'Trust', 'description' => 'Keep publication tied to marketplace review and visible ownership context.'],
++                            ['title' => 'Usefulness', 'description' => 'Prioritize information and tools that help people continue their property research.'],
++                            ['title' => 'Connection', 'description' => 'Make it easy for visitors to contact the responsible company when they are ready.'],
++                        ],
++                    ],
++                    'stats' => [
++                        'enabled' => false,
++                        'eyebrow' => 'Marketplace at a glance',
++                        'title' => 'A focused platform for real-estate discovery',
++                        'items' => [
++                            ['value' => '1', 'label' => 'Unified marketplace'],
++                            ['value' => '100%', 'label' => 'Approval-first publishing'],
++                            ['value' => '24/7', 'label' => 'Self-service discovery'],
++                            ['value' => 'Direct', 'label' => 'Company inquiries'],
++                        ],
++                    ],
++                    'team' => [
++                        'enabled' => false,
++                        'eyebrow' => 'Our team',
++                        'title' => 'People behind Barama',
++                        'items' => [
++                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
++                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
++                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
++                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
++                        ],
++                    ],
++                    'cta' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Start exploring',
++                        'title' => 'Find the right property context',
++                        'description' => 'Browse approved marketplace inventory, explore developments, or connect with a real-estate company.',
++                        'primary_label' => 'Browse properties',
++                        'primary_url' => '/properties',
++                        'secondary_label' => 'Contact us',
++                        'secondary_url' => '/contact',
++                    ],
++                ],
++            ],
++            'contact' => [
++                'enabled' => true,
++                'seo' => [
++                    'title' => 'Contact Us · Barama Real Estate',
++                    'description' => 'Contact Barama Real Estate for marketplace support, general questions, partnerships, and platform assistance.',
++                    'robots' => 'index,follow',
++                ],
++                'hero' => [
++                    'enabled' => true,
++                    'eyebrow' => 'Contact Barama',
++                    'title' => 'How can we help?',
++                    'description' => 'Send a message for marketplace support, general questions, partnership inquiries, or help using Barama Real Estate.',
++                    'image_url' => '',
++                ],
++                'section_order' => [
++                    'channels',
++                    'office',
++                    'hours',
++                    'form',
++                    'faq',
++                    'socials',
++                ],
++                'sections' => [
++                    'channels' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Contact options',
++                        'title' => 'Reach the Barama team',
++                        'description' => 'Choose the contact option that works best for you.',
++                        'phone' => '',
++                        'email' => '',
++                        'telegram_url' => '',
++                        'whatsapp_url' => '',
++                    ],
++                    'office' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Office',
++                        'title' => 'Visit or locate us',
++                        'address' => '',
++                        'location_note' => '',
++                        'map_url' => '',
++                        'map_label' => 'Open map',
++                    ],
++                    'hours' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Business hours',
++                        'title' => 'When we are available',
++                        'timezone' => 'Asia/Phnom_Penh',
++                        'items' => [
++                            ['day' => 'Monday', 'hours' => '08:30 – 17:30'],
++                            ['day' => 'Tuesday', 'hours' => '08:30 – 17:30'],
++                            ['day' => 'Wednesday', 'hours' => '08:30 – 17:30'],
++                            ['day' => 'Thursday', 'hours' => '08:30 – 17:30'],
++                            ['day' => 'Friday', 'hours' => '08:30 – 17:30'],
++                            ['day' => 'Saturday', 'hours' => '09:00 – 12:00'],
++                            ['day' => 'Sunday', 'hours' => 'Closed'],
++                        ],
++                    ],
++                    'form' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Send a message',
++                        'title' => 'Tell us what you need',
++                        'description' => 'Use this form for general support, partnership questions, or platform assistance. Property-specific questions should be sent from the relevant listing, project, or company page.',
++                        'button_label' => 'Send message',
++                        'success_message' => 'Thank you. Your message has been received and is now in our support inbox.',
++                        'destination_email' => '',
++                        'require_phone' => false,
++                        'consent_text' => 'I agree that the information I submit may be used to respond to this request.',
++                        'subjects' => [
++                            'General question',
++                            'Marketplace support',
++                            'Partnership inquiry',
++                            'Company onboarding',
++                            'Technical issue',
++                        ],
++                    ],
++                    'faq' => [
++                        'enabled' => true,
++                        'eyebrow' => 'Common questions',
++                        'title' => 'Before you send a message',
++                        'items' => [
++                            ['question' => 'How do I ask about a property?', 'answer' => 'Open the published property, project, or company page and use its direct inquiry option so your message reaches the responsible company with the correct context.'],
++                            ['question' => 'Can a company publish directly?', 'answer' => 'Marketplace records follow the configured review workflow before public publication.'],
++                            ['question' => 'Where should I report a technical issue?', 'answer' => 'Choose Technical issue in the contact form and include the page or action that caused the problem.'],
++                            ['question' => 'Can I discuss a partnership?', 'answer' => 'Yes. Choose Partnership inquiry and provide enough context for the Barama team to review your request.'],
++                            ['question' => 'When will I receive a reply?', 'answer' => 'Response times depend on the subject and configured business hours. Your message is stored in the administration inbox for follow-up.'],
++                        ],
++                    ],
++                    'socials' => [
++                        'enabled' => false,
++                        'eyebrow' => 'Follow Barama',
++                        'title' => 'Official social channels',
++                        'description' => 'Add only official Barama social profiles.',
++                        'facebook_url' => '',
++                        'instagram_url' => '',
++                        'linkedin_url' => '',
++                        'youtube_url' => '',
++                        'telegram_url' => '',
++                        'tiktok_url' => '',
++                    ],
++                ],
++            ],
+             'navigation' => [
+                 ['id' => 'home', 'label' => 'Home', 'path' => '/', 'active_area' => 'home', 'enabled' => true],
+                 ['id' => 'properties', 'label' => 'Properties', 'path' => '/properties', 'active_area' => 'properties', 'enabled' => true],
+                 ['id' => 'projects', 'label' => 'Projects', 'path' => '/projects', 'active_area' => 'projects', 'enabled' => true],
+                 ['id' => 'companies', 'label' => 'Companies', 'path' => '/company', 'active_area' => 'company', 'enabled' => true],
++                ['id' => 'about', 'label' => 'About', 'path' => '/about', 'active_area' => 'about', 'enabled' => true],
++                ['id' => 'contact', 'label' => 'Contact', 'path' => '/contact', 'active_area' => 'contact', 'enabled' => true],
+             ],
+         ];
+     }
+diff --git a/application/app/Repositories/WorkspaceReadRepository.php b/application/app/Repositories/WorkspaceReadRepository.php
+--- a/application/app/Repositories/WorkspaceReadRepository.php
++++ b/application/app/Repositories/WorkspaceReadRepository.php
+@@ -1023,7 +1023,8 @@ public function adminMarketplaceSummary(string $section): array
+                 COALESCE(SUM(status = "published"), 0) AS published,
+                 COALESCE(SUM(status = "archived"), 0) AS archived,
+                 COALESCE(SUM(status = "published" AND robots_directive = "index,follow"), 0) AS indexable
+-                FROM cms_pages',
++                FROM cms_pages
++                WHERE LOWER(slug) NOT IN ("about", "about-us", "contact", "contact-us")',
+             'seo' => 'SELECT COUNT(*) AS total,
+                 COALESCE(SUM(issue_state = "attention"), 0) AS attention,
+                 COALESCE(SUM(index_state = "indexable"), 0) AS indexable,
+@@ -1228,6 +1229,7 @@ public function adminMarketplaceSummary(string $section): array
+                     FROM cms_pages p
+                     WHERE p.status = "published"
+                       AND p.published_at IS NOT NULL
++                      AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
+                 ) seo_rows',
+             'inquiries' => 'SELECT COUNT(*) AS total,
+                 COALESCE(SUM(status = "new"), 0) AS new,
+@@ -1985,10 +1987,12 @@ public function adminSection(
+                     FROM cms_pages p
+                     WHERE p.status = "published"
+                       AND p.published_at IS NOT NULL
++                      AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
+                  ) seo_rows
+                  WHERE CONCAT_WS(" ", title, path, entity_type) LIKE :search
+                  ORDER BY updated_at DESC',
+-                'SELECT COUNT(*) FROM cms_pages',
++                'SELECT COUNT(*) FROM cms_pages
++                 WHERE LOWER(slug) NOT IN ("about", "about-us", "contact", "contact-us")',
+                 ['search' => $search],
+             ],
+             'pages' => [
+@@ -1997,7 +2001,8 @@ public function adminSection(
+                         COALESCE(updated_by.name, "System") AS updated_by_name
+                  FROM cms_pages p
+                  LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+-                 WHERE CONCAT_WS(
++                 WHERE LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
++                   AND CONCAT_WS(
+                     " ",
+                     p.title,
+                     p.slug,
+@@ -2010,7 +2015,8 @@ public function adminSection(
+                 'SELECT COUNT(*)
+                  FROM cms_pages p
+                  LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+-                 WHERE CONCAT_WS(
++                 WHERE LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
++                   AND CONCAT_WS(
+                     " ",
+                     p.title,
+                     p.slug,
+diff --git a/application/app/Repositories/WorkspaceRecordRepository.php b/application/app/Repositories/WorkspaceRecordRepository.php
+--- a/application/app/Repositories/WorkspaceRecordRepository.php
++++ b/application/app/Repositories/WorkspaceRecordRepository.php
+@@ -307,6 +307,7 @@ public function adminRecord(string $resource, int $id): ?array
+                        LEFT JOIN users created_by ON created_by.id = p.created_by_user_id
+                        LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+                        WHERE p.id = :id
++                         AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
+                        LIMIT 1',
+             'user' => 'SELECT u.id, u.uuid, u.name, u.email, u.status, u.auth_version,
+                               u.email_verified_at, u.last_login_at, u.created_at, u.updated_at,
+diff --git a/application/app/Security/ContactMessageThrottle.php b/application/app/Security/ContactMessageThrottle.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Security/ContactMessageThrottle.php
+@@ -0,0 +1,92 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Security;
++
++use Barama\Core\Database;
++use DateInterval;
++use DateTimeImmutable;
++use PDO;
++
++final class ContactMessageThrottle
++{
++    public function allow(string $ip): bool
++    {
++        $key = hash('sha256', 'contact-message|' . trim($ip));
++        $pdo = Database::connection();
++        $statement = $pdo->prepare(
++            'SELECT id, attempts, window_started_at, blocked_until
++             FROM inquiry_rate_limits
++             WHERE key_hash = :key_hash
++             LIMIT 1'
++        );
++        $statement->execute(['key_hash' => $key]);
++        $row = $statement->fetch(PDO::FETCH_ASSOC);
++
++        $now = new DateTimeImmutable();
++        $windowMinutes = max(1, (int) config('domain.inquiry_window_minutes', 15));
++        $maxAttempts = max(1, (int) config('domain.inquiry_max_attempts', 5));
++
++        if (!is_array($row)) {
++            $insert = $pdo->prepare(
++                'INSERT INTO inquiry_rate_limits
++                    (key_hash, attempts, window_started_at, blocked_until)
++                 VALUES
++                    (:key_hash, 1, :window_started_at, NULL)'
++            );
++            $insert->execute([
++                'key_hash' => $key,
++                'window_started_at' => $now->format('Y-m-d H:i:s'),
++            ]);
++
++            return true;
++        }
++
++        if (
++            is_string($row['blocked_until'])
++            && $row['blocked_until'] !== ''
++            && new DateTimeImmutable($row['blocked_until']) > $now
++        ) {
++            return false;
++        }
++
++        $windowStart = new DateTimeImmutable((string) $row['window_started_at']);
++        $windowEnd = $windowStart->add(new DateInterval("PT{$windowMinutes}M"));
++
++        if ($windowEnd <= $now) {
++            $reset = $pdo->prepare(
++                'UPDATE inquiry_rate_limits
++                 SET attempts = 1,
++                     window_started_at = :window_started_at,
++                     blocked_until = NULL
++                 WHERE id = :id'
++            );
++            $reset->execute([
++                'window_started_at' => $now->format('Y-m-d H:i:s'),
++                'id' => (int) $row['id'],
++            ]);
++
++            return true;
++        }
++
++        $attempts = (int) $row['attempts'] + 1;
++        $blockedUntil = $attempts > $maxAttempts
++            ? $now->add(new DateInterval("PT{$windowMinutes}M"))->format('Y-m-d H:i:s')
++            : null;
++
++        $update = $pdo->prepare(
++            'UPDATE inquiry_rate_limits
++             SET attempts = :attempts,
++                 blocked_until = :blocked_until
++             WHERE id = :id'
++        );
++        $update->execute([
++            'attempts' => $attempts,
++            'blocked_until' => $blockedUntil,
++            'id' => (int) $row['id'],
++        ]);
++
++        return $blockedUntil === null;
++    }
++}
+diff --git a/application/app/Services/BuiltInPageManagementService.php b/application/app/Services/BuiltInPageManagementService.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Services/BuiltInPageManagementService.php
+@@ -0,0 +1,491 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Services;
++
++use Barama\Repositories\SiteContentRepository;
++use DomainException;
++use InvalidArgumentException;
++
++final class BuiltInPageManagementService
++{
++    private const PAGE_SECTIONS = [
++        'about' => ['story', 'mission_vision', 'values', 'stats', 'team', 'cta'],
++        'contact' => ['channels', 'office', 'hours', 'form', 'faq', 'socials'],
++    ];
++
++    /** @param array<string,mixed> $input */
++    public function updateSection(string $page, string $section, array $input): void
++    {
++        $actor = $this->administrator();
++        $page = $this->page($page);
++        $section = strtolower(trim($section));
++
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++        $defaults = SiteContentRepository::defaults()[$page];
++
++        if (!is_array($config[$page] ?? null)) {
++            $config[$page] = $defaults;
++        }
++
++        if ($section === 'settings') {
++            $config[$page]['enabled'] = $this->boolean($input['enabled'] ?? '0');
++        } elseif ($section === 'seo') {
++            $config[$page]['seo'] = $this->validatedSeo(
++                $input,
++                is_array($config[$page]['seo'] ?? null) ? $config[$page]['seo'] : []
++            );
++        } elseif ($section === 'hero') {
++            $config[$page]['hero'] = $this->validatedHero(
++                $page,
++                $input,
++                is_array($config[$page]['hero'] ?? null) ? $config[$page]['hero'] : []
++            );
++        } else {
++            $this->assertSection($page, $section);
++            $current = is_array($config[$page]['sections'][$section] ?? null)
++                ? $config[$page]['sections'][$section]
++                : [];
++            $config[$page]['sections'][$section] = $page === 'about'
++                ? $this->validatedAboutSection($section, $input, $current)
++                : $this->validatedContactSection($section, $input, $current);
++            $config[$page]['section_order'] = $this->reorder(
++                is_array($config[$page]['section_order'] ?? null)
++                    ? array_values($config[$page]['section_order'])
++                    : self::PAGE_SECTIONS[$page],
++                $section,
++                $input['position'] ?? null
++            );
++        }
++
++        $repository->save($config);
++
++        $this->audit(
++            'admin.builtin_page_updated',
++            (int) $actor['id'],
++            ['page' => $page, 'section' => $section]
++        );
++    }
++
++    public function toggleSection(string $page, string $section, bool $enabled): void
++    {
++        $actor = $this->administrator();
++        $page = $this->page($page);
++        $section = strtolower(trim($section));
++
++        if ($section !== 'hero') {
++            $this->assertSection($page, $section);
++        }
++
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++
++        if ($section === 'hero') {
++            $config[$page]['hero']['enabled'] = $enabled;
++        } else {
++            $config[$page]['sections'][$section]['enabled'] = $enabled;
++        }
++
++        $repository->save($config);
++
++        $this->audit(
++            'admin.builtin_page_section_toggled',
++            (int) $actor['id'],
++            ['page' => $page, 'section' => $section, 'enabled' => $enabled]
++        );
++    }
++
++    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
++    private function validatedSeo(array $input, array $current): array
++    {
++        $title = $this->text($input['title'] ?? $current['title'] ?? '', 191, 'SEO title');
++        $description = $this->text(
++            $input['description'] ?? $current['description'] ?? '',
++            300,
++            'SEO description'
++        );
++        $robots = strtolower(trim((string) ($input['robots'] ?? $current['robots'] ?? 'index,follow')));
++
++        if (!in_array($robots, ['index,follow', 'noindex,follow', 'noindex,nofollow'], true)) {
++            throw new InvalidArgumentException('Choose a supported robots directive.');
++        }
++
++        return [
++            'title' => $title,
++            'description' => $description,
++            'robots' => $robots,
++        ];
++    }
++
++    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
++    private function validatedHero(string $page, array $input, array $current): array
++    {
++        $label = $page === 'about' ? 'About' : 'Contact';
++        $title = $this->text($input['title'] ?? $current['title'] ?? '', 180, $label . ' hero title');
++        $description = $this->text(
++            $input['description'] ?? $current['description'] ?? '',
++            700,
++            $label . ' hero description'
++        );
++
++        if ($title === '' || $description === '') {
++            throw new InvalidArgumentException($label . ' hero title and description are required.');
++        }
++
++        return [
++            'enabled' => !empty($current['enabled']),
++            'eyebrow' => $this->text($input['eyebrow'] ?? $current['eyebrow'] ?? '', 80, $label . ' hero eyebrow'),
++            'title' => $title,
++            'description' => $description,
++            'image_url' => $this->optionalExternalUrl($input['image_url'] ?? $current['image_url'] ?? '', $label . ' hero image URL'),
++        ];
++    }
++
++    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
++    private function validatedAboutSection(string $section, array $input, array $current): array
++    {
++        $base = [
++            'enabled' => !empty($current['enabled']),
++            'eyebrow' => $this->text($input['eyebrow'] ?? $current['eyebrow'] ?? '', 80, 'Section eyebrow'),
++            'title' => $this->text($input['title'] ?? $current['title'] ?? '', 160, 'Section title'),
++        ];
++
++        if ($section === 'story') {
++            return $base + [
++                'body' => $this->text($input['body'] ?? $current['body'] ?? '', 6000, 'About story'),
++                'image_url' => $this->optionalExternalUrl($input['image_url'] ?? $current['image_url'] ?? '', 'About story image URL'),
++            ];
++        }
++
++        if ($section === 'mission_vision') {
++            return $base + [
++                'mission_title' => $this->text($input['mission_title'] ?? $current['mission_title'] ?? '', 100, 'Mission title'),
++                'mission_text' => $this->text($input['mission_text'] ?? $current['mission_text'] ?? '', 1200, 'Mission text'),
++                'vision_title' => $this->text($input['vision_title'] ?? $current['vision_title'] ?? '', 100, 'Vision title'),
++                'vision_text' => $this->text($input['vision_text'] ?? $current['vision_text'] ?? '', 1200, 'Vision text'),
++            ];
++        }
++
++        if ($section === 'values') {
++            return $base + [
++                'items' => $this->textCards($input['items'] ?? null, $current['items'] ?? null, 4, 'Value', 110, 360),
++            ];
++        }
++
++        if ($section === 'stats') {
++            $rows = is_array($input['items'] ?? null)
++                ? $input['items']
++                : (is_array($current['items'] ?? null) ? $current['items'] : []);
++            $items = [];
++
++            for ($index = 0; $index < 4; $index++) {
++                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
++                $items[] = [
++                    'value' => $this->text($row['value'] ?? '', 30, 'Stat value'),
++                    'label' => $this->text($row['label'] ?? '', 100, 'Stat label'),
++                ];
++            }
++
++            return $base + ['items' => $items];
++        }
++
++        if ($section === 'team') {
++            $rows = is_array($input['items'] ?? null)
++                ? $input['items']
++                : (is_array($current['items'] ?? null) ? $current['items'] : []);
++            $items = [];
++
++            for ($index = 0; $index < 4; $index++) {
++                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
++                $items[] = [
++                    'name' => $this->text($row['name'] ?? '', 120, 'Team member name'),
++                    'role' => $this->text($row['role'] ?? '', 120, 'Team member role'),
++                    'bio' => $this->text($row['bio'] ?? '', 500, 'Team member bio'),
++                    'image_url' => $this->optionalExternalUrl($row['image_url'] ?? '', 'Team member image URL'),
++                ];
++            }
++
++            return $base + ['items' => $items];
++        }
++
++        if ($section === 'cta') {
++            return $base + [
++                'description' => $this->text($input['description'] ?? $current['description'] ?? '', 600, 'CTA description'),
++                'primary_label' => $this->text($input['primary_label'] ?? $current['primary_label'] ?? '', 70, 'Primary CTA label'),
++                'primary_url' => $this->optionalLink($input['primary_url'] ?? $current['primary_url'] ?? ''),
++                'secondary_label' => $this->text($input['secondary_label'] ?? $current['secondary_label'] ?? '', 70, 'Secondary CTA label'),
++                'secondary_url' => $this->optionalLink($input['secondary_url'] ?? $current['secondary_url'] ?? ''),
++            ];
++        }
++
++        throw new InvalidArgumentException('Unknown About section.');
++    }
++
++    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
++    private function validatedContactSection(string $section, array $input, array $current): array
++    {
++        $base = [
++            'enabled' => !empty($current['enabled']),
++            'eyebrow' => $this->text($input['eyebrow'] ?? $current['eyebrow'] ?? '', 80, 'Section eyebrow'),
++            'title' => $this->text($input['title'] ?? $current['title'] ?? '', 160, 'Section title'),
++        ];
++
++        if ($section === 'channels') {
++            $email = strtolower($this->text($input['email'] ?? $current['email'] ?? '', 191, 'Contact email'));
++
++            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
++                throw new InvalidArgumentException('Contact email address is invalid.');
++            }
++
++            return $base + [
++                'description' => $this->text($input['description'] ?? $current['description'] ?? '', 500, 'Contact channels description'),
++                'phone' => $this->text($input['phone'] ?? $current['phone'] ?? '', 60, 'Contact phone'),
++                'email' => $email,
++                'telegram_url' => $this->optionalExternalUrl($input['telegram_url'] ?? $current['telegram_url'] ?? '', 'Telegram URL'),
++                'whatsapp_url' => $this->optionalExternalUrl($input['whatsapp_url'] ?? $current['whatsapp_url'] ?? '', 'WhatsApp URL'),
++            ];
++        }
++
++        if ($section === 'office') {
++            return $base + [
++                'address' => $this->text($input['address'] ?? $current['address'] ?? '', 600, 'Office address'),
++                'location_note' => $this->text($input['location_note'] ?? $current['location_note'] ?? '', 400, 'Location note'),
++                'map_url' => $this->optionalExternalUrl($input['map_url'] ?? $current['map_url'] ?? '', 'Map URL'),
++                'map_label' => $this->text($input['map_label'] ?? $current['map_label'] ?? 'Open map', 70, 'Map button label'),
++            ];
++        }
++
++        if ($section === 'hours') {
++            $rows = is_array($input['items'] ?? null)
++                ? $input['items']
++                : (is_array($current['items'] ?? null) ? $current['items'] : []);
++            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
++            $items = [];
++
++            foreach ($days as $index => $day) {
++                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
++                $items[] = [
++                    'day' => $day,
++                    'hours' => $this->text($row['hours'] ?? '', 80, $day . ' hours'),
++                ];
++            }
++
++            return $base + [
++                'timezone' => $this->text($input['timezone'] ?? $current['timezone'] ?? 'Asia/Phnom_Penh', 80, 'Business-hours timezone'),
++                'items' => $items,
++            ];
++        }
++
++        if ($section === 'form') {
++            $destinationEmail = strtolower($this->text(
++                $input['destination_email'] ?? $current['destination_email'] ?? '',
++                191,
++                'Destination email'
++            ));
++
++            if ($destinationEmail !== '' && filter_var($destinationEmail, FILTER_VALIDATE_EMAIL) === false) {
++                throw new InvalidArgumentException('Destination email address is invalid.');
++            }
++
++            $subjects = array_key_exists('subjects', $input)
++                ? preg_split('/\R+/', trim((string) $input['subjects']))
++                : (is_array($current['subjects'] ?? null) ? $current['subjects'] : []);
++            $cleanSubjects = [];
++
++            foreach (array_slice(is_array($subjects) ? $subjects : [], 0, 8) as $subject) {
++                $subject = $this->text($subject, 100, 'Contact subject');
++                if ($subject !== '') {
++                    $cleanSubjects[] = $subject;
++                }
++            }
++
++            return $base + [
++                'description' => $this->text($input['description'] ?? $current['description'] ?? '', 600, 'Contact form description'),
++                'button_label' => $this->text($input['button_label'] ?? $current['button_label'] ?? 'Send message', 70, 'Contact form button label'),
++                'success_message' => $this->text($input['success_message'] ?? $current['success_message'] ?? '', 260, 'Contact form success message'),
++                'destination_email' => $destinationEmail,
++                'require_phone' => $this->boolean($input['require_phone'] ?? '0'),
++                'consent_text' => $this->text($input['consent_text'] ?? $current['consent_text'] ?? '', 500, 'Contact form consent text'),
++                'subjects' => $cleanSubjects,
++            ];
++        }
++
++        if ($section === 'faq') {
++            $rows = is_array($input['items'] ?? null)
++                ? $input['items']
++                : (is_array($current['items'] ?? null) ? $current['items'] : []);
++            $items = [];
++
++            for ($index = 0; $index < 5; $index++) {
++                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
++                $items[] = [
++                    'question' => $this->text($row['question'] ?? '', 180, 'FAQ question'),
++                    'answer' => $this->text($row['answer'] ?? '', 900, 'FAQ answer'),
++                ];
++            }
++
++            return $base + ['items' => $items];
++        }
++
++        if ($section === 'socials') {
++            return $base + [
++                'description' => $this->text($input['description'] ?? $current['description'] ?? '', 400, 'Social links description'),
++                'facebook_url' => $this->optionalExternalUrl($input['facebook_url'] ?? $current['facebook_url'] ?? '', 'Facebook URL'),
++                'instagram_url' => $this->optionalExternalUrl($input['instagram_url'] ?? $current['instagram_url'] ?? '', 'Instagram URL'),
++                'linkedin_url' => $this->optionalExternalUrl($input['linkedin_url'] ?? $current['linkedin_url'] ?? '', 'LinkedIn URL'),
++                'youtube_url' => $this->optionalExternalUrl($input['youtube_url'] ?? $current['youtube_url'] ?? '', 'YouTube URL'),
++                'telegram_url' => $this->optionalExternalUrl($input['telegram_url'] ?? $current['telegram_url'] ?? '', 'Telegram URL'),
++                'tiktok_url' => $this->optionalExternalUrl($input['tiktok_url'] ?? $current['tiktok_url'] ?? '', 'TikTok URL'),
++            ];
++        }
++
++        throw new InvalidArgumentException('Unknown Contact section.');
++    }
++
++    /** @return array<int,array{title:string,description:string}> */
++    private function textCards(mixed $input, mixed $current, int $count, string $label, int $titleMax, int $descriptionMax): array
++    {
++        $rows = is_array($input)
++            ? $input
++            : (is_array($current) ? $current : []);
++        $items = [];
++
++        for ($index = 0; $index < $count; $index++) {
++            $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
++            $items[] = [
++                'title' => $this->text($row['title'] ?? '', $titleMax, $label . ' title'),
++                'description' => $this->text($row['description'] ?? '', $descriptionMax, $label . ' description'),
++            ];
++        }
++
++        return $items;
++    }
++
++    /** @param array<int,mixed> $order @return array<int,string> */
++    private function reorder(array $order, string $section, mixed $position): array
++    {
++        $order = array_values(array_filter(
++            array_map(static fn (mixed $item): string => (string) $item, $order),
++            static fn (string $item): bool => $item !== $section
++        ));
++
++        $max = count($order) + 1;
++        $requested = filter_var(
++            $position,
++            FILTER_VALIDATE_INT,
++            ['options' => ['min_range' => 1, 'max_range' => $max]]
++        );
++        $requested = $requested === false ? $max : (int) $requested;
++
++        array_splice($order, $requested - 1, 0, [$section]);
++
++        return array_values($order);
++    }
++
++    private function page(string $page): string
++    {
++        $page = strtolower(trim($page));
++
++        if (!array_key_exists($page, self::PAGE_SECTIONS)) {
++            throw new InvalidArgumentException('Unknown built-in page.');
++        }
++
++        return $page;
++    }
++
++    private function assertSection(string $page, string $section): void
++    {
++        if (!in_array($section, self::PAGE_SECTIONS[$page], true)) {
++            throw new InvalidArgumentException('Unknown built-in page section.');
++        }
++    }
++
++    private function boolean(mixed $value): bool
++    {
++        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'on', 'yes'], true);
++    }
++
++    private function text(mixed $value, int $max, string $label): string
++    {
++        $value = trim((string) $value);
++
++        if (mb_strlen($value) > $max) {
++            throw new InvalidArgumentException($label . ' cannot exceed ' . $max . ' characters.');
++        }
++
++        return $value;
++    }
++
++    private function optionalLink(mixed $value): string
++    {
++        $value = trim((string) $value);
++
++        if ($value === '') {
++            return '';
++        }
++
++        if (str_starts_with($value, '/')) {
++            if (
++                str_starts_with($value, '//')
++                || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
++                || mb_strlen($value) > 1000
++            ) {
++                throw new InvalidArgumentException('Internal link is invalid.');
++            }
++
++            return $value;
++        }
++
++        return $this->optionalExternalUrl($value, 'Link URL');
++    }
++
++    private function optionalExternalUrl(mixed $value, string $label): string
++    {
++        $value = trim((string) $value);
++
++        if ($value === '') {
++            return '';
++        }
++
++        if (mb_strlen($value) > 1000) {
++            throw new InvalidArgumentException($label . ' cannot exceed 1,000 characters.');
++        }
++
++        if (filter_var($value, FILTER_VALIDATE_URL) === false) {
++            throw new InvalidArgumentException($label . ' is invalid.');
++        }
++
++        $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
++
++        if (!in_array($scheme, ['http', 'https'], true)) {
++            throw new InvalidArgumentException($label . ' must use HTTP or HTTPS.');
++        }
++
++        return $value;
++    }
++
++    /** @return array<string,mixed> */
++    private function administrator(): array
++    {
++        $auth = new AuthService();
++        $user = $auth->user();
++
++        if (
++            $user === null
++            || !$auth->hasRole('administrator')
++            || !$auth->can('page.manage')
++        ) {
++            throw new DomainException('Administrator page management permission is required.');
++        }
++
++        return $user;
++    }
++
++    /** @param array<string,mixed> $metadata */
++    private function audit(string $event, int $actorId, array $metadata): void
++    {
++        (new SecurityAuditService())->record($event, $actorId, null, $metadata);
++    }
++}
+diff --git a/application/app/Services/ContactMessageService.php b/application/app/Services/ContactMessageService.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Services/ContactMessageService.php
+@@ -0,0 +1,147 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Services;
++
++use Barama\Repositories\ContactMessageRepository;
++use Barama\Repositories\SiteContentRepository;
++use Barama\Security\ContactMessageThrottle;
++use Barama\Support\DomainInput;
++use DomainException;
++use InvalidArgumentException;
++
++final class ContactMessageService
++{
++    /** @param array<string,mixed> $input */
++    public function capture(
++        array $input,
++        string $ip,
++        string $userAgent,
++        ?int $userId = null
++    ): int {
++        if (trim((string) ($input['website'] ?? '')) !== '') {
++            throw new InvalidArgumentException('Your message could not be submitted.');
++        }
++
++        if (!(new ContactMessageThrottle())->allow($ip)) {
++            throw new DomainException('Too many contact attempts. Please try again later.');
++        }
++
++        $contactConfig = (new SiteContentRepository())->get()['contact'] ?? [];
++        $formConfig = is_array($contactConfig['sections']['form'] ?? null)
++            ? $contactConfig['sections']['form']
++            : [];
++
++        if (empty($contactConfig['enabled']) || empty($formConfig['enabled'])) {
++            throw new DomainException('The contact form is currently unavailable.');
++        }
++
++        $name = DomainInput::requiredString($input, 'contact_name', 160, 2);
++        $email = strtolower(DomainInput::requiredString($input, 'contact_email', 191, 5));
++        $phone = DomainInput::optionalString($input, 'contact_phone', 60);
++        $subject = DomainInput::requiredString($input, 'subject', 160, 2);
++        $message = DomainInput::requiredString($input, 'message', 5000, 10);
++
++        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
++            throw new InvalidArgumentException('Contact email address is invalid.');
++        }
++
++        if (!empty($formConfig['require_phone']) && $phone === null) {
++            throw new InvalidArgumentException('Phone number is required.');
++        }
++
++        $consentText = trim((string) ($formConfig['consent_text'] ?? ''));
++
++        if (
++            $consentText !== ''
++            && !in_array(strtolower(trim((string) ($input['consent'] ?? ''))), ['1', 'true', 'on', 'yes'], true)
++        ) {
++            throw new InvalidArgumentException('Please confirm the contact-form consent notice.');
++        }
++
++        $id = (new ContactMessageRepository())->create([
++            'user_id' => $userId,
++            'contact_name' => $name,
++            'contact_email' => $email,
++            'contact_phone' => $phone,
++            'subject' => $subject,
++            'message' => $message,
++            'ip_hash' => hash('sha256', trim($ip)),
++            'user_agent_hash' => hash('sha256', trim($userAgent)),
++        ]);
++
++        $destination = strtolower(trim((string) ($formConfig['destination_email'] ?? '')));
++
++        if ($destination !== '' && filter_var($destination, FILTER_VALIDATE_EMAIL) !== false) {
++            $safeName = e($name);
++            $safeEmail = e($email);
++            $safePhone = e((string) ($phone ?? 'Not provided'));
++            $safeSubject = e($subject);
++            $safeMessage = nl2br(e($message));
++
++            (new NotificationService())->notifyAddress($destination, [
++                'subject' => 'Contact form: ' . $subject,
++                'html' => '<p><strong>New Barama contact message</strong></p>'
++                    . '<p><strong>From:</strong> ' . $safeName . '<br>'
++                    . '<strong>Email:</strong> ' . $safeEmail . '<br>'
++                    . '<strong>Phone:</strong> ' . $safePhone . '<br>'
++                    . '<strong>Subject:</strong> ' . $safeSubject . '</p>'
++                    . '<p>' . $safeMessage . '</p>',
++                'text' => "New Barama contact message\n\n"
++                    . "From: {$name}\nEmail: {$email}\nPhone: " . ($phone ?? 'Not provided')
++                    . "\nSubject: {$subject}\n\n{$message}",
++                'dedupe_key' => 'contact-message:' . $id,
++            ]);
++        }
++
++        return $id;
++    }
++
++    public function setStatus(int $id, string $status): void
++    {
++        $actor = $this->administrator();
++        $repository = new ContactMessageRepository();
++        $message = $repository->find($id);
++
++        if ($message === null) {
++            throw new InvalidArgumentException('Contact message was not found.');
++        }
++
++        $status = strtolower(trim($status));
++
++        if (!in_array($status, ['new', 'read', 'resolved', 'spam'], true)) {
++            throw new InvalidArgumentException('Choose a supported contact-message status.');
++        }
++
++        $repository->setStatus($id, $status, (int) $actor['id']);
++
++        (new SecurityAuditService())->record(
++            'admin.contact_message_status_changed',
++            (int) $actor['id'],
++            null,
++            [
++                'contact_message_id' => $id,
++                'from_status' => (string) $message['status'],
++                'to_status' => $status,
++            ]
++        );
++    }
++
++    /** @return array<string,mixed> */
++    private function administrator(): array
++    {
++        $auth = new AuthService();
++        $user = $auth->user();
++
++        if (
++            $user === null
++            || !$auth->hasRole('administrator')
++            || !$auth->can('page.manage')
++        ) {
++            throw new DomainException('Administrator page management permission is required.');
++        }
++
++        return $user;
++    }
++}
+diff --git a/application/app/Services/PageManagementService.php b/application/app/Services/PageManagementService.php
+--- a/application/app/Services/PageManagementService.php
++++ b/application/app/Services/PageManagementService.php
+@@ -88,6 +88,12 @@ public function setStatus(int $id, string $status): void
+             throw new InvalidArgumentException('CMS page was not found.');
+         }
+ 
++        if (in_array(strtolower((string) $page['slug']), ['about', 'about-us', 'contact', 'contact-us'], true)) {
++            throw new DomainException(
++                'About Us and Contact Us are built-in pages. Manage them from their dedicated dashboard sections.'
++            );
++        }
++
+         $status = strtolower(trim($status));
+ 
+         $transitions = [
+@@ -168,6 +174,12 @@ private function validated(array $input): array
+             );
+         }
+ 
++        if (in_array($slug, ['about', 'about-us', 'contact', 'contact-us'], true)) {
++            throw new InvalidArgumentException(
++                'About Us and Contact Us are built-in pages. Manage them from their dedicated dashboard sections.'
++            );
++        }
++
+         if (mb_strlen($excerpt) > 500) {
+             throw new InvalidArgumentException('Page excerpt cannot exceed 500 characters.');
+         }
+diff --git a/application/app/Services/SiteContentManagementService.php b/application/app/Services/SiteContentManagementService.php
+--- a/application/app/Services/SiteContentManagementService.php
++++ b/application/app/Services/SiteContentManagementService.php
+@@ -847,6 +847,8 @@ private function activeArea(string $path): string
+ 
+         return match (true) {
+             $route === '/' => 'home',
++            $route === '/about' => 'about',
++            $route === '/contact' => 'contact',
+             str_starts_with($route, '/properties') => 'properties',
+             str_starts_with($route, '/projects') => 'projects',
+             str_starts_with($route, '/company') => 'company',
+diff --git a/application/database/migrations/0022_create_contact_messages.php b/application/database/migrations/0022_create_contact_messages.php
+new file mode 100644
+--- /dev/null
++++ b/application/database/migrations/0022_create_contact_messages.php
+@@ -0,0 +1,35 @@
++<?php
++
++declare(strict_types=1);
++
++return static function (PDO $pdo): void {
++    $pdo->exec(<<<'SQL'
++CREATE TABLE IF NOT EXISTS contact_messages (
++    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
++    uuid CHAR(36) NOT NULL,
++    user_id BIGINT UNSIGNED NULL,
++    contact_name VARCHAR(160) NOT NULL,
++    contact_email VARCHAR(191) NOT NULL,
++    contact_phone VARCHAR(60) NULL,
++    subject VARCHAR(160) NOT NULL,
++    message TEXT NOT NULL,
++    source VARCHAR(40) NOT NULL DEFAULT "contact_page",
++    status VARCHAR(24) NOT NULL DEFAULT "new",
++    ip_hash CHAR(64) NOT NULL,
++    user_agent_hash CHAR(64) NOT NULL,
++    handled_by_user_id BIGINT UNSIGNED NULL,
++    resolved_at DATETIME NULL,
++    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
++    PRIMARY KEY (id),
++    UNIQUE KEY contact_messages_uuid_unique (uuid),
++    KEY contact_messages_status_created_index (status, created_at),
++    KEY contact_messages_user_index (user_id, created_at),
++    KEY contact_messages_handler_index (handled_by_user_id, updated_at),
++    CONSTRAINT contact_messages_user_fk
++        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
++    CONSTRAINT contact_messages_handler_fk
++        FOREIGN KEY (handled_by_user_id) REFERENCES users(id) ON DELETE SET NULL
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
++SQL);
++};
+diff --git a/application/resources/views/public/about.php b/application/resources/views/public/about.php
+new file mode 100644
+--- /dev/null
++++ b/application/resources/views/public/about.php
+@@ -0,0 +1,173 @@
++<?php
++
++declare(strict_types=1);
++
++$page = is_array($aboutPage ?? null)
++    ? $aboutPage
++    : \Barama\Repositories\SiteContentRepository::defaults()['about'];
++$hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
++$sections = is_array($page['sections'] ?? null) ? $page['sections'] : [];
++$order = is_array($page['section_order'] ?? null)
++    ? array_values($page['section_order'])
++    : ['story', 'mission_vision', 'values', 'stats', 'team', 'cta'];
++
++$linkHref = static function (string $value): string {
++    return str_starts_with($value, '/') ? url($value) : $value;
++};
++?>
++<main class="builtin-public-page builtin-about-page">
++    <?php if (!empty($hero['enabled'])): ?>
++        <section class="builtin-hero">
++            <div class="container app-container">
++                <div class="builtin-hero__grid">
++                    <div class="builtin-hero__copy">
++                        <span class="eyebrow"><?= e((string) ($hero['eyebrow'] ?? 'About Barama')) ?></span>
++                        <h1><?= e((string) ($hero['title'] ?? 'About Us')) ?></h1>
++                        <p><?= e((string) ($hero['description'] ?? '')) ?></p>
++                        <div class="builtin-hero__actions">
++                            <a class="btn btn-primary" href="<?= e(url('/properties')) ?>"><?= app_icon('search') ?><span>Browse properties</span></a>
++                            <a class="btn btn-outline-secondary" href="<?= e(url('/contact')) ?>"><?= app_icon('mail') ?><span>Contact us</span></a>
++                        </div>
++                    </div>
++                    <?php if (trim((string) ($hero['image_url'] ?? '')) !== ''): ?>
++                        <div class="builtin-hero__media">
++                            <img src="<?= e((string) $hero['image_url']) ?>" alt="<?= e((string) ($hero['title'] ?? 'About Barama')) ?>" loading="eager">
++                        </div>
++                    <?php else: ?>
++                        <div class="builtin-hero__visual" aria-hidden="true">
++                            <span><?= app_icon('building') ?></span>
++                            <span><?= app_icon('home') ?></span>
++                            <span><?= app_icon('layers') ?></span>
++                        </div>
++                    <?php endif; ?>
++                </div>
++            </div>
++        </section>
++    <?php endif; ?>
++
++    <?php foreach ($order as $sectionKey): ?>
++        <?php $section = is_array($sections[$sectionKey] ?? null) ? $sections[$sectionKey] : []; ?>
++        <?php if (empty($section['enabled'])) continue; ?>
++
++        <?php if ($sectionKey === 'story'): ?>
++            <section class="builtin-section">
++                <div class="container app-container builtin-split">
++                    <div class="builtin-section__copy">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Our story')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                        <div class="builtin-prose"><?= nl2br(e((string) ($section['body'] ?? ''))) ?></div>
++                    </div>
++                    <div class="builtin-split__media<?= trim((string) ($section['image_url'] ?? '')) === '' ? ' is-placeholder' : '' ?>">
++                        <?php if (trim((string) ($section['image_url'] ?? '')) !== ''): ?>
++                            <img src="<?= e((string) $section['image_url']) ?>" alt="<?= e((string) ($section['title'] ?? 'Our story')) ?>" loading="lazy">
++                        <?php else: ?>
++                            <div class="builtin-placeholder-mark"><?= app_icon('building') ?><strong>Barama Real Estate</strong><span>Structured property discovery</span></div>
++                        <?php endif; ?>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'mission_vision'): ?>
++            <section class="builtin-section builtin-section--soft">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Purpose')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                    </div>
++                    <div class="builtin-card-grid builtin-card-grid--two">
++                        <article class="builtin-info-card">
++                            <span class="builtin-info-card__icon"><?= app_icon('check') ?></span>
++                            <h3><?= e((string) ($section['mission_title'] ?? 'Our mission')) ?></h3>
++                            <p><?= e((string) ($section['mission_text'] ?? '')) ?></p>
++                        </article>
++                        <article class="builtin-info-card">
++                            <span class="builtin-info-card__icon"><?= app_icon('eye') ?></span>
++                            <h3><?= e((string) ($section['vision_title'] ?? 'Our vision')) ?></h3>
++                            <p><?= e((string) ($section['vision_text'] ?? '')) ?></p>
++                        </article>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'values'): ?>
++            <?php $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
++            <section class="builtin-section">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Our values')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                    </div>
++                    <div class="builtin-card-grid builtin-card-grid--four">
++                        <?php foreach ($items as $index => $item): ?>
++                            <?php if (trim((string) ($item['title'] ?? '')) === '' && trim((string) ($item['description'] ?? '')) === '') continue; ?>
++                            <article class="builtin-info-card">
++                                <span class="builtin-info-card__number"><?= e(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)) ?></span>
++                                <h3><?= e((string) ($item['title'] ?? '')) ?></h3>
++                                <p><?= e((string) ($item['description'] ?? '')) ?></p>
++                            </article>
++                        <?php endforeach; ?>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'stats'): ?>
++            <?php $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
++            <section class="builtin-section builtin-section--soft">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Marketplace at a glance')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                    </div>
++                    <div class="builtin-stat-grid">
++                        <?php foreach ($items as $item): ?>
++                            <?php if (trim((string) ($item['value'] ?? '')) === '' && trim((string) ($item['label'] ?? '')) === '') continue; ?>
++                            <div class="builtin-stat"><strong><?= e((string) ($item['value'] ?? '')) ?></strong><span><?= e((string) ($item['label'] ?? '')) ?></span></div>
++                        <?php endforeach; ?>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'team'): ?>
++            <?php $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
++            <section class="builtin-section">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Our team')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                    </div>
++                    <div class="builtin-team-grid">
++                        <?php foreach ($items as $item): ?>
++                            <?php if (trim((string) ($item['name'] ?? '')) === '') continue; ?>
++                            <article class="builtin-team-card">
++                                <div class="builtin-team-card__media">
++                                    <?php if (trim((string) ($item['image_url'] ?? '')) !== ''): ?>
++                                        <img src="<?= e((string) $item['image_url']) ?>" alt="<?= e((string) $item['name']) ?>" loading="lazy">
++                                    <?php else: ?>
++                                        <?= app_icon('user') ?>
++                                    <?php endif; ?>
++                                </div>
++                                <div><h3><?= e((string) $item['name']) ?></h3><strong><?= e((string) ($item['role'] ?? '')) ?></strong><p><?= e((string) ($item['bio'] ?? '')) ?></p></div>
++                            </article>
++                        <?php endforeach; ?>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'cta'): ?>
++            <section class="builtin-section">
++                <div class="container app-container">
++                    <div class="builtin-cta">
++                        <div>
++                            <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Start exploring')) ?></span>
++                            <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                            <p><?= e((string) ($section['description'] ?? '')) ?></p>
++                        </div>
++                        <div class="builtin-cta__actions">
++                            <?php if (trim((string) ($section['primary_label'] ?? '')) !== '' && trim((string) ($section['primary_url'] ?? '')) !== ''): ?>
++                                <a class="btn btn-primary" href="<?= e($linkHref((string) $section['primary_url'])) ?>"><?= e((string) $section['primary_label']) ?></a>
++                            <?php endif; ?>
++                            <?php if (trim((string) ($section['secondary_label'] ?? '')) !== '' && trim((string) ($section['secondary_url'] ?? '')) !== ''): ?>
++                                <a class="btn btn-outline-secondary" href="<?= e($linkHref((string) $section['secondary_url'])) ?>"><?= e((string) $section['secondary_label']) ?></a>
++                            <?php endif; ?>
++                        </div>
++                    </div>
++                </div>
++            </section>
++        <?php endif; ?>
++    <?php endforeach; ?>
++</main>
+diff --git a/application/resources/views/public/contact.php b/application/resources/views/public/contact.php
+new file mode 100644
+--- /dev/null
++++ b/application/resources/views/public/contact.php
+@@ -0,0 +1,176 @@
++<?php
++
++declare(strict_types=1);
++
++$page = is_array($contactPage ?? null)
++    ? $contactPage
++    : \Barama\Repositories\SiteContentRepository::defaults()['contact'];
++$hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
++$sections = is_array($page['sections'] ?? null) ? $page['sections'] : [];
++$order = is_array($page['section_order'] ?? null)
++    ? array_values($page['section_order'])
++    : ['channels', 'office', 'hours', 'form', 'faq', 'socials'];
++?>
++<main class="builtin-public-page builtin-contact-page">
++    <?php if (!empty($hero['enabled'])): ?>
++        <section class="builtin-hero builtin-hero--contact">
++            <div class="container app-container">
++                <div class="builtin-hero__grid">
++                    <div class="builtin-hero__copy">
++                        <span class="eyebrow"><?= e((string) ($hero['eyebrow'] ?? 'Contact Barama')) ?></span>
++                        <h1><?= e((string) ($hero['title'] ?? 'Contact Us')) ?></h1>
++                        <p><?= e((string) ($hero['description'] ?? '')) ?></p>
++                    </div>
++                    <?php if (trim((string) ($hero['image_url'] ?? '')) !== ''): ?>
++                        <div class="builtin-hero__media"><img src="<?= e((string) $hero['image_url']) ?>" alt="<?= e((string) ($hero['title'] ?? 'Contact Barama')) ?>" loading="eager"></div>
++                    <?php else: ?>
++                        <div class="builtin-hero__visual" aria-hidden="true">
++                            <span><?= app_icon('mail') ?></span>
++                            <span><?= app_icon('message') ?></span>
++                            <span><?= app_icon('phone') ?></span>
++                        </div>
++                    <?php endif; ?>
++                </div>
++            </div>
++        </section>
++    <?php endif; ?>
++
++    <?php foreach ($order as $sectionKey): ?>
++        <?php $section = is_array($sections[$sectionKey] ?? null) ? $sections[$sectionKey] : []; ?>
++        <?php if (empty($section['enabled'])) continue; ?>
++
++        <?php if ($sectionKey === 'channels'): ?>
++            <?php
++            $phone = trim((string) ($section['phone'] ?? ''));
++            $email = trim((string) ($section['email'] ?? ''));
++            $telegram = trim((string) ($section['telegram_url'] ?? ''));
++            $whatsapp = trim((string) ($section['whatsapp_url'] ?? ''));
++            ?>
++            <section class="builtin-section">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Contact options')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                        <?php if (trim((string) ($section['description'] ?? '')) !== ''): ?><p><?= e((string) $section['description']) ?></p><?php endif; ?>
++                    </div>
++                    <div class="builtin-contact-channel-grid">
++                        <?php if ($email !== ''): ?><a class="builtin-contact-channel" href="mailto:<?= e($email) ?>"><?= app_icon('mail') ?><span><strong>Email</strong><small><?= e($email) ?></small></span></a><?php endif; ?>
++                        <?php if ($phone !== ''): ?><a class="builtin-contact-channel" href="tel:<?= e((string) preg_replace('/[^0-9+]/', '', $phone)) ?>"><?= app_icon('phone') ?><span><strong>Phone</strong><small><?= e($phone) ?></small></span></a><?php endif; ?>
++                        <?php if ($telegram !== ''): ?><a class="builtin-contact-channel" href="<?= e($telegram) ?>" target="_blank" rel="noopener noreferrer"><?= app_icon('message') ?><span><strong>Telegram</strong><small>Open official channel</small></span></a><?php endif; ?>
++                        <?php if ($whatsapp !== ''): ?><a class="builtin-contact-channel" href="<?= e($whatsapp) ?>" target="_blank" rel="noopener noreferrer"><?= app_icon('message') ?><span><strong>WhatsApp</strong><small>Start a conversation</small></span></a><?php endif; ?>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'office'): ?>
++            <section class="builtin-section builtin-section--soft">
++                <div class="container app-container builtin-contact-office">
++                    <div>
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Office')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                        <?php if (trim((string) ($section['address'] ?? '')) !== ''): ?><p class="builtin-office-address"><?= app_icon('map') ?><span><?= nl2br(e((string) $section['address'])) ?></span></p><?php endif; ?>
++                        <?php if (trim((string) ($section['location_note'] ?? '')) !== ''): ?><p><?= e((string) $section['location_note']) ?></p><?php endif; ?>
++                        <?php if (trim((string) ($section['map_url'] ?? '')) !== ''): ?><a class="btn btn-outline-secondary" href="<?= e((string) $section['map_url']) ?>" target="_blank" rel="noopener noreferrer"><?= app_icon('map') ?><span><?= e((string) ($section['map_label'] ?? 'Open map')) ?></span></a><?php endif; ?>
++                    </div>
++                    <div class="builtin-map-placeholder" aria-hidden="true"><?= app_icon('map') ?><strong>Location</strong><span>Use the configured map link for directions.</span></div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'hours'): ?>
++            <?php $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
++            <section class="builtin-section">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Business hours')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                    </div>
++                    <div class="builtin-hours-card">
++                        <?php foreach ($items as $item): ?>
++                            <div><strong><?= e((string) ($item['day'] ?? '')) ?></strong><span><?= e((string) ($item['hours'] ?? '')) ?></span></div>
++                        <?php endforeach; ?>
++                        <small><?= app_icon('clock') ?> <?= e((string) ($section['timezone'] ?? 'Asia/Phnom_Penh')) ?></small>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'form'): ?>
++            <?php $subjects = is_array($section['subjects'] ?? null) ? array_values($section['subjects']) : []; ?>
++            <section class="builtin-section builtin-section--soft" id="contact-form">
++                <div class="container app-container builtin-contact-form-layout">
++                    <div class="builtin-section__copy">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Send a message')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                        <p><?= e((string) ($section['description'] ?? '')) ?></p>
++                        <div class="builtin-contact-form-note"><?= app_icon('shield') ?><span>Messages are rate-limited and stored securely for administrative follow-up.</span></div>
++                    </div>
++                    <div class="builtin-contact-form-card">
++                        <form action="<?= e(url('/contact/messages')) ?>" method="post" data-inquiry-form data-contact-form>
++                            <?= csrf_field() ?>
++                            <div class="contact-form-honeypot" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
++                            <div class="builtin-form-grid">
++                                <label><span>Name</span><input class="form-control" name="contact_name" maxlength="160" required autocomplete="name"></label>
++                                <label><span>Email</span><input class="form-control" type="email" name="contact_email" maxlength="191" required autocomplete="email"></label>
++                                <label><span>Phone<?= !empty($section['require_phone']) ? '' : ' (optional)' ?></span><input class="form-control" name="contact_phone" maxlength="60" <?= !empty($section['require_phone']) ? 'required' : '' ?> autocomplete="tel"></label>
++                                <label><span>Subject</span>
++                                    <?php if ($subjects !== []): ?>
++                                        <select class="form-select" name="subject" required>
++                                            <option value="">Choose a subject</option>
++                                            <?php foreach ($subjects as $subject): ?><option value="<?= e((string) $subject) ?>"><?= e((string) $subject) ?></option><?php endforeach; ?>
++                                        </select>
++                                    <?php else: ?>
++                                        <input class="form-control" name="subject" maxlength="160" required>
++                                    <?php endif; ?>
++                                </label>
++                                <label class="builtin-form-grid__wide"><span>Message</span><textarea class="form-control" name="message" rows="7" maxlength="5000" required></textarea></label>
++                                <?php if (trim((string) ($section['consent_text'] ?? '')) !== ''): ?>
++                                    <label class="builtin-contact-consent builtin-form-grid__wide"><input type="checkbox" name="consent" value="1" required><span><?= e((string) $section['consent_text']) ?></span></label>
++                                <?php endif; ?>
++                            </div>
++                            <button class="btn btn-primary builtin-contact-submit" type="submit"><?= app_icon('mail') ?><span><?= e((string) ($section['button_label'] ?? 'Send message')) ?></span></button>
++                        </form>
++                        <div class="inquiry-card__notice" data-inquiry-notice hidden></div>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'faq'): ?>
++            <?php $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
++            <section class="builtin-section">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Common questions')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                    </div>
++                    <div class="builtin-faq-list">
++                        <?php foreach ($items as $item): ?>
++                            <?php if (trim((string) ($item['question'] ?? '')) === '') continue; ?>
++                            <details><summary><?= e((string) $item['question']) ?><span><?= app_icon('plus') ?></span></summary><p><?= e((string) ($item['answer'] ?? '')) ?></p></details>
++                        <?php endforeach; ?>
++                    </div>
++                </div>
++            </section>
++        <?php elseif ($sectionKey === 'socials'): ?>
++            <?php
++            $socials = [
++                'Facebook' => (string) ($section['facebook_url'] ?? ''),
++                'Instagram' => (string) ($section['instagram_url'] ?? ''),
++                'LinkedIn' => (string) ($section['linkedin_url'] ?? ''),
++                'YouTube' => (string) ($section['youtube_url'] ?? ''),
++                'Telegram' => (string) ($section['telegram_url'] ?? ''),
++                'TikTok' => (string) ($section['tiktok_url'] ?? ''),
++            ];
++            ?>
++            <section class="builtin-section builtin-section--soft">
++                <div class="container app-container">
++                    <div class="builtin-section__head">
++                        <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Follow Barama')) ?></span>
++                        <h2><?= e((string) ($section['title'] ?? '')) ?></h2>
++                        <?php if (trim((string) ($section['description'] ?? '')) !== ''): ?><p><?= e((string) $section['description']) ?></p><?php endif; ?>
++                    </div>
++                    <div class="builtin-social-grid">
++                        <?php foreach ($socials as $label => $href): ?>
++                            <?php if (trim($href) === '') continue; ?>
++                            <a href="<?= e($href) ?>" target="_blank" rel="noopener noreferrer"><?= app_icon('globe') ?><span><?= e($label) ?></span></a>
++                        <?php endforeach; ?>
++                    </div>
++                </div>
++            </section>
++        <?php endif; ?>
++    <?php endforeach; ?>
++</main>
+diff --git a/application/resources/views/workspace/builtin-page.php b/application/resources/views/workspace/builtin-page.php
+new file mode 100644
+--- /dev/null
++++ b/application/resources/views/workspace/builtin-page.php
+@@ -0,0 +1,276 @@
++<?php
++
++declare(strict_types=1);
++
++$pageKey = ($builtInPageType ?? '') === 'contact' ? 'contact' : 'about';
++$defaults = \Barama\Repositories\SiteContentRepository::defaults()[$pageKey];
++$pageConfig = is_array($builtInPage ?? null) ? $builtInPage : $defaults;
++$hero = is_array($pageConfig['hero'] ?? null) ? $pageConfig['hero'] : [];
++$seo = is_array($pageConfig['seo'] ?? null) ? $pageConfig['seo'] : [];
++$sections = is_array($pageConfig['sections'] ?? null) ? $pageConfig['sections'] : [];
++$order = is_array($pageConfig['section_order'] ?? null)
++    ? array_values($pageConfig['section_order'])
++    : array_values($defaults['section_order']);
++$positions = [];
++
++foreach ($order as $index => $key) {
++    $positions[(string) $key] = $index + 1;
++}
++
++$isContact = $pageKey === 'contact';
++$pageTitleLabel = $isContact ? 'Contact' : 'About';
++$publicPath = $isContact ? '/contact' : '/about';
++$pageDescription = $isContact
++    ? 'Build the dedicated Contact Us experience, contact channels, business information, message form, FAQ, social links, and support inbox.'
++    : 'Build the dedicated About Us experience with structured story, mission, values, statistics, team, and calls-to-action.';
++$definitions = $isContact
++    ? [
++        'hero' => ['label' => 'Hero', 'description' => 'Top-level Contact Us headline, introduction, and optional image.', 'icon' => 'mail'],
++        'channels' => ['label' => 'Contact Channels', 'description' => 'Phone, email, Telegram and WhatsApp contact options.', 'icon' => 'phone'],
++        'office' => ['label' => 'Office & Location', 'description' => 'Address, location note, and external map directions.', 'icon' => 'map'],
++        'hours' => ['label' => 'Business Hours', 'description' => 'Seven-day availability schedule with timezone.', 'icon' => 'clock'],
++        'form' => ['label' => 'Contact Form', 'description' => 'Secure, rate-limited contact form with inbox storage and optional email routing.', 'icon' => 'message'],
++        'faq' => ['label' => 'FAQ', 'description' => 'Five expandable questions to help visitors before contacting you.', 'icon' => 'check'],
++        'socials' => ['label' => 'Social Links', 'description' => 'Official social and messaging profiles.', 'icon' => 'globe'],
++    ]
++    : [
++        'hero' => ['label' => 'Hero', 'description' => 'Top-level About Us headline, introduction, and optional image.', 'icon' => 'home'],
++        'story' => ['label' => 'Our Story', 'description' => 'Long-form company/platform introduction with optional supporting image.', 'icon' => 'building'],
++        'mission_vision' => ['label' => 'Mission & Vision', 'description' => 'Two focused purpose cards describing mission and long-term vision.', 'icon' => 'eye'],
++        'values' => ['label' => 'Values', 'description' => 'Four clean cards describing the principles behind the platform.', 'icon' => 'shield'],
++        'stats' => ['label' => 'Stats', 'description' => 'Four concise marketplace or company metrics.', 'icon' => 'grid'],
++        'team' => ['label' => 'Team', 'description' => 'Up to four team profiles with role, biography, and image URL.', 'icon' => 'users'],
++        'cta' => ['label' => 'Call to Action', 'description' => 'Closing message with primary and secondary actions.', 'icon' => 'check'],
++    ];
++
++$enabledSections = 0;
++foreach ($definitions as $key => $definition) {
++    $enabled = $key === 'hero'
++        ? !empty($hero['enabled'])
++        : !empty($sections[$key]['enabled']);
++    if ($enabled) {
++        $enabledSections++;
++    }
++}
++
++$messages = is_array($contactMessages ?? null) ? $contactMessages : [];
++$messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSummary : [];
++?>
++<section class="workspace-page content-config-page builtin-admin-page">
++    <div class="workspace-page__header">
++        <div>
++            <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
++            <h1><?= e($pageTitleLabel) ?></h1>
++            <p><?= e($pageDescription) ?></p>
++        </div>
++        <div class="builtin-admin-page__header-actions">
++            <button class="content-config-button" type="button" data-configure-open="<?= e($pageKey) ?>-seo">
++                <?= app_icon('search') ?><span>SEO settings</span>
++            </button>
++            <a class="workspace-context-note" href="<?= e(url($publicPath)) ?>" target="_blank" rel="noopener noreferrer">
++                <?= app_icon('globe') ?> View page
++            </a>
++        </div>
++    </div>
++
++    <div data-workspace-notice hidden></div>
++
++    <div class="builtin-admin-summary">
++        <article><span><?= app_icon('globe') ?></span><div><small>Public page</small><strong><?= !empty($pageConfig['enabled']) ? 'Enabled' : 'Disabled' ?></strong></div></article>
++        <article><span><?= app_icon('layers') ?></span><div><small>Visible sections</small><strong><?= e((string) $enabledSections) ?> / <?= e((string) count($definitions)) ?></strong></div></article>
++        <article><span><?= app_icon('search') ?></span><div><small>Indexing</small><strong><?= e((string) ($seo['robots'] ?? 'index,follow')) ?></strong></div></article>
++        <?php if ($isContact): ?>
++            <article><span><?= app_icon('message') ?></span><div><small>New messages</small><strong><?= e(number_format((int) ($messageSummary['new'] ?? 0))) ?></strong></div></article>
++        <?php endif; ?>
++    </div>
++
++    <section class="builtin-admin-status">
++        <div><span class="builtin-admin-status__icon"><?= app_icon($isContact ? 'mail' : 'users') ?></span><div><strong><?= e($pageTitleLabel) ?> page visibility</strong><small>This controls the dedicated public <?= e($publicPath) ?> route. It is independent from normal CMS pages.</small></div></div>
++        <form action="<?= e(url('/dashboard/built-in-pages/' . $pageKey . '/settings')) ?>" method="post" data-workspace-form data-toggle-form>
++            <?= csrf_field() ?>
++            <input type="hidden" name="enabled" value="<?= !empty($pageConfig['enabled']) ? '1' : '0' ?>" data-toggle-value>
++            <label class="premium-switch">
++                <input type="checkbox" <?= !empty($pageConfig['enabled']) ? 'checked' : '' ?> data-auto-toggle aria-label="Toggle <?= e($pageTitleLabel) ?> page">
++                <span class="premium-switch__track"><span></span></span>
++                <b><?= !empty($pageConfig['enabled']) ? 'ON' : 'OFF' ?></b>
++            </label>
++        </form>
++    </section>
++
++    <div class="content-config-table-wrap">
++        <table class="content-config-table">
++            <thead><tr><th>Built-in section</th><th>Current configuration</th><th>Position</th><th>Status</th><th class="content-config-table__action">Action</th></tr></thead>
++            <tbody>
++            <?php foreach ($definitions as $key => $definition): ?>
++                <?php
++                $section = $key === 'hero'
++                    ? $hero
++                    : (is_array($sections[$key] ?? null) ? $sections[$key] : []);
++                $enabled = !empty($section['enabled']);
++                $summary = trim((string) ($section['title'] ?? ''));
++                if ($summary === '') {
++                    $summary = (string) $definition['label'];
++                }
++                ?>
++                <tr>
++                    <td><div class="content-config-feature"><span class="content-config-feature__icon"><?= app_icon((string) $definition['icon']) ?></span><span><strong><?= e((string) $definition['label']) ?></strong><small><?= e((string) $definition['description']) ?></small></span></div></td>
++                    <td><span class="content-config-summary"><?= e($summary) ?></span></td>
++                    <td><span class="content-config-position"><?= $key === 'hero' ? 'Fixed' : e((string) ($positions[$key] ?? '—')) ?></span></td>
++                    <td>
++                        <form action="<?= e(url('/dashboard/built-in-pages/' . $pageKey . '/' . $key . '/toggle')) ?>" method="post" data-workspace-form data-toggle-form>
++                            <?= csrf_field() ?>
++                            <input type="hidden" name="enabled" value="<?= $enabled ? '1' : '0' ?>" data-toggle-value>
++                            <label class="premium-switch"><input type="checkbox" <?= $enabled ? 'checked' : '' ?> data-auto-toggle aria-label="Toggle <?= e((string) $definition['label']) ?>"><span class="premium-switch__track"><span></span></span><b><?= $enabled ? 'ON' : 'OFF' ?></b></label>
++                        </form>
++                    </td>
++                    <td class="content-config-table__action"><button class="content-config-button" type="button" data-configure-open="<?= e($pageKey . '-' . $key) ?>"><?= app_icon('settings') ?><span>Configure</span></button></td>
++                </tr>
++            <?php endforeach; ?>
++            </tbody>
++        </table>
++    </div>
++
++    <dialog class="config-dialog" id="<?= e($pageKey) ?>-seo" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/' . $pageKey . '/seo')) ?>" method="post" data-workspace-form>
++            <?= csrf_field() ?>
++            <header class="config-dialog__head"><div><span class="eyebrow">Built-in Page SEO</span><h2><?= e($pageTitleLabel) ?> SEO</h2><p>Configure the dedicated public route without creating a normal CMS page.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++            <div class="config-dialog__body config-field-grid">
++                <label class="config-field-grid__wide"><span>SEO title</span><input class="form-control" name="title" maxlength="191" value="<?= e((string) ($seo['title'] ?? '')) ?>"></label>
++                <label class="config-field-grid__wide"><span>SEO description</span><textarea class="form-control" name="description" rows="4" maxlength="300"><?= e((string) ($seo['description'] ?? '')) ?></textarea></label>
++                <label><span>Robots directive</span><select class="form-select" name="robots"><?php foreach (['index,follow','noindex,follow','noindex,nofollow'] as $option): ?><option value="<?= e($option) ?>" <?= ($seo['robots'] ?? 'index,follow') === $option ? 'selected' : '' ?>><?= e($option) ?></option><?php endforeach; ?></select></label>
++                <label><span>Canonical URL</span><input class="form-control" value="<?= e(url($publicPath)) ?>" readonly></label>
++            </div>
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save SEO</button></footer>
++        </form>
++    </dialog>
++
++    <dialog class="config-dialog config-dialog--wide" id="<?= e($pageKey) ?>-hero" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/' . $pageKey . '/hero')) ?>" method="post" data-workspace-form>
++            <?= csrf_field() ?>
++            <header class="config-dialog__head"><div><span class="eyebrow"><?= e($pageTitleLabel) ?> Hero</span><h2>Configure hero</h2><p>Use concise copy and an optional HTTPS image URL.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++            <div class="config-dialog__body config-field-grid">
++                <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($hero['eyebrow'] ?? '')) ?>"></label>
++                <label class="config-field-grid__wide"><span>Headline</span><input class="form-control" name="title" maxlength="180" required value="<?= e((string) ($hero['title'] ?? '')) ?>"></label>
++                <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="4" maxlength="700" required><?= e((string) ($hero['description'] ?? '')) ?></textarea></label>
++                <label class="config-field-grid__wide"><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($hero['image_url'] ?? '')) ?>" placeholder="https://example.com/about-hero.jpg"></label>
++            </div>
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save hero</button></footer>
++        </form>
++    </dialog>
++
++    <?php if (!$isContact): ?>
++        <?php $story = is_array($sections['story'] ?? null) ? $sections['story'] : []; ?>
++        <dialog class="config-dialog config-dialog--wide" id="about-story" data-config-dialog>
++            <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/story')) ?>" method="post" data-workspace-form><?= csrf_field() ?>
++                <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2>Our Story</h2><p>Use this as the main long-form introduction to Barama or the organization behind it.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++                <div class="config-dialog__body config-field-grid">
++                    <label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['story'] ?? 1)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label>
++                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($story['eyebrow'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($story['title'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Story</span><textarea class="form-control" name="body" rows="10" maxlength="6000"><?= e((string) ($story['body'] ?? '')) ?></textarea></label>
++                    <label class="config-field-grid__wide"><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($story['image_url'] ?? '')) ?>"></label>
++                </div>
++                <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save story</button></footer>
++            </form>
++        </dialog>
++
++        <?php $mv = is_array($sections['mission_vision'] ?? null) ? $sections['mission_vision'] : []; ?>
++        <dialog class="config-dialog config-dialog--wide" id="about-mission_vision" data-config-dialog>
++            <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/mission_vision')) ?>" method="post" data-workspace-form><?= csrf_field() ?>
++                <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2>Mission & Vision</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++                <div class="config-dialog__body config-field-grid">
++                    <label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['mission_vision'] ?? 2)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label>
++                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($mv['eyebrow'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Section title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($mv['title'] ?? '')) ?>"></label>
++                    <label><span>Mission title</span><input class="form-control" name="mission_title" maxlength="100" value="<?= e((string) ($mv['mission_title'] ?? '')) ?>"></label>
++                    <label><span>Vision title</span><input class="form-control" name="vision_title" maxlength="100" value="<?= e((string) ($mv['vision_title'] ?? '')) ?>"></label>
++                    <label><span>Mission text</span><textarea class="form-control" name="mission_text" rows="5" maxlength="1200"><?= e((string) ($mv['mission_text'] ?? '')) ?></textarea></label>
++                    <label><span>Vision text</span><textarea class="form-control" name="vision_text" rows="5" maxlength="1200"><?= e((string) ($mv['vision_text'] ?? '')) ?></textarea></label>
++                </div>
++                <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save mission & vision</button></footer>
++            </form>
++        </dialog>
++
++        <?php foreach (['values' => ['Values','Value',4], 'stats' => ['Stats','Stat',4]] as $key => $meta): ?>
++            <?php $section = is_array($sections[$key] ?? null) ? $sections[$key] : []; $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
++            <dialog class="config-dialog config-dialog--wide" id="about-<?= e($key) ?>" data-config-dialog>
++                <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/' . $key)) ?>" method="post" data-workspace-form><?= csrf_field() ?>
++                    <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2><?= e($meta[0]) ?></h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++                    <div class="config-dialog__body">
++                        <div class="config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions[$key] ?? 99)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($section['eyebrow'] ?? '')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($section['title'] ?? '')) ?>"></label></div>
++                        <div class="homepage-repeat-grid homepage-repeat-grid--four">
++                            <?php for($i=0;$i<4;$i++): ?><?php $item=is_array($items[$i]??null)?$items[$i]:[]; ?>
++                                <section><strong><?= e($meta[1] . ' ' . ($i+1)) ?></strong>
++                                    <?php if($key==='stats'): ?><label><span>Value</span><input class="form-control" name="items[<?= $i ?>][value]" maxlength="30" value="<?= e((string) ($item['value'] ?? '')) ?>"></label><label><span>Label</span><input class="form-control" name="items[<?= $i ?>][label]" maxlength="100" value="<?= e((string) ($item['label'] ?? '')) ?>"></label>
++                                    <?php else: ?><label><span>Title</span><input class="form-control" name="items[<?= $i ?>][title]" maxlength="110" value="<?= e((string) ($item['title'] ?? '')) ?>"></label><label><span>Description</span><textarea class="form-control" name="items[<?= $i ?>][description]" rows="4" maxlength="360"><?= e((string) ($item['description'] ?? '')) ?></textarea></label><?php endif; ?>
++                                </section>
++                            <?php endfor; ?>
++                        </div>
++                    </div>
++                    <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save <?= e(strtolower($meta[0])) ?></button></footer>
++                </form>
++            </dialog>
++        <?php endforeach; ?>
++
++        <?php $team = is_array($sections['team'] ?? null) ? $sections['team'] : []; $teamItems=is_array($team['items']??null)?array_values($team['items']):[]; ?>
++        <dialog class="config-dialog config-dialog--wide" id="about-team" data-config-dialog>
++            <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/team')) ?>" method="post" data-workspace-form><?= csrf_field() ?>
++                <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2>Team</h2><p>Leave unused team profiles blank.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++                <div class="config-dialog__body">
++                    <div class="config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['team'] ?? 99)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($team['eyebrow'] ?? '')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($team['title'] ?? '')) ?>"></label></div>
++                    <div class="homepage-repeat-grid homepage-repeat-grid--four"><?php for($i=0;$i<4;$i++): ?><?php $item=is_array($teamItems[$i]??null)?$teamItems[$i]:[]; ?><section><strong>Member <?= $i+1 ?></strong><label><span>Name</span><input class="form-control" name="items[<?= $i ?>][name]" maxlength="120" value="<?= e((string) ($item['name'] ?? '')) ?>"></label><label><span>Role</span><input class="form-control" name="items[<?= $i ?>][role]" maxlength="120" value="<?= e((string) ($item['role'] ?? '')) ?>"></label><label><span>Bio</span><textarea class="form-control" name="items[<?= $i ?>][bio]" rows="4" maxlength="500"><?= e((string) ($item['bio'] ?? '')) ?></textarea></label><label><span>Image URL</span><input class="form-control" type="url" name="items[<?= $i ?>][image_url]" maxlength="1000" value="<?= e((string) ($item['image_url'] ?? '')) ?>"></label></section><?php endfor; ?></div>
++                </div>
++                <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save team</button></footer>
++            </form>
++        </dialog>
++
++        <?php $cta = is_array($sections['cta'] ?? null) ? $sections['cta'] : []; ?>
++        <dialog class="config-dialog config-dialog--wide" id="about-cta" data-config-dialog>
++            <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/cta')) ?>" method="post" data-workspace-form><?= csrf_field() ?>
++                <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2>Call to Action</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++                <div class="config-dialog__body config-field-grid">
++                    <label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['cta'] ?? 99)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($cta['eyebrow'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($cta['title'] ?? '')) ?>"></label><label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="4" maxlength="600"><?= e((string) ($cta['description'] ?? '')) ?></textarea></label>
++                    <label><span>Primary label</span><input class="form-control" name="primary_label" maxlength="70" value="<?= e((string) ($cta['primary_label'] ?? '')) ?>"></label><label><span>Primary URL</span><input class="form-control" name="primary_url" maxlength="1000" value="<?= e((string) ($cta['primary_url'] ?? '')) ?>"></label>
++                    <label><span>Secondary label</span><input class="form-control" name="secondary_label" maxlength="70" value="<?= e((string) ($cta['secondary_label'] ?? '')) ?>"></label><label><span>Secondary URL</span><input class="form-control" name="secondary_url" maxlength="1000" value="<?= e((string) ($cta['secondary_url'] ?? '')) ?>"></label>
++                </div>
++                <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save CTA</button></footer>
++            </form>
++        </dialog>
++    <?php else: ?>
++        <?php $channels = is_array($sections['channels'] ?? null) ? $sections['channels'] : []; ?>
++        <dialog class="config-dialog config-dialog--wide" id="contact-channels" data-config-dialog><form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/contact/channels')) ?>" method="post" data-workspace-form><?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Contact Section</span><h2>Contact Channels</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header><div class="config-dialog__body config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['channels']??1)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string)($channels['eyebrow']??'')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string)($channels['title']??'')) ?>"></label><label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="3" maxlength="500"><?= e((string)($channels['description']??'')) ?></textarea></label><label><span>Phone</span><input class="form-control" name="phone" maxlength="60" value="<?= e((string)($channels['phone']??'')) ?>"></label><label><span>Email</span><input class="form-control" type="email" name="email" maxlength="191" value="<?= e((string)($channels['email']??'')) ?>"></label><label><span>Telegram URL</span><input class="form-control" type="url" name="telegram_url" maxlength="1000" value="<?= e((string)($channels['telegram_url']??'')) ?>"></label><label><span>WhatsApp URL</span><input class="form-control" type="url" name="whatsapp_url" maxlength="1000" value="<?= e((string)($channels['whatsapp_url']??'')) ?>"></label></div><footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save channels</button></footer></form></dialog>
++
++        <?php $office = is_array($sections['office'] ?? null) ? $sections['office'] : []; ?>
++        <dialog class="config-dialog config-dialog--wide" id="contact-office" data-config-dialog><form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/contact/office')) ?>" method="post" data-workspace-form><?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Contact Section</span><h2>Office & Location</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header><div class="config-dialog__body config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['office']??2)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string)($office['eyebrow']??'')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string)($office['title']??'')) ?>"></label><label class="config-field-grid__wide"><span>Address</span><textarea class="form-control" name="address" rows="4" maxlength="600"><?= e((string)($office['address']??'')) ?></textarea></label><label class="config-field-grid__wide"><span>Location note</span><textarea class="form-control" name="location_note" rows="3" maxlength="400"><?= e((string)($office['location_note']??'')) ?></textarea></label><label><span>Map URL</span><input class="form-control" type="url" name="map_url" maxlength="1000" value="<?= e((string)($office['map_url']??'')) ?>"></label><label><span>Map button label</span><input class="form-control" name="map_label" maxlength="70" value="<?= e((string)($office['map_label']??'Open map')) ?>"></label></div><footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save office</button></footer></form></dialog>
++
++        <?php $hours = is_array($sections['hours'] ?? null) ? $sections['hours'] : []; $hourItems=is_array($hours['items']??null)?array_values($hours['items']):[]; ?>
++        <dialog class="config-dialog config-dialog--wide" id="contact-hours" data-config-dialog><form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/contact/hours')) ?>" method="post" data-workspace-form><?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Contact Section</span><h2>Business Hours</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header><div class="config-dialog__body"><div class="config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['hours']??3)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string)($hours['eyebrow']??'')) ?>"></label><label><span>Timezone</span><input class="form-control" name="timezone" maxlength="80" value="<?= e((string)($hours['timezone']??'Asia/Phnom_Penh')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string)($hours['title']??'')) ?>"></label></div><div class="builtin-hours-editor"><?php foreach(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as $i=>$day): ?><?php $item=is_array($hourItems[$i]??null)?$hourItems[$i]:[]; ?><label><span><?= e($day) ?></span><input class="form-control" name="items[<?= $i ?>][hours]" maxlength="80" value="<?= e((string)($item['hours']??'')) ?>" placeholder="08:30 – 17:30 or Closed"></label><?php endforeach; ?></div></div><footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save hours</button></footer></form></dialog>
++
++        <?php $form = is_array($sections['form'] ?? null) ? $sections['form'] : []; $subjectText=implode("\n", is_array($form['subjects']??null)?$form['subjects']:[]); ?>
++        <dialog class="config-dialog config-dialog--wide" id="contact-form" data-config-dialog><form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/contact/form')) ?>" method="post" data-workspace-form><?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Contact Section</span><h2>Contact Form</h2><p>Submissions are stored in the support inbox below. Destination email is optional.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header><div class="config-dialog__body config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['form']??4)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string)($form['eyebrow']??'')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string)($form['title']??'')) ?>"></label><label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="4" maxlength="600"><?= e((string)($form['description']??'')) ?></textarea></label><label><span>Button label</span><input class="form-control" name="button_label" maxlength="70" value="<?= e((string)($form['button_label']??'Send message')) ?>"></label><label><span>Destination email</span><input class="form-control" type="email" name="destination_email" maxlength="191" value="<?= e((string)($form['destination_email']??'')) ?>"><small>Optional. Messages are stored even when this is blank.</small></label><label class="config-field-grid__wide"><span>Success message</span><input class="form-control" name="success_message" maxlength="260" value="<?= e((string)($form['success_message']??'')) ?>"></label><label class="config-field-grid__wide"><span>Consent text</span><textarea class="form-control" name="consent_text" rows="2" maxlength="500"><?= e((string)($form['consent_text']??'')) ?></textarea></label><label class="config-field-grid__wide"><span>Subjects — one per line</span><textarea class="form-control" name="subjects" rows="6" maxlength="900"><?= e($subjectText) ?></textarea></label><label class="premium-inline-toggle config-field-grid__wide"><input type="checkbox" name="require_phone" value="1" <?= !empty($form['require_phone'])?'checked':'' ?>><span>Require phone number</span></label></div><footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save contact form</button></footer></form></dialog>
++
++        <?php $faq = is_array($sections['faq'] ?? null) ? $sections['faq'] : []; $faqItems=is_array($faq['items']??null)?array_values($faq['items']):[]; ?>
++        <dialog class="config-dialog config-dialog--wide" id="contact-faq" data-config-dialog><form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/contact/faq')) ?>" method="post" data-workspace-form><?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Contact Section</span><h2>FAQ</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header><div class="config-dialog__body"><div class="config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['faq']??5)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string)($faq['eyebrow']??'')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string)($faq['title']??'')) ?>"></label></div><div class="homepage-repeat-grid"><?php for($i=0;$i<5;$i++): ?><?php $item=is_array($faqItems[$i]??null)?$faqItems[$i]:[]; ?><section><strong>Question <?= $i+1 ?></strong><label><span>Question</span><input class="form-control" name="items[<?= $i ?>][question]" maxlength="180" value="<?= e((string)($item['question']??'')) ?>"></label><label><span>Answer</span><textarea class="form-control" name="items[<?= $i ?>][answer]" rows="5" maxlength="900"><?= e((string)($item['answer']??'')) ?></textarea></label></section><?php endfor; ?></div></div><footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save FAQ</button></footer></form></dialog>
++
++        <?php $socials = is_array($sections['socials'] ?? null) ? $sections['socials'] : []; ?>
++        <dialog class="config-dialog config-dialog--wide" id="contact-socials" data-config-dialog><form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/contact/socials')) ?>" method="post" data-workspace-form><?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Contact Section</span><h2>Social Links</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header><div class="config-dialog__body config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['socials']??6)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string)($socials['eyebrow']??'')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string)($socials['title']??'')) ?>"></label><label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="3" maxlength="400"><?= e((string)($socials['description']??'')) ?></textarea></label><?php foreach(['facebook'=>'Facebook','instagram'=>'Instagram','linkedin'=>'LinkedIn','youtube'=>'YouTube','telegram'=>'Telegram','tiktok'=>'TikTok'] as $network=>$label): ?><label><span><?= e($label) ?> URL</span><input class="form-control" type="url" name="<?= e($network) ?>_url" maxlength="1000" value="<?= e((string)($socials[$network . '_url']??'')) ?>"></label><?php endforeach; ?></div><footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save social links</button></footer></form></dialog>
++
++        <section class="builtin-message-inbox">
++            <div class="builtin-message-inbox__head"><div><span class="eyebrow">Contact Inbox</span><h2>Recent messages</h2><p>Messages submitted through the dedicated Contact Us page. Update status without deleting the original request.</p></div><div class="builtin-message-inbox__counts"><span>New <strong><?= e(number_format((int)($messageSummary['new']??0))) ?></strong></span><span>Read <strong><?= e(number_format((int)($messageSummary['read']??0))) ?></strong></span><span>Resolved <strong><?= e(number_format((int)($messageSummary['resolved']??0))) ?></strong></span></div></div>
++            <?php if($messages===[]): ?><div class="workspace-record-empty">No contact messages have been received yet.</div><?php else: ?>
++                <div class="builtin-message-list">
++                    <?php foreach($messages as $message): ?>
++                        <?php $status=(string)($message['status']??'new'); ?>
++                        <article class="builtin-message-card">
++                            <div class="builtin-message-card__top"><div><strong><?= e((string)($message['contact_name']??'')) ?></strong><span><?= e((string)($message['contact_email']??'')) ?><?= trim((string)($message['contact_phone']??''))!==''?' · '.e((string)$message['contact_phone']):'' ?></span></div><span class="status-badge status-badge--<?= e($status==='resolved'?'approved':($status==='spam'?'rejected':($status==='new'?'pending':'active'))) ?>"><?= e(ucfirst($status)) ?></span></div>
++                            <h3><?= e((string)($message['subject']??'')) ?></h3>
++                            <details><summary>Read message</summary><p><?= nl2br(e((string)($message['message']??''))) ?></p></details>
++                            <footer><small><?= e((string)($message['created_at']??'')) ?><?= trim((string)($message['handled_by_name']??''))!==''?' · handled by '.e((string)$message['handled_by_name']):'' ?></small><form action="<?= e(url('/dashboard/contact/messages/' . (int)$message['id'] . '/status')) ?>" method="post" data-workspace-form><?= csrf_field() ?><select class="form-select" name="status"><?php foreach(['new','read','resolved','spam'] as $option): ?><option value="<?= e($option) ?>" <?= $status===$option?'selected':'' ?>><?= e(ucfirst($option)) ?></option><?php endforeach; ?></select><button class="content-config-button" type="submit"><?= app_icon('check') ?><span>Update</span></button></form></footer>
++                        </article>
++                    <?php endforeach; ?>
++                </div>
++            <?php endif; ?>
++        </section>
++    <?php endif; ?>
++</section>
+diff --git a/application/routes/web.php b/application/routes/web.php
+--- a/application/routes/web.php
++++ b/application/routes/web.php
+@@ -8,8 +8,11 @@
+ use Barama\Http\Controllers\AccountManagementController;
+ use Barama\Http\Controllers\AdminManagementController;
+ use Barama\Http\Controllers\AppearanceController;
++use Barama\Http\Controllers\BuiltInPageAdminController;
++use Barama\Http\Controllers\BuiltInPageController;
+ use Barama\Http\Controllers\AuthController;
+ use Barama\Http\Controllers\CompanyController;
++use Barama\Http\Controllers\ContactMessageController;
+ use Barama\Http\Controllers\CmsController;
+ use Barama\Http\Controllers\DashboardController;
+ use Barama\Http\Controllers\DeveloperController;
+@@ -47,6 +50,9 @@
+ 
+ $router->get('/company', [CompanyController::class, 'index']);
+ $router->get('/company/{slug}', [CompanyController::class, 'show']);
++$router->get('/about', [BuiltInPageController::class, 'about']);
++$router->get('/contact', [BuiltInPageController::class, 'contact']);
++$router->post('/contact/messages', [ContactMessageController::class, 'store'], $csrf);
+ $router->get('/pages/{slug}', [CmsController::class, 'show']);
+ 
+ $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
+@@ -541,6 +547,16 @@
+     [AdminManagementController::class, 'toggleHomepageFeature'],
+     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+ );
++$router->get(
++    '/dashboard/about',
++    [DashboardController::class, 'about'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
++);
++$router->get(
++    '/dashboard/contact',
++    [DashboardController::class, 'contact'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
++);
+ $router->get(
+     '/dashboard/navigation',
+     [DashboardController::class, 'navigationManager'],
+@@ -566,6 +582,22 @@
+     [AdminManagementController::class, 'deleteNavigation'],
+     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+ );
++$router->post(
++    '/dashboard/built-in-pages/{page}/{section}',
++    [BuiltInPageAdminController::class, 'update'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->post(
++    '/dashboard/built-in-pages/{page}/{section}/toggle',
++    [BuiltInPageAdminController::class, 'toggle'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->post(
++    '/dashboard/contact/messages/{id}/status',
++    [BuiltInPageAdminController::class, 'contactMessageStatus'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++
+ $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+ $router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+ $router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+diff --git a/assets/css/app.css b/assets/css/app.css
+--- a/assets/css/app.css
++++ b/assets/css/app.css
+@@ -13887,3 +13887,1162 @@ body:not(.auth-standalone-body) textarea {
+         padding-inline: 0.78rem;
+     }
+ }
++
++
++/* BARAMA_BUILTIN_ABOUT_CONTACT_V100 */
++.builtin-admin-page__header-actions {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    justify-content: flex-end;
++    gap: 0.65rem;
++}
++
++.builtin-admin-summary {
++    display: grid;
++    grid-template-columns: repeat(4, minmax(0, 1fr));
++    gap: 0.75rem;
++    margin-bottom: 1rem;
++}
++
++.builtin-admin-summary article {
++    display: flex;
++    min-width: 0;
++    align-items: center;
++    gap: 0.75rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 14px;
++    background: var(--barama-surface);
++    padding: 0.9rem 1rem;
++}
++
++.builtin-admin-summary article > span {
++    display: grid;
++    width: 36px;
++    height: 36px;
++    flex: 0 0 36px;
++    place-items: center;
++    border-radius: 10px;
++    background: color-mix(in srgb, var(--barama-primary) 10%, var(--barama-surface));
++    color: var(--barama-primary);
++}
++
++.builtin-admin-summary svg,
++.builtin-admin-status__icon svg {
++    width: 18px;
++    height: 18px;
++}
++
++.builtin-admin-summary small,
++.builtin-admin-summary strong {
++    display: block;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.builtin-admin-summary small {
++    color: var(--barama-muted);
++    font-size: 0.69rem;
++    font-weight: 750;
++    letter-spacing: 0.03em;
++    text-transform: uppercase;
++}
++
++.builtin-admin-summary strong {
++    margin-top: 0.1rem;
++    color: var(--barama-text);
++    font-size: 0.92rem;
++    font-weight: 850;
++}
++
++.builtin-admin-status {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 1rem;
++    margin-bottom: 1rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 14px;
++    background: color-mix(in srgb, var(--barama-surface-soft) 70%, var(--barama-surface));
++    padding: 0.9rem 1rem;
++}
++
++.builtin-admin-status > div {
++    display: flex;
++    min-width: 0;
++    align-items: center;
++    gap: 0.75rem;
++}
++
++.builtin-admin-status__icon {
++    display: grid;
++    width: 38px;
++    height: 38px;
++    flex: 0 0 38px;
++    place-items: center;
++    border-radius: 11px;
++    background: color-mix(in srgb, var(--barama-primary) 11%, var(--barama-surface));
++    color: var(--barama-primary);
++}
++
++.builtin-admin-status strong,
++.builtin-admin-status small {
++    display: block;
++}
++
++.builtin-admin-status strong {
++    color: var(--barama-text);
++    font-size: 0.86rem;
++    font-weight: 850;
++}
++
++.builtin-admin-status small {
++    margin-top: 0.12rem;
++    color: var(--barama-muted);
++    font-size: 0.74rem;
++    line-height: 1.45;
++}
++
++.builtin-hours-editor {
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 0.65rem;
++    margin-top: 1rem;
++}
++
++.builtin-hours-editor label {
++    display: grid;
++    grid-template-columns: minmax(90px, 0.4fr) minmax(0, 1fr);
++    align-items: center;
++    gap: 0.7rem;
++}
++
++.builtin-hours-editor label > span {
++    color: var(--barama-text);
++    font-size: 0.76rem;
++    font-weight: 800;
++}
++
++.builtin-message-inbox {
++    margin-top: 1rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 16px;
++    background: var(--barama-surface);
++    padding: 1rem;
++}
++
++.builtin-message-inbox__head {
++    display: flex;
++    align-items: flex-start;
++    justify-content: space-between;
++    gap: 1rem;
++    margin-bottom: 1rem;
++}
++
++.builtin-message-inbox__head .eyebrow {
++    margin-bottom: 0.35rem;
++}
++
++.builtin-message-inbox__head h2 {
++    margin: 0;
++    color: var(--barama-text);
++    font-size: 1.05rem;
++    font-weight: 900;
++}
++
++.builtin-message-inbox__head p {
++    max-width: 720px;
++    margin: 0.3rem 0 0;
++    color: var(--barama-muted);
++    font-size: 0.78rem;
++    line-height: 1.55;
++}
++
++.builtin-message-inbox__counts {
++    display: flex;
++    flex-wrap: wrap;
++    justify-content: flex-end;
++    gap: 0.4rem;
++}
++
++.builtin-message-inbox__counts span {
++    display: inline-flex;
++    align-items: center;
++    gap: 0.35rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 999px;
++    background: var(--barama-surface-soft);
++    color: var(--barama-muted);
++    padding: 0.34rem 0.55rem;
++    font-size: 0.7rem;
++    font-weight: 750;
++}
++
++.builtin-message-inbox__counts strong {
++    color: var(--barama-text);
++}
++
++.builtin-message-list {
++    display: grid;
++    gap: 0.65rem;
++}
++
++.builtin-message-card {
++    border: 1px solid var(--barama-border);
++    border-radius: 13px;
++    background: var(--barama-bg);
++    padding: 0.85rem 0.9rem;
++}
++
++.builtin-message-card__top,
++.builtin-message-card footer {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 0.75rem;
++}
++
++.builtin-message-card__top > div strong,
++.builtin-message-card__top > div span {
++    display: block;
++}
++
++.builtin-message-card__top > div strong {
++    color: var(--barama-text);
++    font-size: 0.82rem;
++    font-weight: 850;
++}
++
++.builtin-message-card__top > div span,
++.builtin-message-card footer small {
++    color: var(--barama-muted);
++    font-size: 0.7rem;
++}
++
++.builtin-message-card h3 {
++    margin: 0.65rem 0 0.45rem;
++    color: var(--barama-text);
++    font-size: 0.86rem;
++    font-weight: 850;
++}
++
++.builtin-message-card details {
++    border-top: 1px solid var(--barama-border);
++    border-bottom: 1px solid var(--barama-border);
++    padding: 0.5rem 0;
++}
++
++.builtin-message-card summary {
++    cursor: pointer;
++    color: var(--barama-primary);
++    font-size: 0.72rem;
++    font-weight: 800;
++}
++
++.builtin-message-card details p {
++    margin: 0.55rem 0 0;
++    color: var(--barama-muted);
++    font-size: 0.78rem;
++    line-height: 1.65;
++}
++
++.builtin-message-card footer {
++    margin-top: 0.65rem;
++}
++
++.builtin-message-card footer form {
++    display: flex;
++    align-items: center;
++    gap: 0.45rem;
++}
++
++.builtin-message-card footer .form-select {
++    min-width: 116px;
++    height: 34px;
++    padding-block: 0.25rem;
++    font-size: 0.72rem;
++}
++
++.builtin-public-page {
++    overflow: hidden;
++    background: var(--barama-bg);
++}
++
++.builtin-hero {
++    position: relative;
++    overflow: hidden;
++    border-bottom: 1px solid var(--barama-border);
++    background:
++        radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--barama-primary) 14%, transparent), transparent 34%),
++        radial-gradient(circle at 85% 72%, color-mix(in srgb, var(--barama-success) 10%, transparent), transparent 30%),
++        var(--barama-bg);
++    padding: clamp(3.5rem, 7vw, 7rem) 0;
++}
++
++.builtin-hero::after {
++    position: absolute;
++    width: 360px;
++    height: 360px;
++    right: -140px;
++    bottom: -210px;
++    border: 1px solid color-mix(in srgb, var(--barama-primary) 18%, transparent);
++    border-radius: 50%;
++    content: "";
++    pointer-events: none;
++}
++
++.builtin-hero__grid {
++    position: relative;
++    z-index: 1;
++    display: grid;
++    grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.72fr);
++    align-items: center;
++    gap: clamp(2rem, 5vw, 5rem);
++}
++
++.builtin-hero__copy .eyebrow {
++    margin-bottom: 0.8rem;
++}
++
++.builtin-hero__copy h1 {
++    max-width: 760px;
++    margin: 0;
++    color: var(--barama-text);
++    font-size: clamp(2.35rem, 5.3vw, 4.9rem);
++    font-weight: 900;
++    letter-spacing: -0.055em;
++    line-height: 0.98;
++}
++
++.builtin-hero__copy > p {
++    max-width: 720px;
++    margin: 1.25rem 0 0;
++    color: var(--barama-muted);
++    font-size: clamp(1rem, 1.45vw, 1.18rem);
++    line-height: 1.75;
++}
++
++.builtin-hero__actions {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 0.65rem;
++    margin-top: 1.6rem;
++}
++
++.builtin-hero__actions .btn,
++.builtin-cta__actions .btn {
++    display: inline-flex;
++    align-items: center;
++    gap: 0.45rem;
++    border-radius: 11px;
++    padding: 0.72rem 1rem;
++    font-weight: 800;
++}
++
++.builtin-hero__actions svg {
++    width: 16px;
++    height: 16px;
++}
++
++.builtin-hero__media,
++.builtin-hero__visual {
++    overflow: hidden;
++    min-height: 360px;
++    border: 1px solid color-mix(in srgb, var(--barama-border) 82%, transparent);
++    border-radius: 28px;
++    background: var(--barama-surface);
++    box-shadow: var(--barama-shadow);
++}
++
++.builtin-hero__media img {
++    width: 100%;
++    height: 100%;
++    min-height: 360px;
++    object-fit: cover;
++}
++
++.builtin-hero__visual {
++    position: relative;
++    display: grid;
++    place-items: center;
++    background:
++        linear-gradient(145deg, color-mix(in srgb, var(--barama-primary) 13%, var(--barama-surface)), var(--barama-surface));
++}
++
++.builtin-hero__visual span {
++    position: absolute;
++    display: grid;
++    width: 94px;
++    height: 94px;
++    place-items: center;
++    border: 1px solid color-mix(in srgb, var(--barama-primary) 18%, var(--barama-border));
++    border-radius: 27px;
++    background: color-mix(in srgb, var(--barama-surface) 92%, transparent);
++    color: var(--barama-primary);
++    box-shadow: 0 16px 40px color-mix(in srgb, var(--barama-primary) 10%, transparent);
++}
++
++.builtin-hero__visual span:first-child {
++    transform: translate(-72px, -54px) rotate(-7deg);
++}
++
++.builtin-hero__visual span:nth-child(2) {
++    transform: translate(70px, -4px) rotate(8deg);
++}
++
++.builtin-hero__visual span:nth-child(3) {
++    transform: translate(-5px, 78px) rotate(-2deg);
++}
++
++.builtin-hero__visual svg {
++    width: 38px;
++    height: 38px;
++}
++
++.builtin-section {
++    padding: clamp(3.4rem, 6vw, 6rem) 0;
++}
++
++.builtin-section--soft {
++    border-top: 1px solid var(--barama-border);
++    border-bottom: 1px solid var(--barama-border);
++    background: var(--barama-surface-soft);
++}
++
++.builtin-section__head {
++    max-width: 760px;
++    margin-bottom: 1.8rem;
++}
++
++.builtin-section__head .eyebrow,
++.builtin-section__copy .eyebrow,
++.builtin-cta .eyebrow {
++    margin-bottom: 0.55rem;
++}
++
++.builtin-section__head h2,
++.builtin-section__copy h2,
++.builtin-cta h2,
++.builtin-contact-office h2 {
++    margin: 0;
++    color: var(--barama-text);
++    font-size: clamp(1.75rem, 3vw, 2.65rem);
++    font-weight: 900;
++    letter-spacing: -0.035em;
++    line-height: 1.08;
++}
++
++.builtin-section__head > p,
++.builtin-section__copy > p,
++.builtin-contact-office > div > p {
++    margin: 0.8rem 0 0;
++    color: var(--barama-muted);
++    line-height: 1.7;
++}
++
++.builtin-split {
++    display: grid;
++    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
++    align-items: center;
++    gap: clamp(2rem, 5vw, 5rem);
++}
++
++.builtin-prose {
++    margin-top: 1rem;
++    color: var(--barama-muted);
++    font-size: 1rem;
++    line-height: 1.85;
++}
++
++.builtin-split__media {
++    overflow: hidden;
++    min-height: 340px;
++    border: 1px solid var(--barama-border);
++    border-radius: 24px;
++    background: var(--barama-surface);
++    box-shadow: var(--barama-shadow);
++}
++
++.builtin-split__media img {
++    width: 100%;
++    height: 100%;
++    min-height: 340px;
++    object-fit: cover;
++}
++
++.builtin-split__media.is-placeholder {
++    display: grid;
++    place-items: center;
++    background:
++        linear-gradient(145deg, color-mix(in srgb, var(--barama-primary) 8%, var(--barama-surface)), var(--barama-surface));
++}
++
++.builtin-placeholder-mark {
++    display: grid;
++    justify-items: center;
++    gap: 0.55rem;
++    color: var(--barama-muted);
++    text-align: center;
++}
++
++.builtin-placeholder-mark svg {
++    width: 48px;
++    height: 48px;
++    color: var(--barama-primary);
++}
++
++.builtin-placeholder-mark strong {
++    color: var(--barama-text);
++    font-size: 1.05rem;
++}
++
++.builtin-placeholder-mark span {
++    font-size: 0.78rem;
++}
++
++.builtin-card-grid {
++    display: grid;
++    gap: 0.85rem;
++}
++
++.builtin-card-grid--two {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++}
++
++.builtin-card-grid--four,
++.builtin-stat-grid {
++    grid-template-columns: repeat(4, minmax(0, 1fr));
++}
++
++.builtin-info-card {
++    position: relative;
++    overflow: hidden;
++    min-height: 210px;
++    border: 1px solid var(--barama-border);
++    border-radius: 18px;
++    background: var(--barama-surface);
++    padding: 1.35rem;
++    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
++}
++
++.builtin-info-card:hover,
++.builtin-contact-channel:hover,
++.builtin-social-grid a:hover {
++    transform: translateY(-3px);
++    border-color: color-mix(in srgb, var(--barama-primary) 36%, var(--barama-border));
++    box-shadow: 0 14px 34px color-mix(in srgb, var(--barama-primary) 8%, transparent);
++}
++
++.builtin-info-card__icon {
++    display: grid;
++    width: 42px;
++    height: 42px;
++    place-items: center;
++    border-radius: 12px;
++    background: color-mix(in srgb, var(--barama-primary) 10%, var(--barama-surface));
++    color: var(--barama-primary);
++}
++
++.builtin-info-card__icon svg {
++    width: 20px;
++    height: 20px;
++}
++
++.builtin-info-card__number {
++    display: block;
++    color: color-mix(in srgb, var(--barama-primary) 70%, var(--barama-muted));
++    font-size: 0.74rem;
++    font-weight: 900;
++    letter-spacing: 0.08em;
++}
++
++.builtin-info-card h3 {
++    margin: 1rem 0 0.45rem;
++    color: var(--barama-text);
++    font-size: 1.05rem;
++    font-weight: 900;
++}
++
++.builtin-info-card p {
++    margin: 0;
++    color: var(--barama-muted);
++    font-size: 0.88rem;
++    line-height: 1.65;
++}
++
++.builtin-stat-grid {
++    display: grid;
++    gap: 0.75rem;
++}
++
++.builtin-stat {
++    border: 1px solid var(--barama-border);
++    border-radius: 17px;
++    background: var(--barama-surface);
++    padding: 1.25rem;
++    text-align: center;
++}
++
++.builtin-stat strong,
++.builtin-stat span {
++    display: block;
++}
++
++.builtin-stat strong {
++    color: var(--barama-primary);
++    font-size: clamp(1.8rem, 3vw, 2.7rem);
++    font-weight: 900;
++    letter-spacing: -0.04em;
++}
++
++.builtin-stat span {
++    margin-top: 0.3rem;
++    color: var(--barama-muted);
++    font-size: 0.78rem;
++    font-weight: 750;
++}
++
++.builtin-team-grid {
++    display: grid;
++    grid-template-columns: repeat(4, minmax(0, 1fr));
++    gap: 0.85rem;
++}
++
++.builtin-team-card {
++    overflow: hidden;
++    border: 1px solid var(--barama-border);
++    border-radius: 18px;
++    background: var(--barama-surface);
++}
++
++.builtin-team-card__media {
++    display: grid;
++    min-height: 230px;
++    place-items: center;
++    overflow: hidden;
++    background: var(--barama-surface-soft);
++    color: var(--barama-primary);
++}
++
++.builtin-team-card__media img {
++    width: 100%;
++    height: 230px;
++    object-fit: cover;
++}
++
++.builtin-team-card__media svg {
++    width: 52px;
++    height: 52px;
++}
++
++.builtin-team-card > div:last-child {
++    padding: 1rem;
++}
++
++.builtin-team-card h3 {
++    margin: 0;
++    color: var(--barama-text);
++    font-size: 1rem;
++    font-weight: 900;
++}
++
++.builtin-team-card strong {
++    display: block;
++    margin-top: 0.2rem;
++    color: var(--barama-primary);
++    font-size: 0.74rem;
++}
++
++.builtin-team-card p {
++    margin: 0.65rem 0 0;
++    color: var(--barama-muted);
++    font-size: 0.8rem;
++    line-height: 1.6;
++}
++
++.builtin-cta {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 2rem;
++    border: 1px solid color-mix(in srgb, var(--barama-primary) 23%, var(--barama-border));
++    border-radius: 24px;
++    background:
++        linear-gradient(135deg, color-mix(in srgb, var(--barama-primary) 10%, var(--barama-surface)), var(--barama-surface));
++    padding: clamp(1.5rem, 4vw, 2.5rem);
++    box-shadow: var(--barama-shadow);
++}
++
++.builtin-cta > div:first-child {
++    max-width: 760px;
++}
++
++.builtin-cta p {
++    margin: 0.75rem 0 0;
++    color: var(--barama-muted);
++    line-height: 1.7;
++}
++
++.builtin-cta__actions {
++    display: flex;
++    flex: 0 0 auto;
++    flex-wrap: wrap;
++    justify-content: flex-end;
++    gap: 0.6rem;
++}
++
++.builtin-contact-channel-grid {
++    display: grid;
++    grid-template-columns: repeat(4, minmax(0, 1fr));
++    gap: 0.75rem;
++}
++
++.builtin-contact-channel {
++    display: flex;
++    min-height: 110px;
++    align-items: center;
++    gap: 0.8rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 16px;
++    background: var(--barama-surface);
++    color: inherit;
++    padding: 1rem;
++    text-decoration: none;
++    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
++}
++
++.builtin-contact-channel > svg {
++    width: 25px;
++    height: 25px;
++    flex: 0 0 25px;
++    color: var(--barama-primary);
++}
++
++.builtin-contact-channel strong,
++.builtin-contact-channel small {
++    display: block;
++}
++
++.builtin-contact-channel strong {
++    color: var(--barama-text);
++    font-size: 0.86rem;
++}
++
++.builtin-contact-channel small {
++    margin-top: 0.2rem;
++    color: var(--barama-muted);
++    font-size: 0.72rem;
++    overflow-wrap: anywhere;
++}
++
++.builtin-contact-office {
++    display: grid;
++    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.75fr);
++    align-items: center;
++    gap: 2rem;
++}
++
++.builtin-office-address {
++    display: flex;
++    align-items: flex-start;
++    gap: 0.55rem;
++}
++
++.builtin-office-address svg {
++    width: 19px;
++    height: 19px;
++    flex: 0 0 19px;
++    margin-top: 0.2rem;
++    color: var(--barama-primary);
++}
++
++.builtin-map-placeholder {
++    display: grid;
++    min-height: 260px;
++    place-items: center;
++    align-content: center;
++    gap: 0.5rem;
++    border: 1px dashed color-mix(in srgb, var(--barama-primary) 36%, var(--barama-border));
++    border-radius: 20px;
++    background: var(--barama-surface);
++    color: var(--barama-muted);
++    text-align: center;
++}
++
++.builtin-map-placeholder svg {
++    width: 42px;
++    height: 42px;
++    color: var(--barama-primary);
++}
++
++.builtin-map-placeholder strong {
++    color: var(--barama-text);
++    font-size: 0.95rem;
++}
++
++.builtin-map-placeholder span {
++    max-width: 240px;
++    font-size: 0.76rem;
++}
++
++.builtin-hours-card {
++    max-width: 760px;
++    border: 1px solid var(--barama-border);
++    border-radius: 18px;
++    background: var(--barama-surface);
++    padding: 0.6rem 1rem 0.8rem;
++}
++
++.builtin-hours-card > div {
++    display: flex;
++    justify-content: space-between;
++    gap: 1rem;
++    border-bottom: 1px solid var(--barama-border);
++    padding: 0.75rem 0.15rem;
++}
++
++.builtin-hours-card > div strong {
++    color: var(--barama-text);
++    font-size: 0.82rem;
++}
++
++.builtin-hours-card > div span {
++    color: var(--barama-muted);
++    font-size: 0.8rem;
++}
++
++.builtin-hours-card > small {
++    display: flex;
++    align-items: center;
++    gap: 0.35rem;
++    margin-top: 0.7rem;
++    color: var(--barama-muted);
++    font-size: 0.72rem;
++}
++
++.builtin-hours-card > small svg {
++    width: 15px;
++    height: 15px;
++}
++
++.builtin-contact-form-layout {
++    display: grid;
++    grid-template-columns: minmax(260px, 0.65fr) minmax(0, 1fr);
++    align-items: start;
++    gap: clamp(1.5rem, 4vw, 3rem);
++}
++
++.builtin-contact-form-note {
++    display: flex;
++    align-items: flex-start;
++    gap: 0.5rem;
++    margin-top: 1rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 13px;
++    background: var(--barama-surface);
++    color: var(--barama-muted);
++    padding: 0.8rem;
++    font-size: 0.75rem;
++    line-height: 1.55;
++}
++
++.builtin-contact-form-note svg {
++    width: 17px;
++    height: 17px;
++    flex: 0 0 17px;
++    color: var(--barama-primary);
++}
++
++.builtin-contact-form-card {
++    border: 1px solid var(--barama-border);
++    border-radius: 20px;
++    background: var(--barama-surface);
++    padding: clamp(1rem, 3vw, 1.5rem);
++    box-shadow: var(--barama-shadow);
++}
++
++.builtin-form-grid {
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 0.75rem;
++}
++
++.builtin-form-grid label > span {
++    display: block;
++    margin-bottom: 0.35rem;
++    color: var(--barama-muted);
++    font-size: 0.74rem;
++    font-weight: 780;
++}
++
++.builtin-form-grid__wide {
++    grid-column: 1 / -1;
++}
++
++.builtin-contact-consent {
++    display: flex !important;
++    align-items: flex-start;
++    gap: 0.55rem;
++    margin-top: 0.15rem;
++}
++
++.builtin-contact-consent input {
++    margin-top: 0.18rem;
++}
++
++.builtin-contact-consent span {
++    margin: 0 !important;
++    font-weight: 650 !important;
++    line-height: 1.5;
++}
++
++.builtin-contact-submit {
++    display: inline-flex;
++    align-items: center;
++    gap: 0.45rem;
++    margin-top: 0.9rem;
++}
++
++.builtin-contact-submit svg {
++    width: 17px;
++    height: 17px;
++}
++
++.builtin-faq-list {
++    display: grid;
++    max-width: 900px;
++    gap: 0.55rem;
++}
++
++.builtin-faq-list details {
++    border: 1px solid var(--barama-border);
++    border-radius: 14px;
++    background: var(--barama-surface);
++    padding: 0 1rem;
++}
++
++.builtin-faq-list summary {
++    display: flex;
++    min-height: 58px;
++    cursor: pointer;
++    align-items: center;
++    justify-content: space-between;
++    gap: 1rem;
++    color: var(--barama-text);
++    font-size: 0.88rem;
++    font-weight: 850;
++    list-style: none;
++}
++
++.builtin-faq-list summary::-webkit-details-marker {
++    display: none;
++}
++
++.builtin-faq-list summary span {
++    display: grid;
++    width: 26px;
++    height: 26px;
++    flex: 0 0 26px;
++    place-items: center;
++    border-radius: 8px;
++    background: var(--barama-surface-soft);
++    color: var(--barama-primary);
++    transition: transform 160ms ease;
++}
++
++.builtin-faq-list details[open] summary span {
++    transform: rotate(45deg);
++}
++
++.builtin-faq-list summary svg {
++    width: 14px;
++    height: 14px;
++}
++
++.builtin-faq-list details p {
++    margin: 0;
++    border-top: 1px solid var(--barama-border);
++    color: var(--barama-muted);
++    padding: 0.8rem 0 1rem;
++    font-size: 0.84rem;
++    line-height: 1.7;
++}
++
++.builtin-social-grid {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 0.6rem;
++}
++
++.builtin-social-grid a {
++    display: inline-flex;
++    align-items: center;
++    gap: 0.45rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 12px;
++    background: var(--barama-surface);
++    padding: 0.7rem 0.9rem;
++    color: var(--barama-text);
++    font-size: 0.8rem;
++    font-weight: 800;
++    text-decoration: none;
++    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
++}
++
++.builtin-social-grid svg {
++    width: 16px;
++    height: 16px;
++    color: var(--barama-primary);
++}
++
++.contact-form-honeypot {
++    position: absolute !important;
++    width: 1px !important;
++    height: 1px !important;
++    overflow: hidden !important;
++    clip: rect(0 0 0 0) !important;
++    white-space: nowrap !important;
++}
++
++@media (max-width: 1099.98px) {
++    .builtin-admin-summary {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++    }
++
++    .builtin-card-grid--four,
++    .builtin-stat-grid,
++    .builtin-team-grid,
++    .builtin-contact-channel-grid {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++    }
++}
++
++@media (max-width: 899.98px) {
++    .builtin-hero__grid,
++    .builtin-split,
++    .builtin-contact-office,
++    .builtin-contact-form-layout {
++        grid-template-columns: 1fr;
++    }
++
++    .builtin-hero__media,
++    .builtin-hero__visual {
++        min-height: 300px;
++    }
++
++    .builtin-hero__media img {
++        min-height: 300px;
++    }
++
++    .builtin-cta {
++        align-items: flex-start;
++        flex-direction: column;
++    }
++
++    .builtin-cta__actions {
++        justify-content: flex-start;
++    }
++}
++
++@media (max-width: 767.98px) {
++    .builtin-admin-page__header-actions,
++    .builtin-message-inbox__head,
++    .builtin-admin-status,
++    .builtin-message-card footer {
++        align-items: stretch;
++        flex-direction: column;
++    }
++
++    .builtin-admin-page__header-actions {
++        justify-content: stretch;
++    }
++
++    .builtin-admin-page__header-actions > * {
++        justify-content: center;
++    }
++
++    .builtin-message-inbox__counts {
++        justify-content: flex-start;
++    }
++
++    .builtin-message-card footer form {
++        width: 100%;
++    }
++
++    .builtin-message-card footer .form-select {
++        flex: 1 1 auto;
++    }
++
++    .builtin-hours-editor {
++        grid-template-columns: 1fr;
++    }
++}
++
++@media (max-width: 575.98px) {
++    .builtin-admin-summary,
++    .builtin-card-grid--two,
++    .builtin-card-grid--four,
++    .builtin-stat-grid,
++    .builtin-team-grid,
++    .builtin-contact-channel-grid,
++    .builtin-form-grid {
++        grid-template-columns: 1fr;
++    }
++
++    .builtin-form-grid__wide {
++        grid-column: auto;
++    }
++
++    .builtin-admin-summary article {
++        padding: 0.8rem;
++    }
++
++    .builtin-hours-editor label {
++        grid-template-columns: 1fr;
++        gap: 0.3rem;
++    }
++
++    .builtin-hero {
++        padding-block: 3rem;
++    }
++
++    .builtin-hero__copy h1 {
++        font-size: clamp(2.2rem, 12vw, 3.5rem);
++    }
++
++    .builtin-hero__visual {
++        min-height: 250px;
++    }
++
++    .builtin-hero__visual span {
++        width: 76px;
++        height: 76px;
++    }
++
++    .builtin-hero__visual span:first-child {
++        transform: translate(-55px, -42px) rotate(-7deg);
++    }
++
++    .builtin-hero__visual span:nth-child(2) {
++        transform: translate(55px, -2px) rotate(8deg);
++    }
++
++    .builtin-hero__visual span:nth-child(3) {
++        transform: translate(-2px, 60px) rotate(-2deg);
++    }
++
++    .builtin-hero__visual svg {
++        width: 31px;
++        height: 31px;
++    }
++
++    .builtin-section {
++        padding-block: 3rem;
++    }
++
++    .builtin-contact-form-card,
++    .builtin-cta {
++        border-radius: 18px;
++    }
++}
+diff --git a/assets/js/app.js b/assets/js/app.js
+--- a/assets/js/app.js
++++ b/assets/js/app.js
+@@ -263,11 +263,15 @@
+                     notice.textContent = payload?.data?.message || 'Your inquiry has been submitted.';
+                 }
+ 
+-                form.querySelectorAll('input:not([type="hidden"]), textarea').forEach((field) => {
+-                    if (field.name !== 'website') {
+-                        field.value = '';
+-                    }
+-                });
++                if (form.matches('[data-contact-form]')) {
++                    form.reset();
++                } else {
++                    form.querySelectorAll('input:not([type="hidden"]), textarea').forEach((field) => {
++                        if (field.name !== 'website') {
++                            field.value = '';
++                        }
++                    });
++                }
+             } catch (error) {
+                 if (notice) {
+                     notice.hidden = false;
+diff --git a/tools/qa.php b/tools/qa.php
+--- a/tools/qa.php
++++ b/tools/qa.php
+@@ -58,7 +58,16 @@
+     'application/database/migrations/0009_create_account_onboarding.php',
+     'application/database/migrations/0010_release_security_hardening.php',
+     'application/database/migrations/0011_create_workspace_preferences.php',
++    'application/database/migrations/0012_create_cms_pages.php',
++    'application/database/migrations/0013_create_billing_foundation.php',
++    'application/database/migrations/0014_create_invoice_transaction_foundation.php',
++    'application/database/migrations/0015_create_coupon_discount_foundation.php',
++    'application/database/migrations/0016_create_tax_rule_foundation.php',
++    'application/database/migrations/0017_create_payment_webhook_foundation.php',
++    'application/database/migrations/0018_create_communication_permission.php',
++    'application/database/migrations/0019_create_email_template_foundation.php',
+     'application/database/migrations/0021_create_newsletter_subscribers.php',
++    'application/database/migrations/0022_create_contact_messages.php',
+     'application/app/Domain/RealEstate/DomainRules.php',
+     'application/app/Repositories/LocationRepository.php',
+     'application/app/Repositories/CompanyRepository.php',
+@@ -317,10 +326,20 @@
+     '0009_create_account_onboarding.php',
+     '0010_release_security_hardening.php',
+     '0011_create_workspace_preferences.php',
++    '0012_create_cms_pages.php',
++    '0013_create_billing_foundation.php',
++    '0014_create_invoice_transaction_foundation.php',
++    '0015_create_coupon_discount_foundation.php',
++    '0016_create_tax_rule_foundation.php',
++    '0017_create_payment_webhook_foundation.php',
++    '0018_create_communication_permission.php',
++    '0019_create_email_template_foundation.php',
++    '0021_create_newsletter_subscribers.php',
++    '0022_create_contact_messages.php',
+ ];
+ 
+ $migrationNames === $expectedMigrationNames
+-    ? $pass('Database migration sequence matches canonical 0001-0011.')
++    ? $pass('Database migration sequence matches the canonical catalog through 0022.')
+     : $fail('Database migration sequence drift detected: ' . implode(', ', $migrationNames));
+ 
+ $migrationPrefixes = array_map(
+diff --git a/tools/schema-smoke.php b/tools/schema-smoke.php
+--- a/tools/schema-smoke.php
++++ b/tools/schema-smoke.php
+@@ -55,6 +55,7 @@
+     'security_audit_events',
+     'cms_pages',
+     'newsletter_subscribers',
++    'contact_messages',
+ ];
+ 
+ $statement = $pdo->query(
+@@ -109,6 +110,48 @@
+     $failures[] = 'newsletter_subscribers email uniqueness is missing.';
+ }
+ 
++$contactMessageColumns = (int) $pdo->query(
++    "SELECT COUNT(*)
++     FROM information_schema.COLUMNS
++     WHERE TABLE_SCHEMA = DATABASE()
++       AND TABLE_NAME = 'contact_messages'
++       AND COLUMN_NAME IN (
++           'id',
++           'uuid',
++           'user_id',
++           'contact_name',
++           'contact_email',
++           'contact_phone',
++           'subject',
++           'message',
++           'source',
++           'status',
++           'ip_hash',
++           'user_agent_hash',
++           'handled_by_user_id',
++           'resolved_at',
++           'created_at',
++           'updated_at'
++       )"
++)->fetchColumn();
++
++if ($contactMessageColumns !== 16) {
++    $failures[] = 'contact_messages columns are incomplete.';
++}
++
++$contactMessageUuidUnique = (int) $pdo->query(
++    "SELECT COUNT(*)
++     FROM information_schema.STATISTICS
++     WHERE TABLE_SCHEMA = DATABASE()
++       AND TABLE_NAME = 'contact_messages'
++       AND INDEX_NAME = 'contact_messages_uuid_unique'
++       AND NON_UNIQUE = 0"
++)->fetchColumn();
++
++if ($contactMessageUuidUnique !== 1) {
++    $failures[] = 'contact_messages UUID uniqueness is missing.';
++}
++
+ $authVersionColumn = (int) $pdo->query(
+     "SELECT COUNT(*)
+      FROM information_schema.COLUMNS
