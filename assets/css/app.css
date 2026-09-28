@@ -13444,3 +13444,208 @@ body:not(.auth-standalone-body) textarea {
         min-height: 88px;
     }
 }
+
+/* BARAMA_PUBLIC_CMS_LEGAL_AUDIT_V100 */
+.cms-page {
+    padding: clamp(2rem, 5vw, 4.5rem) 0 clamp(4rem, 8vw, 7rem);
+}
+
+.cms-page__breadcrumb {
+    margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+.content-page {
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.content-page__header {
+    border-bottom: 1px solid var(--barama-border);
+    padding-bottom: clamp(1.3rem, 3vw, 2rem);
+}
+
+.content-page__heading {
+    max-width: 820px;
+}
+
+.content-page__heading h1 {
+    margin: 0;
+    color: var(--barama-text);
+    font-size: clamp(2rem, 5vw, 4.4rem);
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 1;
+}
+
+.content-page__lead {
+    max-width: 760px;
+    margin: 1rem 0 0;
+    color: var(--barama-muted);
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
+    line-height: 1.7;
+}
+
+.content-page__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 1rem;
+    align-items: center;
+    margin-top: 1.2rem;
+    color: var(--barama-muted);
+    font-size: 0.68rem;
+}
+
+.content-page__meta > span {
+    display: inline-flex;
+    gap: 0.38rem;
+    align-items: center;
+}
+
+.content-page__meta svg {
+    width: 14px;
+    height: 14px;
+    color: var(--barama-primary);
+}
+
+.content-page__meta strong {
+    color: var(--barama-text);
+    font-weight: 820;
+}
+
+.content-page__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(210px, 0.28fr);
+    gap: clamp(1.6rem, 4vw, 3.5rem);
+    align-items: start;
+    padding-top: clamp(1.5rem, 3.5vw, 2.8rem);
+}
+
+.content-page__body {
+    min-width: 0;
+    max-width: 760px;
+}
+
+.content-page__body p {
+    margin: 0 0 1.15rem;
+    color: var(--barama-text);
+    font-size: 0.94rem;
+    line-height: 1.82;
+}
+
+.content-page__body p:last-child {
+    margin-bottom: 0;
+}
+
+.content-page__empty {
+    border-left: 3px solid var(--barama-border);
+    color: var(--barama-muted) !important;
+    padding-left: 1rem;
+}
+
+.content-page__aside {
+    position: sticky;
+    top: 104px;
+    display: grid;
+    gap: 1rem;
+    border-left: 1px solid var(--barama-border);
+    background: transparent;
+    padding-left: 1rem;
+}
+
+.content-page__aside > div > strong,
+.content-page__aside > div > small {
+    display: block;
+}
+
+.content-page__aside > div > strong {
+    overflow-wrap: anywhere;
+    color: var(--barama-text);
+    font-size: 0.78rem;
+    font-weight: 850;
+    line-height: 1.45;
+}
+
+.content-page__aside > div > small {
+    margin-top: 0.3rem;
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+}
+
+.content-page__aside .eyebrow {
+    margin-bottom: 0.45rem;
+    font-size: 0.62rem;
+}
+
+.content-page__aside .btn {
+    display: inline-flex;
+    gap: 0.38rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.content-page__aside .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+@media (max-width: 767.98px) {
+    .content-page__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .content-page__aside {
+        position: static;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        border-top: 1px solid var(--barama-border);
+        border-left: 0;
+        padding-top: 1rem;
+        padding-left: 0;
+    }
+
+    .content-page__aside .btn {
+        width: auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .cms-page {
+        padding-top: 1.5rem;
+    }
+
+    .content-page__aside {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .content-page__aside .btn {
+        width: 100%;
+    }
+}
+
+@media print {
+    .site-header,
+    .site-footer,
+    .cms-page__breadcrumb,
+    .content-page__aside {
+        display: none !important;
+    }
+
+    .cms-page {
+        padding: 0;
+    }
+
+    .content-page {
+        max-width: none;
+    }
+
+    .content-page__layout {
+        display: block;
+        padding-top: 1rem;
+    }
+
+    .content-page__body {
+        max-width: none;
+    }
+}
