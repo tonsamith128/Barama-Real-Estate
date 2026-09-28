@@ -66,12 +66,36 @@ final class NotificationService
         }
 
         [$html, $text] = $this->emailBodies($data);
+        $subject = (string) ($data['email_subject'] ?? $data['title']);
+
+        if (!$this->hasExplicitEmailBodies($data)) {
+            $action = trim((string) ($data['action_url'] ?? ''));
+            $rendered = (new EmailTemplateRendererService())->render(
+                (string) $data['type'],
+                [
+                    'title' => (string) $data['title'],
+                    'message' => (string) $data['message'],
+                    'action_url' => $action !== '' ? url($action) : '',
+                    'recipient_name' => (string) $user['name'],
+                    'app_name' => (string) config('app.name', 'Barama Real Estate'),
+                    'app_url' => rtrim((string) config('app.url', ''), '/'),
+                ],
+                [
+                    'subject' => $subject,
+                    'html' => $html,
+                    'text' => $text,
+                ]
+            );
+            $subject = $rendered['subject'];
+            $html = $rendered['html'];
+            $text = $rendered['text'];
+        }
 
         $repository->queueEmail([
             'user_id' => $userId,
             'notification_id' => $notificationId,
             'to_address' => $email,
-            'subject' => $data['email_subject'] ?? $data['title'],
+            'subject' => $subject,
             'html_body' => $html,
             'text_body' => $text,
             'dedupe_key' => 'user:' . $userId . ':' . $data['dedupe_key'],
@@ -139,6 +163,14 @@ final class NotificationService
             'viewing_updates' => $enabled('viewing_updates'),
             'inquiry_updates' => $enabled('inquiry_updates'),
         ]);
+    }
+
+    /** @param array<string,mixed> $data */
+    private function hasExplicitEmailBodies(array $data): bool
+    {
+        return isset($data['email_html'], $data['email_text'])
+            && is_string($data['email_html'])
+            && is_string($data['email_text']);
     }
 
     /** @param array<string,mixed> $data */

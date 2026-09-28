@@ -8,12 +8,14 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\EmailTemplateRepository;
 use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\NotificationRepository;
 use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\WorkspaceSettingsRepository;
+use Barama\Services\EmailTemplateManagementService;
 
 final class DashboardController
 {
@@ -136,6 +138,23 @@ final class DashboardController
             'activeSection' => 'mail-queue',
             'outbox' => $repository->adminOutbox(),
             'communicationsSummary' => $repository->communicationsSummary(),
+        ]));
+    }
+
+    public function emailTemplates(Request $request): Response
+    {
+        $repository = new EmailTemplateRepository();
+
+        return Response::html(View::render('workspace/communications-email-templates', [
+            'pageTitle' => 'Email Templates · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'email-templates',
+            'emailTemplates' => $repository->all(),
+            'emailTemplateSummary' => $repository->summary(),
+            'supportedTemplateKeys' => EmailTemplateManagementService::supportedKeys(),
         ]));
     }
 
@@ -676,6 +695,7 @@ final class DashboardController
 
             ['heading' => 'Communications'],
             ['label' => 'Notification Center', 'path' => '/dashboard/notifications', 'icon' => 'message'],
+            ['label' => 'Email Templates', 'path' => '/dashboard/email-templates', 'icon' => 'mail'],
             ['label' => 'Mail Queue & Logs', 'path' => '/dashboard/mail-queue', 'icon' => 'pipeline'],
 
             ['heading' => 'Users & Security'],

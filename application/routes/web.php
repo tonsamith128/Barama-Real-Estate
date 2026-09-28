@@ -468,6 +468,26 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
 );
 $router->get(
+    '/dashboard/email-templates',
+    [DashboardController::class, 'emailTemplates'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+);
+$router->post(
+    '/dashboard/email-templates',
+    [AdminManagementController::class, 'createEmailTemplate'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/email-templates/{id}',
+    [AdminManagementController::class, 'updateEmailTemplate'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/email-templates/{id}/status',
+    [AdminManagementController::class, 'updateEmailTemplateStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/mail-queue',
     [DashboardController::class, 'mailQueue'],
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
