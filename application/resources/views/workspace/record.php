@@ -828,7 +828,7 @@ $details = match ($recordResource) {
             <?php endif; ?>
 
             <?php if ($editable): ?>
-                <section class="workspace-record-panel">
+                <section class="workspace-record-panel" id="workspace-record-edit">
                     <div class="workspace-record-panel__head"><h2>Edit <?= e($humanize($recordResource)) ?></h2><span><?= e($workspaceType === 'admin' ? 'Administrator edit · current workflow status is preserved.' : 'Changes remain in the review workflow.') ?></span></div>
 
                     <?php if ($recordResource === 'company'): ?>
