@@ -7,6 +7,7 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Services\AdminMediaManagementService;
+use Barama\Services\AppearanceManagementService;
 use Barama\Services\BillingOperationsService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
@@ -353,6 +354,56 @@ final class AdminManagementController
                 'email_template_id' => (int) $id,
                 'status' => $status,
                 'message' => 'Email template status updated.',
+            ];
+        });
+    }
+
+    public function updateAppearanceFeature(Request $request, string $feature): Response
+    {
+        return $this->execute(function () use ($request, $feature): array {
+            (new AppearanceManagementService())->updateFeature(
+                $feature,
+                $request->all()
+            );
+
+            return [
+                'feature' => $feature,
+                'message' => 'Appearance configuration updated.',
+            ];
+        });
+    }
+
+    public function toggleAppearanceFeature(Request $request, string $feature): Response
+    {
+        return $this->execute(function () use ($request, $feature): array {
+            $enabled = in_array(
+                strtolower(trim((string) $request->input('enabled', '0'))),
+                ['1', 'true', 'on', 'yes'],
+                true
+            );
+
+            (new AppearanceManagementService())->setFeatureEnabled(
+                $feature,
+                $enabled
+            );
+
+            return [
+                'feature' => $feature,
+                'enabled' => $enabled,
+                'message' => $enabled
+                    ? 'Appearance feature enabled.'
+                    : 'Appearance feature disabled.',
+            ];
+        });
+    }
+
+    public function resetAppearance(Request $request): Response
+    {
+        return $this->execute(function (): array {
+            (new AppearanceManagementService())->reset();
+
+            return [
+                'message' => 'Frontend appearance reset to Barama defaults.',
             ];
         });
     }
