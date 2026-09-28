@@ -15046,3 +15046,291 @@ body:not(.auth-standalone-body) textarea {
         border-radius: 18px;
     }
 }
+
+
+/* BARAMA_PUBLIC_HEADER_PROFILE_MENU_FOOTER_THEME_V100 */
+.site-header__inner {
+    gap: 1rem;
+}
+
+.site-navigation {
+    min-width: 0;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 0.8rem;
+}
+
+.main-nav {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+.header-auth {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.barama-user-menu-wrap {
+    flex: 0 0 auto;
+    justify-self: end;
+}
+
+.barama-user-menu-wrap--authenticated .barama-user-trigger {
+    border-color: color-mix(in srgb, var(--barama-primary) 24%, var(--barama-border));
+    background: color-mix(in srgb, var(--barama-primary) 7%, var(--barama-surface));
+    color: var(--barama-primary);
+}
+
+.barama-user-menu__head--profile {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 58px;
+    border-bottom: 1px solid var(--barama-border);
+    margin-bottom: 8px;
+    padding: 8px 10px 12px;
+}
+
+.barama-user-menu__profile-avatar {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 12px;
+    background:
+        linear-gradient(
+            145deg,
+            color-mix(in srgb, var(--barama-primary) 16%, var(--barama-surface)),
+            color-mix(in srgb, var(--barama-success) 7%, var(--barama-surface))
+        );
+    color: var(--barama-primary);
+}
+
+.barama-user-menu__profile-avatar svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.barama-user-menu__profile-copy {
+    min-width: 0;
+}
+
+.barama-user-menu__profile-copy strong,
+.barama-user-menu__profile-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barama-user-menu__profile-copy strong {
+    color: var(--barama-text);
+    font-size: 0.86rem;
+    font-weight: 850;
+}
+
+.barama-user-menu__profile-copy small {
+    color: var(--barama-muted);
+    font-size: 0.67rem;
+    font-weight: 700;
+}
+
+.barama-user-menu__signout {
+    margin: 0;
+}
+
+.barama-user-action--button {
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.barama-user-action--button .barama-user-action__icon {
+    color: var(--barama-muted);
+    background: color-mix(in srgb, var(--barama-muted) 8%, transparent);
+}
+
+.barama-user-action--button:hover .barama-user-action__icon,
+.barama-user-action--button:focus-visible .barama-user-action__icon {
+    color: var(--barama-primary);
+    background: color-mix(in srgb, var(--barama-primary) 9%, transparent);
+}
+
+/* The public theme switcher belongs in the footer, not the global header. */
+.site-footer__grid {
+    grid-template-columns: minmax(240px, 1.45fr) repeat(3, minmax(120px, 0.62fr));
+}
+
+.site-footer__bottom {
+    min-height: 64px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.site-footer__meta {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.8rem;
+}
+
+.site-footer__utility {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-left: auto;
+}
+
+.site-footer .site-footer__legal {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0;
+}
+
+.site-footer .site-footer__legal a {
+    padding: 0;
+    color: var(--barama-muted);
+    font-size: 0.8125rem !important;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.site-footer .site-footer__legal a:hover,
+.site-footer .site-footer__legal a:focus-visible {
+    color: var(--barama-primary);
+}
+
+.site-footer__theme {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    background: transparent;
+}
+
+.site-footer__theme svg {
+    width: 17px;
+    height: 17px;
+}
+
+@media (max-width: 1180px) {
+    .site-navigation {
+        gap: 0.5rem;
+    }
+
+    .main-nav {
+        gap: 0.12rem;
+    }
+
+    .main-nav a {
+        padding-inline: 0.62rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .site-navigation {
+        justify-content: stretch;
+    }
+
+    .header-auth {
+        grid-template-columns: minmax(0, 1fr) auto;
+        margin-left: 0;
+    }
+
+    .barama-user-menu-wrap {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        justify-self: end;
+    }
+
+    .header-locale {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: center;
+    }
+
+    .site-footer__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .site-footer__brand {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-footer__bottom {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0.85rem 0;
+    }
+
+    .site-footer__meta {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    .site-footer__utility {
+        width: 100%;
+        flex-basis: 100%;
+        justify-content: space-between;
+        margin-left: 0;
+    }
+
+    .site-footer .site-footer__legal {
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .header-locale {
+        width: auto;
+        min-width: 0;
+    }
+
+    .header-locale select {
+        width: auto;
+        max-width: 100px;
+    }
+
+    .barama-user-menu {
+        top: 72px;
+    }
+
+    .site-footer__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .site-footer__brand {
+        grid-column: 1 / -1 !important;
+    }
+
+    .site-footer__bottom {
+        flex-wrap: wrap;
+    }
+
+    .site-footer__meta {
+        gap: 0.25rem 0.6rem;
+    }
+
+    .site-footer .site-footer__legal a {
+        font-size: 0.75rem !important;
+    }
+}
