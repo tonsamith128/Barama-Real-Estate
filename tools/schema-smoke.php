@@ -55,6 +55,7 @@ $requiredTables = [
     'security_audit_events',
     'cms_pages',
     'newsletter_subscribers',
+    'contact_messages',
 ];
 
 $statement = $pdo->query(
@@ -107,6 +108,48 @@ $newsletterEmailUnique = (int) $pdo->query(
 
 if ($newsletterEmailUnique !== 1) {
     $failures[] = 'newsletter_subscribers email uniqueness is missing.';
+}
+
+$contactMessageColumns = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'contact_messages'
+       AND COLUMN_NAME IN (
+           'id',
+           'uuid',
+           'user_id',
+           'contact_name',
+           'contact_email',
+           'contact_phone',
+           'subject',
+           'message',
+           'source',
+           'status',
+           'ip_hash',
+           'user_agent_hash',
+           'handled_by_user_id',
+           'resolved_at',
+           'created_at',
+           'updated_at'
+       )"
+)->fetchColumn();
+
+if ($contactMessageColumns !== 16) {
+    $failures[] = 'contact_messages columns are incomplete.';
+}
+
+$contactMessageUuidUnique = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'contact_messages'
+       AND INDEX_NAME = 'contact_messages_uuid_unique'
+       AND NON_UNIQUE = 0"
+)->fetchColumn();
+
+if ($contactMessageUuidUnique !== 1) {
+    $failures[] = 'contact_messages UUID uniqueness is missing.';
 }
 
 $authVersionColumn = (int) $pdo->query(
