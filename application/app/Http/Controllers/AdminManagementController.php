@@ -10,6 +10,7 @@ use Barama\Services\AdminMediaManagementService;
 use Barama\Services\BillingOperationsService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
+use Barama\Services\CommunicationsManagementService;
 use Barama\Services\DomainWorkflowService;
 use Barama\Services\FinanceManagementService;
 use Barama\Services\PageManagementService;
@@ -263,6 +264,40 @@ final class AdminManagementController
             'transaction_id' => (new FinanceManagementService())->createTransaction($request->all()),
             'message' => 'Immutable transaction recorded.',
         ], 201);
+    }
+
+    public function requeueMail(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid mail queue ID is required.');
+            }
+
+            (new CommunicationsManagementService())->requeueEmail((int) $id);
+
+            return [
+                'email_outbox_id' => (int) $id,
+                'status' => 'pending',
+                'message' => 'Mail item requeued.',
+            ];
+        });
+    }
+
+    public function cancelMail(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid mail queue ID is required.');
+            }
+
+            (new CommunicationsManagementService())->cancelEmail((int) $id);
+
+            return [
+                'email_outbox_id' => (int) $id,
+                'status' => 'cancelled',
+                'message' => 'Mail item cancelled.',
+            ];
+        });
     }
 
     public function updateSiteContent(Request $request): Response
