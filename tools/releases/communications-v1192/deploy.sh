@@ -15,14 +15,7 @@ BACKUP="/root/barama-real-estate-backups/admin-communications-phase7-v1.19.2-$ST
 BACKUP_READY=0
 MIGRATION_ATTEMPTED=0
 
-mapfile -t FILES < <(
-    "$PHP" -r '
-        $manifest = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
-        foreach (($manifest["production_files"] ?? []) as $entry) {
-            echo $entry["path"], PHP_EOL;
-        }
-    ' "$MANIFEST"
-)
+FILES=()
 
 restore_files() {
     local state rel
@@ -105,6 +98,20 @@ command -v curl >/dev/null 2>&1 || {
 
 cd "$BUNDLE_ROOT"
 sha256sum -c BUNDLE_CONTENTS.sha256
+
+mapfile -t FILES < <(
+    "$PHP" -r '
+        $manifest = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
+        foreach (($manifest["production_files"] ?? []) as $entry) {
+            echo $entry["path"], PHP_EOL;
+        }
+    ' "$MANIFEST"
+)
+
+[ "${#FILES[@]}" -gt 0 ] || {
+    echo "ERROR: Release manifest contains no production files."
+    exit 1
+}
 
 echo
 echo "[1/7] Accepted v1.19.1 drift guard..."
