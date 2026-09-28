@@ -26,7 +26,9 @@ The demo site must not be reinstalled until every mandatory surface below is acc
 | # | Surface | Route(s) | Status | Notes |
 |---:|---|---|---|---|
 | 0 | Shared public shell | Header / footer / mobile nav | CODE READY | Guest legal links repaired; Legal footer group added; mobile footer kept two-column. |
-| 1 | Homepage | `/` | CODE READY | Search-first structure preserved; hero scale reduced; marketplace pulse softened; featured cards refined with transparent premium surfaces. |
+| 1 | Homepage | `/` | CODE READY | Search-first structure preserved; full Hero background supports Plain/Color/Image/Slider/Video; independent Hero/Search/Summary/Quick Discovery/section toggles added. |
+| 1A | Homepage Manager | `/dashboard/homepage` | CODE READY | Transparent premium feature table; every homepage feature uses ON/OFF switch + Configure dialog; uploaded hero media is stored in Media Library. |
+| 1B | Navigation Manager | `/dashboard/navigation` | CODE READY | Split from Homepage; add/edit/delete/reorder/toggle/configure functions; safe internal-path validation and last-enabled protection. |
 | 2 | Property marketplace | `/properties` | CODE READY | Filter state/counts repaired; search accessibility fixed; filtered SEO guard completed; result cards refined. |
 | 3 | Property detail | `/properties/{slug}` | CODE READY | Price-on-request fallback fixed; summary completed with bedrooms/bathrooms/parking/furnishing; contain-fit image/video/YouTube media and 2–6 related-card density verified. |
 | 4 | Projects marketplace | `/projects` | CODE READY | Search accessibility fixed; active filter chips added; filtered result state and pagination labeling aligned with Properties. |
