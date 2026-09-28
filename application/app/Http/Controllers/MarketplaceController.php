@@ -26,7 +26,9 @@ final class MarketplaceController
             || (string) ($filters['location'] ?? '') !== ''
             || (string) ($filters['bedrooms'] ?? '') !== ''
             || (string) ($filters['min_price'] ?? '') !== ''
-            || (string) ($filters['max_price'] ?? '') !== '';
+            || (string) ($filters['max_price'] ?? '') !== ''
+            || (string) ($filters['currency'] ?? '') !== ''
+            || (string) ($filters['sort'] ?? 'newest') !== 'newest';
 
         return Response::html(View::render('marketplace/properties', [
             'pageTitle' => 'Properties for Sale & Rent',

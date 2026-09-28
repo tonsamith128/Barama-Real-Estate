@@ -508,8 +508,38 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
 );
 $router->post(
-    '/dashboard/homepage',
-    [AdminManagementController::class, 'updateSiteContent'],
+    '/dashboard/homepage/{feature}',
+    [AdminManagementController::class, 'updateHomepageFeature'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/homepage/{feature}/toggle',
+    [AdminManagementController::class, 'toggleHomepageFeature'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/navigation',
+    [DashboardController::class, 'navigationManager'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/navigation',
+    [AdminManagementController::class, 'createNavigation'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/navigation/{id}',
+    [AdminManagementController::class, 'updateNavigation'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/navigation/{id}/toggle',
+    [AdminManagementController::class, 'toggleNavigation'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/navigation/{id}/delete',
+    [AdminManagementController::class, 'deleteNavigation'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);

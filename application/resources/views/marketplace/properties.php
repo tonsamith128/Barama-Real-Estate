@@ -5,14 +5,28 @@ $rows = is_array($inventory['rows'] ?? null) ? $inventory['rows'] : [];
 $page = (int) ($inventory['page'] ?? 1);
 $pages = (int) ($inventory['pages'] ?? 1);
 $total = (int) ($inventory['total'] ?? 0);
-$activeFilters = array_filter([
-    'Offer' => ($filters['offer'] ?? '') !== '' ? ucwords((string) $filters['offer']) : '',
+
+$locationLabels = [];
+foreach ($locations as $location) {
+    $locationLabels[(string) ($location['id'] ?? '')] = (string) ($location['name'] ?? '');
+}
+
+$advancedFilters = array_filter([
     'Type' => ($filters['type'] ?? '') !== '' ? ucwords(str_replace('_', ' ', (string) $filters['type'])) : '',
     'Bedrooms' => ($filters['bedrooms'] ?? '') !== '' ? (string) $filters['bedrooms'] . '+' : '',
     'Currency' => (string) ($filters['currency'] ?? ''),
     'Min' => ($filters['min_price'] ?? '') !== '' ? number_format((float) $filters['min_price'], 0) : '',
     'Max' => ($filters['max_price'] ?? '') !== '' ? number_format((float) $filters['max_price'], 0) : '',
+    'Sort' => ($filters['sort'] ?? 'newest') !== 'newest'
+        ? ucwords(str_replace('_', ' ', (string) $filters['sort']))
+        : '',
 ]);
+
+$resultFilters = array_filter(array_merge([
+    'Search' => trim((string) ($filters['q'] ?? '')),
+    'Offer' => ($filters['offer'] ?? '') !== '' ? ucwords((string) $filters['offer']) : '',
+    'Location' => $locationLabels[(string) ($filters['location'] ?? '')] ?? '',
+], $advancedFilters));
 ?>
 <section class="marketplace-hero marketplace-hero--discovery">
     <div class="container app-container">
@@ -29,7 +43,7 @@ $activeFilters = array_filter([
             <div class="discovery-filter__primary">
                 <label class="discovery-filter__search">
                     <span><?= app_icon('search') ?></span>
-                    <input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Property, company, reference, location">
+                    <input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Property, company, reference, location" aria-label="Search properties">
                 </label>
                 <label>
                     <span class="visually-hidden">Offer</span>
@@ -51,8 +65,8 @@ $activeFilters = array_filter([
                 <button class="btn btn-primary" type="submit"><?= app_icon('search') ?><span>Search</span></button>
             </div>
 
-            <details class="discovery-filter__more" <?= $activeFilters !== [] ? 'open' : '' ?>>
-                <summary><?= app_icon('grid') ?><span>More filters</span><small><?= e((string) count($activeFilters)) ?> active</small></summary>
+            <details class="discovery-filter__more" <?= $advancedFilters !== [] ? 'open' : '' ?>>
+                <summary><?= app_icon('grid') ?><span>More filters</span><small><?= e((string) count($advancedFilters)) ?> active</small></summary>
                 <div class="discovery-filter__advanced">
                     <label><span>Property type</span><select name="type"><option value="">All types</option><?php foreach ($propertyTypes as $type): ?><option value="<?= e($type) ?>" <?= ($filters['type'] ?? '') === $type ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $type))) ?></option><?php endforeach; ?></select></label>
                     <label><span>Bedrooms</span><select name="bedrooms"><option value="">Any</option><?php foreach ([1,2,3,4,5] as $bed): ?><option value="<?= e((string) $bed) ?>" <?= (string) ($filters['bedrooms'] ?? '') === (string) $bed ? 'selected' : '' ?>><?= e((string) $bed) ?>+</option><?php endforeach; ?></select></label>
@@ -70,8 +84,8 @@ $activeFilters = array_filter([
 <section class="marketplace-section marketplace-results">
     <div class="container app-container">
         <div class="marketplace-results__bar">
-            <div><strong><?= e(number_format($total)) ?> result<?= $total === 1 ? '' : 's' ?></strong><span><?= $activeFilters !== [] ? 'Filtered marketplace inventory' : 'All approved marketplace inventory' ?></span></div>
-            <?php if ($activeFilters !== []): ?><div class="filter-chips"><?php foreach ($activeFilters as $label => $value): ?><span><small><?= e($label) ?></small><?= e($value) ?></span><?php endforeach; ?></div><?php endif; ?>
+            <div><strong><?= e(number_format($total)) ?> result<?= $total === 1 ? '' : 's' ?></strong><span><?= $resultFilters !== [] ? 'Filtered marketplace inventory' : 'All approved marketplace inventory' ?></span></div>
+            <?php if ($resultFilters !== []): ?><div class="filter-chips" aria-label="Active property filters"><?php foreach ($resultFilters as $label => $value): ?><span><small><?= e($label) ?></small><?= e($value) ?></span><?php endforeach; ?></div><?php endif; ?>
         </div>
 
         <?php if ($rows === []): ?>
