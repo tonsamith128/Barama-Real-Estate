@@ -575,7 +575,12 @@ final class SiteContentManagementService
                 ];
             }
 
-            return $base + ['items' => $items];
+            return $base + [
+                'link_url' => $this->optionalLink(
+                    $input['link_url'] ?? $current['link_url'] ?? ''
+                ),
+                'items' => $items,
+            ];
         }
 
         if ($section === 'subscribe') {
