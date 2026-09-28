@@ -16,6 +16,7 @@ use Barama\Services\DomainWorkflowService;
 use Barama\Services\EmailTemplateManagementService;
 use Barama\Services\FinanceManagementService;
 use Barama\Services\PageManagementService;
+use Barama\Services\PropertyManagementService;
 use Barama\Services\SiteContentManagementService;
 use Barama\Services\SiteMediaStorageService;
 use Barama\Services\UserAdministrationService;
@@ -609,6 +610,41 @@ final class AdminManagementController
             return [
                 'media_id' => (int) $id,
                 'message' => 'Orphaned media asset deleted.',
+            ];
+        });
+    }
+
+    public function updateProperty(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid property ID is required.');
+            }
+
+            (new PropertyManagementService())->updateAsAdministrator(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'property_id' => (int) $id,
+                'message' => 'Property updated successfully.',
+            ];
+        });
+    }
+
+    public function deleteProperty(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid property ID is required.');
+            }
+
+            (new PropertyManagementService())->deleteAsAdministrator((int) $id);
+
+            return [
+                'property_id' => (int) $id,
+                'message' => 'Property deleted successfully.',
             ];
         });
     }
