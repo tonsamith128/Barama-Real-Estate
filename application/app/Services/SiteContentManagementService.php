@@ -19,6 +19,12 @@ final class SiteContentManagementService
         'listings',
         'projects',
         'companies',
+        'featured_locations',
+        'how_it_works',
+        'trust_stats',
+        'testimonials',
+        'blog',
+        'subscribe',
     ];
 
     /** @param array<string,mixed> $input */
@@ -450,16 +456,15 @@ final class SiteContentManagementService
             ? $config['homepage']['sections'][$section]
             : [];
 
-        $config['homepage']['sections'][$section] = [
-            'enabled' => !empty($current['enabled']),
-            'eyebrow' => $this->text($input['eyebrow'] ?? $current['eyebrow'] ?? '', 80, ucfirst($section) . ' eyebrow'),
-            'title' => $this->text($input['title'] ?? $current['title'] ?? '', 140, ucfirst($section) . ' title'),
-            'link_label' => $this->text($input['link_label'] ?? $current['link_label'] ?? '', 80, ucfirst($section) . ' link label'),
-        ];
+        $config['homepage']['sections'][$section] = $this->validatedHomepageSection(
+            $section,
+            $input,
+            $current
+        );
 
         $order = is_array($config['homepage']['section_order'] ?? null)
             ? array_values($config['homepage']['section_order'])
-            : ['listings', 'projects', 'companies'];
+            : array_values(SiteContentRepository::defaults()['homepage']['section_order']);
         $order = array_values(array_filter(
             $order,
             static fn (mixed $value): bool => (string) $value !== $section
@@ -469,6 +474,171 @@ final class SiteContentManagementService
         $config['homepage']['section_order'] = array_values($order);
 
         return $config;
+    }
+
+    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
+    private function validatedHomepageSection(string $section, array $input, array $current): array
+    {
+        $base = [
+            'enabled' => !empty($current['enabled']),
+            'eyebrow' => $this->text(
+                $input['eyebrow'] ?? $current['eyebrow'] ?? '',
+                80,
+                ucfirst(str_replace('_', ' ', $section)) . ' eyebrow'
+            ),
+            'title' => $this->text(
+                $input['title'] ?? $current['title'] ?? '',
+                140,
+                ucfirst(str_replace('_', ' ', $section)) . ' title'
+            ),
+            'link_label' => $this->text(
+                $input['link_label'] ?? $current['link_label'] ?? '',
+                80,
+                ucfirst(str_replace('_', ' ', $section)) . ' link label'
+            ),
+        ];
+
+        if ($section === 'featured_locations') {
+            $limit = filter_var(
+                $input['limit'] ?? $current['limit'] ?? 6,
+                FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 3, 'max_range' => 8]]
+            );
+
+            return $base + [
+                'limit' => $limit === false ? 6 : (int) $limit,
+            ];
+        }
+
+        if ($section === 'how_it_works') {
+            return $base + [
+                'items' => $this->textCards(
+                    $input['items'] ?? null,
+                    $current['items'] ?? null,
+                    3,
+                    'How it works'
+                ),
+            ];
+        }
+
+        if ($section === 'trust_stats') {
+            $rows = is_array($input['items'] ?? null)
+                ? $input['items']
+                : (is_array($current['items'] ?? null) ? $current['items'] : []);
+            $items = [];
+
+            for ($index = 0; $index < 4; $index++) {
+                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
+                $items[] = [
+                    'value' => $this->text($row['value'] ?? '', 24, 'Trust stat value'),
+                    'label' => $this->text($row['label'] ?? '', 90, 'Trust stat label'),
+                ];
+            }
+
+            return $base + ['items' => $items];
+        }
+
+        if ($section === 'testimonials') {
+            $rows = is_array($input['items'] ?? null)
+                ? $input['items']
+                : (is_array($current['items'] ?? null) ? $current['items'] : []);
+            $items = [];
+
+            for ($index = 0; $index < 3; $index++) {
+                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
+                $items[] = [
+                    'quote' => $this->text($row['quote'] ?? '', 500, 'Testimonial quote'),
+                    'name' => $this->text($row['name'] ?? '', 100, 'Testimonial name'),
+                    'role' => $this->text($row['role'] ?? '', 120, 'Testimonial role'),
+                ];
+            }
+
+            return $base + ['items' => $items];
+        }
+
+        if ($section === 'blog') {
+            $rows = is_array($input['items'] ?? null)
+                ? $input['items']
+                : (is_array($current['items'] ?? null) ? $current['items'] : []);
+            $items = [];
+
+            for ($index = 0; $index < 3; $index++) {
+                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
+                $items[] = [
+                    'title' => $this->text($row['title'] ?? '', 140, 'Blog card title'),
+                    'excerpt' => $this->text($row['excerpt'] ?? '', 320, 'Blog card excerpt'),
+                    'url' => $this->optionalLink($row['url'] ?? ''),
+                    'image_url' => $this->optionalExternalUrl(
+                        $row['image_url'] ?? '',
+                        'Blog card image URL'
+                    ),
+                ];
+            }
+
+            return $base + ['items' => $items];
+        }
+
+        if ($section === 'subscribe') {
+            return [
+                'enabled' => !empty($current['enabled']),
+                'eyebrow' => $base['eyebrow'],
+                'title' => $base['title'],
+                'description' => $this->text(
+                    $input['description'] ?? $current['description'] ?? '',
+                    360,
+                    'Subscribe description'
+                ),
+                'placeholder' => $this->text(
+                    $input['placeholder'] ?? $current['placeholder'] ?? '',
+                    120,
+                    'Subscribe placeholder'
+                ),
+                'button_label' => $this->text(
+                    $input['button_label'] ?? $current['button_label'] ?? 'Subscribe',
+                    60,
+                    'Subscribe button label'
+                ),
+                'success_message' => $this->text(
+                    $input['success_message'] ?? $current['success_message'] ?? '',
+                    220,
+                    'Subscribe success message'
+                ),
+                'consent_text' => $this->text(
+                    $input['consent_text'] ?? $current['consent_text'] ?? '',
+                    220,
+                    'Subscribe consent text'
+                ),
+            ];
+        }
+
+        return $base;
+    }
+
+    /** @return array<int,array{title:string,description:string}> */
+    private function textCards(mixed $input, mixed $current, int $count, string $label): array
+    {
+        $rows = is_array($input)
+            ? $input
+            : (is_array($current) ? $current : []);
+        $items = [];
+
+        for ($index = 0; $index < $count; $index++) {
+            $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
+            $items[] = [
+                'title' => $this->text(
+                    $row['title'] ?? '',
+                    100,
+                    $label . ' title'
+                ),
+                'description' => $this->text(
+                    $row['description'] ?? '',
+                    260,
+                    $label . ' description'
+                ),
+            ];
+        }
+
+        return $items;
     }
 
     /** @param array<string,mixed> $input @return array<string,mixed> */
@@ -577,6 +747,21 @@ final class SiteContentManagementService
         }
 
         return $value !== '' ? ['type' => $type, 'value' => $value] : null;
+    }
+
+    private function optionalLink(mixed $value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (str_starts_with($value, '/')) {
+            return $this->internalPath($value);
+        }
+
+        return $this->optionalExternalUrl($value, 'Blog card URL');
     }
 
     private function optionalExternalUrl(mixed $value, string $label): string
