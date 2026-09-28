@@ -68,6 +68,55 @@ final class ProjectManagementService
     }
 
     /** @param array<string, mixed> $input */
+    public function updateAsAdministrator(int $projectId, array $input): void
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('dashboard.access')) {
+            throw new DomainException('Administrator access is required.');
+        }
+
+        $projects = new ProjectWriteRepository();
+        $project = $projects->findById($projectId);
+
+        if ($project === null) {
+            throw new InvalidArgumentException('Project was not found.');
+        }
+
+        $this->persist($projectId, (int) $project['company_id'], $input);
+    }
+
+    public function deleteAsAdministrator(int $projectId): void
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('dashboard.access')) {
+            throw new DomainException('Administrator access is required.');
+        }
+
+        $projects = new ProjectWriteRepository();
+        $project = $projects->findById($projectId);
+
+        if ($project === null) {
+            throw new InvalidArgumentException('Project was not found.');
+        }
+
+        if ((string) ($project['status'] ?? '') !== 'archived') {
+            throw new DomainException('Archive the project before deleting it.');
+        }
+
+        if ($projects->activePropertyCount($projectId) > 0) {
+            throw new DomainException(
+                'Remove or archive and delete all project properties before deleting this project.'
+            );
+        }
+
+        $projects->softDelete($projectId);
+    }
+
+    /** @param array<string, mixed> $input */
     private function persist(?int $projectId, int $companyId, array $input): int
     {
         $name = DomainInput::requiredString($input, 'name', 191, 2);
