@@ -27,6 +27,18 @@ final class EmailTemplateManagementService
         'app_url',
     ];
 
+    /** @return array<string,string> */
+    public static function supportedKeys(): array
+    {
+        return [
+            'inquiry_received' => 'Inquiry received',
+            'viewing_confirmed' => 'Viewing confirmed',
+            'viewing_rescheduled' => 'Viewing rescheduled',
+            'viewing_completed' => 'Viewing completed',
+            'viewing_declined' => 'Viewing declined',
+        ];
+    }
+
     /** @param array<string,mixed> $input */
     public function create(array $input): int
     {
