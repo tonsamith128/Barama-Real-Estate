@@ -35,7 +35,7 @@ The demo site must not be reinstalled until every mandatory surface below is acc
 | 4 | Projects marketplace | `/projects` | CODE READY | Search accessibility fixed; active filter chips added; filtered result state and pagination labeling aligned with Properties. |
 | 5 | Project detail | `/projects/{slug}` | CODE READY | Featured media retained; project facts completed; approved developer profile/phone/email surfaces added; inquiry preserved; available inventory and same-developer related projects included. |
 | 6 | Companies directory | `/company` | CODE READY | Search accessibility aligned; active filter chips added; filtered result state and pagination labeling aligned; company cards receive a restrained company accent with equal-height responsive presentation. |
-| 7 | Company detail | `/company/{slug}` | TODO | Featured media, company information, publisher contact, properties/projects. |
+| 7 | Company detail | `/company/{slug}` | CODE READY | Featured media preserved; company facts completed; approved/verified profile and publisher contact surfaces refined; external website links restricted to HTTP/HTTPS; inquiry, published projects and available properties preserved. |
 | 8 | Public CMS + legal | `/pages/{slug}` | TODO | Privacy, Terms, Disclaimer and other managed pages. |
 | 9 | Authentication | `/login`, `/register`, `/forgot-password`, reset/verify routes | TODO | Standalone premium shell; no public header/footer; password UX and validation. |
 | 10 | Customer account | `/account/**` | TODO | Workspace header/sidebar, profile, activity, saved/viewing/inquiry/settings/privacy flows. |
