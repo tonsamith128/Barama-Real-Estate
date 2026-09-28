@@ -96,25 +96,25 @@ final class AppearanceRepository
     {
         return [
             'typography' => [
-                'enabled' => true,
+                'enabled' => false,
                 'body_line_height' => 1.6,
                 'heading_line_height' => 1.08,
                 'body_letter_spacing' => 0.0,
                 'heading_letter_spacing' => -0.035,
             ],
             'font_family' => [
-                'enabled' => true,
+                'enabled' => false,
                 'body' => 'inter',
                 'heading' => 'inter',
             ],
             'font_size' => [
-                'enabled' => true,
+                'enabled' => false,
                 'base_px' => 16,
                 'small_scale' => 0.875,
                 'nav_scale' => 0.9,
             ],
             'color' => [
-                'enabled' => true,
+                'enabled' => false,
                 'light' => [
                     'background' => '#f6f8fb',
                     'surface' => '#ffffff',
@@ -143,7 +143,7 @@ final class AppearanceRepository
                 ],
             ],
             'background' => [
-                'enabled' => true,
+                'enabled' => false,
                 'style' => 'solid',
                 'light_to' => '#eef4ff',
                 'dark_to' => '#101d31',
@@ -151,7 +151,7 @@ final class AppearanceRepository
                 'fixed' => false,
             ],
             'font_style' => [
-                'enabled' => true,
+                'enabled' => false,
                 'body_weight' => 400,
                 'heading_weight' => 850,
                 'nav_weight' => 700,
@@ -159,13 +159,13 @@ final class AppearanceRepository
                 'smoothing' => true,
             ],
             'border' => [
-                'enabled' => true,
+                'enabled' => false,
                 'width' => 1,
                 'style' => 'solid',
                 'opacity' => 100,
             ],
             'shadow' => [
-                'enabled' => true,
+                'enabled' => false,
                 'level' => 'soft',
                 'hover' => true,
             ],
@@ -174,18 +174,18 @@ final class AppearanceRepository
                 'name' => 'barama',
             ],
             'skin' => [
-                'enabled' => true,
+                'enabled' => false,
                 'name' => 'modern',
             ],
             'layout' => [
-                'enabled' => true,
+                'enabled' => false,
                 'container_width' => 1220,
                 'page_gutter' => 24,
                 'section_spacing' => 1.0,
                 'density' => 'comfortable',
             ],
             'radius_spacing' => [
-                'enabled' => true,
+                'enabled' => false,
                 'radius_sm' => 12,
                 'radius_md' => 18,
                 'radius_lg' => 28,
@@ -194,28 +194,28 @@ final class AppearanceRepository
                 'gap_scale' => 1.0,
             ],
             'buttons' => [
-                'enabled' => true,
+                'enabled' => false,
                 'style' => 'solid',
                 'radius' => 12,
                 'weight' => 800,
                 'uppercase' => false,
             ],
             'cards' => [
-                'enabled' => true,
+                'enabled' => false,
                 'style' => 'elevated',
                 'radius' => 18,
                 'border' => true,
                 'hover_lift' => true,
             ],
             'forms' => [
-                'enabled' => true,
+                'enabled' => false,
                 'style' => 'outlined',
                 'height' => 48,
                 'radius' => 12,
                 'focus_ring' => true,
             ],
             'header' => [
-                'enabled' => true,
+                'enabled' => false,
                 'sticky' => true,
                 'blur' => 16,
                 'height' => 76,
@@ -223,13 +223,13 @@ final class AppearanceRepository
                 'shadow' => false,
             ],
             'footer' => [
-                'enabled' => true,
+                'enabled' => false,
                 'style' => 'standard',
                 'border' => true,
                 'spacing' => 48,
             ],
             'motion' => [
-                'enabled' => true,
+                'enabled' => false,
                 'transitions' => true,
                 'duration' => 160,
                 'hover_lift' => true,
