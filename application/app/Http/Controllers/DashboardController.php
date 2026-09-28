@@ -9,6 +9,7 @@ use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\FinanceRepository;
+use Barama\Repositories\NotificationRepository;
 use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
@@ -103,6 +104,38 @@ final class DashboardController
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => 'homepage',
             'siteContent' => (new SiteContentRepository())->get(),
+        ]));
+    }
+
+    public function notificationCenter(Request $request): Response
+    {
+        $repository = new NotificationRepository();
+
+        return Response::html(View::render('workspace/communications-notifications', [
+            'pageTitle' => 'Notification Center · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'notification-center',
+            'notifications' => $repository->adminNotifications(),
+            'communicationsSummary' => $repository->communicationsSummary(),
+        ]));
+    }
+
+    public function mailQueue(Request $request): Response
+    {
+        $repository = new NotificationRepository();
+
+        return Response::html(View::render('workspace/communications-mail-queue', [
+            'pageTitle' => 'Mail Queue & Logs · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'mail-queue',
+            'outbox' => $repository->adminOutbox(),
+            'communicationsSummary' => $repository->communicationsSummary(),
         ]));
     }
 
@@ -640,6 +673,10 @@ final class DashboardController
             ['label' => 'Billing Operations', 'path' => '/dashboard/billing-operations', 'icon' => 'pipeline'],
             ['label' => 'Invoices', 'path' => '/dashboard/invoices', 'icon' => 'edit'],
             ['label' => 'Transactions', 'path' => '/dashboard/transactions', 'icon' => 'pipeline'],
+
+            ['heading' => 'Communications'],
+            ['label' => 'Notification Center', 'path' => '/dashboard/notifications', 'icon' => 'message'],
+            ['label' => 'Mail Queue & Logs', 'path' => '/dashboard/mail-queue', 'icon' => 'pipeline'],
 
             ['heading' => 'Users & Security'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
