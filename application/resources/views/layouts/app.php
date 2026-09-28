@@ -292,9 +292,9 @@ $seoType = trim((string) ($metaType ?? 'website'));
                                             <span class="barama-user-menu__theme-label"><?= e(t('Theme')) ?></span>
                                         </div>
                                         <div class="barama-user-menu__legal">
-                                            <a href="<?= e(url('/account/privacy')) ?>"><?= e(t('Privacy')) ?></a>
-                                            <span><?= e(t('Terms')) ?></span>
-                                            <span><?= e(t('Disclaimer')) ?></span>
+                                            <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
+                                            <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
+                                            <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
                                         </div>
                                     </div>
                                 </div>
@@ -503,6 +503,13 @@ $seoType = trim((string) ($metaType ?? 'website'));
                     <a href="<?= e((string) config('app.documentation_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Documentation')) ?></a>
                     <a href="<?= e((string) config('app.support_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Contact Support')) ?></a>
                     <a href="<?= e(url('/health')) ?>"><?= e(t('System Health')) ?></a>
+                </nav>
+
+                <nav aria-label="<?= e(t('Legal links')) ?>">
+                    <strong><?= e(t('Legal')) ?></strong>
+                    <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
+                    <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
+                    <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
                 </nav>
             </div>
 
