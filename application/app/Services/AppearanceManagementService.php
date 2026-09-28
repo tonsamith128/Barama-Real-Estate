@@ -351,6 +351,8 @@ final class AppearanceManagementService
     /** @param array<string,mixed> $config */
     public function skinName(array $config): string
     {
+        $config = $this->effective($config);
+
         if (empty($config['skin']['enabled'])) {
             return 'modern';
         }
@@ -425,7 +427,7 @@ final class AppearanceManagementService
             'mono' => [
                 'font_family' => ['enabled' => true, 'body' => 'mono', 'heading' => 'mono'],
                 'font_style' => ['enabled' => true, 'heading_weight' => 800],
-                'skin' => ['name' => 'sharp'],
+                'skin' => ['enabled' => true, 'name' => 'sharp'],
             ],
             default => [],
         };
