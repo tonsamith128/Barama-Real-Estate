@@ -1754,6 +1754,11 @@ final class WorkspaceReadRepository
                                      FROM listings listing_row
                                      INNER JOIN properties property_row ON property_row.id = listing_row.property_id
                                      WHERE listing_row.id = ma.entity_id)
+                                WHEN "site" THEN CASE
+                                    WHEN ma.collection LIKE "homepage_hero_%"
+                                    THEN "Homepage Hero"
+                                    ELSE "Public Site"
+                                END
                                 ELSE NULL
                             END
                             FROM media_attachments ma
