@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Core\Database;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\CatalogRepository;
 use Barama\Repositories\ProjectWriteRepository;
@@ -11,6 +12,7 @@ use Barama\Support\DomainInput;
 use Barama\Support\Slugger;
 use DomainException;
 use InvalidArgumentException;
+use Throwable;
 
 final class ProjectManagementService
 {
@@ -26,7 +28,25 @@ final class ProjectManagementService
         $companyId = DomainInput::requiredPositiveInt($input, 'company_id');
         (new CompanyAccessService())->assertCanManage($companyId);
 
-        return $this->persist(null, $companyId, $input);
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+            (new SubscriptionEntitlementService())->assertCanConsume(
+                $companyId,
+                'project'
+            );
+            $id = $this->persist(null, $companyId, $input);
+            $pdo->commit();
+
+            return $id;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     /** @param array<string, mixed> $input */

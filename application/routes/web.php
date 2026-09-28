@@ -19,6 +19,7 @@ use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
 use Barama\Http\Controllers\MarketplaceController;
 use Barama\Http\Controllers\PublicMediaController;
+use Barama\Http\Controllers\PaymentWebhookController;
 use Barama\Http\Controllers\SeoController;
 use Barama\Http\Middleware\AuthMiddleware;
 use Barama\Http\Middleware\CsrfMiddleware;
@@ -46,6 +47,10 @@ $router->get('/company/{slug}', [CompanyController::class, 'show']);
 $router->get('/pages/{slug}', [CmsController::class, 'show']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
+$router->post(
+    '/payments/webhooks/{provider}',
+    [PaymentWebhookController::class, 'receive']
+);
 
 $router->get('/login', [AuthController::class, 'showLogin'], $guest);
 $router->post('/login', [AuthController::class, 'login'], $guestPost);
@@ -221,6 +226,11 @@ $router->get(
     [DeveloperController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
 );
+$router->get(
+    '/developer/billing',
+    [DeveloperController::class, 'billing'],
+    [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
+);
 $router->get('/developer/settings', [WorkspaceSettingsController::class, 'developerIndex'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
 $router->get('/developer/settings/{section}', [WorkspaceSettingsController::class, 'developer'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
 $router->post('/developer/settings/{section}', [WorkspaceSettingsController::class, 'saveDeveloper'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]);
@@ -336,6 +346,121 @@ $router->get(
     '/dashboard/manage/{resource}/{id}',
     [DashboardController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->get(
+    '/dashboard/plans',
+    [DashboardController::class, 'plans'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/plans',
+    [AdminManagementController::class, 'createPlan'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/plans/{id}/status',
+    [AdminManagementController::class, 'updatePlanStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/subscriptions',
+    [DashboardController::class, 'subscriptions'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/subscriptions',
+    [AdminManagementController::class, 'assignSubscription'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/subscriptions/{id}/status',
+    [AdminManagementController::class, 'updateSubscriptionStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/coupons',
+    [DashboardController::class, 'coupons'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/coupons',
+    [AdminManagementController::class, 'createCoupon'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/coupons/{id}/status',
+    [AdminManagementController::class, 'updateCouponStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/taxes',
+    [DashboardController::class, 'taxes'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/taxes',
+    [AdminManagementController::class, 'createTaxRule'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/taxes/{id}/status',
+    [AdminManagementController::class, 'updateTaxRuleStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/payment-providers',
+    [DashboardController::class, 'paymentProviders'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/payment-providers',
+    [AdminManagementController::class, 'createPaymentProvider'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/payment-providers/{id}/status',
+    [AdminManagementController::class, 'updatePaymentProviderStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/billing-operations',
+    [DashboardController::class, 'billingOperations'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/billing-operations/webhooks/{id}/retry',
+    [AdminManagementController::class, 'retryBillingWebhook'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/billing-operations/webhooks/{id}/ignore',
+    [AdminManagementController::class, 'ignoreBillingWebhook'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/invoices',
+    [DashboardController::class, 'invoices'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/invoices',
+    [AdminManagementController::class, 'createInvoice'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/invoices/{id}/status',
+    [AdminManagementController::class, 'updateInvoiceStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/transactions',
+    [DashboardController::class, 'transactions'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage')]
+);
+$router->post(
+    '/dashboard/transactions',
+    [AdminManagementController::class, 'createTransaction'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
     '/dashboard/homepage',
