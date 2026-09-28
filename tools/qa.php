@@ -152,6 +152,7 @@ $required = [
     'tools/communications-v1192-readonly.php',
     'tools/communications-v1192-rollback-db.php',
     'tools/build-communications-v1192-release.php',
+    'tools/communications-v1192-package-smoke.php',
     'tools/releases/communications-v1192/deploy.sh',
     'tools/releases/communications-v1192/rollback.sh',
     'docs/releases/admin-communications-v1.19.2.json',
