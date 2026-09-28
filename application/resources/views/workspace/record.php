@@ -38,9 +38,17 @@ $viewingTransitions = $recordResource === 'viewing'
 $scheduledLocal = !empty($record['scheduled_for'])
     ? date('Y-m-d\TH:i', strtotime((string) $record['scheduled_for']))
     : '';
-$editable = $workspaceType === 'developer'
-    && in_array($recordResource, ['company', 'project', 'property', 'listing'], true)
-    && in_array($status, ['draft', 'rejected'], true);
+$adminEditMode = !empty($adminEditMode);
+$editable = (
+        $workspaceType === 'developer'
+        && in_array($recordResource, ['company', 'project', 'property', 'listing'], true)
+        && in_array($status, ['draft', 'rejected'], true)
+    )
+    || (
+        $workspaceType === 'admin'
+        && $recordResource === 'property'
+        && $adminEditMode
+    );
 
 $moderationBlockers = [];
 
@@ -820,8 +828,8 @@ $details = match ($recordResource) {
             <?php endif; ?>
 
             <?php if ($editable): ?>
-                <section class="workspace-record-panel">
-                    <div class="workspace-record-panel__head"><h2>Edit <?= e($humanize($recordResource)) ?></h2><span>Changes remain in the review workflow.</span></div>
+                <section class="workspace-record-panel" id="workspace-record-edit">
+                    <div class="workspace-record-panel__head"><h2>Edit <?= e($humanize($recordResource)) ?></h2><span><?= e($workspaceType === 'admin' ? 'Administrator edit · current workflow status is preserved.' : 'Changes remain in the review workflow.') ?></span></div>
 
                     <?php if ($recordResource === 'company'): ?>
                         <form action="<?= e(url('/developer/companies/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-form">
@@ -857,7 +865,11 @@ $details = match ($recordResource) {
                             <button class="btn btn-primary" type="submit">Save changes</button>
                         </form>
                     <?php elseif ($recordResource === 'property'): ?>
-                        <form action="<?= e(url('/developer/properties/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-form">
+                        <form action="<?= e(url(
+                            $workspaceType === 'admin'
+                                ? '/dashboard/properties/' . (int) $record['id']
+                                : '/developer/properties/' . (int) $record['id']
+                        )) ?>" method="post" data-workspace-form class="workspace-form">
                             <?= csrf_field() ?>
                             <div class="workspace-form__grid">
                                 <label><span>Title</span><input class="form-control" name="title" value="<?= e((string) $record['title']) ?>" required maxlength="191"></label>

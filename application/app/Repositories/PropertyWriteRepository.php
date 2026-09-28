@@ -106,4 +106,29 @@ final class PropertyWriteRepository
 
         return $statement->fetchColumn() !== false;
     }
+
+    public function activeListingCount(int $propertyId): int
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT COUNT(*)
+             FROM listings
+             WHERE property_id = :property_id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['property_id' => $propertyId]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function softDelete(int $propertyId): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE properties
+             SET deleted_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['id' => $propertyId]);
+    }
 }

@@ -6,6 +6,9 @@ $rows = is_array($records['rows'] ?? null) ? $records['rows'] : [];
 $total = (int) ($records['total'] ?? 0);
 $page = (int) ($records['page'] ?? 1);
 $pages = (int) ($records['pages'] ?? 1);
+$perPage = (int) ($records['per_page'] ?? 0);
+$perPage = $perPage > 0 ? $perPage : max(1, count($rows));
+$showPropertyNumbers = $workspaceType === 'admin' && $activeSection === 'properties';
 $companies = is_array($formOptions['companies'] ?? null) ? $formOptions['companies'] : [];
 $projects = is_array($formOptions['projects'] ?? null) ? $formOptions['projects'] : [];
 $properties = is_array($formOptions['properties'] ?? null) ? $formOptions['properties'] : [];
@@ -169,10 +172,26 @@ $actionButton = static function (
         . '</button></form>';
 };
 
+$renderRowMenu = static function (array $items, string $key): string {
+    $safeKey = preg_replace('/[^a-z0-9_-]+/i', '-', $key) ?: 'record';
+    $menuId = 'workspace-row-actions-menu-' . trim($safeKey, '-');
+
+    return '<div class="workspace-row-actions" data-workspace-row-actions>'
+        . '<button class="workspace-row-actions__trigger" type="button" '
+        . 'data-workspace-row-actions-trigger aria-expanded="false" '
+        . 'aria-controls="' . e($menuId) . '" aria-label="Record actions" title="Actions">'
+        . '<span aria-hidden="true">&#8942;</span></button>'
+        . '<div id="' . e($menuId) . '" class="workspace-row-actions__menu" '
+        . 'data-workspace-row-actions-menu hidden>'
+        . implode('', $items)
+        . '</div></div>';
+};
+
 $renderActions = static function (array $row) use (
     $workspaceType,
     $activeSection,
     $actionButton,
+    $renderRowMenu,
     $humanize,
     $currentUserId
 ): string {
@@ -184,6 +203,44 @@ $renderActions = static function (array $row) use (
 
     $status = (string) ($row['status'] ?? $row['stage'] ?? '');
     $buttons = [];
+
+    if ($workspaceType === 'admin' && $activeSection === 'properties') {
+        $slug = trim((string) ($row['slug'] ?? ''));
+        $listingsCount = (int) ($row['listings_count'] ?? 0);
+        $viewUrl = url('/dashboard/manage/property/' . $id);
+
+        if ($status === 'approved') {
+            $buttons[] = $actionButton('property', $id, 'archived', 'Archive', 'danger');
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
+                . 'title="Archive is available for approved properties.">Archive</button>';
+        }
+
+        if ($slug !== '') {
+            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
+                . 'data-copy-value="' . e($slug) . '">Copy slug</button>';
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled>Copy slug</button>';
+        }
+
+        if ($status === 'archived' && $listingsCount === 0) {
+            $buttons[] = '<form action="' . e(url('/dashboard/properties/' . $id . '/delete'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="table-action table-action--danger" type="submit">Delete</button></form>';
+        } else {
+            $deleteHint = $status !== 'archived'
+                ? 'Archive the property before deleting it.'
+                : 'Remove or archive all property listings before deleting it.';
+            $buttons[] = '<button class="table-action table-action--danger table-action--disabled" '
+                . 'type="button" disabled title="' . e($deleteHint) . '">Delete</button>';
+        }
+
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl . '?edit=1#workspace-record-edit') . '">Edit</a>';
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl) . '">View</a>';
+
+        return $renderRowMenu($buttons, 'admin-property-' . $id);
+    }
 
     $viewResource = $workspaceType === 'developer'
         ? match ($activeSection) {
@@ -559,10 +616,7 @@ $renderActions = static function (array $row) use (
                 true
             ))
     ) {
-        return '<details class="workspace-row-actions">'
-            . '<summary aria-label="Record actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>'
-            . '<div class="workspace-row-actions__menu">' . implode('', $buttons) . '</div>'
-            . '</details>';
+        return $renderRowMenu($buttons, $workspaceType . '-' . $activeSection . '-' . $id);
     }
 
     return '<div class="table-actions">' . implode('', $buttons) . '</div>';
@@ -1100,6 +1154,9 @@ $renderActions = static function (array $row) use (
                                 <input type="checkbox" data-bulk-toggle aria-label="Select all records on this page">
                             </th>
                         <?php endif; ?>
+                        <?php if ($showPropertyNumbers): ?>
+                            <th scope="col" class="workspace-table__number">No</th>
+                        <?php endif; ?>
                         <?php foreach ($columns as $label): ?>
                             <th scope="col"><?= e($label) ?></th>
                         <?php endforeach; ?>
@@ -1109,14 +1166,14 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showPropertyNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
                                 <span class="workspace-empty__icon"><?= app_icon((string) ($emptyState['icon'] ?? 'search')) ?></span>
                                 <strong><?= e((string) ($emptyState['title'] ?? 'No records found')) ?></strong>
                                 <span><?= e((string) ($emptyState['detail'] ?? 'Records matching this section and search will appear here.')) ?></span>
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($rows as $row): ?>
+                        <?php foreach ($rows as $rowIndex => $row): ?>
                             <tr>
                                 <?php if ($bulkMode): ?>
                                     <td class="workspace-table__check">
@@ -1129,6 +1186,9 @@ $renderActions = static function (array $row) use (
                                             aria-label="Select <?= e((string) ($row['title'] ?? 'record')) ?>"
                                         >
                                     </td>
+                                <?php endif; ?>
+                                <?php if ($showPropertyNumbers): ?>
+                                    <td class="workspace-table__number"><?= e((string) (((max(1, $page) - 1) * $perPage) + $rowIndex + 1)) ?></td>
                                 <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
                                     <td><?= $formatCell($key, $row) ?></td>

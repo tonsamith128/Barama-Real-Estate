@@ -621,6 +621,17 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/properties/{id}',
+    [AdminManagementController::class, 'updateProperty'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/properties/{id}/delete',
+    [AdminManagementController::class, 'deleteProperty'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
+$router->post(
     '/dashboard/bulk-workflow',
     [AdminManagementController::class, 'bulkWorkflow'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]

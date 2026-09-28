@@ -1871,3 +1871,122 @@
         });
     });
 })();
+
+/* BARAMA_WORKSPACE_FLOATING_ROW_ACTIONS_V100 */
+(() => {
+    'use strict';
+
+    const init = () => {
+        let active = null;
+
+        const closeMenu = () => {
+            if (!active) return;
+
+            const { owner, trigger, menu } = active;
+            menu.hidden = true;
+            menu.style.top = '';
+            menu.style.left = '';
+            menu.style.visibility = '';
+            owner.appendChild(menu);
+            trigger.setAttribute('aria-expanded', 'false');
+            active = null;
+        };
+
+        const positionMenu = () => {
+            if (!active) return;
+
+            const { trigger, menu } = active;
+            const rect = trigger.getBoundingClientRect();
+            const gap = 6;
+            const edge = 8;
+
+            menu.hidden = false;
+            menu.style.visibility = 'hidden';
+
+            const width = menu.offsetWidth;
+            const height = menu.offsetHeight;
+            let left = rect.right - width;
+            let top = rect.bottom + gap;
+
+            left = Math.max(edge, Math.min(left, window.innerWidth - width - edge));
+
+            if (top + height > window.innerHeight - edge) {
+                top = rect.top - height - gap;
+            }
+
+            top = Math.max(edge, Math.min(top, window.innerHeight - height - edge));
+
+            menu.style.left = Math.round(left) + 'px';
+            menu.style.top = Math.round(top) + 'px';
+            menu.style.visibility = '';
+        };
+
+        document.querySelectorAll('[data-workspace-row-actions-trigger]').forEach((trigger) => {
+            const owner = trigger.closest('[data-workspace-row-actions]');
+            const menuId = trigger.getAttribute('aria-controls');
+            const menu = menuId ? document.getElementById(menuId) : null;
+
+            if (!owner || !menu) return;
+
+            trigger.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (active?.trigger === trigger) {
+                    closeMenu();
+                    return;
+                }
+
+                closeMenu();
+                active = { owner, trigger, menu };
+                trigger.setAttribute('aria-expanded', 'true');
+                document.body.appendChild(menu);
+                positionMenu();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!active) return;
+            if (active.menu.contains(event.target) || active.trigger.contains(event.target)) return;
+            closeMenu();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !active) return;
+            const trigger = active.trigger;
+            closeMenu();
+            trigger.focus();
+        });
+
+        window.addEventListener('resize', positionMenu);
+        window.addEventListener('scroll', closeMenu, true);
+
+        document.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-copy-slug]');
+            if (!button) return;
+
+            event.preventDefault();
+            const value = button.getAttribute('data-copy-value') || '';
+            if (!value) return;
+
+            const original = button.textContent;
+
+            try {
+                await navigator.clipboard.writeText(value);
+                button.textContent = 'Copied';
+            } catch (_) {
+                button.textContent = 'Copy failed';
+            }
+
+            window.setTimeout(() => {
+                button.textContent = original;
+            }, 1200);
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+        init();
+    }
+})();
