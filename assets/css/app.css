@@ -13332,3 +13332,37 @@ body:not(.auth-standalone-body) textarea {
         min-height: 88px;
     }
 }
+
+/* BARAMA_COMPANIES_DIRECTORY_AUDIT_V100 */
+.marketplace-results--companies .inventory-card {
+    --company-directory-accent: var(--barama-success);
+    border-color: color-mix(in srgb, var(--company-directory-accent) 14%, var(--barama-border));
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--company-directory-accent) 7%, transparent), transparent 44%),
+        linear-gradient(150deg, color-mix(in srgb, var(--barama-surface) 96%, transparent), color-mix(in srgb, var(--company-directory-accent) 2.5%, var(--barama-surface)));
+}
+
+.marketplace-results--companies .inventory-card:hover {
+    border-color: color-mix(in srgb, var(--company-directory-accent) 30%, var(--barama-border));
+}
+
+.inventory-grid--companies .inventory-card {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+}
+
+.inventory-grid--companies .inventory-card__body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+}
+
+.inventory-grid--companies .inventory-card__footer {
+    margin-top: auto;
+}
+
+.filter-chips--companies > span {
+    border-color: color-mix(in srgb, var(--barama-success) 18%, var(--barama-border));
+    background: color-mix(in srgb, var(--barama-success) 5%, var(--barama-surface));
+}
