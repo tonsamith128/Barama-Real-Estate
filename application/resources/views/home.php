@@ -423,7 +423,7 @@ $hasHeroBackground = $heroEnabled && (
             </div>
         </section>
     <?php elseif ($homeSectionKey === 'subscribe' && $homeEnabled): ?>
-        <section class="marketplace-section marketplace-section--home homepage-subscribe">
+        <section class="marketplace-section marketplace-section--home homepage-subscribe" id="subscribe">
             <div class="container app-container">
                 <div class="homepage-subscribe__panel">
                     <div>
@@ -432,7 +432,11 @@ $hasHeroBackground = $heroEnabled && (
                         <p><?= e((string) ($homeSection['description'] ?? '')) ?></p>
                     </div>
                     <div>
-                        <div class="homepage-subscribe__notice" data-home-subscribe-notice hidden aria-live="polite"></div>
+                        <?php
+                        $subscribeSuccess = (string) ($_GET['subscribed'] ?? '') === '1';
+                        $subscribeError = trim((string) ($_GET['subscribe_error'] ?? ''));
+                        ?>
+                        <div class="homepage-subscribe__notice <?= $subscribeError !== '' ? 'is-error' : ($subscribeSuccess ? 'is-success' : '') ?>" data-home-subscribe-notice<?= (!$subscribeSuccess && $subscribeError === '') ? ' hidden' : '' ?> aria-live="polite"><?= $subscribeError !== '' ? e($subscribeError) : ($subscribeSuccess ? e((string) ($homeSection['success_message'] ?? 'Thank you. You are subscribed to Barama updates.')) : '') ?></div>
                         <form action="<?= e(url('/subscribe')) ?>" method="post" data-home-subscribe-form data-success-message="<?= e((string) ($homeSection['success_message'] ?? 'Thank you. You are subscribed to Barama updates.')) ?>">
                             <?= csrf_field() ?>
                             <input type="hidden" name="source" value="homepage">
