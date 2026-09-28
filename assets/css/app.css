@@ -6521,6 +6521,23 @@ body.installer-modal-open {
     padding-top: 1.3rem;
 }
 
+
+.marketplace-results .inventory-card {
+    border-color: color-mix(in srgb, var(--barama-primary) 10%, var(--barama-border));
+    background:
+        linear-gradient(
+            150deg,
+            color-mix(in srgb, var(--barama-surface) 96%, transparent),
+            color-mix(in srgb, var(--barama-primary) 2%, var(--barama-surface))
+        );
+    box-shadow: 0 10px 26px rgba(8, 18, 35, 0.045);
+}
+
+.marketplace-results .inventory-card:hover {
+    border-color: color-mix(in srgb, var(--barama-primary) 24%, var(--barama-border));
+    box-shadow: 0 16px 34px rgba(8, 18, 35, 0.075);
+}
+
 .marketplace-results__bar {
     display: flex;
     min-height: 52px;
