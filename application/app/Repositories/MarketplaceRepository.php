@@ -369,8 +369,16 @@ final class MarketplaceRepository
                               LIMIT 1
                           ) AS primary_media_alt';
 
+        $sort = strtolower(trim((string) ($filters['sort'] ?? 'verified')));
+        $orderBy = match ($sort) {
+            'name' => 'c.name ASC, c.verified_at DESC',
+            'projects' => 'project_count DESC, c.verified_at DESC, c.name ASC',
+            'listings' => 'listing_count DESC, c.verified_at DESC, c.name ASC',
+            default => 'c.verified_at DESC, c.name ASC',
+        };
+
         return $this->paginate(
-            $select . $from . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY c.verified_at DESC, c.name ASC',
+            $select . $from . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY ' . $orderBy,
             'SELECT COUNT(*)' . $from . ' WHERE ' . implode(' AND ', $where),
             $params,
             $page,
