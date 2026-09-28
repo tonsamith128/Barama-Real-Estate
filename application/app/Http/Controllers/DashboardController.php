@@ -367,6 +367,10 @@ final class DashboardController
             ?? ucfirst($resource)
         );
 
+        $workspaceRead = new WorkspaceReadRepository();
+        $adminEditMode = $resource === 'property'
+            && in_array((string) $request->input('edit', ''), ['1', 'true', 'yes'], true);
+
         return Response::html(View::render('workspace/record', [
             'pageTitle' => $title . ' · Admin',
             'activeArea' => 'dashboard',
@@ -378,8 +382,12 @@ final class DashboardController
             'record' => $record,
             'history' => $data['history'],
             'media' => $data['media'],
+            'adminEditMode' => $adminEditMode,
             'formOptions' => [
-                'locations' => (new WorkspaceReadRepository())->adminLocations(),
+                'locations' => $workspaceRead->adminLocations(),
+                'projects' => $resource === 'property'
+                    ? $workspaceRead->adminProjectsForCompany((int) ($record['company_id'] ?? 0))
+                    : [],
             ],
         ]));
     }
