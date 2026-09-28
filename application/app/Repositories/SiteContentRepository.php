@@ -313,6 +313,7 @@ final class SiteContentRepository
                         'eyebrow' => 'Insights',
                         'title' => 'Latest from Barama',
                         'link_label' => 'View all insights',
+                        'link_url' => '',
                         'items' => [
                             [
                                 'title' => 'How to compare property opportunities',
