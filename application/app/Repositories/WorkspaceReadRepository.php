@@ -1496,7 +1496,7 @@ final class WorkspaceReadRepository
                 ['search' => $search],
             ],
             'properties' => [
-                'SELECT p.id, p.reference_code, p.title, p.property_type,
+                'SELECT p.id, p.reference_code, p.title, p.slug, p.property_type,
                         p.location_id, p.status, p.updated_at,
                         c.name AS company_name, c.status AS company_status,
                         pr.name AS project_name, pr.status AS project_status,
@@ -2190,6 +2190,23 @@ final class WorkspaceReadRepository
                  LIMIT 300'
             )
             ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    /** @return array<int, array<string, mixed>> */
+    public function adminProjectsForCompany(int $companyId): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT id, name, status
+             FROM projects
+             WHERE company_id = :company_id
+               AND deleted_at IS NULL
+             ORDER BY name ASC
+             LIMIT 300'
+        );
+        $statement->execute(['company_id' => $companyId]);
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
 
