@@ -88,253 +88,261 @@ final class AppearanceManagementService
     {
         $config = $this->effective($config);
         $defaults = AppearanceRepository::defaults();
-
-        foreach (self::FEATURES as $feature) {
-            if ($feature === 'preset') {
-                continue;
-            }
-
-            if (empty($config[$feature]['enabled'])) {
-                $config[$feature] = $defaults[$feature];
-            }
-        }
-
-        $typography = $config['typography'];
-        $families = $config['font_family'];
-        $sizes = $config['font_size'];
-        $colors = $config['color'];
-        $background = $config['background'];
-        $fontStyle = $config['font_style'];
-        $border = $config['border'];
-        $shadow = $config['shadow'];
-        $layout = $config['layout'];
-        $radius = $config['radius_spacing'];
-        $buttons = $config['buttons'];
-        $cards = $config['cards'];
-        $forms = $config['forms'];
-        $header = $config['header'];
-        $footer = $config['footer'];
-        $motion = $config['motion'];
-        $skin = !empty($config['skin']['enabled'])
-            ? $this->enum((string) ($config['skin']['name'] ?? 'modern'), ['modern', 'soft', 'sharp', 'glass', 'luxury'], 'modern')
-            : 'modern';
-
-        $light = $this->safePalette((array) ($colors['light'] ?? []), (array) $defaults['color']['light']);
-        $dark = $this->safePalette((array) ($colors['dark'] ?? []), (array) $defaults['color']['dark']);
-
-        $fontBody = $this->fontStack((string) ($families['body'] ?? 'inter'));
-        $fontHeading = $this->fontStack((string) ($families['heading'] ?? 'inter'));
-        $basePx = $this->boundedInt($sizes['base_px'] ?? 16, 14, 20, 16);
-        $smallScale = $this->boundedFloat($sizes['small_scale'] ?? 0.875, 0.72, 1.0, 0.875);
-        $navScale = $this->boundedFloat($sizes['nav_scale'] ?? 0.9, 0.78, 1.15, 0.9);
-        $bodyLine = $this->boundedFloat($typography['body_line_height'] ?? 1.6, 1.2, 2.0, 1.6);
-        $headingLine = $this->boundedFloat($typography['heading_line_height'] ?? 1.08, 0.9, 1.6, 1.08);
-        $bodyLetter = $this->boundedFloat($typography['body_letter_spacing'] ?? 0, -0.05, 0.1, 0);
-        $headingLetter = $this->boundedFloat($typography['heading_letter_spacing'] ?? -0.035, -0.12, 0.08, -0.035);
-        $bodyWeight = $this->allowedInt($fontStyle['body_weight'] ?? 400, [400, 500, 600], 400);
-        $headingWeight = $this->allowedInt($fontStyle['heading_weight'] ?? 850, [600, 700, 800, 850, 900], 850);
-        $navWeight = $this->allowedInt($fontStyle['nav_weight'] ?? 700, [500, 600, 700, 800, 900], 700);
-        $headingTransform = $this->enum((string) ($fontStyle['heading_transform'] ?? 'none'), ['none', 'uppercase'], 'none');
-        $smoothing = !empty($fontStyle['smoothing']);
-
-        $container = $this->boundedInt($layout['container_width'] ?? 1220, 1040, 1600, 1220);
-        $gutter = $this->boundedInt($layout['page_gutter'] ?? 24, 12, 48, 24);
-        $sectionScale = $this->boundedFloat($layout['section_spacing'] ?? 1.0, 0.75, 1.5, 1.0);
-        $density = $this->enum((string) ($layout['density'] ?? 'comfortable'), ['compact', 'comfortable', 'spacious'], 'comfortable');
-        $densityScale = match ($density) {
-            'compact' => 0.88,
-            'spacious' => 1.14,
-            default => 1.0,
-        };
-
-        $radiusSm = $this->boundedInt($radius['radius_sm'] ?? 12, 0, 24, 12);
-        $radiusMd = $this->boundedInt($radius['radius_md'] ?? 18, 0, 32, 18);
-        $radiusLg = $this->boundedInt($radius['radius_lg'] ?? 28, 0, 48, 28);
-        $controlRadius = $this->boundedInt($radius['control_radius'] ?? 12, 0, 24, 12);
-        $cardRadius = $this->boundedInt($radius['card_radius'] ?? 18, 0, 32, 18);
-        $gapScale = $this->boundedFloat($radius['gap_scale'] ?? 1.0, 0.75, 1.5, 1.0);
-
-        $borderWidth = $this->boundedInt($border['width'] ?? 1, 0, 3, 1);
-        $borderStyle = $this->enum((string) ($border['style'] ?? 'solid'), ['solid', 'dashed'], 'solid');
-        $borderOpacity = $this->boundedInt($border['opacity'] ?? 100, 0, 100, 100);
-
-        $shadowLevel = $this->enum((string) ($shadow['level'] ?? 'soft'), ['none', 'soft', 'medium', 'strong'], 'soft');
-        [$lightShadow, $darkShadow] = $this->shadowPair($shadowLevel);
-
-        $buttonStyle = $this->enum((string) ($buttons['style'] ?? 'solid'), ['solid', 'soft', 'outline', 'gradient'], 'solid');
-        $buttonRadius = $this->boundedInt($buttons['radius'] ?? 12, 0, 30, 12);
-        $buttonWeight = $this->allowedInt($buttons['weight'] ?? 800, [600, 700, 800, 900], 800);
-        $buttonTransform = !empty($buttons['uppercase']) ? 'uppercase' : 'none';
-
-        $cardStyle = $this->enum((string) ($cards['style'] ?? 'elevated'), ['elevated', 'outlined', 'flat', 'glass'], 'elevated');
-        $cardConfiguredRadius = $this->boundedInt($cards['radius'] ?? $cardRadius, 0, 32, $cardRadius);
-        $cardBorder = !empty($cards['border']);
-        $cardHover = !empty($cards['hover_lift']) && !empty($shadow['hover']);
-
-        $formStyle = $this->enum((string) ($forms['style'] ?? 'outlined'), ['outlined', 'filled', 'soft'], 'outlined');
-        $formHeight = $this->boundedInt($forms['height'] ?? 48, 40, 60, 48);
-        $formRadius = $this->boundedInt($forms['radius'] ?? $controlRadius, 0, 24, $controlRadius);
-        $focusRing = !empty($forms['focus_ring']);
-
-        $headerSticky = !empty($header['sticky']);
-        $headerBlur = $this->boundedInt($header['blur'] ?? 16, 0, 30, 16);
-        $headerHeight = $this->boundedInt($header['height'] ?? 76, 60, 96, 76);
-        $navStyle = $this->enum((string) ($header['nav_style'] ?? 'soft'), ['soft', 'pill', 'underline', 'minimal'], 'soft');
-        $headerShadow = !empty($header['shadow']);
-
-        $footerStyle = $this->enum((string) ($footer['style'] ?? 'standard'), ['standard', 'minimal', 'contrast'], 'standard');
-        $footerBorder = !empty($footer['border']);
-        $footerSpacing = $this->boundedInt($footer['spacing'] ?? 48, 24, 96, 48);
-
-        $duration = !empty($motion['transitions'])
-            ? $this->boundedInt($motion['duration'] ?? 160, 0, 500, 160)
-            : 0;
-        $hoverLift = !empty($motion['hover_lift']);
-        $smoothScroll = !empty($motion['smooth_scroll']);
-        $respectReduced = !empty($motion['respect_reduced_motion']);
-
-        $lightBackground = $this->backgroundCss(
-            $this->enum((string) ($background['style'] ?? 'solid'), ['solid', 'gradient', 'soft-gradient'], 'solid'),
-            $light['background'],
-            $this->color((string) ($background['light_to'] ?? '#eef4ff'), '#eef4ff'),
-            $this->enum((string) ($background['pattern'] ?? 'none'), ['none', 'dots', 'grid'], 'none'),
-            !empty($background['fixed']),
-            $light['border']
-        );
-        $darkBackground = $this->backgroundCss(
-            $this->enum((string) ($background['style'] ?? 'solid'), ['solid', 'gradient', 'soft-gradient'], 'solid'),
-            $dark['background'],
-            $this->color((string) ($background['dark_to'] ?? '#101d31'), '#101d31'),
-            $this->enum((string) ($background['pattern'] ?? 'none'), ['none', 'dots', 'grid'], 'none'),
-            !empty($background['fixed']),
-            $dark['border']
-        );
-
-        $css = [];
-        $css[] = '/* Barama dynamic frontend appearance */';
-        $css[] = '.barama-public-root{font-size:' . $basePx . 'px;' . ($smoothScroll ? 'scroll-behavior:smooth;' : '') . '}';
-        $css[] = 'body.barama-public-surface{'
-            . '--barama-bg:' . $light['background'] . ';'
-            . '--barama-surface:' . $light['surface'] . ';'
-            . '--barama-surface-soft:' . $light['surface_soft'] . ';'
-            . '--barama-text:' . $light['text'] . ';'
-            . '--barama-muted:' . $light['muted'] . ';'
-            . '--barama-border:' . $light['border'] . ';'
-            . '--barama-primary:' . $light['primary'] . ';'
-            . '--barama-primary-strong:' . $light['primary_strong'] . ';'
-            . '--barama-success:' . $light['success'] . ';'
-            . '--barama-danger:' . $light['danger'] . ';'
-            . '--barama-shadow:' . $lightShadow . ';'
-            . '--barama-radius-sm:' . $radiusSm . 'px;'
-            . '--barama-radius-md:' . $radiusMd . 'px;'
-            . '--barama-radius-lg:' . $radiusLg . 'px;'
-            . '--barama-container:' . $container . 'px;'
-            . '--appearance-font-body:' . $fontBody . ';'
-            . '--appearance-font-heading:' . $fontHeading . ';'
-            . '--appearance-small-scale:' . $smallScale . ';'
-            . '--appearance-nav-scale:' . $navScale . ';'
-            . '--appearance-section-scale:' . $sectionScale . ';'
-            . '--appearance-density-scale:' . $densityScale . ';'
-            . '--appearance-gap-scale:' . $gapScale . ';'
-            . '--appearance-link:' . $light['link'] . ';'
-            . '--appearance-border-width:' . $borderWidth . 'px;'
-            . '--appearance-border-style:' . $borderStyle . ';'
-            . '--appearance-border-opacity:' . $borderOpacity . '%;'
-            . '--appearance-control-radius:' . $controlRadius . 'px;'
-            . '--appearance-card-radius:' . $cardConfiguredRadius . 'px;'
-            . '--appearance-motion:' . $duration . 'ms;'
-            . 'font-family:var(--appearance-font-body);'
-            . 'font-weight:' . $bodyWeight . ';'
-            . 'line-height:' . $bodyLine . ';'
-            . 'letter-spacing:' . $bodyLetter . 'em;'
-            . $lightBackground
-            . ($smoothing ? '-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;' : '')
-            . '}';
-        $css[] = 'html[data-bs-theme="dark"] body.barama-public-surface{'
-            . '--barama-bg:' . $dark['background'] . ';'
-            . '--barama-surface:' . $dark['surface'] . ';'
-            . '--barama-surface-soft:' . $dark['surface_soft'] . ';'
-            . '--barama-text:' . $dark['text'] . ';'
-            . '--barama-muted:' . $dark['muted'] . ';'
-            . '--barama-border:' . $dark['border'] . ';'
-            . '--barama-primary:' . $dark['primary'] . ';'
-            . '--barama-primary-strong:' . $dark['primary_strong'] . ';'
-            . '--barama-success:' . $dark['success'] . ';'
-            . '--barama-danger:' . $dark['danger'] . ';'
-            . '--barama-shadow:' . $darkShadow . ';'
-            . '--appearance-link:' . $dark['link'] . ';'
-            . $darkBackground
-            . '}';
-
-        $css[] = '.barama-public-surface :where(h1,h2,h3,h4,h5,h6,.section-heading-row h2,.single-detail__title-block h1){font-family:var(--appearance-font-heading);font-weight:' . $headingWeight . ';line-height:' . $headingLine . ';letter-spacing:' . $headingLetter . 'em;text-transform:' . $headingTransform . ';}';
-        $css[] = '.barama-public-surface :where(.main-nav a,.site-footer a){font-size:calc(1rem * var(--appearance-nav-scale));font-weight:' . $navWeight . ';}';
-        $css[] = '.barama-public-surface small{font-size:calc(1em * var(--appearance-small-scale));}';
-        $css[] = '.barama-public-surface .app-container{max-width:var(--barama-container);padding-left:' . $gutter . 'px;padding-right:' . $gutter . 'px;}';
-        $css[] = '.barama-public-surface :where(.marketplace-section,.hero-section,.listing-detail,.cms-page,.auth-shell){--appearance-section-gap:calc(1rem * var(--appearance-section-scale));}';
-
+        $css = ['/* Barama dynamic frontend appearance */'];
         $commonCards = '.inventory-card,.market-pulse,.market-intent,.detail-summary-card,.inquiry-card,.foundation-panel,.detail-company-link,.auth-card,.cms-content';
-        $cardBackground = match ($cardStyle) {
-            'flat' => 'background:var(--barama-surface);box-shadow:none;',
-            'outlined' => 'background:transparent;box-shadow:none;',
-            'glass' => 'background:color-mix(in srgb,var(--barama-surface) 78%,transparent);backdrop-filter:blur(18px);',
-            default => 'background:var(--barama-surface);box-shadow:var(--barama-shadow);',
-        };
-        $css[] = '.barama-public-surface :where(' . $commonCards . '){border-radius:' . $cardConfiguredRadius . 'px;'
-            . ($cardBorder ? 'border:' . $borderWidth . 'px ' . $borderStyle . ' color-mix(in srgb,var(--barama-border) ' . $borderOpacity . '%,transparent);' : 'border:0;')
-            . $cardBackground
-            . 'transition:transform var(--appearance-motion) ease,box-shadow var(--appearance-motion) ease,border-color var(--appearance-motion) ease;}';
-        if ($cardHover && $hoverLift) {
-            $css[] = '.barama-public-surface :where(.inventory-card,.market-intent,.detail-company-link):hover{transform:translateY(-3px);}';
+
+        if (!empty($config['font_size']['enabled'])) {
+            $sizes = $config['font_size'];
+            $basePx = $this->boundedInt($sizes['base_px'] ?? 16, 14, 20, 16);
+            $smallScale = $this->boundedFloat($sizes['small_scale'] ?? 0.875, 0.72, 1.0, 0.875);
+            $navScale = $this->boundedFloat($sizes['nav_scale'] ?? 0.9, 0.78, 1.15, 0.9);
+            $css[] = '.barama-public-root{font-size:' . $basePx . 'px;}';
+            $css[] = 'body.barama-public-surface{--appearance-small-scale:' . $smallScale . ';--appearance-nav-scale:' . $navScale . ';}';
+            $css[] = '.barama-public-surface small{font-size:calc(1em * var(--appearance-small-scale));}';
+            $css[] = '.barama-public-surface :where(.main-nav a,.site-footer a){font-size:calc(1rem * var(--appearance-nav-scale));}';
         }
 
-        $buttonBackground = match ($buttonStyle) {
-            'soft' => 'background:color-mix(in srgb,var(--barama-primary) 12%,var(--barama-surface));color:var(--barama-primary);border-color:color-mix(in srgb,var(--barama-primary) 24%,var(--barama-border));',
-            'outline' => 'background:transparent;color:var(--barama-primary);border-color:var(--barama-primary);',
-            'gradient' => 'background:linear-gradient(135deg,var(--barama-primary),var(--barama-primary-strong));color:#fff;border-color:transparent;',
-            default => '',
-        };
-        $css[] = '.barama-public-surface :where(.btn,.market-searchbar button,.barama-user-trigger){border-radius:' . $buttonRadius . 'px;font-weight:' . $buttonWeight . ';text-transform:' . $buttonTransform . ';transition:all var(--appearance-motion) ease;}';
-        if ($buttonBackground !== '') {
-            $css[] = '.barama-public-surface .btn-primary{' . $buttonBackground . '}';
+        if (!empty($config['color']['enabled'])) {
+            $colors = $config['color'];
+            $light = $this->safePalette((array) ($colors['light'] ?? []), (array) $defaults['color']['light']);
+            $dark = $this->safePalette((array) ($colors['dark'] ?? []), (array) $defaults['color']['dark']);
+            $css[] = 'body.barama-public-surface{'
+                . '--barama-bg:' . $light['background'] . ';'
+                . '--barama-surface:' . $light['surface'] . ';'
+                . '--barama-surface-soft:' . $light['surface_soft'] . ';'
+                . '--barama-text:' . $light['text'] . ';'
+                . '--barama-muted:' . $light['muted'] . ';'
+                . '--barama-border:' . $light['border'] . ';'
+                . '--barama-primary:' . $light['primary'] . ';'
+                . '--barama-primary-strong:' . $light['primary_strong'] . ';'
+                . '--barama-success:' . $light['success'] . ';'
+                . '--barama-danger:' . $light['danger'] . ';'
+                . '--appearance-link:' . $light['link'] . ';'
+                . '}';
+            $css[] = 'html[data-bs-theme="dark"] body.barama-public-surface{'
+                . '--barama-bg:' . $dark['background'] . ';'
+                . '--barama-surface:' . $dark['surface'] . ';'
+                . '--barama-surface-soft:' . $dark['surface_soft'] . ';'
+                . '--barama-text:' . $dark['text'] . ';'
+                . '--barama-muted:' . $dark['muted'] . ';'
+                . '--barama-border:' . $dark['border'] . ';'
+                . '--barama-primary:' . $dark['primary'] . ';'
+                . '--barama-primary-strong:' . $dark['primary_strong'] . ';'
+                . '--barama-success:' . $dark['success'] . ';'
+                . '--barama-danger:' . $dark['danger'] . ';'
+                . '--appearance-link:' . $dark['link'] . ';'
+                . '}';
+            $css[] = '.barama-public-surface :where(.cms-content a,.detail-section a,.site-footer a){color:var(--appearance-link);}';
         }
 
-        $formBackground = match ($formStyle) {
-            'filled' => 'background:var(--barama-surface);',
-            'soft' => 'background:var(--barama-surface-soft);border-color:transparent;',
-            default => 'background:transparent;',
-        };
-        $css[] = '.barama-public-surface :where(.form-control,.form-select,input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea){min-height:' . $formHeight . 'px;border-radius:' . $formRadius . 'px;' . $formBackground . 'transition:border-color var(--appearance-motion) ease,box-shadow var(--appearance-motion) ease,background-color var(--appearance-motion) ease;}';
-        if (!$focusRing) {
-            $css[] = '.barama-public-surface :where(input,select,textarea,button,a):focus-visible{box-shadow:none;}';
+        if (!empty($config['font_family']['enabled'])) {
+            $families = $config['font_family'];
+            $fontBody = $this->fontStack((string) ($families['body'] ?? 'inter'));
+            $fontHeading = $this->fontStack((string) ($families['heading'] ?? 'inter'));
+            $css[] = 'body.barama-public-surface{font-family:' . $fontBody . ';}';
+            $css[] = '.barama-public-surface :where(h1,h2,h3,h4,h5,h6,.section-heading-row h2,.single-detail__title-block h1){font-family:' . $fontHeading . ';}';
         }
 
-        $css[] = '.barama-public-surface .site-header{position:' . ($headerSticky ? 'sticky' : 'relative') . ';top:' . ($headerSticky ? '0' : 'auto') . ';min-height:' . $headerHeight . 'px;backdrop-filter:blur(' . $headerBlur . 'px);' . ($headerShadow ? 'box-shadow:0 10px 30px rgba(8,18,35,.08);' : 'box-shadow:none;') . '}';
-        $css[] = '.barama-public-surface .site-header__inner{min-height:' . $headerHeight . 'px;}';
-        if ($navStyle === 'pill') {
-            $css[] = '.barama-public-surface .main-nav a{border-radius:999px;}';
-        } elseif ($navStyle === 'underline') {
-            $css[] = '.barama-public-surface .main-nav a{border-radius:0;border-bottom:2px solid transparent;background:transparent!important}.barama-public-surface .main-nav a:is(:hover,.is-active){border-bottom-color:var(--barama-primary);color:var(--barama-primary);}';
-        } elseif ($navStyle === 'minimal') {
-            $css[] = '.barama-public-surface .main-nav a{background:transparent!important;}';
+        if (!empty($config['typography']['enabled'])) {
+            $typography = $config['typography'];
+            $bodyLine = $this->boundedFloat($typography['body_line_height'] ?? 1.6, 1.2, 2.0, 1.6);
+            $headingLine = $this->boundedFloat($typography['heading_line_height'] ?? 1.08, 0.9, 1.6, 1.08);
+            $bodyLetter = $this->boundedFloat($typography['body_letter_spacing'] ?? 0, -0.05, 0.1, 0);
+            $headingLetter = $this->boundedFloat($typography['heading_letter_spacing'] ?? -0.035, -0.12, 0.08, -0.035);
+            $css[] = 'body.barama-public-surface{line-height:' . $bodyLine . ';letter-spacing:' . $bodyLetter . 'em;}';
+            $css[] = '.barama-public-surface :where(h1,h2,h3,h4,h5,h6,.section-heading-row h2,.single-detail__title-block h1){line-height:' . $headingLine . ';letter-spacing:' . $headingLetter . 'em;}';
         }
 
-        $footerBackground = $footerStyle === 'contrast'
-            ? 'background:var(--barama-text);color:var(--barama-bg);'
-            : ($footerStyle === 'minimal' ? 'background:transparent;' : '');
-        $css[] = '.barama-public-surface .site-footer{padding-top:' . $footerSpacing . 'px;padding-bottom:' . $footerSpacing . 'px;' . ($footerBorder ? 'border-top:' . $borderWidth . 'px ' . $borderStyle . ' color-mix(in srgb,var(--barama-border) ' . $borderOpacity . '%,transparent);' : 'border-top:0;') . $footerBackground . '}';
-
-        if ($skin === 'soft') {
-            $css[] = '.barama-public-surface :where(' . $commonCards . '){background:linear-gradient(145deg,var(--barama-surface),color-mix(in srgb,var(--barama-primary) 3%,var(--barama-surface)));}';
-        } elseif ($skin === 'sharp') {
-            $css[] = '.barama-public-surface :where(' . $commonCards . ',.btn,.form-control,.form-select){box-shadow:none;border-radius:min(6px,var(--appearance-card-radius));}';
-        } elseif ($skin === 'glass') {
-            $css[] = '.barama-public-surface :where(' . $commonCards . '){background:color-mix(in srgb,var(--barama-surface) 72%,transparent);backdrop-filter:blur(20px);border-color:color-mix(in srgb,var(--barama-border) 62%,transparent);}';
-        } elseif ($skin === 'luxury') {
-            $css[] = '.barama-public-surface :where(.eyebrow,.detail-status){letter-spacing:.14em}.barama-public-surface :where(' . $commonCards . '){box-shadow:0 20px 60px rgba(22,18,12,.1);}';
+        if (!empty($config['font_style']['enabled'])) {
+            $fontStyle = $config['font_style'];
+            $bodyWeight = $this->allowedInt($fontStyle['body_weight'] ?? 400, [400, 500, 600], 400);
+            $headingWeight = $this->allowedInt($fontStyle['heading_weight'] ?? 850, [600, 700, 800, 850, 900], 850);
+            $navWeight = $this->allowedInt($fontStyle['nav_weight'] ?? 700, [500, 600, 700, 800, 900], 700);
+            $headingTransform = $this->enum((string) ($fontStyle['heading_transform'] ?? 'none'), ['none', 'uppercase'], 'none');
+            $css[] = 'body.barama-public-surface{font-weight:' . $bodyWeight . ';'
+                . (!empty($fontStyle['smoothing']) ? '-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;' : '')
+                . '}';
+            $css[] = '.barama-public-surface :where(h1,h2,h3,h4,h5,h6,.section-heading-row h2,.single-detail__title-block h1){font-weight:' . $headingWeight . ';text-transform:' . $headingTransform . ';}';
+            $css[] = '.barama-public-surface .main-nav a{font-weight:' . $navWeight . ';}';
         }
 
-        if ($respectReduced) {
-            $css[] = '@media (prefers-reduced-motion:reduce){.barama-public-root{scroll-behavior:auto!important}.barama-public-surface *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}}';
+        if (!empty($config['background']['enabled'])) {
+            $background = $config['background'];
+            $defaultsColor = $defaults['color'];
+            $lightBase = !empty($config['color']['enabled'])
+                ? (string) ($config['color']['light']['background'] ?? $defaultsColor['light']['background'])
+                : (string) $defaultsColor['light']['background'];
+            $darkBase = !empty($config['color']['enabled'])
+                ? (string) ($config['color']['dark']['background'] ?? $defaultsColor['dark']['background'])
+                : (string) $defaultsColor['dark']['background'];
+            $style = $this->enum((string) ($background['style'] ?? 'solid'), ['solid', 'gradient', 'soft-gradient'], 'solid');
+            $pattern = $this->enum((string) ($background['pattern'] ?? 'none'), ['none', 'dots', 'grid'], 'none');
+            $lightBorder = !empty($config['color']['enabled']) ? (string) ($config['color']['light']['border'] ?? '#dde3ea') : '#dde3ea';
+            $darkBorder = !empty($config['color']['enabled']) ? (string) ($config['color']['dark']['border'] ?? '#26364b') : '#26364b';
+            $css[] = 'body.barama-public-surface{' . $this->backgroundCss(
+                $style,
+                $this->color($lightBase, '#f6f8fb'),
+                $this->color((string) ($background['light_to'] ?? '#eef4ff'), '#eef4ff'),
+                $pattern,
+                !empty($background['fixed']),
+                $this->color($lightBorder, '#dde3ea')
+            ) . '}';
+            $css[] = 'html[data-bs-theme="dark"] body.barama-public-surface{' . $this->backgroundCss(
+                $style,
+                $this->color($darkBase, '#0d1420'),
+                $this->color((string) ($background['dark_to'] ?? '#101d31'), '#101d31'),
+                $pattern,
+                !empty($background['fixed']),
+                $this->color($darkBorder, '#26364b')
+            ) . '}';
+        }
+
+        if (!empty($config['layout']['enabled'])) {
+            $layout = $config['layout'];
+            $container = $this->boundedInt($layout['container_width'] ?? 1220, 1040, 1600, 1220);
+            $gutter = $this->boundedInt($layout['page_gutter'] ?? 24, 12, 48, 24);
+            $sectionScale = $this->boundedFloat($layout['section_spacing'] ?? 1.0, 0.75, 1.5, 1.0);
+            $density = $this->enum((string) ($layout['density'] ?? 'comfortable'), ['compact', 'comfortable', 'spacious'], 'comfortable');
+            $densityScale = match ($density) {'compact' => 0.88, 'spacious' => 1.14, default => 1.0};
+            $css[] = 'body.barama-public-surface{--barama-container:' . $container . 'px;--appearance-section-scale:' . $sectionScale . ';--appearance-density-scale:' . $densityScale . ';}';
+            $css[] = '.barama-public-surface .app-container{max-width:var(--barama-container);padding-left:' . $gutter . 'px;padding-right:' . $gutter . 'px;}';
+            $css[] = '.barama-public-surface :where(.marketplace-section,.hero-section,.listing-detail,.cms-page,.auth-shell){--appearance-section-gap:calc(1rem * var(--appearance-section-scale));}';
+        }
+
+        if (!empty($config['radius_spacing']['enabled'])) {
+            $radius = $config['radius_spacing'];
+            $css[] = 'body.barama-public-surface{'
+                . '--barama-radius-sm:' . $this->boundedInt($radius['radius_sm'] ?? 12, 0, 24, 12) . 'px;'
+                . '--barama-radius-md:' . $this->boundedInt($radius['radius_md'] ?? 18, 0, 32, 18) . 'px;'
+                . '--barama-radius-lg:' . $this->boundedInt($radius['radius_lg'] ?? 28, 0, 48, 28) . 'px;'
+                . '--appearance-control-radius:' . $this->boundedInt($radius['control_radius'] ?? 12, 0, 24, 12) . 'px;'
+                . '--appearance-card-radius:' . $this->boundedInt($radius['card_radius'] ?? 18, 0, 32, 18) . 'px;'
+                . '--appearance-gap-scale:' . $this->boundedFloat($radius['gap_scale'] ?? 1.0, 0.75, 1.5, 1.0) . ';'
+                . '}';
+        }
+
+        if (!empty($config['border']['enabled'])) {
+            $border = $config['border'];
+            $width = $this->boundedInt($border['width'] ?? 1, 0, 3, 1);
+            $style = $this->enum((string) ($border['style'] ?? 'solid'), ['solid', 'dashed'], 'solid');
+            $opacity = $this->boundedInt($border['opacity'] ?? 100, 0, 100, 100);
+            $css[] = 'body.barama-public-surface{--appearance-border-width:' . $width . 'px;--appearance-border-style:' . $style . ';--appearance-border-opacity:' . $opacity . '%;}';
+            $css[] = '.barama-public-surface :where(.inventory-card,.market-pulse,.market-intent,.detail-summary-card,.inquiry-card,.foundation-panel,.detail-company-link,.form-control,.form-select,.site-header,.site-footer){border-width:' . $width . 'px;border-style:' . $style . ';border-color:color-mix(in srgb,var(--barama-border) ' . $opacity . '%,transparent);}';
+        }
+
+        if (!empty($config['shadow']['enabled'])) {
+            $shadow = $config['shadow'];
+            $level = $this->enum((string) ($shadow['level'] ?? 'soft'), ['none', 'soft', 'medium', 'strong'], 'soft');
+            [$lightShadow, $darkShadow] = $this->shadowPair($level);
+            $css[] = 'body.barama-public-surface{--barama-shadow:' . $lightShadow . ';}';
+            $css[] = 'html[data-bs-theme="dark"] body.barama-public-surface{--barama-shadow:' . $darkShadow . ';}';
+            $css[] = '.barama-public-surface :where(.inventory-card,.market-pulse,.detail-summary-card,.inquiry-card,.foundation-panel){box-shadow:var(--barama-shadow);}';
+        }
+
+        if (!empty($config['buttons']['enabled'])) {
+            $buttons = $config['buttons'];
+            $style = $this->enum((string) ($buttons['style'] ?? 'solid'), ['solid', 'soft', 'outline', 'gradient'], 'solid');
+            $radius = $this->boundedInt($buttons['radius'] ?? 12, 0, 30, 12);
+            $weight = $this->allowedInt($buttons['weight'] ?? 800, [600, 700, 800, 900], 800);
+            $transform = !empty($buttons['uppercase']) ? 'uppercase' : 'none';
+            $css[] = '.barama-public-surface :where(.btn,.market-searchbar button,.barama-user-trigger){border-radius:' . $radius . 'px;font-weight:' . $weight . ';text-transform:' . $transform . ';}';
+            if ($style === 'soft') {
+                $css[] = '.barama-public-surface .btn-primary{background:color-mix(in srgb,var(--barama-primary) 12%,var(--barama-surface));color:var(--barama-primary);border-color:color-mix(in srgb,var(--barama-primary) 24%,var(--barama-border));}';
+            } elseif ($style === 'outline') {
+                $css[] = '.barama-public-surface .btn-primary{background:transparent;color:var(--barama-primary);border-color:var(--barama-primary);}';
+            } elseif ($style === 'gradient') {
+                $css[] = '.barama-public-surface .btn-primary{background:linear-gradient(135deg,var(--barama-primary),var(--barama-primary-strong));color:#fff;border-color:transparent;}';
+            }
+        }
+
+        if (!empty($config['cards']['enabled'])) {
+            $cards = $config['cards'];
+            $style = $this->enum((string) ($cards['style'] ?? 'elevated'), ['elevated', 'outlined', 'flat', 'glass'], 'elevated');
+            $radius = $this->boundedInt($cards['radius'] ?? 18, 0, 32, 18);
+            $surface = match ($style) {
+                'flat' => 'background:var(--barama-surface);box-shadow:none;',
+                'outlined' => 'background:transparent;box-shadow:none;',
+                'glass' => 'background:color-mix(in srgb,var(--barama-surface) 78%,transparent);backdrop-filter:blur(18px);',
+                default => 'background:var(--barama-surface);box-shadow:var(--barama-shadow);',
+            };
+            $css[] = '.barama-public-surface :where(' . $commonCards . '){border-radius:' . $radius . 'px;' . (!empty($cards['border']) ? 'border:1px solid var(--barama-border);' : 'border:0;') . $surface . '}';
+            if (!empty($cards['hover_lift'])) {
+                $css[] = '.barama-public-surface :where(.inventory-card,.market-intent,.detail-company-link):hover{transform:translateY(-3px);}';
+            }
+        }
+
+        if (!empty($config['forms']['enabled'])) {
+            $forms = $config['forms'];
+            $style = $this->enum((string) ($forms['style'] ?? 'outlined'), ['outlined', 'filled', 'soft'], 'outlined');
+            $height = $this->boundedInt($forms['height'] ?? 48, 40, 60, 48);
+            $radius = $this->boundedInt($forms['radius'] ?? 12, 0, 24, 12);
+            $surface = match ($style) {
+                'filled' => 'background:var(--barama-surface);',
+                'soft' => 'background:var(--barama-surface-soft);border-color:transparent;',
+                default => 'background:transparent;',
+            };
+            $css[] = '.barama-public-surface :where(.form-control,.form-select,input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea){min-height:' . $height . 'px;border-radius:' . $radius . 'px;' . $surface . '}';
+            if (empty($forms['focus_ring'])) {
+                $css[] = '.barama-public-surface :where(input,select,textarea,button,a):focus-visible{box-shadow:none;}';
+            }
+        }
+
+        if (!empty($config['header']['enabled'])) {
+            $header = $config['header'];
+            $sticky = !empty($header['sticky']);
+            $blur = $this->boundedInt($header['blur'] ?? 16, 0, 30, 16);
+            $height = $this->boundedInt($header['height'] ?? 76, 60, 96, 76);
+            $navStyle = $this->enum((string) ($header['nav_style'] ?? 'soft'), ['soft', 'pill', 'underline', 'minimal'], 'soft');
+            $css[] = '.barama-public-surface .site-header{position:' . ($sticky ? 'sticky' : 'relative') . ';top:' . ($sticky ? '0' : 'auto') . ';min-height:' . $height . 'px;backdrop-filter:blur(' . $blur . 'px);' . (!empty($header['shadow']) ? 'box-shadow:0 10px 30px rgba(8,18,35,.08);' : 'box-shadow:none;') . '}';
+            $css[] = '.barama-public-surface .site-header__inner{min-height:' . $height . 'px;}';
+            if ($navStyle === 'pill') {
+                $css[] = '.barama-public-surface .main-nav a{border-radius:999px;}';
+            } elseif ($navStyle === 'underline') {
+                $css[] = '.barama-public-surface .main-nav a{border-radius:0;border-bottom:2px solid transparent;background:transparent!important}.barama-public-surface .main-nav a:is(:hover,.is-active){border-bottom-color:var(--barama-primary);color:var(--barama-primary);}';
+            } elseif ($navStyle === 'minimal') {
+                $css[] = '.barama-public-surface .main-nav a{background:transparent!important;}';
+            }
+        }
+
+        if (!empty($config['footer']['enabled'])) {
+            $footer = $config['footer'];
+            $style = $this->enum((string) ($footer['style'] ?? 'standard'), ['standard', 'minimal', 'contrast'], 'standard');
+            $spacing = $this->boundedInt($footer['spacing'] ?? 48, 24, 96, 48);
+            $surface = $style === 'contrast'
+                ? 'background:var(--barama-text);color:var(--barama-bg);'
+                : ($style === 'minimal' ? 'background:transparent;' : '');
+            $css[] = '.barama-public-surface .site-footer{padding-top:' . $spacing . 'px;padding-bottom:' . $spacing . 'px;' . (!empty($footer['border']) ? 'border-top:1px solid var(--barama-border);' : 'border-top:0;') . $surface . '}';
+        }
+
+        if (!empty($config['skin']['enabled'])) {
+            $skin = $this->enum((string) ($config['skin']['name'] ?? 'modern'), ['modern', 'soft', 'sharp', 'glass', 'luxury'], 'modern');
+            if ($skin === 'soft') {
+                $css[] = '.barama-public-surface :where(' . $commonCards . '){background:linear-gradient(145deg,var(--barama-surface),color-mix(in srgb,var(--barama-primary) 3%,var(--barama-surface)));}';
+            } elseif ($skin === 'sharp') {
+                $css[] = '.barama-public-surface :where(' . $commonCards . ',.btn,.form-control,.form-select){box-shadow:none;border-radius:6px;}';
+            } elseif ($skin === 'glass') {
+                $css[] = '.barama-public-surface :where(' . $commonCards . '){background:color-mix(in srgb,var(--barama-surface) 72%,transparent);backdrop-filter:blur(20px);border-color:color-mix(in srgb,var(--barama-border) 62%,transparent);}';
+            } elseif ($skin === 'luxury') {
+                $css[] = '.barama-public-surface :where(.eyebrow,.detail-status){letter-spacing:.14em}.barama-public-surface :where(' . $commonCards . '){box-shadow:0 20px 60px rgba(22,18,12,.1);}';
+            }
+        }
+
+        if (!empty($config['motion']['enabled'])) {
+            $motion = $config['motion'];
+            $duration = !empty($motion['transitions'])
+                ? $this->boundedInt($motion['duration'] ?? 160, 0, 500, 160)
+                : 0;
+            $css[] = 'body.barama-public-surface{--appearance-motion:' . $duration . 'ms;}';
+            $css[] = '.barama-public-surface :where(.btn,.inventory-card,.market-intent,.detail-company-link,.form-control,.form-select,.main-nav a){transition-duration:var(--appearance-motion);}';
+            if (!empty($motion['hover_lift'])) {
+                $css[] = '.barama-public-surface :where(.inventory-card,.market-intent,.detail-company-link):hover{transform:translateY(-3px);}';
+            }
+            if (!empty($motion['smooth_scroll'])) {
+                $css[] = '.barama-public-root{scroll-behavior:smooth;}';
+            }
+            if (!empty($motion['respect_reduced_motion'])) {
+                $css[] = '@media (prefers-reduced-motion:reduce){.barama-public-root{scroll-behavior:auto!important}.barama-public-surface *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}}';
+            }
         }
 
         return implode("\n", $css) . "\n";
@@ -378,41 +386,45 @@ final class AppearanceManagementService
         return match ($name) {
             'ocean' => [
                 'color' => [
+                    'enabled' => true,
                     'light' => ['background' => '#f4f8ff', 'primary' => '#0c63e7', 'primary_strong' => '#084eb9', 'link' => '#0c63e7'],
                     'dark' => ['background' => '#081423', 'surface' => '#0f2034', 'surface_soft' => '#152b45', 'primary' => '#63a4ff', 'primary_strong' => '#8bbcff', 'link' => '#8bbcff'],
                 ],
-                'background' => ['style' => 'soft-gradient', 'light_to' => '#e7f2ff', 'dark_to' => '#102b48'],
-                'skin' => ['name' => 'glass'],
+                'background' => ['enabled' => true, 'style' => 'soft-gradient', 'light_to' => '#e7f2ff', 'dark_to' => '#102b48'],
+                'skin' => ['enabled' => true, 'name' => 'glass'],
             ],
             'luxury' => [
-                'font_family' => ['heading' => 'serif'],
+                'font_family' => ['enabled' => true, 'heading' => 'serif'],
                 'color' => [
+                    'enabled' => true,
                     'light' => ['background' => '#fbfaf7', 'surface_soft' => '#f3efe7', 'primary' => '#8a672f', 'primary_strong' => '#6f5122', 'link' => '#8a672f'],
                     'dark' => ['background' => '#15130f', 'surface' => '#1e1a14', 'surface_soft' => '#282219', 'primary' => '#d1aa66', 'primary_strong' => '#e0c28b', 'link' => '#d9ba82'],
                 ],
-                'shadow' => ['level' => 'medium'],
-                'skin' => ['name' => 'luxury'],
+                'shadow' => ['enabled' => true, 'level' => 'medium'],
+                'skin' => ['enabled' => true, 'name' => 'luxury'],
             ],
             'warm' => [
                 'color' => [
+                    'enabled' => true,
                     'light' => ['background' => '#fff8f3', 'surface_soft' => '#fff0e5', 'primary' => '#c65e38', 'primary_strong' => '#9f4529', 'link' => '#b84f2e'],
                     'dark' => ['background' => '#1a100d', 'surface' => '#251814', 'surface_soft' => '#31201a', 'primary' => '#f2946c', 'primary_strong' => '#ffb08e', 'link' => '#f5a080'],
                 ],
-                'background' => ['style' => 'soft-gradient', 'light_to' => '#ffe9dc', 'dark_to' => '#322019'],
-                'skin' => ['name' => 'soft'],
+                'background' => ['enabled' => true, 'style' => 'soft-gradient', 'light_to' => '#ffe9dc', 'dark_to' => '#322019'],
+                'skin' => ['enabled' => true, 'name' => 'soft'],
             ],
             'minimal' => [
                 'color' => [
+                    'enabled' => true,
                     'light' => ['background' => '#fafafa', 'surface_soft' => '#f4f4f4', 'text' => '#161616', 'muted' => '#6b6b6b', 'border' => '#dedede', 'primary' => '#232323', 'primary_strong' => '#000000', 'link' => '#232323'],
                     'dark' => ['background' => '#111111', 'surface' => '#171717', 'surface_soft' => '#202020', 'text' => '#f3f3f3', 'muted' => '#a5a5a5', 'border' => '#303030', 'primary' => '#f3f3f3', 'primary_strong' => '#ffffff', 'link' => '#ffffff'],
                 ],
-                'shadow' => ['level' => 'none'],
-                'radius_spacing' => ['radius_sm' => 6, 'radius_md' => 8, 'radius_lg' => 12, 'control_radius' => 7, 'card_radius' => 8],
-                'skin' => ['name' => 'sharp'],
+                'shadow' => ['enabled' => true, 'level' => 'none'],
+                'radius_spacing' => ['enabled' => true, 'radius_sm' => 6, 'radius_md' => 8, 'radius_lg' => 12, 'control_radius' => 7, 'card_radius' => 8],
+                'skin' => ['enabled' => true, 'name' => 'sharp'],
             ],
             'mono' => [
-                'font_family' => ['body' => 'mono', 'heading' => 'mono'],
-                'font_style' => ['heading_weight' => 800],
+                'font_family' => ['enabled' => true, 'body' => 'mono', 'heading' => 'mono'],
+                'font_style' => ['enabled' => true, 'heading_weight' => 800],
                 'skin' => ['name' => 'sharp'],
             ],
             default => [],
