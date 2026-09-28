@@ -275,6 +275,146 @@ final class NotificationRepository
     }
 
     /** @return array<int,array<string,mixed>> */
+    public function adminNotifications(int $limit = 1000): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT n.id, n.uuid, n.user_id, u.name AS user_name,
+                    u.email AS user_email, n.category, n.type,
+                    n.title, n.message, n.action_url,
+                    n.entity_type, n.entity_id, n.read_at, n.created_at
+             FROM notifications n
+             INNER JOIN users u ON u.id = n.user_id
+             ORDER BY n.created_at DESC, n.id DESC
+             LIMIT :limit'
+        );
+        $statement->bindValue(
+            ':limit',
+            max(1, min(2000, $limit)),
+            PDO::PARAM_INT
+        );
+        $statement->execute();
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function adminOutbox(int $limit = 1500): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT o.id, o.uuid, o.user_id, u.name AS user_name,
+                    o.notification_id, o.to_address, o.subject,
+                    o.status, o.attempts, o.available_at, o.locked_at,
+                    o.sent_at, o.last_error, o.dedupe_key,
+                    o.created_at, o.updated_at
+             FROM email_outbox o
+             LEFT JOIN users u ON u.id = o.user_id
+             ORDER BY o.created_at DESC, o.id DESC
+             LIMIT :limit'
+        );
+        $statement->bindValue(
+            ':limit',
+            max(1, min(3000, $limit)),
+            PDO::PARAM_INT
+        );
+        $statement->execute();
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return array<string,int> */
+    public function communicationsSummary(): array
+    {
+        $row = Database::connection()->query(
+            'SELECT
+                (SELECT COUNT(*) FROM notifications) AS notifications,
+                (
+                    SELECT COUNT(*)
+                    FROM notifications
+                    WHERE read_at IS NULL
+                ) AS unread_notifications,
+                (
+                    SELECT COUNT(*)
+                    FROM email_outbox
+                    WHERE status = "pending"
+                ) AS pending_email,
+                (
+                    SELECT COUNT(*)
+                    FROM email_outbox
+                    WHERE status = "processing"
+                ) AS processing_email,
+                (
+                    SELECT COUNT(*)
+                    FROM email_outbox
+                    WHERE status = "failed"
+                ) AS failed_email,
+                (
+                    SELECT COUNT(*)
+                    FROM email_outbox
+                    WHERE status = "sent"
+                ) AS sent_email,
+                (
+                    SELECT COUNT(*)
+                    FROM email_outbox
+                    WHERE status = "cancelled"
+                ) AS cancelled_email'
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row)
+            ? array_map(
+                static fn (mixed $value): int => (int) $value,
+                $row
+            )
+            : [];
+    }
+
+    /** @return array<string,mixed>|null */
+    public function outboxMessage(int $id, bool $forUpdate = false): ?array
+    {
+        $sql = 'SELECT *
+                FROM email_outbox
+                WHERE id = :id
+                LIMIT 1';
+
+        if ($forUpdate) {
+            $sql .= ' FOR UPDATE';
+        }
+
+        $statement = Database::connection()->prepare($sql);
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function requeueEmail(int $id): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE email_outbox
+             SET status = "pending",
+                 attempts = 0,
+                 available_at = CURRENT_TIMESTAMP,
+                 locked_at = NULL,
+                 sent_at = NULL,
+                 last_error = NULL,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute(['id' => $id]);
+    }
+
+    public function cancelEmail(int $id): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE email_outbox
+             SET status = "cancelled",
+                 locked_at = NULL,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute(['id' => $id]);
+    }
+
+    /** @return array<int,array<string,mixed>> */
     public function outboxCandidates(int $limit, int $maxAttempts, int $staleMinutes): array
     {
         $staleBefore = date('Y-m-d H:i:s', time() - max(60, $staleMinutes * 60));

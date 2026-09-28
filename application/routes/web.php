@@ -463,6 +463,26 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->get(
+    '/dashboard/notifications',
+    [DashboardController::class, 'notificationCenter'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+);
+$router->get(
+    '/dashboard/mail-queue',
+    [DashboardController::class, 'mailQueue'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+);
+$router->post(
+    '/dashboard/mail-queue/{id}/requeue',
+    [AdminManagementController::class, 'requeueMail'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/mail-queue/{id}/cancel',
+    [AdminManagementController::class, 'cancelMail'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/homepage',
     [DashboardController::class, 'homepage'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
