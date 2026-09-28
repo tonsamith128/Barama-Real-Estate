@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\AnnouncementRepository;
 use Barama\Repositories\EmailTemplateRepository;
 use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\NotificationRepository;
@@ -15,6 +16,7 @@ use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\WorkspaceSettingsRepository;
+use Barama\Services\AnnouncementManagementService;
 use Barama\Services\EmailTemplateManagementService;
 
 final class DashboardController
@@ -106,6 +108,43 @@ final class DashboardController
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => 'homepage',
             'siteContent' => (new SiteContentRepository())->get(),
+        ]));
+    }
+
+    public function announcements(Request $request): Response
+    {
+        $repository = new AnnouncementRepository();
+        $search = mb_substr(trim((string) $request->input('q', '')), 0, 80);
+        $status = strtolower(trim((string) $request->input('status', '')));
+        $audience = strtolower(trim((string) $request->input('audience', '')));
+        $page = filter_var(
+            $request->input('page', 1),
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+        $page = $page === false ? 1 : (int) $page;
+
+        if (!in_array($status, ['', 'draft', 'scheduled', 'published', 'cancelled', 'archived'], true)) {
+            $status = '';
+        }
+
+        if ($audience !== '' && !array_key_exists($audience, AnnouncementManagementService::audienceOptions())) {
+            $audience = '';
+        }
+
+        return Response::html(View::render('workspace/communications-announcements', [
+            'pageTitle' => 'Announcements · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'announcements',
+            'announcementPage' => $repository->paginate($search, $status, $audience, $page, 20),
+            'announcementSummary' => $repository->summary(),
+            'announcementSearch' => $search,
+            'announcementFilters' => ['status' => $status, 'audience' => $audience],
+            'announcementAudiences' => AnnouncementManagementService::audienceOptions(),
+            'announcementPriorities' => AnnouncementManagementService::priorityOptions(),
         ]));
     }
 
@@ -695,6 +734,7 @@ final class DashboardController
 
             ['heading' => 'Communications'],
             ['label' => 'Notification Center', 'path' => '/dashboard/notifications', 'icon' => 'message'],
+            ['label' => 'Announcements', 'path' => '/dashboard/announcements', 'icon' => 'bell'],
             ['label' => 'Email Templates', 'path' => '/dashboard/email-templates', 'icon' => 'mail'],
             ['label' => 'Mail Queue & Logs', 'path' => '/dashboard/mail-queue', 'icon' => 'pipeline'],
 

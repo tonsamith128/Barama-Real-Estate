@@ -16,12 +16,14 @@ final class EmailTemplateManagementService
         'viewing_rescheduled',
         'viewing_completed',
         'viewing_declined',
+        'announcement_published',
     ];
 
     private const ALLOWED_VARIABLES = [
         'title',
         'message',
         'action_url',
+        'action_label',
         'recipient_name',
         'app_name',
         'app_url',
@@ -36,6 +38,7 @@ final class EmailTemplateManagementService
             'viewing_rescheduled' => 'Viewing rescheduled',
             'viewing_completed' => 'Viewing completed',
             'viewing_declined' => 'Viewing declined',
+            'announcement_published' => 'Announcement published',
         ];
     }
 

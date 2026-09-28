@@ -58,6 +58,15 @@ $required = [
     'application/database/migrations/0009_create_account_onboarding.php',
     'application/database/migrations/0010_release_security_hardening.php',
     'application/database/migrations/0011_create_workspace_preferences.php',
+    'application/database/migrations/0012_create_cms_pages.php',
+    'application/database/migrations/0013_create_billing_foundation.php',
+    'application/database/migrations/0014_create_invoice_transaction_foundation.php',
+    'application/database/migrations/0015_create_coupon_discount_foundation.php',
+    'application/database/migrations/0016_create_tax_rule_foundation.php',
+    'application/database/migrations/0017_create_payment_webhook_foundation.php',
+    'application/database/migrations/0018_create_communication_permission.php',
+    'application/database/migrations/0019_create_email_template_foundation.php',
+    'application/database/migrations/0020_create_announcement_foundation.php',
     'application/app/Domain/RealEstate/DomainRules.php',
     'application/app/Repositories/LocationRepository.php',
     'application/app/Repositories/CompanyRepository.php',
@@ -138,6 +147,15 @@ $required = [
     'tools/schema-smoke.php',
     'tools/domain-write-smoke.php',
     'tools/notification-smoke.php',
+    'tools/communications-announcement-smoke.php',
+    'tools/communications-v1192-predeploy.php',
+    'tools/communications-v1192-readonly.php',
+    'tools/communications-v1192-rollback-db.php',
+    'tools/build-communications-v1192-release.php',
+    'tools/communications-v1192-package-smoke.php',
+    'tools/releases/communications-v1192/deploy.sh',
+    'tools/releases/communications-v1192/rollback.sh',
+    'docs/releases/admin-communications-v1.19.2.json',
     'tools/notifications.php',
     'tools/build-package.php',
     'tools/package-smoke.php',
@@ -311,10 +329,19 @@ $expectedMigrationNames = [
     '0009_create_account_onboarding.php',
     '0010_release_security_hardening.php',
     '0011_create_workspace_preferences.php',
+    '0012_create_cms_pages.php',
+    '0013_create_billing_foundation.php',
+    '0014_create_invoice_transaction_foundation.php',
+    '0015_create_coupon_discount_foundation.php',
+    '0016_create_tax_rule_foundation.php',
+    '0017_create_payment_webhook_foundation.php',
+    '0018_create_communication_permission.php',
+    '0019_create_email_template_foundation.php',
+    '0020_create_announcement_foundation.php',
 ];
 
 $migrationNames === $expectedMigrationNames
-    ? $pass('Database migration sequence matches canonical 0001-0011.')
+    ? $pass('Database migration sequence matches canonical 0001-0020.')
     : $fail('Database migration sequence drift detected: ' . implode(', ', $migrationNames));
 
 $migrationPrefixes = array_map(

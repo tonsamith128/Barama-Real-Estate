@@ -12,6 +12,7 @@ $variables = [
     '{{title}}',
     '{{message}}',
     '{{action_url}}',
+    '{{action_label}}',
     '{{recipient_name}}',
     '{{app_name}}',
     '{{app_url}}',

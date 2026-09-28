@@ -5,6 +5,11 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -83,8 +88,17 @@ jobs:
       - name: Run release security hardening smoke test
         run: php tools/security-hardening-smoke.php
 
+      - name: Run Communications v1.19.2 read-only acceptance
+        run: php tools/communications-v1192-readonly.php --allow-non-live
+
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
+
+      - name: Run Communications announcement delivery smoke test
+        run: php tools/communications-announcement-smoke.php
+
+      - name: Verify Communications v1.19.2 release bundle
+        run: php tools/communications-v1192-package-smoke.php
 
       - name: Run SMTP transport smoke test
         run: php tools/smtp-smoke.php
@@ -169,6 +183,7 @@ jobs:
   webserver-compat:
     name: Exact Package Web Server QA
     needs: foundation-qa
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -204,6 +219,7 @@ jobs:
   browser-compat:
     name: Exact Package Browser & Accessibility QA
     needs: foundation-qa
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
