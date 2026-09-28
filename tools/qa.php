@@ -142,6 +142,7 @@ $required = [
     'tools/schema-smoke.php',
     'tools/domain-write-smoke.php',
     'tools/notification-smoke.php',
+    'tools/newsletter-smoke.php',
     'tools/notifications.php',
     'tools/build-package.php',
     'tools/package-smoke.php',
