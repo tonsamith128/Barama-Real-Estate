@@ -847,6 +847,8 @@ final class SiteContentManagementService
 
         return match (true) {
             $route === '/' => 'home',
+            $route === '/about' => 'about',
+            $route === '/contact' => 'contact',
             str_starts_with($route, '/properties') => 'properties',
             str_starts_with($route, '/projects') => 'projects',
             str_starts_with($route, '/company') => 'company',

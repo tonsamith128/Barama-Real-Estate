@@ -7,6 +7,7 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Repositories\SeoRepository;
+use Barama\Repositories\SiteContentRepository;
 use DateTimeImmutable;
 use Throwable;
 
@@ -47,6 +48,25 @@ final class SeoController
             ['path' => '/projects', 'last_modified' => null],
             ['path' => '/company', 'last_modified' => null],
         ];
+
+        $siteContent = (new SiteContentRepository())->get();
+
+        foreach (['about', 'contact'] as $builtInPage) {
+            $config = is_array($siteContent[$builtInPage] ?? null)
+                ? $siteContent[$builtInPage]
+                : [];
+            $seo = is_array($config['seo'] ?? null) ? $config['seo'] : [];
+
+            if (
+                !empty($config['enabled'])
+                && (string) ($seo['robots'] ?? 'index,follow') === 'index,follow'
+            ) {
+                $entries[] = [
+                    'path' => '/' . $builtInPage,
+                    'last_modified' => null,
+                ];
+            }
+        }
 
         foreach ((new SeoRepository())->sitemapEntries() as $entry) {
             $entries[] = $entry;

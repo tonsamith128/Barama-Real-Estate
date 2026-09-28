@@ -67,6 +67,24 @@ final class SiteContentRepository
             $homepage['section_order'] = $defaults['homepage']['section_order'];
         }
 
+        $rawAbout = is_array($decoded['about'] ?? null)
+            ? $decoded['about']
+            : [];
+        $about = array_replace_recursive($defaults['about'], $rawAbout);
+
+        if (!is_array($about['section_order'] ?? null)) {
+            $about['section_order'] = $defaults['about']['section_order'];
+        }
+
+        $rawContact = is_array($decoded['contact'] ?? null)
+            ? $decoded['contact']
+            : [];
+        $contact = array_replace_recursive($defaults['contact'], $rawContact);
+
+        if (!is_array($contact['section_order'] ?? null)) {
+            $contact['section_order'] = $defaults['contact']['section_order'];
+        }
+
         $navigationInput = is_array($decoded['navigation'] ?? null)
             ? array_values($decoded['navigation'])
             : $defaults['navigation'];
@@ -89,17 +107,31 @@ final class SiteContentRepository
                 );
             }
 
+            $activeArea = trim((string) ($item['active_area'] ?? ''));
+
+            if ($activeArea === '') {
+                $route = (string) parse_url($path, PHP_URL_PATH);
+                $activeArea = match ($route) {
+                    '/' => 'home',
+                    '/about' => 'about',
+                    '/contact' => 'contact',
+                    default => '',
+                };
+            }
+
             $navigation[] = [
                 'id' => $id,
                 'label' => $label,
                 'path' => $path,
-                'active_area' => trim((string) ($item['active_area'] ?? '')),
+                'active_area' => $activeArea,
                 'enabled' => !empty($item['enabled']),
             ];
         }
 
         self::$cache = [
             'homepage' => $homepage,
+            'about' => $about,
+            'contact' => $contact,
             'navigation' => $navigation,
         ];
 
@@ -347,11 +379,198 @@ final class SiteContentRepository
                     ],
                 ],
             ],
+            'about' => [
+                'enabled' => true,
+                'seo' => [
+                    'title' => 'About Us · Barama Real Estate',
+                    'description' => 'Learn how Barama Real Estate helps people discover approved property, projects, and real-estate companies in one structured marketplace.',
+                    'robots' => 'index,follow',
+                ],
+                'hero' => [
+                    'enabled' => true,
+                    'eyebrow' => 'About Barama',
+                    'title' => 'A clearer way to discover real estate',
+                    'description' => 'Barama Real Estate brings approved marketplace inventory, development projects, and company profiles together so property discovery feels structured, transparent, and easier to navigate.',
+                    'image_url' => '',
+                ],
+                'section_order' => [
+                    'story',
+                    'mission_vision',
+                    'values',
+                    'stats',
+                    'team',
+                    'cta',
+                ],
+                'sections' => [
+                    'story' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Our story',
+                        'title' => 'Built around useful property information',
+                        'body' => 'Barama Real Estate is designed as a focused marketplace where visitors can explore approved properties, projects, and real-estate companies without unnecessary complexity. The platform connects public discovery with structured company-managed inventory and direct inquiries.',
+                        'image_url' => '',
+                    ],
+                    'mission_vision' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Purpose',
+                        'title' => 'What guides the marketplace',
+                        'mission_title' => 'Our mission',
+                        'mission_text' => 'Make real-estate discovery easier to understand by presenting approved inventory, clear context, and direct ways to connect with responsible companies.',
+                        'vision_title' => 'Our vision',
+                        'vision_text' => 'Create a dependable digital marketplace where property information is organized, accessible, and useful for customers and real-estate professionals.',
+                    ],
+                    'values' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Our values',
+                        'title' => 'Principles behind the platform',
+                        'items' => [
+                            ['title' => 'Clarity', 'description' => 'Present property and company information in a clean, understandable structure.'],
+                            ['title' => 'Trust', 'description' => 'Keep publication tied to marketplace review and visible ownership context.'],
+                            ['title' => 'Usefulness', 'description' => 'Prioritize information and tools that help people continue their property research.'],
+                            ['title' => 'Connection', 'description' => 'Make it easy for visitors to contact the responsible company when they are ready.'],
+                        ],
+                    ],
+                    'stats' => [
+                        'enabled' => false,
+                        'eyebrow' => 'Marketplace at a glance',
+                        'title' => 'A focused platform for real-estate discovery',
+                        'items' => [
+                            ['value' => '1', 'label' => 'Unified marketplace'],
+                            ['value' => '100%', 'label' => 'Approval-first publishing'],
+                            ['value' => '24/7', 'label' => 'Self-service discovery'],
+                            ['value' => 'Direct', 'label' => 'Company inquiries'],
+                        ],
+                    ],
+                    'team' => [
+                        'enabled' => false,
+                        'eyebrow' => 'Our team',
+                        'title' => 'People behind Barama',
+                        'items' => [
+                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
+                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
+                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
+                            ['name' => '', 'role' => '', 'bio' => '', 'image_url' => ''],
+                        ],
+                    ],
+                    'cta' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Start exploring',
+                        'title' => 'Find the right property context',
+                        'description' => 'Browse approved marketplace inventory, explore developments, or connect with a real-estate company.',
+                        'primary_label' => 'Browse properties',
+                        'primary_url' => '/properties',
+                        'secondary_label' => 'Contact us',
+                        'secondary_url' => '/contact',
+                    ],
+                ],
+            ],
+            'contact' => [
+                'enabled' => true,
+                'seo' => [
+                    'title' => 'Contact Us · Barama Real Estate',
+                    'description' => 'Contact Barama Real Estate for marketplace support, general questions, partnerships, and platform assistance.',
+                    'robots' => 'index,follow',
+                ],
+                'hero' => [
+                    'enabled' => true,
+                    'eyebrow' => 'Contact Barama',
+                    'title' => 'How can we help?',
+                    'description' => 'Send a message for marketplace support, general questions, partnership inquiries, or help using Barama Real Estate.',
+                    'image_url' => '',
+                ],
+                'section_order' => [
+                    'channels',
+                    'office',
+                    'hours',
+                    'form',
+                    'faq',
+                    'socials',
+                ],
+                'sections' => [
+                    'channels' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Contact options',
+                        'title' => 'Reach the Barama team',
+                        'description' => 'Choose the contact option that works best for you.',
+                        'phone' => '',
+                        'email' => '',
+                        'telegram_url' => '',
+                        'whatsapp_url' => '',
+                    ],
+                    'office' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Office',
+                        'title' => 'Visit or locate us',
+                        'address' => '',
+                        'location_note' => '',
+                        'map_url' => '',
+                        'map_label' => 'Open map',
+                    ],
+                    'hours' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Business hours',
+                        'title' => 'When we are available',
+                        'timezone' => 'Asia/Phnom_Penh',
+                        'items' => [
+                            ['day' => 'Monday', 'hours' => '08:30 – 17:30'],
+                            ['day' => 'Tuesday', 'hours' => '08:30 – 17:30'],
+                            ['day' => 'Wednesday', 'hours' => '08:30 – 17:30'],
+                            ['day' => 'Thursday', 'hours' => '08:30 – 17:30'],
+                            ['day' => 'Friday', 'hours' => '08:30 – 17:30'],
+                            ['day' => 'Saturday', 'hours' => '09:00 – 12:00'],
+                            ['day' => 'Sunday', 'hours' => 'Closed'],
+                        ],
+                    ],
+                    'form' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Send a message',
+                        'title' => 'Tell us what you need',
+                        'description' => 'Use this form for general support, partnership questions, or platform assistance. Property-specific questions should be sent from the relevant listing, project, or company page.',
+                        'button_label' => 'Send message',
+                        'success_message' => 'Thank you. Your message has been received and is now in our support inbox.',
+                        'destination_email' => '',
+                        'require_phone' => false,
+                        'consent_text' => 'I agree that the information I submit may be used to respond to this request.',
+                        'subjects' => [
+                            'General question',
+                            'Marketplace support',
+                            'Partnership inquiry',
+                            'Company onboarding',
+                            'Technical issue',
+                        ],
+                    ],
+                    'faq' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Common questions',
+                        'title' => 'Before you send a message',
+                        'items' => [
+                            ['question' => 'How do I ask about a property?', 'answer' => 'Open the published property, project, or company page and use its direct inquiry option so your message reaches the responsible company with the correct context.'],
+                            ['question' => 'Can a company publish directly?', 'answer' => 'Marketplace records follow the configured review workflow before public publication.'],
+                            ['question' => 'Where should I report a technical issue?', 'answer' => 'Choose Technical issue in the contact form and include the page or action that caused the problem.'],
+                            ['question' => 'Can I discuss a partnership?', 'answer' => 'Yes. Choose Partnership inquiry and provide enough context for the Barama team to review your request.'],
+                            ['question' => 'When will I receive a reply?', 'answer' => 'Response times depend on the subject and configured business hours. Your message is stored in the administration inbox for follow-up.'],
+                        ],
+                    ],
+                    'socials' => [
+                        'enabled' => false,
+                        'eyebrow' => 'Follow Barama',
+                        'title' => 'Official social channels',
+                        'description' => 'Add only official Barama social profiles.',
+                        'facebook_url' => '',
+                        'instagram_url' => '',
+                        'linkedin_url' => '',
+                        'youtube_url' => '',
+                        'telegram_url' => '',
+                        'tiktok_url' => '',
+                    ],
+                ],
+            ],
             'navigation' => [
                 ['id' => 'home', 'label' => 'Home', 'path' => '/', 'active_area' => 'home', 'enabled' => true],
                 ['id' => 'properties', 'label' => 'Properties', 'path' => '/properties', 'active_area' => 'properties', 'enabled' => true],
                 ['id' => 'projects', 'label' => 'Projects', 'path' => '/projects', 'active_area' => 'projects', 'enabled' => true],
                 ['id' => 'companies', 'label' => 'Companies', 'path' => '/company', 'active_area' => 'company', 'enabled' => true],
+                ['id' => 'about', 'label' => 'About', 'path' => '/about', 'active_area' => 'about', 'enabled' => true],
+                ['id' => 'contact', 'label' => 'Contact', 'path' => '/contact', 'active_area' => 'contact', 'enabled' => true],
             ],
         ];
     }

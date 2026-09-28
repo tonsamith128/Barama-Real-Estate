@@ -263,11 +263,15 @@
                     notice.textContent = payload?.data?.message || 'Your inquiry has been submitted.';
                 }
 
-                form.querySelectorAll('input:not([type="hidden"]), textarea').forEach((field) => {
-                    if (field.name !== 'website') {
-                        field.value = '';
-                    }
-                });
+                if (form.matches('[data-contact-form]')) {
+                    form.reset();
+                } else {
+                    form.querySelectorAll('input:not([type="hidden"]), textarea').forEach((field) => {
+                        if (field.name !== 'website') {
+                            field.value = '';
+                        }
+                    });
+                }
             } catch (error) {
                 if (notice) {
                     notice.hidden = false;

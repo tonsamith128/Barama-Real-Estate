@@ -1023,7 +1023,8 @@ final class WorkspaceReadRepository
                 COALESCE(SUM(status = "published"), 0) AS published,
                 COALESCE(SUM(status = "archived"), 0) AS archived,
                 COALESCE(SUM(status = "published" AND robots_directive = "index,follow"), 0) AS indexable
-                FROM cms_pages',
+                FROM cms_pages
+                WHERE LOWER(slug) NOT IN ("about", "about-us", "contact", "contact-us")',
             'seo' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(issue_state = "attention"), 0) AS attention,
                 COALESCE(SUM(index_state = "indexable"), 0) AS indexable,
@@ -1228,6 +1229,7 @@ final class WorkspaceReadRepository
                     FROM cms_pages p
                     WHERE p.status = "published"
                       AND p.published_at IS NOT NULL
+                      AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
                 ) seo_rows',
             'inquiries' => 'SELECT COUNT(*) AS total,
                 COALESCE(SUM(status = "new"), 0) AS new,
@@ -1985,10 +1987,12 @@ final class WorkspaceReadRepository
                     FROM cms_pages p
                     WHERE p.status = "published"
                       AND p.published_at IS NOT NULL
+                      AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
                  ) seo_rows
                  WHERE CONCAT_WS(" ", title, path, entity_type) LIKE :search
                  ORDER BY updated_at DESC',
-                'SELECT COUNT(*) FROM cms_pages',
+                'SELECT COUNT(*) FROM cms_pages
+                 WHERE LOWER(slug) NOT IN ("about", "about-us", "contact", "contact-us")',
                 ['search' => $search],
             ],
             'pages' => [
@@ -1997,7 +2001,8 @@ final class WorkspaceReadRepository
                         COALESCE(updated_by.name, "System") AS updated_by_name
                  FROM cms_pages p
                  LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
-                 WHERE CONCAT_WS(
+                 WHERE LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
+                   AND CONCAT_WS(
                     " ",
                     p.title,
                     p.slug,
@@ -2010,7 +2015,8 @@ final class WorkspaceReadRepository
                 'SELECT COUNT(*)
                  FROM cms_pages p
                  LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
-                 WHERE CONCAT_WS(
+                 WHERE LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
+                   AND CONCAT_WS(
                     " ",
                     p.title,
                     p.slug,
