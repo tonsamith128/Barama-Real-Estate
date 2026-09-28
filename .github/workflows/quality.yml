@@ -74,6 +74,9 @@ jobs:
       - name: Verify migration replay is clean
         run: php tools/migrate.php
 
+      - name: Run newsletter subscription smoke test
+        run: php tools/newsletter-smoke.php
+
       - name: Run domain write smoke test
         run: php tools/domain-write-smoke.php
 
