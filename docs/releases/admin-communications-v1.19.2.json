@@ -144,5 +144,52 @@
     "Per-recipient delivery is unique on announcement_id + user_id",
     "Published announcement delivery is idempotent",
     "Scheduled announcement runner is integrated through tools/notifications.php"
+  ],
+  "required_foreign_keys": {
+    "communication_announcements": [
+      "communication_announcements_created_by_fk",
+      "communication_announcements_updated_by_fk",
+      "communication_announcements_published_by_fk"
+    ],
+    "communication_announcement_deliveries": [
+      "communication_announcement_deliveries_announcement_fk",
+      "communication_announcement_deliveries_user_fk",
+      "communication_announcement_deliveries_notification_fk",
+      "communication_announcement_deliveries_outbox_fk"
+    ]
+  },
+  "required_methods": {
+    "Barama\\Http\\Controllers\\DashboardController": [
+      "announcements"
+    ],
+    "Barama\\Http\\Controllers\\AdminManagementController": [
+      "createAnnouncement",
+      "updateAnnouncement",
+      "updateAnnouncementStatus",
+      "publishAnnouncement"
+    ],
+    "Barama\\Services\\AnnouncementDeliveryService": [
+      "processDue",
+      "publish"
+    ],
+    "Barama\\Services\\AnnouncementManagementService": [
+      "create",
+      "update",
+      "setStatus",
+      "publishNow"
+    ]
+  },
+  "runner": {
+    "path": "tools/notifications.php",
+    "lock": "barama:notification-jobs",
+    "commands": [
+      "run",
+      "announcements",
+      "alerts",
+      "outbox"
+    ]
+  },
+  "live_acceptance_only_files": [
+    "tools/communications-v1192-readonly.php"
   ]
 }
