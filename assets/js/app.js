@@ -184,15 +184,18 @@
             }
 
             try {
-                const response = await window.fetch(form.action, {
-                    method: form.method || 'POST',
+                const response = await window.fetch(
+                    submitter?.formAction || form.action,
+                    {
+                    method: submitter?.formMethod || form.method || 'POST',
                     body: new FormData(form),
                     credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
-                });
+                }
+                );
 
                 const payload = await response.json().catch(() => null);
 
@@ -1480,5 +1483,87 @@
                 form.submit();
             }
         });
+    });
+})();
+
+
+/* BARAMA_PRE_DEMO_CONTENT_DISCOVERY_V100 */
+(() => {
+    'use strict';
+
+    const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
+
+    document.querySelectorAll('[data-configure-open]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const id = button.getAttribute('data-configure-open');
+            const dialog = id ? document.getElementById(id) : null;
+
+            if (!(dialog instanceof HTMLDialogElement)) {
+                return;
+            }
+
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+
+            window.setTimeout(() => {
+                dialog.querySelector('input:not([type="hidden"]), select, textarea, button')
+                    ?.focus();
+            }, 0);
+        });
+    });
+
+    dialogs.forEach((dialog) => {
+        dialog.querySelectorAll('[data-configure-close]').forEach((button) => {
+            button.addEventListener('click', () => dialog.close());
+        });
+
+        dialog.addEventListener('click', (event) => {
+            if (event.target === dialog) {
+                dialog.close();
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-toggle-form]').forEach((form) => {
+        const input = form.querySelector('[data-auto-toggle]');
+        const value = form.querySelector('[data-toggle-value]');
+        const label = form.querySelector('.premium-switch b');
+
+        if (!(input instanceof HTMLInputElement) || !(value instanceof HTMLInputElement)) {
+            return;
+        }
+
+        input.addEventListener('change', () => {
+            value.value = input.checked ? '1' : '0';
+
+            if (label) {
+                label.textContent = input.checked ? 'ON' : 'OFF';
+            }
+
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-hero-background-type]').forEach((select) => {
+        const dialog = select.closest('[data-config-dialog]');
+        if (!dialog) return;
+
+        const panels = Array.from(
+            dialog.querySelectorAll('[data-hero-background-panel]')
+        );
+
+        const update = () => {
+            panels.forEach((panel) => {
+                panel.hidden = panel.getAttribute('data-hero-background-panel') !== select.value;
+            });
+        };
+
+        select.addEventListener('change', update);
+        update();
     });
 })();
