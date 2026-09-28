@@ -5,6 +5,11 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -172,6 +177,7 @@ jobs:
   webserver-compat:
     name: Exact Package Web Server QA
     needs: foundation-qa
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -207,6 +213,7 @@ jobs:
   browser-compat:
     name: Exact Package Browser & Accessibility QA
     needs: foundation-qa
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
