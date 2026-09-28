@@ -245,7 +245,7 @@ final class WorkspaceReadRepository
                 ['user_id' => $userId, 'search' => $search],
             ],
             'projects' => [
-                'SELECT p.id, p.name, p.project_type, p.completion_status, p.status,
+                'SELECT p.id, p.name, p.slug, p.project_type, p.completion_status, p.status,
                         p.location_id, p.updated_at, c.name AS company_name,
                         loc.name AS location_name,
                         (SELECT COUNT(*) FROM properties prop WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count
@@ -1440,7 +1440,7 @@ final class WorkspaceReadRepository
                 ['search' => $search],
             ],
             'companies' => [
-                'SELECT c.id, c.name, c.company_type, c.status, c.email, c.phone,
+                'SELECT c.id, c.name, c.slug, c.company_type, c.status, c.email, c.phone,
                         c.location_id, c.verified_at, c.updated_at, loc.name AS location_name,
                         (SELECT COUNT(*) FROM company_members cm
                          WHERE cm.company_id = c.id AND cm.status = "active") AS members_count,
