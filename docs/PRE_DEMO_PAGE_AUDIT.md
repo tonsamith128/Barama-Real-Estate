@@ -33,7 +33,7 @@ The demo site must not be reinstalled until every mandatory surface below is acc
 | 3 | Property detail | `/properties/{slug}` | CODE READY | Price-on-request fallback fixed; summary completed with bedrooms/bathrooms/parking/furnishing; contain-fit image/video/YouTube media and 2–6 related-card density verified. |
 | 4 | Projects marketplace | `/projects` | CODE READY | Search accessibility fixed; active filter chips added; filtered result state and pagination labeling aligned with Properties. |
 | 5 | Project detail | `/projects/{slug}` | TODO | Featured media, business information, publisher contact, related projects. |
-| 6 | Companies directory | `/company` | TODO | Search/filter, company cards, responsive directory. |
+| 6 | Companies directory | `/company` | CODE READY | Accessible search/type/location/sort controls; active-filter chips; filtered SEO state retained; premium approved-company cards; responsive result bar and pagination semantics. |
 | 7 | Company detail | `/company/{slug}` | TODO | Featured media, company information, publisher contact, properties/projects. |
 | 8 | Public CMS + legal | `/pages/{slug}` | TODO | Privacy, Terms, Disclaimer and other managed pages. |
 | 9 | Authentication | `/login`, `/register`, `/forgot-password`, reset/verify routes | TODO | Standalone premium shell; no public header/footer; password UX and validation. |
