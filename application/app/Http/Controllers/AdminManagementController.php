@@ -360,7 +360,7 @@ final class AdminManagementController
 
     public function updateAppearanceFeature(Request $request, string $feature): Response
     {
-        return $this->execute(function () use ($request, $feature): array {
+        return $this->executeAppearance(function () use ($request, $feature): array {
             (new AppearanceManagementService())->updateFeature(
                 $feature,
                 $request->all()
@@ -375,7 +375,7 @@ final class AdminManagementController
 
     public function toggleAppearanceFeature(Request $request, string $feature): Response
     {
-        return $this->execute(function () use ($request, $feature): array {
+        return $this->executeAppearance(function () use ($request, $feature): array {
             $enabled = in_array(
                 strtolower(trim((string) $request->input('enabled', '0'))),
                 ['1', 'true', 'on', 'yes'],
@@ -399,7 +399,7 @@ final class AdminManagementController
 
     public function resetAppearance(Request $request): Response
     {
-        return $this->execute(function (): array {
+        return $this->executeAppearance(function (): array {
             (new AppearanceManagementService())->reset();
 
             return [
@@ -754,6 +754,77 @@ final class AdminManagementController
                 'message' => 'Active sessions were invalidated for this account.',
             ];
         });
+    }
+
+    /**
+     * Appearance writes keep JSON for the enhanced UI but retain a native
+     * redirect fallback so configuration remains usable if browser scripting
+     * or an intermediary blocks the AJAX response.
+     *
+     * @param callable(): array<string, mixed> $action
+     */
+    private function executeAppearance(callable $action): Response
+    {
+        $ajax = strtolower(trim((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')))
+            === 'xmlhttprequest';
+
+        try {
+            $data = $action();
+
+            if ($ajax) {
+                return Response::json([
+                    'ok' => true,
+                    'data' => $data,
+                ]);
+            }
+
+            return Response::redirect('/dashboard/appearance?appearance_saved=1');
+        } catch (InvalidArgumentException $exception) {
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $exception->getMessage(),
+                ], 422);
+            }
+
+            return Response::redirect(
+                '/dashboard/appearance?appearance_error='
+                . rawurlencode($exception->getMessage())
+            );
+        } catch (DomainException $exception) {
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $exception->getMessage(),
+                ], 403);
+            }
+
+            return Response::redirect(
+                '/dashboard/appearance?appearance_error='
+                . rawurlencode($exception->getMessage())
+            );
+        } catch (\Throwable $exception) {
+            error_log(
+                '[Barama Appearance] '
+                . $exception::class
+                . ': '
+                . $exception->getMessage()
+            );
+
+            $message = 'Appearance could not be saved. Please retry or review the server error log.';
+
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $message,
+                ], 500);
+            }
+
+            return Response::redirect(
+                '/dashboard/appearance?appearance_error='
+                . rawurlencode($message)
+            );
+        }
     }
 
     /**
