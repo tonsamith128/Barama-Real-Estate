@@ -11,7 +11,7 @@ $features = is_array($homepage['features'] ?? null) ? $homepage['features'] : []
 $sections = is_array($homepage['sections'] ?? null) ? $homepage['sections'] : [];
 $order = is_array($homepage['section_order'] ?? null)
     ? array_values($homepage['section_order'])
-    : ['listings', 'projects', 'companies'];
+    : array_values(\Barama\Repositories\SiteContentRepository::defaults()['homepage']['section_order']);
 $positions = [];
 
 foreach ($order as $index => $sectionKey) {
@@ -67,6 +67,48 @@ $rows = [
         'icon' => 'building',
         'enabled' => !empty($sections['companies']['enabled']),
         'summary' => (string) ($sections['companies']['title'] ?? 'Approved professionals'),
+    ],
+    'featured_locations' => [
+        'label' => 'Featured Locations',
+        'description' => 'Show popular marketplace locations as direct property-discovery shortcuts.',
+        'icon' => 'map',
+        'enabled' => !empty($sections['featured_locations']['enabled']),
+        'summary' => (string) ($sections['featured_locations']['title'] ?? 'Popular places to discover'),
+    ],
+    'how_it_works' => [
+        'label' => 'How It Works',
+        'description' => 'Three clear steps explaining marketplace discovery and direct inquiry.',
+        'icon' => 'check',
+        'enabled' => !empty($sections['how_it_works']['enabled']),
+        'summary' => (string) ($sections['how_it_works']['title'] ?? 'A simpler way to discover real estate'),
+    ],
+    'trust_stats' => [
+        'label' => 'Trust & Stats',
+        'description' => 'Four compact confidence metrics for marketplace positioning.',
+        'icon' => 'shield',
+        'enabled' => !empty($sections['trust_stats']['enabled']),
+        'summary' => (string) ($sections['trust_stats']['title'] ?? 'Built around approved public inventory'),
+    ],
+    'testimonials' => [
+        'label' => 'Testimonials',
+        'description' => 'Three customer or company quotes with names and roles.',
+        'icon' => 'message',
+        'enabled' => !empty($sections['testimonials']['enabled']),
+        'summary' => (string) ($sections['testimonials']['title'] ?? 'What marketplace users say'),
+    ],
+    'blog' => [
+        'label' => 'Blog',
+        'description' => 'Three manually curated insight cards with optional image and link.',
+        'icon' => 'edit',
+        'enabled' => !empty($sections['blog']['enabled']),
+        'summary' => (string) ($sections['blog']['title'] ?? 'Latest from Barama'),
+    ],
+    'subscribe' => [
+        'label' => 'Subscribe',
+        'description' => 'Rate-limited newsletter email signup backed by subscriber storage.',
+        'icon' => 'mail',
+        'enabled' => !empty($sections['subscribe']['enabled']),
+        'summary' => (string) ($sections['subscribe']['title'] ?? 'Get marketplace updates'),
     ],
 ];
 
@@ -258,19 +300,147 @@ $sliderImages = is_array($background['slider_images'] ?? null)
         </form>
     </dialog>
 
-    <?php foreach (['listings' => 'Latest Inventory','projects' => 'Projects','companies' => 'Companies'] as $key => $label): ?>
+    <?php foreach ([
+        'listings' => 'Latest Inventory',
+        'projects' => 'Projects',
+        'companies' => 'Companies',
+        'featured_locations' => 'Featured Locations',
+    ] as $key => $label): ?>
         <?php $section = is_array($sections[$key] ?? null) ? $sections[$key] : []; ?>
         <dialog class="config-dialog" id="homepage-config-<?= e($key) ?>" data-config-dialog>
             <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/' . $key)) ?>" method="post" data-workspace-form>
-                <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure <?= e($label) ?></h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+                <?= csrf_field() ?>
+                <header class="config-dialog__head">
+                    <div><span class="eyebrow">Homepage Section</span><h2>Configure <?= e($label) ?></h2></div>
+                    <button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button>
+                </header>
                 <div class="config-dialog__body config-field-grid">
-                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= 3; $position++): ?><option value="<?= $position ?>" <?= (int) ($positions[$key] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
+                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($order); $position++): ?><option value="<?= $position ?>" <?= (int) ($positions[$key] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
                     <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($section['eyebrow'] ?? '')) ?>"></label>
                     <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($section['title'] ?? '')) ?>"></label>
                     <label class="config-field-grid__wide"><span>Link label</span><input class="form-control" name="link_label" maxlength="80" value="<?= e((string) ($section['link_label'] ?? '')) ?>"></label>
+                    <?php if ($key === 'featured_locations'): ?>
+                        <label><span>Locations to show</span><select class="form-select" name="limit"><?php for ($limit = 3; $limit <= 8; $limit++): ?><option value="<?= $limit ?>" <?= (int) ($section['limit'] ?? 6) === $limit ? 'selected' : '' ?>><?= $limit ?></option><?php endfor; ?></select></label>
+                    <?php endif; ?>
                 </div>
                 <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
             </form>
         </dialog>
     <?php endforeach; ?>
+
+    <?php
+    $how = is_array($sections['how_it_works'] ?? null) ? $sections['how_it_works'] : [];
+    $howItems = is_array($how['items'] ?? null) ? array_values($how['items']) : [];
+    ?>
+    <dialog class="config-dialog config-dialog--wide" id="homepage-config-how_it_works" data-config-dialog>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/how_it_works')) ?>" method="post" data-workspace-form>
+            <?= csrf_field() ?>
+            <header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure How It Works</h2><p>Explain the marketplace journey in three concise steps.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+            <div class="config-dialog__body">
+                <div class="config-field-grid">
+                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($order); $position++): ?><option value="<?= $position ?>" <?= (int) ($positions['how_it_works'] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
+                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($how['eyebrow'] ?? '')) ?>"></label>
+                    <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($how['title'] ?? '')) ?>"></label>
+                </div>
+                <div class="homepage-repeat-grid">
+                    <?php for ($index = 0; $index < 3; $index++): ?><?php $item = is_array($howItems[$index] ?? null) ? $howItems[$index] : []; ?>
+                        <section><strong>Step <?= $index + 1 ?></strong><label><span>Title</span><input class="form-control" name="items[<?= $index ?>][title]" maxlength="100" value="<?= e((string) ($item['title'] ?? '')) ?>"></label><label><span>Description</span><textarea class="form-control" name="items[<?= $index ?>][description]" rows="3" maxlength="260"><?= e((string) ($item['description'] ?? '')) ?></textarea></label></section>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
+        </form>
+    </dialog>
+
+    <?php
+    $trust = is_array($sections['trust_stats'] ?? null) ? $sections['trust_stats'] : [];
+    $trustItems = is_array($trust['items'] ?? null) ? array_values($trust['items']) : [];
+    ?>
+    <dialog class="config-dialog config-dialog--wide" id="homepage-config-trust_stats" data-config-dialog>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/trust_stats')) ?>" method="post" data-workspace-form>
+            <?= csrf_field() ?>
+            <header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure Trust & Stats</h2><p>Use short factual metrics; avoid claims you cannot substantiate.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+            <div class="config-dialog__body">
+                <div class="config-field-grid">
+                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($order); $position++): ?><option value="<?= $position ?>" <?= (int) ($positions['trust_stats'] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
+                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($trust['eyebrow'] ?? '')) ?>"></label>
+                    <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($trust['title'] ?? '')) ?>"></label>
+                </div>
+                <div class="homepage-repeat-grid homepage-repeat-grid--four">
+                    <?php for ($index = 0; $index < 4; $index++): ?><?php $item = is_array($trustItems[$index] ?? null) ? $trustItems[$index] : []; ?>
+                        <section><strong>Stat <?= $index + 1 ?></strong><label><span>Value</span><input class="form-control" name="items[<?= $index ?>][value]" maxlength="24" value="<?= e((string) ($item['value'] ?? '')) ?>"></label><label><span>Label</span><input class="form-control" name="items[<?= $index ?>][label]" maxlength="90" value="<?= e((string) ($item['label'] ?? '')) ?>"></label></section>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
+        </form>
+    </dialog>
+
+    <?php
+    $testimonials = is_array($sections['testimonials'] ?? null) ? $sections['testimonials'] : [];
+    $testimonialItems = is_array($testimonials['items'] ?? null) ? array_values($testimonials['items']) : [];
+    ?>
+    <dialog class="config-dialog config-dialog--wide" id="homepage-config-testimonials" data-config-dialog>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/testimonials')) ?>" method="post" data-workspace-form>
+            <?= csrf_field() ?>
+            <header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure Testimonials</h2><p>Publish only quotes you have permission to use.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+            <div class="config-dialog__body">
+                <div class="config-field-grid">
+                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($order); $position++): ?><option value="<?= $position ?>" <?= (int) ($positions['testimonials'] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
+                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($testimonials['eyebrow'] ?? '')) ?>"></label>
+                    <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($testimonials['title'] ?? '')) ?>"></label>
+                </div>
+                <div class="homepage-repeat-grid">
+                    <?php for ($index = 0; $index < 3; $index++): ?><?php $item = is_array($testimonialItems[$index] ?? null) ? $testimonialItems[$index] : []; ?>
+                        <section><strong>Testimonial <?= $index + 1 ?></strong><label><span>Quote</span><textarea class="form-control" name="items[<?= $index ?>][quote]" rows="4" maxlength="500"><?= e((string) ($item['quote'] ?? '')) ?></textarea></label><label><span>Name</span><input class="form-control" name="items[<?= $index ?>][name]" maxlength="100" value="<?= e((string) ($item['name'] ?? '')) ?>"></label><label><span>Role / company</span><input class="form-control" name="items[<?= $index ?>][role]" maxlength="120" value="<?= e((string) ($item['role'] ?? '')) ?>"></label></section>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
+        </form>
+    </dialog>
+
+    <?php
+    $blog = is_array($sections['blog'] ?? null) ? $sections['blog'] : [];
+    $blogItems = is_array($blog['items'] ?? null) ? array_values($blog['items']) : [];
+    ?>
+    <dialog class="config-dialog config-dialog--wide" id="homepage-config-blog" data-config-dialog>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/blog')) ?>" method="post" data-workspace-form>
+            <?= csrf_field() ?>
+            <header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure Blog</h2><p>Curate three insight cards. Links may use an internal Barama path or a valid HTTP/HTTPS URL.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+            <div class="config-dialog__body">
+                <div class="config-field-grid">
+                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($order); $position++): ?><option value="<?= $position ?>" <?= (int) ($positions['blog'] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
+                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($blog['eyebrow'] ?? '')) ?>"></label>
+                    <label><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($blog['title'] ?? '')) ?>"></label>
+                    <label><span>Section link label</span><input class="form-control" name="link_label" maxlength="80" value="<?= e((string) ($blog['link_label'] ?? '')) ?>"></label>
+                </div>
+                <div class="homepage-repeat-grid">
+                    <?php for ($index = 0; $index < 3; $index++): ?><?php $item = is_array($blogItems[$index] ?? null) ? $blogItems[$index] : []; ?>
+                        <section><strong>Article <?= $index + 1 ?></strong><label><span>Title</span><input class="form-control" name="items[<?= $index ?>][title]" maxlength="140" value="<?= e((string) ($item['title'] ?? '')) ?>"></label><label><span>Excerpt</span><textarea class="form-control" name="items[<?= $index ?>][excerpt]" rows="3" maxlength="320"><?= e((string) ($item['excerpt'] ?? '')) ?></textarea></label><label><span>Article URL</span><input class="form-control" name="items[<?= $index ?>][url]" maxlength="1000" value="<?= e((string) ($item['url'] ?? '')) ?>" placeholder="/pages/market-insights"></label><label><span>Image URL</span><input class="form-control" type="url" name="items[<?= $index ?>][image_url]" maxlength="1000" value="<?= e((string) ($item['image_url'] ?? '')) ?>" placeholder="https://example.com/article.jpg"></label></section>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
+        </form>
+    </dialog>
+
+    <?php $subscribe = is_array($sections['subscribe'] ?? null) ? $sections['subscribe'] : []; ?>
+    <dialog class="config-dialog" id="homepage-config-subscribe" data-config-dialog>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/subscribe')) ?>" method="post" data-workspace-form>
+            <?= csrf_field() ?>
+            <header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure Subscribe</h2><p>Email addresses are stored in the newsletter subscriber table with deduplication and rate limiting.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+            <div class="config-dialog__body config-field-grid">
+                <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($order); $position++): ?><option value="<?= $position ?>" <?= (int) ($positions['subscribe'] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
+                <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($subscribe['eyebrow'] ?? '')) ?>"></label>
+                <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($subscribe['title'] ?? '')) ?>"></label>
+                <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="3" maxlength="360"><?= e((string) ($subscribe['description'] ?? '')) ?></textarea></label>
+                <label><span>Email placeholder</span><input class="form-control" name="placeholder" maxlength="120" value="<?= e((string) ($subscribe['placeholder'] ?? '')) ?>"></label>
+                <label><span>Button label</span><input class="form-control" name="button_label" maxlength="60" value="<?= e((string) ($subscribe['button_label'] ?? 'Subscribe')) ?>"></label>
+                <label class="config-field-grid__wide"><span>Success message</span><input class="form-control" name="success_message" maxlength="220" value="<?= e((string) ($subscribe['success_message'] ?? '')) ?>"></label>
+                <label class="config-field-grid__wide"><span>Consent / privacy note</span><textarea class="form-control" name="consent_text" rows="2" maxlength="220"><?= e((string) ($subscribe['consent_text'] ?? '')) ?></textarea></label>
+            </div>
+            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
+        </form>
+    </dialog>
 </section>
