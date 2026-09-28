@@ -183,6 +183,10 @@ $rollback = (string) $zip->getFromName($prefix . 'bin/rollback.sh');
 if (
     str_contains(
         $deploy,
+        'BUNDLE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"'
+    )
+    && str_contains(
+        $deploy,
         'SITE="/www/wwwroot/baramarealestate.tonsamith.com"'
     )
     && str_contains(
