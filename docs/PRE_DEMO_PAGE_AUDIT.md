@@ -29,7 +29,7 @@ The demo site must not be reinstalled until every mandatory surface below is acc
 | 1 | Homepage | `/` | CODE READY | Search-first structure preserved; hero scale reduced; marketplace pulse softened; featured cards refined with transparent premium surfaces. |
 | 2 | Property marketplace | `/properties` | CODE READY | Filter state/counts repaired; search accessibility fixed; filtered SEO guard completed; result cards refined. |
 | 3 | Property detail | `/properties/{slug}` | CODE READY | Price-on-request fallback fixed; summary completed with bedrooms/bathrooms/parking/furnishing; contain-fit image/video/YouTube media and 2–6 related-card density verified. |
-| 4 | Projects marketplace | `/projects` | TODO | Search, filters, project cards, empty states. |
+| 4 | Projects marketplace | `/projects` | CODE READY | Search accessibility fixed; active filter chips added; filtered result state and pagination labeling aligned with Properties. |
 | 5 | Project detail | `/projects/{slug}` | TODO | Featured media, business information, publisher contact, related projects. |
 | 6 | Companies directory | `/company` | TODO | Search/filter, company cards, responsive directory. |
 | 7 | Company detail | `/company/{slug}` | TODO | Featured media, company information, publisher contact, properties/projects. |
