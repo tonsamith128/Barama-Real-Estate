@@ -1116,6 +1116,21 @@ html[data-bs-theme="dark"] {
     white-space: nowrap;
 }
 
+.workspace-table__title-link {
+    color: var(--barama-text);
+    font-weight: 760;
+    text-decoration: none;
+    background: transparent;
+}
+
+.workspace-table__title-link:hover,
+.workspace-table__title-link:focus-visible {
+    color: var(--barama-primary-strong);
+    text-decoration: underline;
+    text-underline-offset: 0.16em;
+    outline: none;
+}
+
 .workspace-table__actions {
     width: 1%;
     text-align: right !important;
