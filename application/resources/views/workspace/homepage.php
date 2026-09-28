@@ -414,6 +414,7 @@ $sliderImages = is_array($background['slider_images'] ?? null)
                     <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($blog['eyebrow'] ?? '')) ?>"></label>
                     <label><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($blog['title'] ?? '')) ?>"></label>
                     <label><span>Section link label</span><input class="form-control" name="link_label" maxlength="80" value="<?= e((string) ($blog['link_label'] ?? '')) ?>"></label>
+                    <label class="config-field-grid__wide"><span>Section link URL</span><input class="form-control" name="link_url" maxlength="1000" value="<?= e((string) ($blog['link_url'] ?? '')) ?>" placeholder="/pages/insights"></label>
                 </div>
                 <div class="homepage-repeat-grid">
                     <?php for ($index = 0; $index < 3; $index++): ?><?php $item = is_array($blogItems[$index] ?? null) ? $blogItems[$index] : []; ?>
