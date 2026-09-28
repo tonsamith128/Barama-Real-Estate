@@ -20,7 +20,7 @@ $homeSections = is_array($homepageContent['sections'] ?? null)
     : [];
 $homeOrder = is_array($homepageContent['section_order'] ?? null)
     ? array_values($homepageContent['section_order'])
-    : ['listings', 'projects', 'companies'];
+    : array_values(\Barama\Repositories\SiteContentRepository::defaults()['homepage']['section_order']);
 
 $heroEyebrow = trim((string) ($hero['eyebrow'] ?? $homepageContent['hero_eyebrow'] ?? 'Barama Real Estate'));
 $heroTitle = trim((string) ($hero['title'] ?? $homepageContent['hero_title'] ?? 'Property Discovery Simplified'));
@@ -284,6 +284,167 @@ $hasHeroBackground = $heroEnabled && (
                     <?php foreach ($featuredCompanies as $company): ?>
                         <?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'company', 'item' => $company]) ?>
                     <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($homeSectionKey === 'featured_locations' && $homeEnabled): ?>
+        <?php
+        $locationLimit = max(3, min(8, (int) ($homeSection['limit'] ?? 6)));
+        $featuredLocations = array_slice(is_array($locations ?? null) ? $locations : [], 0, $locationLimit);
+        ?>
+        <?php if ($featuredLocations !== []): ?>
+            <section class="marketplace-section marketplace-section--home homepage-locations">
+                <div class="container app-container">
+                    <div class="section-heading-row section-heading-row--compact">
+                        <div>
+                            <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Explore locations')) ?></span>
+                            <h2><?= e((string) ($homeSection['title'] ?? 'Popular places to discover')) ?></h2>
+                        </div>
+                        <a href="<?= e(url('/properties')) ?>"><?= e((string) ($homeSection['link_label'] ?? 'Browse all properties')) ?></a>
+                    </div>
+                    <div class="homepage-location-grid">
+                        <?php foreach ($featuredLocations as $location): ?>
+                            <a class="homepage-location-card" href="<?= e(url('/properties?location=' . rawurlencode((string) ($location['id'] ?? '')))) ?>">
+                                <span class="homepage-location-card__icon"><?= app_icon('map') ?></span>
+                                <span><strong><?= e((string) ($location['name'] ?? 'Location')) ?></strong><small>Explore published properties</small></span>
+                                <b>↗</b>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </section>
+        <?php endif; ?>
+    <?php elseif ($homeSectionKey === 'how_it_works' && $homeEnabled): ?>
+        <?php $items = is_array($homeSection['items'] ?? null) ? array_values($homeSection['items']) : []; ?>
+        <section class="marketplace-section marketplace-section--home marketplace-section--soft homepage-how">
+            <div class="container app-container">
+                <div class="section-heading-row section-heading-row--compact">
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'How it works')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'A simpler way to discover real estate')) ?></h2>
+                    </div>
+                </div>
+                <div class="homepage-how-grid">
+                    <?php foreach (array_slice($items, 0, 3) as $index => $item): ?>
+                        <?php if (trim((string) ($item['title'] ?? '')) !== '' || trim((string) ($item['description'] ?? '')) !== ''): ?>
+                            <article class="homepage-how-card">
+                                <span><?= e((string) ($index + 1)) ?></span>
+                                <h3><?= e((string) ($item['title'] ?? '')) ?></h3>
+                                <p><?= e((string) ($item['description'] ?? '')) ?></p>
+                            </article>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($homeSectionKey === 'trust_stats' && $homeEnabled): ?>
+        <?php $items = is_array($homeSection['items'] ?? null) ? array_values($homeSection['items']) : []; ?>
+        <section class="marketplace-section marketplace-section--home homepage-trust">
+            <div class="container app-container">
+                <div class="homepage-trust__head">
+                    <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Marketplace confidence')) ?></span>
+                    <h2><?= e((string) ($homeSection['title'] ?? 'Built around approved public inventory')) ?></h2>
+                </div>
+                <div class="homepage-trust-grid">
+                    <?php foreach (array_slice($items, 0, 4) as $item): ?>
+                        <?php if (trim((string) ($item['value'] ?? '')) !== '' || trim((string) ($item['label'] ?? '')) !== ''): ?>
+                            <div><strong><?= e((string) ($item['value'] ?? '')) ?></strong><span><?= e((string) ($item['label'] ?? '')) ?></span></div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($homeSectionKey === 'testimonials' && $homeEnabled): ?>
+        <?php $items = is_array($homeSection['items'] ?? null) ? array_values($homeSection['items']) : []; ?>
+        <section class="marketplace-section marketplace-section--home marketplace-section--soft homepage-testimonials">
+            <div class="container app-container">
+                <div class="section-heading-row section-heading-row--compact">
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Testimonials')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'What marketplace users say')) ?></h2>
+                    </div>
+                </div>
+                <div class="homepage-testimonial-grid">
+                    <?php foreach (array_slice($items, 0, 3) as $item): ?>
+                        <?php if (trim((string) ($item['quote'] ?? '')) !== ''): ?>
+                            <blockquote class="homepage-testimonial">
+                                <span aria-hidden="true">“</span>
+                                <p><?= e((string) ($item['quote'] ?? '')) ?></p>
+                                <footer><strong><?= e((string) ($item['name'] ?? '')) ?></strong><small><?= e((string) ($item['role'] ?? '')) ?></small></footer>
+                            </blockquote>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($homeSectionKey === 'blog' && $homeEnabled): ?>
+        <?php
+        $items = is_array($homeSection['items'] ?? null) ? array_values($homeSection['items']) : [];
+        $sectionUrl = trim((string) ($homeSection['link_url'] ?? ''));
+        $sectionHref = $sectionUrl !== ''
+            ? (str_starts_with($sectionUrl, '/') ? url($sectionUrl) : $sectionUrl)
+            : '';
+        ?>
+        <section class="marketplace-section marketplace-section--home homepage-blog">
+            <div class="container app-container">
+                <div class="section-heading-row section-heading-row--compact">
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Insights')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'Latest from Barama')) ?></h2>
+                    </div>
+                    <?php if ($sectionHref !== '' && trim((string) ($homeSection['link_label'] ?? '')) !== ''): ?>
+                        <a href="<?= e($sectionHref) ?>"><?= e((string) $homeSection['link_label']) ?></a>
+                    <?php endif; ?>
+                </div>
+                <div class="homepage-blog-grid">
+                    <?php foreach (array_slice($items, 0, 3) as $item): ?>
+                        <?php
+                        $articleUrl = trim((string) ($item['url'] ?? ''));
+                        $articleHref = $articleUrl !== ''
+                            ? (str_starts_with($articleUrl, '/') ? url($articleUrl) : $articleUrl)
+                            : '';
+                        ?>
+                        <?php if (trim((string) ($item['title'] ?? '')) !== ''): ?>
+                            <article class="homepage-blog-card">
+                                <?php if (trim((string) ($item['image_url'] ?? '')) !== ''): ?>
+                                    <img src="<?= e((string) $item['image_url']) ?>" alt="" loading="lazy" decoding="async">
+                                <?php else: ?>
+                                    <div class="homepage-blog-card__placeholder"><?= app_icon('edit') ?></div>
+                                <?php endif; ?>
+                                <div>
+                                    <h3><?= e((string) ($item['title'] ?? '')) ?></h3>
+                                    <p><?= e((string) ($item['excerpt'] ?? '')) ?></p>
+                                    <?php if ($articleHref !== ''): ?><a href="<?= e($articleHref) ?>">Read more <span>↗</span></a><?php endif; ?>
+                                </div>
+                            </article>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php elseif ($homeSectionKey === 'subscribe' && $homeEnabled): ?>
+        <section class="marketplace-section marketplace-section--home homepage-subscribe">
+            <div class="container app-container">
+                <div class="homepage-subscribe__panel">
+                    <div>
+                        <span class="eyebrow"><?= e((string) ($homeSection['eyebrow'] ?? 'Stay informed')) ?></span>
+                        <h2><?= e((string) ($homeSection['title'] ?? 'Get marketplace updates')) ?></h2>
+                        <p><?= e((string) ($homeSection['description'] ?? '')) ?></p>
+                    </div>
+                    <div>
+                        <div class="homepage-subscribe__notice" data-home-subscribe-notice hidden aria-live="polite"></div>
+                        <form action="<?= e(url('/subscribe')) ?>" method="post" data-home-subscribe-form data-success-message="<?= e((string) ($homeSection['success_message'] ?? 'Thank you. You are subscribed to Barama updates.')) ?>">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="source" value="homepage">
+                            <input class="inquiry-honeypot" name="website" autocomplete="off" tabindex="-1" aria-hidden="true">
+                            <label>
+                                <span class="visually-hidden">Email address</span>
+                                <input type="email" name="email" maxlength="191" required autocomplete="email" placeholder="<?= e((string) ($homeSection['placeholder'] ?? 'Enter your email address')) ?>">
+                            </label>
+                            <button class="btn btn-primary" type="submit"><?= app_icon('mail') ?><span><?= e((string) ($homeSection['button_label'] ?? 'Subscribe')) ?></span></button>
+                        </form>
+                        <?php if (trim((string) ($homeSection['consent_text'] ?? '')) !== ''): ?><small><?= e((string) $homeSection['consent_text']) ?></small><?php endif; ?>
+                    </div>
                 </div>
             </div>
         </section>
