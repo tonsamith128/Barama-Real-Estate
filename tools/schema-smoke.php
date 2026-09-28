@@ -54,6 +54,7 @@ $requiredTables = [
     'email_verification_tokens',
     'security_audit_events',
     'cms_pages',
+    'newsletter_subscribers',
 ];
 
 $statement = $pdo->query(
@@ -71,6 +72,41 @@ foreach ($requiredTables as $table) {
     if (!isset($tableLookup[$table])) {
         $failures[] = "Missing table: {$table}";
     }
+}
+
+$newsletterColumns = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'newsletter_subscribers'
+       AND COLUMN_NAME IN (
+           'id',
+           'uuid',
+           'email',
+           'status',
+           'source',
+           'subscribed_at',
+           'unsubscribed_at',
+           'created_at',
+           'updated_at'
+       )"
+)->fetchColumn();
+
+if ($newsletterColumns !== 9) {
+    $failures[] = 'newsletter_subscribers columns are incomplete.';
+}
+
+$newsletterEmailUnique = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'newsletter_subscribers'
+       AND INDEX_NAME = 'newsletter_subscribers_email_unique'
+       AND NON_UNIQUE = 0"
+)->fetchColumn();
+
+if ($newsletterEmailUnique !== 1) {
+    $failures[] = 'newsletter_subscribers email uniqueness is missing.';
 }
 
 $authVersionColumn = (int) $pdo->query(
