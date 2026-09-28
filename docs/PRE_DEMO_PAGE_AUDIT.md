@@ -32,7 +32,7 @@ The demo site must not be reinstalled until every mandatory surface below is acc
 | 2 | Property marketplace | `/properties` | CODE READY | Filter state/counts repaired; search accessibility fixed; filtered SEO guard completed; result cards refined. |
 | 3 | Property detail | `/properties/{slug}` | CODE READY | Price-on-request fallback fixed; summary completed with bedrooms/bathrooms/parking/furnishing; contain-fit image/video/YouTube media and 2–6 related-card density verified. |
 | 4 | Projects marketplace | `/projects` | CODE READY | Search accessibility fixed; active filter chips added; filtered result state and pagination labeling aligned with Properties. |
-| 5 | Project detail | `/projects/{slug}` | TODO | Featured media, business information, publisher contact, related projects. |
+| 5 | Project detail | `/projects/{slug}` | CODE READY | Featured media retained; project facts completed; approved developer profile/phone/email surfaces added; inquiry preserved; available inventory and same-developer related projects included. |
 | 6 | Companies directory | `/company` | TODO | Search/filter, company cards, responsive directory. |
 | 7 | Company detail | `/company/{slug}` | TODO | Featured media, company information, publisher contact, properties/projects. |
 | 8 | Public CMS + legal | `/pages/{slug}` | TODO | Privacy, Terms, Disclaimer and other managed pages. |
