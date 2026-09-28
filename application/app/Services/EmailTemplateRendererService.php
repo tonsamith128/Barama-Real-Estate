@@ -69,17 +69,15 @@ final class EmailTemplateRendererService
         array $variables,
         bool $escapeHtml
     ): string {
-        $replacements = [];
+        return preg_replace_callback(
+            '/\{\{\s*([a-z0-9_]+)\s*\}\}/i',
+            static function (array $match) use ($variables, $escapeHtml): string {
+                $key = strtolower((string) ($match[1] ?? ''));
+                $value = (string) ($variables[$key] ?? '');
 
-        foreach ($variables as $key => $value) {
-            $replacements['{{' . $key . '}}'] = $escapeHtml
-                ? e($value)
-                : $value;
-            $replacements['{{ ' . $key . ' }}'] = $escapeHtml
-                ? e($value)
-                : $value;
-        }
-
-        return strtr($template, $replacements);
+                return $escapeHtml ? e($value) : $value;
+            },
+            $template
+        ) ?? $template;
     }
 }
