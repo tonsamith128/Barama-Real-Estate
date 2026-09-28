@@ -7,6 +7,7 @@ use Barama\Core\Response;
 use Barama\Http\Controllers\AccountController;
 use Barama\Http\Controllers\AccountManagementController;
 use Barama\Http\Controllers\AdminManagementController;
+use Barama\Http\Controllers\AppearanceController;
 use Barama\Http\Controllers\AuthController;
 use Barama\Http\Controllers\CompanyController;
 use Barama\Http\Controllers\CmsController;
@@ -31,6 +32,7 @@ $guestPost = [new GuestMiddleware(), new CsrfMiddleware()];
 $csrf = [new CsrfMiddleware()];
 
 $router->get('/', [HomeController::class, 'index']);
+$router->get('/appearance.css', [AppearanceController::class, 'stylesheet']);
 $router->get('/robots.txt', [SeoController::class, 'robots']);
 $router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
 
@@ -501,6 +503,26 @@ $router->post(
     '/dashboard/mail-queue/{id}/cancel',
     [AdminManagementController::class, 'cancelMail'],
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/appearance',
+    [DashboardController::class, 'appearance'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/appearance/reset',
+    [AdminManagementController::class, 'resetAppearance'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/appearance/{feature}',
+    [AdminManagementController::class, 'updateAppearanceFeature'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/appearance/{feature}/toggle',
+    [AdminManagementController::class, 'toggleAppearanceFeature'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 $router->get(
     '/dashboard/homepage',
