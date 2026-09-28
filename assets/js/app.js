@@ -1567,3 +1567,77 @@
         update();
     });
 })();
+
+
+/* BARAMA_HOMEPAGE_HERO_SLIDER_V100 */
+(() => {
+    'use strict';
+
+    const reducedMotion = window.matchMedia
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+
+    document.querySelectorAll('[data-hero-slider]').forEach((slider) => {
+        const slides = Array.from(slider.querySelectorAll('.hero-slider__slide'));
+
+        if (slides.length < 2) {
+            return;
+        }
+
+        const autoplay = slider.getAttribute('data-hero-slider-autoplay') === '1';
+
+        if (!autoplay || reducedMotion) {
+            return;
+        }
+
+        const requested = Number.parseInt(
+            slider.getAttribute('data-hero-slider-interval') || '6000',
+            10
+        );
+        const interval = Number.isFinite(requested)
+            ? Math.max(2500, Math.min(20000, requested))
+            : 6000;
+
+        let index = Math.max(
+            0,
+            slides.findIndex((slide) => slide.classList.contains('is-active'))
+        );
+        let timer = null;
+
+        const show = (next) => {
+            slides.forEach((slide, slideIndex) => {
+                slide.classList.toggle('is-active', slideIndex === next);
+            });
+            index = next;
+        };
+
+        const start = () => {
+            if (timer !== null || document.hidden) {
+                return;
+            }
+
+            timer = window.setInterval(() => {
+                show((index + 1) % slides.length);
+            }, interval);
+        };
+
+        const stop = () => {
+            if (timer === null) {
+                return;
+            }
+
+            window.clearInterval(timer);
+            timer = null;
+        };
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stop();
+            } else {
+                start();
+            }
+        });
+
+        start();
+    });
+})();
