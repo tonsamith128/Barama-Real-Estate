@@ -10,9 +10,29 @@ use Throwable;
 define('BARAMA_CLI', true);
 
 $root = dirname(__DIR__);
-$manifestPath = $root . '/docs/releases/admin-communications-v1.19.2.json';
+$manifestPath = '';
 $allowNonLive = in_array('--allow-non-live', $argv, true);
 $jsonOnly = in_array('--json', $argv, true);
+
+foreach ($argv as $argument) {
+    if (str_starts_with($argument, '--root=')) {
+        $candidateRoot = rtrim(substr($argument, 7), '/');
+
+        if ($candidateRoot !== '') {
+            $root = $candidateRoot;
+        }
+
+        continue;
+    }
+
+    if (str_starts_with($argument, '--manifest=')) {
+        $manifestPath = substr($argument, 11);
+    }
+}
+
+if ($manifestPath === '') {
+    $manifestPath = $root . '/docs/releases/admin-communications-v1.19.2.json';
+}
 
 $passes = [];
 $failures = [];
