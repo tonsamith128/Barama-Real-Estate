@@ -621,6 +621,27 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/companies/{id}',
+    [AdminManagementController::class, 'updateCompany'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/companies/{id}/delete',
+    [AdminManagementController::class, 'deleteCompany'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/projects/{id}',
+    [AdminManagementController::class, 'updateProject'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/projects/{id}/delete',
+    [AdminManagementController::class, 'deleteProject'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
+$router->post(
     '/dashboard/properties/{id}',
     [AdminManagementController::class, 'updateProperty'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
