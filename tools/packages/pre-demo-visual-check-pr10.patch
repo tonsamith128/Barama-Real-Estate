@@ -1,0 +1,3771 @@
+diff --git a/application/app/Http/Controllers/AdminManagementController.php b/application/app/Http/Controllers/AdminManagementController.php
+--- a/application/app/Http/Controllers/AdminManagementController.php
++++ b/application/app/Http/Controllers/AdminManagementController.php
+@@ -17,6 +17,7 @@
+ use Barama\Services\FinanceManagementService;
+ use Barama\Services\PageManagementService;
+ use Barama\Services\SiteContentManagementService;
++use Barama\Services\SiteMediaStorageService;
+ use Barama\Services\UserAdministrationService;
+ use DomainException;
+ use InvalidArgumentException;
+@@ -413,13 +414,129 @@ public function updateEmailTemplateStatus(
+         });
+     }
+ 
+-    public function updateSiteContent(Request $request): Response
++    public function updateHomepageFeature(Request $request, string $feature): Response
+     {
+-        return $this->execute(function () use ($request): array {
+-            (new SiteContentManagementService())->update($request->all());
++        return $this->execute(function () use ($request, $feature): array {
++            $input = $request->all();
++
++            if (strtolower(trim($feature)) === 'hero') {
++                $files = $request->files();
++                $storage = new SiteMediaStorageService();
++
++                $image = $files['hero_image_file'] ?? null;
++                if (is_array($image) && (int) ($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
++                    $stored = $storage->store($image, 'homepage_hero_image');
++                    $input['uploaded_image_uuid'] = $stored['uuid'];
++                }
++
++                $slider = $files['hero_slider_files'] ?? null;
++                if (is_array($slider)) {
++                    $stored = $storage->storeMany($slider, 'homepage_hero_slider');
++                    $input['uploaded_slider_uuids'] = array_map(
++                        static fn (array $item): string => (string) $item['uuid'],
++                        $stored
++                    );
++                }
++
++                $video = $files['hero_video_file'] ?? null;
++                if (is_array($video) && (int) ($video['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
++                    $stored = $storage->store($video, 'homepage_hero_video');
++                    $input['uploaded_video_uuid'] = $stored['uuid'];
++                }
++            }
++
++            (new SiteContentManagementService())->updateHomepageFeature(
++                $feature,
++                $input
++            );
++
++            return [
++                'feature' => $feature,
++                'message' => 'Homepage feature configuration updated.',
++            ];
++        });
++    }
++
++    public function toggleHomepageFeature(Request $request, string $feature): Response
++    {
++        return $this->execute(function () use ($request, $feature): array {
++            $enabled = in_array(
++                strtolower(trim((string) $request->input('enabled', '0'))),
++                ['1', 'true', 'on', 'yes'],
++                true
++            );
++
++            (new SiteContentManagementService())->setHomepageFeatureEnabled(
++                $feature,
++                $enabled
++            );
++
++            return [
++                'feature' => $feature,
++                'enabled' => $enabled,
++                'message' => $enabled
++                    ? 'Homepage feature enabled.'
++                    : 'Homepage feature disabled.',
++            ];
++        });
++    }
++
++    public function createNavigation(Request $request): Response
++    {
++        return $this->execute(fn (): array => [
++            'navigation_id' => (new SiteContentManagementService())
++                ->createNavigation($request->all()),
++            'message' => 'Navigation item created.',
++        ], 201);
++    }
++
++    public function updateNavigation(Request $request, string $id): Response
++    {
++        return $this->execute(function () use ($request, $id): array {
++            (new SiteContentManagementService())->updateNavigation(
++                $id,
++                $request->all()
++            );
++
++            return [
++                'navigation_id' => $id,
++                'message' => 'Navigation item updated.',
++            ];
++        });
++    }
++
++    public function toggleNavigation(Request $request, string $id): Response
++    {
++        return $this->execute(function () use ($request, $id): array {
++            $enabled = in_array(
++                strtolower(trim((string) $request->input('enabled', '0'))),
++                ['1', 'true', 'on', 'yes'],
++                true
++            );
++
++            (new SiteContentManagementService())->setNavigationEnabled(
++                $id,
++                $enabled
++            );
++
++            return [
++                'navigation_id' => $id,
++                'enabled' => $enabled,
++                'message' => $enabled
++                    ? 'Navigation item enabled.'
++                    : 'Navigation item disabled.',
++            ];
++        });
++    }
++
++    public function deleteNavigation(Request $request, string $id): Response
++    {
++        return $this->execute(function () use ($id): array {
++            (new SiteContentManagementService())->deleteNavigation($id);
+ 
+             return [
+-                'message' => 'Homepage and primary navigation updated.',
++                'navigation_id' => $id,
++                'message' => 'Navigation item deleted.',
+             ];
+         });
+     }
+diff --git a/application/app/Http/Controllers/DashboardController.php b/application/app/Http/Controllers/DashboardController.php
+--- a/application/app/Http/Controllers/DashboardController.php
++++ b/application/app/Http/Controllers/DashboardController.php
+@@ -100,14 +100,35 @@ public function section(Request $request, string $section): Response
+ 
+     public function homepage(Request $request): Response
+     {
+-        return Response::html(View::render('workspace/site-content', [
+-            'pageTitle' => 'Homepage & Navigation · Admin',
++        $config = (new SiteContentRepository())->get();
++
++        return Response::html(View::render('workspace/homepage', [
++            'pageTitle' => 'Homepage · Admin',
+             'activeArea' => 'dashboard',
+             'workspaceType' => 'admin',
+             'workspaceLabel' => 'Admin Control Center',
+             'workspaceNavigation' => $this->navigation(),
+             'activeSection' => 'homepage',
+-            'siteContent' => (new SiteContentRepository())->get(),
++            'homepage' => is_array($config['homepage'] ?? null)
++                ? $config['homepage']
++                : [],
++        ]));
++    }
++
++    public function navigationManager(Request $request): Response
++    {
++        $config = (new SiteContentRepository())->get();
++
++        return Response::html(View::render('workspace/navigation', [
++            'pageTitle' => 'Navigation · Admin',
++            'activeArea' => 'dashboard',
++            'workspaceType' => 'admin',
++            'workspaceLabel' => 'Admin Control Center',
++            'workspaceNavigation' => $this->navigation(),
++            'activeSection' => 'navigation',
++            'navigationItems' => is_array($config['navigation'] ?? null)
++                ? array_values($config['navigation'])
++                : [],
+         ]));
+     }
+ 
+@@ -703,9 +724,6 @@ private function navigation(): array
+             ['label' => 'Approval Queue', 'path' => '/dashboard/approvals', 'icon' => 'shield'],
+ 
+             ['heading' => 'Marketplace'],
+-            ['label' => 'Companies / Developers', 'path' => '/dashboard/companies', 'icon' => 'building'],
+-            ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
+-            ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
+             ['label' => 'Listings', 'path' => '/dashboard/listings', 'icon' => 'tag'],
+ 
+             ['heading' => 'CRM'],
+@@ -717,7 +735,14 @@ private function navigation(): array
+             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
+ 
+             ['heading' => 'Content & Discovery'],
+-            ['label' => 'Homepage & Navigation', 'path' => '/dashboard/homepage', 'icon' => 'home'],
++            ['label' => 'Appearance', 'path' => '/dashboard/settings', 'icon' => 'settings'],
++            ['label' => 'Homepage', 'path' => '/dashboard/homepage', 'icon' => 'home'],
++            ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
++            ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
++            ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
++            ['label' => 'Navigation', 'path' => '/dashboard/navigation', 'icon' => 'menu'],
++            ['label' => 'About', 'path' => '/dashboard/pages?q=About', 'icon' => 'users'],
++            ['label' => 'Contact', 'path' => '/dashboard/pages?q=Contact', 'icon' => 'mail'],
+             ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
+             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
+             ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],
+diff --git a/application/app/Http/Controllers/MarketplaceController.php b/application/app/Http/Controllers/MarketplaceController.php
+--- a/application/app/Http/Controllers/MarketplaceController.php
++++ b/application/app/Http/Controllers/MarketplaceController.php
+@@ -26,7 +26,9 @@ public function properties(Request $request): Response
+             || (string) ($filters['location'] ?? '') !== ''
+             || (string) ($filters['bedrooms'] ?? '') !== ''
+             || (string) ($filters['min_price'] ?? '') !== ''
+-            || (string) ($filters['max_price'] ?? '') !== '';
++            || (string) ($filters['max_price'] ?? '') !== ''
++            || (string) ($filters['currency'] ?? '') !== ''
++            || (string) ($filters['sort'] ?? 'newest') !== 'newest';
+ 
+         return Response::html(View::render('marketplace/properties', [
+             'pageTitle' => 'Properties for Sale & Rent',
+diff --git a/application/app/Repositories/MarketplaceRepository.php b/application/app/Repositories/MarketplaceRepository.php
+--- a/application/app/Repositories/MarketplaceRepository.php
++++ b/application/app/Repositories/MarketplaceRepository.php
+@@ -595,6 +595,15 @@ public function publicMedia(string $uuid): ?array
+                                    AND c.deleted_at IS NULL
+                              )
+                          )
++                         OR (
++                             ma.entity_type = "site"
++                             AND ma.entity_id = 1
++                             AND ma.collection IN (
++                                 "homepage_hero_image",
++                                 "homepage_hero_slider",
++                                 "homepage_hero_video"
++                             )
++                         )
+                          OR (
+                              ma.entity_type = "listing"
+                              AND EXISTS (
+diff --git a/application/app/Repositories/SiteContentRepository.php b/application/app/Repositories/SiteContentRepository.php
+--- a/application/app/Repositories/SiteContentRepository.php
++++ b/application/app/Repositories/SiteContentRepository.php
+@@ -5,7 +5,6 @@
+ namespace Barama\Repositories;
+ 
+ use Barama\Core\Database;
+-use PDO;
+ 
+ final class SiteContentRepository
+ {
+@@ -29,34 +28,75 @@ public function get(): array
+         );
+         $statement->execute(['setting_key' => self::SETTING_KEY]);
+         $json = $statement->fetchColumn();
+-
+         $defaults = self::defaults();
+ 
+         if (!is_string($json) || trim($json) === '') {
+             self::$cache = $defaults;
+-
+             return self::$cache;
+         }
+ 
+         $decoded = json_decode($json, true);
+ 
+         if (!is_array($decoded)) {
+             self::$cache = $defaults;
+-
+             return self::$cache;
+         }
+ 
+-        $homepage = is_array($decoded['homepage'] ?? null)
+-            ? array_replace_recursive($defaults['homepage'], $decoded['homepage'])
+-            : $defaults['homepage'];
++        $rawHomepage = is_array($decoded['homepage'] ?? null)
++            ? $decoded['homepage']
++            : [];
++        $homepage = array_replace_recursive($defaults['homepage'], $rawHomepage);
++
++        /* Backward compatibility with the original Homepage & Navigation model. */
++        if (!is_array($rawHomepage['hero'] ?? null)) {
++            $homepage['hero']['eyebrow'] = (string) (
++                $rawHomepage['hero_eyebrow']
++                ?? $defaults['homepage']['hero']['eyebrow']
++            );
++            $homepage['hero']['title'] = (string) (
++                $rawHomepage['hero_title']
++                ?? $defaults['homepage']['hero']['title']
++            );
++            $homepage['hero']['description'] = (string) (
++                $rawHomepage['hero_description']
++                ?? $defaults['homepage']['hero']['description']
++            );
++        }
+ 
+         if (!is_array($homepage['section_order'] ?? null)) {
+             $homepage['section_order'] = $defaults['homepage']['section_order'];
+         }
+ 
+-        $navigation = is_array($decoded['navigation'] ?? null)
++        $navigationInput = is_array($decoded['navigation'] ?? null)
+             ? array_values($decoded['navigation'])
+             : $defaults['navigation'];
++        $navigation = [];
++
++        foreach ($navigationInput as $index => $item) {
++            if (!is_array($item)) {
++                continue;
++            }
++
++            $label = trim((string) ($item['label'] ?? ''));
++            $path = trim((string) ($item['path'] ?? ''));
++            $id = trim((string) ($item['id'] ?? ''));
++
++            if ($id === '') {
++                $id = substr(
++                    hash('sha256', $index . '|' . $label . '|' . $path),
++                    0,
++                    16
++                );
++            }
++
++            $navigation[] = [
++                'id' => $id,
++                'label' => $label,
++                'path' => $path,
++                'active_area' => trim((string) ($item['active_area'] ?? '')),
++                'enabled' => !empty($item['enabled']),
++            ];
++        }
+ 
+         self::$cache = [
+             'homepage' => $homepage,
+@@ -92,7 +132,7 @@ public function save(array $config): void
+         self::$cache = $config;
+     }
+ 
+-    /** @return array<int,array{label:string,path:string,active_area:string,enabled:bool}> */
++    /** @return array<int,array{id:string,label:string,path:string,active_area:string,enabled:bool}> */
+     public function navigation(): array
+     {
+         $navigation = $this->get()['navigation'] ?? [];
+@@ -116,9 +156,66 @@ public static function defaults(): array
+     {
+         return [
+             'homepage' => [
++                /* Legacy keys remain readable by older packages during upgrade. */
+                 'hero_eyebrow' => 'Barama Real Estate',
+                 'hero_title' => 'Property Discovery Simplified',
+                 'hero_description' => 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.',
++                'hero' => [
++                    'enabled' => true,
++                    'eyebrow' => 'Barama Real Estate',
++                    'title' => 'Property Discovery Simplified',
++                    'description' => 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.',
++                    'background' => [
++                        'type' => 'plain',
++                        'color_preset' => 'ocean',
++                        'overlay_strength' => 44,
++                        'image_source' => 'url',
++                        'image_url' => '',
++                        'image_media_uuid' => '',
++                        'slider_images' => [],
++                        'slider_style' => 'fade',
++                        'slider_interval' => 6000,
++                        'slider_autoplay' => true,
++                        'video_source' => 'url',
++                        'video_url' => '',
++                        'video_media_uuid' => '',
++                        'youtube_url' => '',
++                    ],
++                ],
++                'features' => [
++                    'search' => [
++                        'enabled' => true,
++                        'placeholder' => 'Search property, company, or location',
++                        'button_label' => 'Search',
++                    ],
++                    'market_pulse' => [
++                        'enabled' => true,
++                        'title' => 'Marketplace',
++                        'subtitle' => 'Approved public inventory',
++                        'note' => 'Public records appear only after marketplace approval.',
++                    ],
++                    'quick_actions' => [
++                        'enabled' => true,
++                        'items' => [
++                            'sale' => [
++                                'title' => 'Buy property',
++                                'description' => 'Browse published homes and investment inventory.',
++                            ],
++                            'rent' => [
++                                'title' => 'Rent property',
++                                'description' => 'Find rental listings by location and budget.',
++                            ],
++                            'project' => [
++                                'title' => 'New developments',
++                                'description' => 'Explore published projects and available units.',
++                            ],
++                            'company' => [
++                                'title' => 'Companies',
++                                'description' => 'Discover approved developers and agencies.',
++                            ],
++                        ],
++                    ],
++                ],
+                 'section_order' => ['listings', 'projects', 'companies'],
+                 'sections' => [
+                     'listings' => [
+@@ -142,10 +239,10 @@ public static function defaults(): array
+                 ],
+             ],
+             'navigation' => [
+-                ['label' => 'Home', 'path' => '/', 'active_area' => 'home', 'enabled' => true],
+-                ['label' => 'Properties', 'path' => '/properties', 'active_area' => 'properties', 'enabled' => true],
+-                ['label' => 'Projects', 'path' => '/projects', 'active_area' => 'projects', 'enabled' => true],
+-                ['label' => 'Companies', 'path' => '/company', 'active_area' => 'company', 'enabled' => true],
++                ['id' => 'home', 'label' => 'Home', 'path' => '/', 'active_area' => 'home', 'enabled' => true],
++                ['id' => 'properties', 'label' => 'Properties', 'path' => '/properties', 'active_area' => 'properties', 'enabled' => true],
++                ['id' => 'projects', 'label' => 'Projects', 'path' => '/projects', 'active_area' => 'projects', 'enabled' => true],
++                ['id' => 'companies', 'label' => 'Companies', 'path' => '/company', 'active_area' => 'company', 'enabled' => true],
+             ],
+         ];
+     }
+diff --git a/application/app/Repositories/WorkspaceReadRepository.php b/application/app/Repositories/WorkspaceReadRepository.php
+--- a/application/app/Repositories/WorkspaceReadRepository.php
++++ b/application/app/Repositories/WorkspaceReadRepository.php
+@@ -1754,6 +1754,11 @@ public function adminSection(
+                                      FROM listings listing_row
+                                      INNER JOIN properties property_row ON property_row.id = listing_row.property_id
+                                      WHERE listing_row.id = ma.entity_id)
++                                WHEN "site" THEN CASE
++                                    WHEN ma.collection LIKE "homepage_hero_%"
++                                    THEN "Homepage Hero"
++                                    ELSE "Public Site"
++                                END
+                                 ELSE NULL
+                             END
+                             FROM media_attachments ma
+diff --git a/application/app/Services/SiteContentManagementService.php b/application/app/Services/SiteContentManagementService.php
+--- a/application/app/Services/SiteContentManagementService.php
++++ b/application/app/Services/SiteContentManagementService.php
+@@ -5,216 +5,620 @@
+ namespace Barama\Services;
+ 
+ use Barama\Repositories\SiteContentRepository;
++use Barama\Support\IdGenerator;
+ use DomainException;
+ use InvalidArgumentException;
+ 
+ final class SiteContentManagementService
+ {
++    private const HOMEPAGE_FEATURES = [
++        'hero',
++        'search',
++        'market_pulse',
++        'quick_actions',
++        'listings',
++        'projects',
++        'companies',
++    ];
++
+     /** @param array<string,mixed> $input */
+-    public function update(array $input): void
++    public function updateHomepageFeature(string $feature, array $input): void
+     {
+-        $user = $this->administrator();
+-        $config = $this->validated($input);
++        $actor = $this->administrator();
++        $feature = $this->homepageFeature($feature);
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++
++        if ($feature === 'hero') {
++            $current = is_array($config['homepage']['hero'] ?? null)
++                ? $config['homepage']['hero']
++                : [];
++            $config['homepage']['hero'] = $this->validatedHero($input, $current);
++
++            /* Keep legacy keys synchronized for upgrade/downgrade safety. */
++            $config['homepage']['hero_eyebrow'] = $config['homepage']['hero']['eyebrow'];
++            $config['homepage']['hero_title'] = $config['homepage']['hero']['title'];
++            $config['homepage']['hero_description'] = $config['homepage']['hero']['description'];
++        } elseif (in_array($feature, ['search', 'market_pulse', 'quick_actions'], true)) {
++            $config['homepage']['features'][$feature] = $this->validatedUtilityFeature(
++                $feature,
++                $input,
++                is_array($config['homepage']['features'][$feature] ?? null)
++                    ? $config['homepage']['features'][$feature]
++                    : []
++            );
++        } else {
++            $config = $this->updateHomepageSection($config, $feature, $input);
++        }
+ 
+-        (new SiteContentRepository())->save($config);
++        $repository->save($config);
++        $this->audit(
++            'admin.homepage_feature_updated',
++            (int) $actor['id'],
++            ['feature' => $feature]
++        );
++    }
+ 
+-        (new SecurityAuditService())->record(
+-            'admin.site_content_updated',
+-            (int) $user['id'],
+-            null,
+-            [
+-                'navigation_items' => count(array_filter(
+-                    $config['navigation'],
+-                    static fn (array $item): bool => !empty($item['enabled'])
+-                )),
+-                'homepage_sections' => count(array_filter(
+-                    $config['homepage']['sections'],
+-                    static fn (array $item): bool => !empty($item['enabled'])
+-                )),
+-            ]
++    public function setHomepageFeatureEnabled(string $feature, bool $enabled): void
++    {
++        $actor = $this->administrator();
++        $feature = $this->homepageFeature($feature);
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++
++        if ($feature === 'hero') {
++            $config['homepage']['hero']['enabled'] = $enabled;
++        } elseif (in_array($feature, ['search', 'market_pulse', 'quick_actions'], true)) {
++            $config['homepage']['features'][$feature]['enabled'] = $enabled;
++        } else {
++            $config['homepage']['sections'][$feature]['enabled'] = $enabled;
++        }
++
++        $repository->save($config);
++        $this->audit(
++            'admin.homepage_feature_toggled',
++            (int) $actor['id'],
++            ['feature' => $feature, 'enabled' => $enabled]
+         );
+     }
+ 
+-    /** @return array<string,mixed> */
+-    private function administrator(): array
++    /** @param array<string,mixed> $input */
++    public function createNavigation(array $input): string
+     {
+-        $auth = new AuthService();
+-        $user = $auth->user();
++        $actor = $this->administrator();
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++        $navigation = is_array($config['navigation'] ?? null)
++            ? array_values($config['navigation'])
++            : [];
++
++        if (count($navigation) >= 20) {
++            throw new DomainException('Primary navigation is limited to 20 items.');
++        }
++
++        $item = $this->validatedNavigationItem($input);
++        $item['id'] = IdGenerator::uuid();
++        $position = $this->position($input['position'] ?? null, count($navigation) + 1);
++        array_splice($navigation, $position - 1, 0, [$item]);
++        $config['navigation'] = array_values($navigation);
++        $repository->save($config);
++
++        $this->audit(
++            'admin.navigation_created',
++            (int) $actor['id'],
++            ['navigation_id' => $item['id'], 'path' => $item['path']]
++        );
++
++        return (string) $item['id'];
++    }
++
++    /** @param array<string,mixed> $input */
++    public function updateNavigation(string $id, array $input): void
++    {
++        $actor = $this->administrator();
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++        $navigation = is_array($config['navigation'] ?? null)
++            ? array_values($config['navigation'])
++            : [];
++        $index = $this->navigationIndex($navigation, $id);
++        $item = $this->validatedNavigationItem($input);
++        $item['id'] = (string) $navigation[$index]['id'];
++        $wasEnabled = !empty($navigation[$index]['enabled']);
++
++        if (!$item['enabled'] && $wasEnabled && $this->enabledNavigationCount($navigation) <= 1) {
++            throw new DomainException('Keep at least one primary navigation item enabled.');
++        }
++
++        array_splice($navigation, $index, 1);
++        $position = $this->position($input['position'] ?? null, count($navigation) + 1);
++        array_splice($navigation, $position - 1, 0, [$item]);
++        $config['navigation'] = array_values($navigation);
++        $repository->save($config);
++
++        $this->audit(
++            'admin.navigation_updated',
++            (int) $actor['id'],
++            ['navigation_id' => $id, 'path' => $item['path']]
++        );
++    }
++
++    public function setNavigationEnabled(string $id, bool $enabled): void
++    {
++        $actor = $this->administrator();
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++        $navigation = is_array($config['navigation'] ?? null)
++            ? array_values($config['navigation'])
++            : [];
++        $index = $this->navigationIndex($navigation, $id);
+ 
+         if (
+-            $user === null
+-            || !$auth->hasRole('administrator')
+-            || !$auth->can('page.manage')
++            !$enabled
++            && !empty($navigation[$index]['enabled'])
++            && $this->enabledNavigationCount($navigation) <= 1
+         ) {
+-            throw new DomainException('Administrator page management permission is required.');
++            throw new DomainException('Keep at least one primary navigation item enabled.');
+         }
+ 
+-        return $user;
++        $navigation[$index]['enabled'] = $enabled;
++        $config['navigation'] = array_values($navigation);
++        $repository->save($config);
++
++        $this->audit(
++            'admin.navigation_toggled',
++            (int) $actor['id'],
++            ['navigation_id' => $id, 'enabled' => $enabled]
++        );
+     }
+ 
+-    /** @param array<string,mixed> $input @return array<string,mixed> */
+-    private function validated(array $input): array
++    public function deleteNavigation(string $id): void
++    {
++        $actor = $this->administrator();
++        $repository = new SiteContentRepository();
++        $config = $repository->get();
++        $navigation = is_array($config['navigation'] ?? null)
++            ? array_values($config['navigation'])
++            : [];
++        $index = $this->navigationIndex($navigation, $id);
++
++        if (
++            !empty($navigation[$index]['enabled'])
++            && $this->enabledNavigationCount($navigation) <= 1
++        ) {
++            throw new DomainException('The last enabled navigation item cannot be deleted.');
++        }
++
++        $removed = $navigation[$index];
++        array_splice($navigation, $index, 1);
++        $config['navigation'] = array_values($navigation);
++        $repository->save($config);
++
++        $this->audit(
++            'admin.navigation_deleted',
++            (int) $actor['id'],
++            ['navigation_id' => $id, 'path' => (string) ($removed['path'] ?? '')]
++        );
++    }
++
++    /** Backward-compatible combined update used only by older packages. */
++    public function update(array $input): void
+     {
+-        $eyebrow = $this->text($input['hero_eyebrow'] ?? '', 80, 'Homepage eyebrow');
+-        $title = $this->text($input['hero_title'] ?? '', 140, 'Homepage title');
++        $this->updateHomepageFeature('hero', $input);
++    }
++
++    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
++    private function validatedHero(array $input, array $current): array
++    {
++        $defaults = SiteContentRepository::defaults()['homepage']['hero'];
++        $current = array_replace_recursive($defaults, $current);
++        $background = is_array($current['background'] ?? null)
++            ? $current['background']
++            : $defaults['background'];
++
++        $eyebrow = $this->text($input['hero_eyebrow'] ?? $current['eyebrow'], 80, 'Homepage eyebrow');
++        $title = $this->text($input['hero_title'] ?? $current['title'], 140, 'Homepage title');
+         $description = $this->text(
+-            $input['hero_description'] ?? '',
++            $input['hero_description'] ?? $current['description'],
+             500,
+             'Homepage description'
+         );
+ 
+         if ($title === '' || $description === '') {
+-            throw new InvalidArgumentException(
+-                'Homepage title and description are required.'
+-            );
++            throw new InvalidArgumentException('Homepage title and description are required.');
+         }
+ 
+-        $knownSections = ['listings', 'projects', 'companies'];
+-        $orderInput = is_array($input['section_order'] ?? null)
+-            ? $input['section_order']
+-            : [];
+-        $orderMap = [];
+-
+-        foreach ($knownSections as $section) {
+-            $position = filter_var(
+-                $orderInput[$section] ?? null,
+-                FILTER_VALIDATE_INT,
+-                ['options' => ['min_range' => 1, 'max_range' => 3]]
+-            );
++        $type = strtolower(trim((string) ($input['background_type'] ?? $background['type'] ?? 'plain')));
+ 
+-            $orderMap[$section] = $position === false ? 99 : (int) $position;
++        if (!in_array($type, ['plain', 'color', 'image', 'slider', 'video'], true)) {
++            throw new InvalidArgumentException('Choose a supported hero background type.');
+         }
+ 
+-        if (
+-            in_array(99, $orderMap, true)
+-            || count(array_unique(array_values($orderMap))) !== count($knownSections)
+-        ) {
+-            throw new InvalidArgumentException(
+-                'Choose a unique homepage position from 1 to 3 for every section.'
+-            );
++        $colorPreset = strtolower(trim((string) ($input['color_preset'] ?? $background['color_preset'] ?? 'ocean')));
++
++        if (!in_array($colorPreset, ['ocean', 'aurora', 'sunset', 'violet', 'emerald'], true)) {
++            $colorPreset = 'ocean';
+         }
+ 
+-        uasort(
+-            $orderMap,
+-            static fn (int $left, int $right): int => $left <=> $right
++        $overlay = filter_var(
++            $input['overlay_strength'] ?? $background['overlay_strength'] ?? 44,
++            FILTER_VALIDATE_INT,
++            ['options' => ['min_range' => 0, 'max_range' => 85]]
+         );
++        $overlay = $overlay === false ? 44 : (int) $overlay;
+ 
+-        $sectionsInput = is_array($input['sections'] ?? null)
+-            ? $input['sections']
+-            : [];
+-        $sections = [];
++        $imageSource = strtolower(trim((string) ($input['image_source'] ?? $background['image_source'] ?? 'url')));
++        $imageSource = in_array($imageSource, ['url', 'media'], true) ? $imageSource : 'url';
++        $imageUrl = $this->optionalExternalUrl(
++            $input['image_url'] ?? $background['image_url'] ?? '',
++            'Hero image URL'
++        );
++        $imageMediaUuid = $this->uuid(
++            $input['uploaded_image_uuid']
++                ?? $input['image_media_uuid']
++                ?? $background['image_media_uuid']
++                ?? '',
++            'Hero image media'
++        );
+ 
+-        foreach ($knownSections as $section) {
+-            $row = is_array($sectionsInput[$section] ?? null)
+-                ? $sectionsInput[$section]
+-                : [];
++        if (!empty($input['uploaded_image_uuid'])) {
++            $imageSource = 'media';
++        }
+ 
+-            $sections[$section] = [
+-                'enabled' => !empty($row['enabled']),
+-                'eyebrow' => $this->text(
+-                    $row['eyebrow'] ?? '',
+-                    80,
+-                    ucfirst($section) . ' eyebrow'
+-                ),
+-                'title' => $this->text(
+-                    $row['title'] ?? '',
+-                    140,
+-                    ucfirst($section) . ' title'
+-                ),
+-                'link_label' => $this->text(
+-                    $row['link_label'] ?? '',
+-                    80,
+-                    ucfirst($section) . ' link label'
+-                ),
+-            ];
++        $sliderStyle = strtolower(trim((string) ($input['slider_style'] ?? $background['slider_style'] ?? 'fade')));
+ 
+-            if (
+-                $sections[$section]['enabled']
+-                && (
+-                    $sections[$section]['title'] === ''
+-                    || $sections[$section]['link_label'] === ''
+-                )
+-            ) {
+-                throw new InvalidArgumentException(
+-                    ucfirst($section)
+-                    . ' title and link label are required when the section is enabled.'
+-                );
+-            }
++        if (!in_array($sliderStyle, ['fade', 'slide', 'kenburns'], true)) {
++            $sliderStyle = 'fade';
+         }
+ 
+-        $labels = is_array($input['nav_label'] ?? null)
+-            ? array_values($input['nav_label'])
++        $sliderInterval = filter_var(
++            $input['slider_interval'] ?? $background['slider_interval'] ?? 6000,
++            FILTER_VALIDATE_INT,
++            ['options' => ['min_range' => 2500, 'max_range' => 20000]]
++        );
++        $sliderInterval = $sliderInterval === false ? 6000 : (int) $sliderInterval;
++        $sliderAutoplay = $this->boolean(
++            $input['slider_autoplay'] ?? ($background['slider_autoplay'] ? '1' : '0')
++        );
++
++        $sliderImages = [];
++        $existing = is_array($input['slider_existing'] ?? null)
++            ? array_values($input['slider_existing'])
+             : [];
+-        $paths = is_array($input['nav_path'] ?? null)
+-            ? array_values($input['nav_path'])
++        $removed = is_array($input['slider_remove'] ?? null)
++            ? array_map('intval', array_values($input['slider_remove']))
+             : [];
+-        $enabled = is_array($input['nav_enabled'] ?? null)
+-            ? $input['nav_enabled']
++
++        foreach ($existing as $index => $encoded) {
++            if (in_array($index, $removed, true)) {
++                continue;
++            }
++
++            $item = $this->sliderItem((string) $encoded);
++            if ($item !== null) {
++                $sliderImages[] = $item;
++            }
++        }
++
++        $uploadedSlider = is_array($input['uploaded_slider_uuids'] ?? null)
++            ? $input['uploaded_slider_uuids']
+             : [];
+ 
+-        $navigation = [];
++        foreach ($uploadedSlider as $uuid) {
++            $value = $this->uuid($uuid, 'Slider media');
++            if ($value !== '') {
++                $sliderImages[] = ['type' => 'media', 'value' => $value];
++            }
++        }
+ 
+-        for ($index = 0; $index < 6; $index++) {
+-            $label = $this->text(
+-                $labels[$index] ?? '',
+-                60,
+-                'Navigation label'
+-            );
+-            $path = trim((string) ($paths[$index] ?? ''));
+-            $isEnabled = isset($enabled[$index])
+-                && in_array((string) $enabled[$index], ['1', 'true', 'on'], true);
++        $urlLines = preg_split('/\R+/', trim((string) ($input['slider_urls'] ?? ''))) ?: [];
+ 
+-            if ($label === '' && $path === '' && !$isEnabled) {
+-                continue;
++        foreach ($urlLines as $url) {
++            $url = $this->optionalExternalUrl($url, 'Slider image URL');
++            if ($url !== '') {
++                $sliderImages[] = ['type' => 'url', 'value' => $url];
++            }
++        }
++
++        $deduped = [];
++        foreach ($sliderImages as $item) {
++            $key = $item['type'] . ':' . $item['value'];
++            $deduped[$key] = $item;
++        }
++        $sliderImages = array_slice(array_values($deduped), 0, 12);
++
++        $videoSource = strtolower(trim((string) ($input['video_source'] ?? $background['video_source'] ?? 'url')));
++        $videoSource = in_array($videoSource, ['url', 'media', 'youtube'], true) ? $videoSource : 'url';
++        $videoUrl = $this->optionalExternalUrl(
++            $input['video_url'] ?? $background['video_url'] ?? '',
++            'Hero video URL'
++        );
++        $videoMediaUuid = $this->uuid(
++            $input['uploaded_video_uuid']
++                ?? $input['video_media_uuid']
++                ?? $background['video_media_uuid']
++                ?? '',
++            'Hero video media'
++        );
++        $youtubeUrl = $this->optionalYoutubeUrl(
++            $input['youtube_url'] ?? $background['youtube_url'] ?? ''
++        );
++
++        if (!empty($input['uploaded_video_uuid'])) {
++            $videoSource = 'media';
++        }
++
++        if ($type === 'image') {
++            if ($imageSource === 'media' && $imageMediaUuid === '') {
++                throw new InvalidArgumentException('Upload or select a hero image before enabling Image Background.');
+             }
++            if ($imageSource === 'url' && $imageUrl === '') {
++                throw new InvalidArgumentException('Enter a hero image URL before enabling Image Background.');
++            }
++        }
+ 
+-            if ($label === '' || $path === '') {
+-                throw new InvalidArgumentException(
+-                    'Every configured navigation item requires both a label and an internal path.'
+-                );
++        if ($type === 'slider' && $sliderImages === []) {
++            throw new InvalidArgumentException('Add at least one image before enabling Image Slider Background.');
++        }
++
++        if ($type === 'video') {
++            $valid = match ($videoSource) {
++                'media' => $videoMediaUuid !== '',
++                'youtube' => $youtubeUrl !== '',
++                default => $videoUrl !== '',
++            };
++            if (!$valid) {
++                throw new InvalidArgumentException('Configure a valid video source before enabling Video Background.');
+             }
++        }
++
++        return [
++            'enabled' => !empty($current['enabled']),
++            'eyebrow' => $eyebrow,
++            'title' => $title,
++            'description' => $description,
++            'background' => [
++                'type' => $type,
++                'color_preset' => $colorPreset,
++                'overlay_strength' => $overlay,
++                'image_source' => $imageSource,
++                'image_url' => $imageUrl,
++                'image_media_uuid' => $imageMediaUuid,
++                'slider_images' => $sliderImages,
++                'slider_style' => $sliderStyle,
++                'slider_interval' => $sliderInterval,
++                'slider_autoplay' => $sliderAutoplay,
++                'video_source' => $videoSource,
++                'video_url' => $videoUrl,
++                'video_media_uuid' => $videoMediaUuid,
++                'youtube_url' => $youtubeUrl,
++            ],
++        ];
++    }
++
++    /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
++    private function validatedUtilityFeature(string $feature, array $input, array $current): array
++    {
++        if ($feature === 'search') {
++            return [
++                'enabled' => !empty($current['enabled']),
++                'placeholder' => $this->text(
++                    $input['placeholder'] ?? $current['placeholder'] ?? '',
++                    120,
++                    'Search placeholder'
++                ),
++                'button_label' => $this->text(
++                    $input['button_label'] ?? $current['button_label'] ?? 'Search',
++                    40,
++                    'Search button label'
++                ),
++            ];
++        }
+ 
+-            $path = $this->internalPath($path);
++        if ($feature === 'market_pulse') {
++            return [
++                'enabled' => !empty($current['enabled']),
++                'title' => $this->text($input['title'] ?? $current['title'] ?? '', 80, 'Marketplace summary title'),
++                'subtitle' => $this->text($input['subtitle'] ?? $current['subtitle'] ?? '', 120, 'Marketplace summary subtitle'),
++                'note' => $this->text($input['note'] ?? $current['note'] ?? '', 180, 'Marketplace summary note'),
++            ];
++        }
+ 
+-            $navigation[] = [
+-                'label' => $label,
+-                'path' => $path,
+-                'active_area' => $this->activeArea($path),
+-                'enabled' => $isEnabled,
++        $items = is_array($input['items'] ?? null) ? $input['items'] : [];
++        $currentItems = is_array($current['items'] ?? null) ? $current['items'] : [];
++        $result = [];
++
++        foreach (['sale', 'rent', 'project', 'company'] as $key) {
++            $row = is_array($items[$key] ?? null) ? $items[$key] : [];
++            $fallback = is_array($currentItems[$key] ?? null) ? $currentItems[$key] : [];
++            $result[$key] = [
++                'title' => $this->text($row['title'] ?? $fallback['title'] ?? '', 80, ucfirst($key) . ' action title'),
++                'description' => $this->text($row['description'] ?? $fallback['description'] ?? '', 180, ucfirst($key) . ' action description'),
+             ];
+         }
+ 
+-        if (
+-            count(array_filter(
+-                $navigation,
+-                static fn (array $item): bool => !empty($item['enabled'])
+-            )) < 1
+-        ) {
+-            throw new InvalidArgumentException(
+-                'Keep at least one primary navigation item enabled.'
+-            );
++        return [
++            'enabled' => !empty($current['enabled']),
++            'items' => $result,
++        ];
++    }
++
++    /** @param array<string,mixed> $config @param array<string,mixed> $input @return array<string,mixed> */
++    private function updateHomepageSection(array $config, string $section, array $input): array
++    {
++        $current = is_array($config['homepage']['sections'][$section] ?? null)
++            ? $config['homepage']['sections'][$section]
++            : [];
++
++        $config['homepage']['sections'][$section] = [
++            'enabled' => !empty($current['enabled']),
++            'eyebrow' => $this->text($input['eyebrow'] ?? $current['eyebrow'] ?? '', 80, ucfirst($section) . ' eyebrow'),
++            'title' => $this->text($input['title'] ?? $current['title'] ?? '', 140, ucfirst($section) . ' title'),
++            'link_label' => $this->text($input['link_label'] ?? $current['link_label'] ?? '', 80, ucfirst($section) . ' link label'),
++        ];
++
++        $order = is_array($config['homepage']['section_order'] ?? null)
++            ? array_values($config['homepage']['section_order'])
++            : ['listings', 'projects', 'companies'];
++        $order = array_values(array_filter(
++            $order,
++            static fn (mixed $value): bool => (string) $value !== $section
++        ));
++        $position = $this->position($input['position'] ?? null, count($order) + 1);
++        array_splice($order, $position - 1, 0, [$section]);
++        $config['homepage']['section_order'] = array_values($order);
++
++        return $config;
++    }
++
++    /** @param array<string,mixed> $input @return array<string,mixed> */
++    private function validatedNavigationItem(array $input): array
++    {
++        $label = $this->text($input['label'] ?? '', 60, 'Navigation label');
++        $path = $this->internalPath(trim((string) ($input['path'] ?? '')));
++
++        if ($label === '') {
++            throw new InvalidArgumentException('Navigation label is required.');
+         }
+ 
+         return [
+-            'homepage' => [
+-                'hero_eyebrow' => $eyebrow,
+-                'hero_title' => $title,
+-                'hero_description' => $description,
+-                'section_order' => array_keys($orderMap),
+-                'sections' => $sections,
+-            ],
+-            'navigation' => $navigation,
++            'label' => $label,
++            'path' => $path,
++            'active_area' => $this->activeArea($path),
++            'enabled' => $this->boolean($input['enabled'] ?? '0'),
+         ];
+     }
+ 
++    private function homepageFeature(string $feature): string
++    {
++        $feature = strtolower(trim($feature));
++
++        if (!in_array($feature, self::HOMEPAGE_FEATURES, true)) {
++            throw new InvalidArgumentException('Unknown homepage feature.');
++        }
++
++        return $feature;
++    }
++
++    /** @param array<int,array<string,mixed>> $navigation */
++    private function navigationIndex(array $navigation, string $id): int
++    {
++        foreach ($navigation as $index => $item) {
++            if ((string) ($item['id'] ?? '') === $id) {
++                return $index;
++            }
++        }
++
++        throw new InvalidArgumentException('Navigation item was not found.');
++    }
++
++    /** @param array<int,array<string,mixed>> $navigation */
++    private function enabledNavigationCount(array $navigation): int
++    {
++        return count(array_filter(
++            $navigation,
++            static fn (array $item): bool => !empty($item['enabled'])
++        ));
++    }
++
++    private function position(mixed $value, int $max): int
++    {
++        $position = filter_var(
++            $value,
++            FILTER_VALIDATE_INT,
++            ['options' => ['min_range' => 1, 'max_range' => max(1, $max)]]
++        );
++
++        return $position === false ? max(1, $max) : (int) $position;
++    }
++
++    private function boolean(mixed $value): bool
++    {
++        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'on', 'yes'], true);
++    }
++
+     private function text(mixed $value, int $max, string $label): string
+     {
+         $value = trim((string) $value);
+ 
+         if (mb_strlen($value) > $max) {
+-            throw new InvalidArgumentException(
+-                $label . ' cannot exceed ' . $max . ' characters.'
+-            );
++            throw new InvalidArgumentException($label . ' cannot exceed ' . $max . ' characters.');
++        }
++
++        return $value;
++    }
++
++    private function uuid(mixed $value, string $label): string
++    {
++        $value = trim((string) $value);
++
++        if ($value === '') {
++            return '';
++        }
++
++        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $value) !== 1) {
++            throw new InvalidArgumentException($label . ' reference is invalid.');
++        }
++
++        return strtolower($value);
++    }
++
++    /** @return array{type:string,value:string}|null */
++    private function sliderItem(string $encoded): ?array
++    {
++        [$type, $value] = array_pad(explode(':', $encoded, 2), 2, '');
++
++        if ($type === 'media') {
++            $value = $this->uuid($value, 'Slider media');
++        } elseif ($type === 'url') {
++            $value = $this->optionalExternalUrl($value, 'Slider image URL');
++        } else {
++            return null;
++        }
++
++        return $value !== '' ? ['type' => $type, 'value' => $value] : null;
++    }
++
++    private function optionalExternalUrl(mixed $value, string $label): string
++    {
++        $value = trim((string) $value);
++
++        if ($value === '') {
++            return '';
++        }
++
++        if (mb_strlen($value) > 1000) {
++            throw new InvalidArgumentException($label . ' is too long.');
++        }
++
++        $parts = parse_url($value);
++
++        if (
++            !is_array($parts)
++            || !in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
++            || empty($parts['host'])
++            || isset($parts['user'])
++            || isset($parts['pass'])
++        ) {
++            throw new InvalidArgumentException($label . ' must be a valid HTTP or HTTPS URL.');
++        }
++
++        return $value;
++    }
++
++    private function optionalYoutubeUrl(mixed $value): string
++    {
++        $value = $this->optionalExternalUrl($value, 'YouTube URL');
++
++        if ($value === '') {
++            return '';
++        }
++
++        $host = strtolower((string) parse_url($value, PHP_URL_HOST));
++        $host = preg_replace('/^www\./', '', $host) ?? $host;
++
++        if (!in_array($host, ['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'], true)) {
++            throw new InvalidArgumentException('Video Background YouTube source must use YouTube.');
+         }
+ 
+         return $value;
+@@ -229,9 +633,7 @@ private function internalPath(string $path): string
+             || str_contains($path, '\\')
+             || preg_match('/[\x00-\x1F\x7F]/', $path) === 1
+         ) {
+-            throw new InvalidArgumentException(
+-                'Navigation links must use safe same-site paths beginning with /.'
+-            );
++            throw new InvalidArgumentException('Navigation links must use safe same-site paths beginning with /.');
+         }
+ 
+         $parts = parse_url($path);
+@@ -243,9 +645,7 @@ private function internalPath(string $path): string
+             || isset($parts['user'])
+             || isset($parts['pass'])
+         ) {
+-            throw new InvalidArgumentException(
+-                'Navigation links must stay inside this Barama installation.'
+-            );
++            throw new InvalidArgumentException('Navigation links must stay inside this Barama installation.');
+         }
+ 
+         return mb_substr($path, 0, 255);
+@@ -263,4 +663,32 @@ private function activeArea(string $path): string
+             default => '',
+         };
+     }
++
++    /** @return array<string,mixed> */
++    private function administrator(): array
++    {
++        $auth = new AuthService();
++        $user = $auth->user();
++
++        if (
++            $user === null
++            || !$auth->hasRole('administrator')
++            || !$auth->can('page.manage')
++        ) {
++            throw new DomainException('Administrator page management permission is required.');
++        }
++
++        return $user;
++    }
++
++    /** @param array<string,mixed> $metadata */
++    private function audit(string $event, int $actorId, array $metadata): void
++    {
++        (new SecurityAuditService())->record(
++            $event,
++            $actorId,
++            null,
++            $metadata
++        );
++    }
+ }
+diff --git a/application/app/Services/SiteMediaStorageService.php b/application/app/Services/SiteMediaStorageService.php
+new file mode 100644
+--- /dev/null
++++ b/application/app/Services/SiteMediaStorageService.php
+@@ -0,0 +1,245 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Barama\Services;
++
++use Barama\Core\Database;
++use Barama\Repositories\MediaRepository;
++use Barama\Support\IdGenerator;
++use DomainException;
++use finfo;
++use InvalidArgumentException;
++use RuntimeException;
++use Throwable;
++
++final class SiteMediaStorageService
++{
++    /**
++     * @param array<string,mixed> $file
++     * @return array{id:int,uuid:string,mime_type:string}
++     */
++    public function store(array $file, string $collection): array
++    {
++        $auth = new AuthService();
++        $user = $auth->user();
++
++        if (
++            $user === null
++            || !$auth->hasRole('administrator')
++            || !$auth->can('page.manage')
++        ) {
++            throw new DomainException('Administrator homepage media permission is required.');
++        }
++
++        $collection = strtolower(trim($collection));
++
++        if (!in_array($collection, [
++            'homepage_hero_image',
++            'homepage_hero_slider',
++            'homepage_hero_video',
++        ], true)) {
++            throw new InvalidArgumentException('Unsupported homepage media collection.');
++        }
++
++        $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
++
++        if ($error !== UPLOAD_ERR_OK) {
++            throw new InvalidArgumentException('The uploaded homepage media is incomplete or invalid.');
++        }
++
++        $temporaryPath = (string) ($file['tmp_name'] ?? '');
++
++        if (
++            $temporaryPath === ''
++            || !is_file($temporaryPath)
++            || (!defined('BARAMA_CLI') && !is_uploaded_file($temporaryPath))
++        ) {
++            throw new InvalidArgumentException('The uploaded homepage media could not be verified.');
++        }
++
++        $actualSize = filesize($temporaryPath);
++
++        if ($actualSize === false) {
++            throw new InvalidArgumentException('The uploaded homepage media size could not be verified.');
++        }
++
++        $size = (int) $actualSize;
++        $maxBytes = max(
++            1,
++            (int) config('domain.site_media_max_upload_bytes', 50 * 1024 * 1024)
++        );
++
++        if ($size < 1 || $size > $maxBytes) {
++            throw new InvalidArgumentException('The uploaded homepage media exceeds the allowed size.');
++        }
++
++        $finfo = new finfo(FILEINFO_MIME_TYPE);
++        $mime = (string) $finfo->file($temporaryPath);
++        $allowed = (array) config('domain.site_media_allowed_mime_types', []);
++
++        if (!isset($allowed[$mime])) {
++            throw new InvalidArgumentException('This homepage media type is not allowed.');
++        }
++
++        if (
++            $collection !== 'homepage_hero_video'
++            && !str_starts_with($mime, 'image/')
++        ) {
++            throw new InvalidArgumentException('Hero image and slider uploads must be images.');
++        }
++
++        if (
++            $collection === 'homepage_hero_video'
++            && !str_starts_with($mime, 'video/')
++        ) {
++            throw new InvalidArgumentException('Hero video upload must be a supported video file.');
++        }
++
++        $extension = (string) $allowed[$mime];
++        $width = null;
++        $height = null;
++
++        if (str_starts_with($mime, 'image/')) {
++            $dimensions = @getimagesize($temporaryPath);
++
++            if (!is_array($dimensions) || !isset($dimensions[0], $dimensions[1])) {
++                throw new InvalidArgumentException('The uploaded homepage image is invalid.');
++            }
++
++            $width = (int) $dimensions[0];
++            $height = (int) $dimensions[1];
++            $maxPixels = max(
++                1,
++                (int) config('domain.media_max_image_pixels', 50_000_000)
++            );
++
++            if ($width < 1 || $height < 1 || ($width * $height) > $maxPixels) {
++                throw new InvalidArgumentException('The uploaded homepage image dimensions are not allowed.');
++            }
++        }
++
++        $relativeDirectory = date('Y/m');
++        $directory = APP_PATH . '/storage/uploads/private/' . $relativeDirectory;
++
++        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
++            throw new RuntimeException('Homepage media storage directory could not be created.');
++        }
++
++        $filename = str_replace('-', '', IdGenerator::uuid()) . '.' . $extension;
++        $destination = $directory . '/' . $filename;
++
++        if (defined('BARAMA_CLI')) {
++            $moved = copy($temporaryPath, $destination);
++
++            if ($moved) {
++                @unlink($temporaryPath);
++            }
++        } else {
++            $moved = move_uploaded_file($temporaryPath, $destination);
++        }
++
++        if (!$moved) {
++            throw new RuntimeException('The uploaded homepage media could not be stored.');
++        }
++
++        @chmod($destination, 0640);
++
++        $relativePath = 'private/' . $relativeDirectory . '/' . $filename;
++        $repository = new MediaRepository();
++        $pdo = Database::connection();
++
++        try {
++            $pdo->beginTransaction();
++
++            $mediaId = $repository->create([
++                'created_by_user_id' => (int) $user['id'],
++                'path' => $relativePath,
++                'original_name' => basename((string) ($file['name'] ?? 'homepage-media.' . $extension)),
++                'mime_type' => $mime,
++                'extension' => $extension,
++                'size_bytes' => $size,
++                'width_px' => $width,
++                'height_px' => $height,
++                'alt_text' => null,
++                'checksum_sha256' => hash_file('sha256', $destination),
++            ]);
++
++            $repository->attach(
++                $mediaId,
++                'site',
++                1,
++                $collection,
++                0,
++                false
++            );
++
++            $asset = $repository->asset($mediaId);
++
++            if ($asset === null) {
++                throw new RuntimeException('Stored homepage media could not be reloaded.');
++            }
++
++            $pdo->commit();
++
++            (new SecurityAuditService())->record(
++                'admin.homepage_media_uploaded',
++                (int) $user['id'],
++                null,
++                [
++                    'media_id' => $mediaId,
++                    'collection' => $collection,
++                    'mime_type' => $mime,
++                    'size_bytes' => $size,
++                ]
++            );
++
++            return [
++                'id' => $mediaId,
++                'uuid' => (string) $asset['uuid'],
++                'mime_type' => $mime,
++            ];
++        } catch (Throwable $exception) {
++            if ($pdo->inTransaction()) {
++                $pdo->rollBack();
++            }
++
++            @unlink($destination);
++            throw $exception;
++        }
++    }
++
++    /**
++     * Normalize a standard PHP multiple-file input and store up to 12 files.
++     *
++     * @param array<string,mixed> $files
++     * @return array<int,array{id:int,uuid:string,mime_type:string}>
++     */
++    public function storeMany(array $files, string $collection): array
++    {
++        $names = is_array($files['name'] ?? null) ? array_values($files['name']) : [];
++        $types = is_array($files['type'] ?? null) ? array_values($files['type']) : [];
++        $tmpNames = is_array($files['tmp_name'] ?? null) ? array_values($files['tmp_name']) : [];
++        $errors = is_array($files['error'] ?? null) ? array_values($files['error']) : [];
++        $sizes = is_array($files['size'] ?? null) ? array_values($files['size']) : [];
++        $stored = [];
++
++        foreach (array_slice($names, 0, 12) as $index => $name) {
++            $error = (int) ($errors[$index] ?? UPLOAD_ERR_NO_FILE);
++
++            if ($error === UPLOAD_ERR_NO_FILE) {
++                continue;
++            }
++
++            $stored[] = $this->store([
++                'name' => $name,
++                'type' => $types[$index] ?? '',
++                'tmp_name' => $tmpNames[$index] ?? '',
++                'error' => $error,
++                'size' => $sizes[$index] ?? 0,
++            ], $collection);
++        }
++
++        return $stored;
++    }
++}
+diff --git a/application/config/domain.php b/application/config/domain.php
+--- a/application/config/domain.php
++++ b/application/config/domain.php
+@@ -7,6 +7,16 @@
+     'inquiry_window_minutes' => 15,
+     'media_max_upload_bytes' => 10 * 1024 * 1024,
+     'media_max_image_pixels' => 50_000_000,
++    'site_media_max_upload_bytes' => 50 * 1024 * 1024,
++    'site_media_allowed_mime_types' => [
++        'image/jpeg' => 'jpg',
++        'image/png' => 'png',
++        'image/webp' => 'webp',
++        'video/mp4' => 'mp4',
++        'video/webm' => 'webm',
++        'video/ogg' => 'ogv',
++        'video/quicktime' => 'mov',
++    ],
+     'media_allowed_mime_types' => [
+         'image/jpeg' => 'jpg',
+         'image/png' => 'png',
+diff --git a/application/resources/views/home.php b/application/resources/views/home.php
+--- a/application/resources/views/home.php
++++ b/application/resources/views/home.php
+@@ -3,100 +3,227 @@
+ 
+ $marketStats = is_array($marketStats ?? null) ? $marketStats : [];
+ $homepageContent = is_array($homepageContent ?? null) ? $homepageContent : [];
++$defaults = \Barama\Repositories\SiteContentRepository::defaults()['homepage'];
++$homepageContent = array_replace_recursive($defaults, $homepageContent);
++
++$hero = is_array($homepageContent['hero'] ?? null)
++    ? $homepageContent['hero']
++    : $defaults['hero'];
++$background = is_array($hero['background'] ?? null)
++    ? $hero['background']
++    : $defaults['hero']['background'];
++$features = is_array($homepageContent['features'] ?? null)
++    ? $homepageContent['features']
++    : $defaults['features'];
+ $homeSections = is_array($homepageContent['sections'] ?? null)
+     ? $homepageContent['sections']
+     : [];
+ $homeOrder = is_array($homepageContent['section_order'] ?? null)
+     ? array_values($homepageContent['section_order'])
+     : ['listings', 'projects', 'companies'];
+ 
+-$heroEyebrow = trim((string) ($homepageContent['hero_eyebrow'] ?? 'Barama Real Estate'));
+-$heroTitle = trim((string) ($homepageContent['hero_title'] ?? 'Property Discovery Simplified'));
++$heroEyebrow = trim((string) ($hero['eyebrow'] ?? $homepageContent['hero_eyebrow'] ?? 'Barama Real Estate'));
++$heroTitle = trim((string) ($hero['title'] ?? $homepageContent['hero_title'] ?? 'Property Discovery Simplified'));
+ $heroDescription = trim((string) (
+-    $homepageContent['hero_description']
++    $hero['description']
++    ?? $homepageContent['hero_description']
+     ?? 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.'
+ ));
++
++$heroEnabled = !empty($hero['enabled']);
++$search = is_array($features['search'] ?? null) ? $features['search'] : [];
++$marketPulse = is_array($features['market_pulse'] ?? null) ? $features['market_pulse'] : [];
++$quickActions = is_array($features['quick_actions'] ?? null) ? $features['quick_actions'] : [];
++$quickItems = is_array($quickActions['items'] ?? null) ? $quickActions['items'] : [];
++
++$backgroundType = strtolower((string) ($background['type'] ?? 'plain'));
++if (!in_array($backgroundType, ['plain', 'color', 'image', 'slider', 'video'], true)) {
++    $backgroundType = 'plain';
++}
++
++$overlayStrength = max(0, min(85, (int) ($background['overlay_strength'] ?? 44)));
++$colorPreset = (string) ($background['color_preset'] ?? 'ocean');
++
++$imageSrc = '';
++if ($backgroundType === 'image') {
++    if (($background['image_source'] ?? '') === 'media' && !empty($background['image_media_uuid'])) {
++        $imageSrc = url('/media/' . rawurlencode((string) $background['image_media_uuid']));
++    } else {
++        $imageSrc = trim((string) ($background['image_url'] ?? ''));
++    }
++}
++
++$sliderSources = [];
++if ($backgroundType === 'slider') {
++    foreach ((array) ($background['slider_images'] ?? []) as $item) {
++        if (!is_array($item)) {
++            continue;
++        }
++
++        $type = (string) ($item['type'] ?? '');
++        $value = trim((string) ($item['value'] ?? ''));
++
++        if ($value === '') {
++            continue;
++        }
++
++        $sliderSources[] = $type === 'media'
++            ? url('/media/' . rawurlencode($value))
++            : $value;
++    }
++}
++
++$videoSrc = '';
++$youtubeEmbed = null;
++if ($backgroundType === 'video') {
++    $videoSource = (string) ($background['video_source'] ?? 'url');
++
++    if ($videoSource === 'media' && !empty($background['video_media_uuid'])) {
++        $videoSrc = url('/media/' . rawurlencode((string) $background['video_media_uuid']));
++    } elseif ($videoSource === 'youtube') {
++        $youtubeEmbed = barama_youtube_embed_url((string) ($background['youtube_url'] ?? ''));
++        if ($youtubeEmbed !== null) {
++            $youtubePath = (string) parse_url($youtubeEmbed, PHP_URL_PATH);
++            $youtubeId = basename($youtubePath);
++            $youtubeEmbed .= '&autoplay=1&mute=1&controls=0&playsinline=1&loop=1'
++                . ($youtubeId !== '' ? '&playlist=' . rawurlencode($youtubeId) : '');
++        }
++    } else {
++        $videoSrc = trim((string) ($background['video_url'] ?? ''));
++    }
++}
++
++$hasHeroBackground = $heroEnabled && (
++    $backgroundType === 'color'
++    || ($backgroundType === 'image' && $imageSrc !== '')
++    || ($backgroundType === 'slider' && $sliderSources !== [])
++    || ($backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null))
++);
+ ?>
+-<section class="market-home">
+-    <div class="container app-container">
+-        <div class="market-home__hero">
+-            <div class="market-home__copy">
+-                <span class="eyebrow"><?= e($heroEyebrow) ?></span>
+-                <h1><?= e($heroTitle) ?></h1>
+-                <p><?= e($heroDescription) ?></p>
+-
+-                <form class="market-searchbar" action="<?= e(url('/properties')) ?>" method="get" data-marketplace-filter>
+-                    <label class="market-searchbar__query">
+-                        <span><?= app_icon('search') ?></span>
+-                        <input name="q" placeholder="Search property, company, or location" aria-label="Search property, company, or location">
+-                    </label>
+-                    <label>
+-                        <span class="visually-hidden">Offer</span>
+-                        <select name="offer" aria-label="Offer">
+-                            <option value="">Sale & rent</option>
+-                            <option value="sale">For sale</option>
+-                            <option value="rent">For rent</option>
+-                        </select>
+-                    </label>
+-                    <label>
+-                        <span class="visually-hidden">Location</span>
+-                        <select name="location" aria-label="Location">
+-                            <option value="">All locations</option>
+-                            <?php foreach (array_slice($locations, 0, 100) as $location): ?>
+-                                <option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?></option>
+-                            <?php endforeach; ?>
+-                        </select>
+-                    </label>
+-                    <button type="submit">
+-                        <span>Search</span>
+-                        <?= app_icon('search') ?>
+-                    </button>
+-                </form>
+-
+-                <div class="market-home__actions">
+-                    <a href="<?= e(url('/projects')) ?>"><?= app_icon('layers') ?><span>Explore developments</span></a>
+-                    <a href="<?= e(url('/company')) ?>"><?= app_icon('building') ?><span>Browse companies</span></a>
+-                </div>
+-            </div>
++<section class="market-home market-home--background-<?= e($backgroundType) ?> <?= $hasHeroBackground ? 'market-home--rich-background' : '' ?>">
++    <?php if ($heroEnabled && $backgroundType === 'color'): ?>
++        <div class="market-home__background market-home__background--color hero-bg-preset--<?= e($colorPreset) ?>" aria-hidden="true"></div>
++    <?php elseif ($heroEnabled && $backgroundType === 'image' && $imageSrc !== ''): ?>
++        <div class="market-home__background market-home__background--media" aria-hidden="true">
++            <img src="<?= e($imageSrc) ?>" alt="" decoding="async">
++        </div>
++    <?php elseif ($heroEnabled && $backgroundType === 'slider' && $sliderSources !== []): ?>
++        <div
++            class="market-home__background market-home__background--slider hero-slider hero-slider--<?= e((string) ($background['slider_style'] ?? 'fade')) ?>"
++            data-hero-slider
++            data-hero-slider-interval="<?= e((string) ((int) ($background['slider_interval'] ?? 6000))) ?>"
++            data-hero-slider-autoplay="<?= !empty($background['slider_autoplay']) ? '1' : '0' ?>"
++            aria-hidden="true"
++        >
++            <?php foreach ($sliderSources as $index => $source): ?>
++                <img class="hero-slider__slide <?= $index === 0 ? 'is-active' : '' ?>" src="<?= e($source) ?>" alt="" decoding="async" <?= $index === 0 ? '' : 'loading="lazy"' ?>>
++            <?php endforeach; ?>
++        </div>
++    <?php elseif ($heroEnabled && $backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null)): ?>
++        <div class="market-home__background market-home__background--video" aria-hidden="true">
++            <?php if ($youtubeEmbed !== null): ?>
++                <iframe src="<?= e($youtubeEmbed) ?>" title="" tabindex="-1" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
++            <?php else: ?>
++                <video autoplay muted loop playsinline preload="metadata">
++                    <source src="<?= e($videoSrc) ?>">
++                </video>
++            <?php endif; ?>
++        </div>
++    <?php endif; ?>
+ 
+-            <aside class="market-pulse" aria-label="Marketplace overview">
+-                <div class="market-pulse__glow" aria-hidden="true"></div>
+-                <div class="market-pulse__head">
+-                    <span><?= app_icon('home') ?></span>
+-                    <div><strong>Marketplace</strong><small>Approved public inventory</small></div>
+-                </div>
+-                <div class="market-pulse__stats">
+-                    <a href="<?= e(url('/properties?offer=sale')) ?>"><strong><?= e(number_format((int) ($marketStats['sale'] ?? 0))) ?></strong><span>For sale</span></a>
+-                    <a href="<?= e(url('/properties?offer=rent')) ?>"><strong><?= e(number_format((int) ($marketStats['rent'] ?? 0))) ?></strong><span>For rent</span></a>
+-                    <a href="<?= e(url('/projects')) ?>"><strong><?= e(number_format((int) ($marketStats['projects'] ?? 0))) ?></strong><span>Projects</span></a>
+-                    <a href="<?= e(url('/company')) ?>"><strong><?= e(number_format((int) ($marketStats['companies'] ?? 0))) ?></strong><span>Companies</span></a>
++    <?php if ($hasHeroBackground && $backgroundType !== 'color'): ?>
++        <div class="market-home__background-overlay" style="--hero-overlay: <?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>" aria-hidden="true"></div>
++    <?php endif; ?>
++
++    <div class="container app-container market-home__content">
++        <?php if ($heroEnabled || !empty($search['enabled']) || !empty($marketPulse['enabled'])): ?>
++            <div class="market-home__hero">
++                <div class="market-home__copy">
++                    <?php if ($heroEnabled): ?>
++                        <span class="eyebrow"><?= e($heroEyebrow) ?></span>
++                        <h1><?= e($heroTitle) ?></h1>
++                        <p><?= e($heroDescription) ?></p>
++                    <?php endif; ?>
++
++                    <?php if (!empty($search['enabled'])): ?>
++                        <form class="market-searchbar" action="<?= e(url('/properties')) ?>" method="get" data-marketplace-filter>
++                            <label class="market-searchbar__query">
++                                <span><?= app_icon('search') ?></span>
++                                <input name="q" placeholder="<?= e((string) ($search['placeholder'] ?? 'Search property, company, or location')) ?>" aria-label="<?= e((string) ($search['placeholder'] ?? 'Search property, company, or location')) ?>">
++                            </label>
++                            <label>
++                                <span class="visually-hidden">Offer</span>
++                                <select name="offer" aria-label="Offer">
++                                    <option value="">Sale & rent</option>
++                                    <option value="sale">For sale</option>
++                                    <option value="rent">For rent</option>
++                                </select>
++                            </label>
++                            <label>
++                                <span class="visually-hidden">Location</span>
++                                <select name="location" aria-label="Location">
++                                    <option value="">All locations</option>
++                                    <?php foreach (array_slice($locations, 0, 100) as $location): ?>
++                                        <option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?></option>
++                                    <?php endforeach; ?>
++                                </select>
++                            </label>
++                            <button type="submit">
++                                <span><?= e((string) ($search['button_label'] ?? 'Search')) ?></span>
++                                <?= app_icon('search') ?>
++                            </button>
++                        </form>
++                    <?php endif; ?>
++
++                    <?php if ($heroEnabled): ?>
++                        <div class="market-home__actions">
++                            <a href="<?= e(url('/projects')) ?>"><?= app_icon('layers') ?><span>Explore developments</span></a>
++                            <a href="<?= e(url('/company')) ?>"><?= app_icon('building') ?><span>Browse companies</span></a>
++                        </div>
++                    <?php endif; ?>
+                 </div>
+-                <div class="market-pulse__note"><?= app_icon('shield') ?><span>Public records appear only after marketplace approval.</span></div>
+-            </aside>
+-        </div>
+ 
+-        <div class="market-intent-grid" aria-label="Explore marketplace">
+-            <a class="market-intent market-intent--sale" href="<?= e(url('/properties?offer=sale')) ?>">
+-                <span class="market-intent__icon"><?= app_icon('home') ?></span>
+-                <span><strong>Buy property</strong><small>Browse published homes and investment inventory.</small></span>
+-                <span class="market-intent__arrow">↗</span>
+-            </a>
+-            <a class="market-intent market-intent--rent" href="<?= e(url('/properties?offer=rent')) ?>">
+-                <span class="market-intent__icon"><?= app_icon('key') ?></span>
+-                <span><strong>Rent property</strong><small>Find rental listings by location and budget.</small></span>
+-                <span class="market-intent__arrow">↗</span>
+-            </a>
+-            <a class="market-intent market-intent--project" href="<?= e(url('/projects')) ?>">
+-                <span class="market-intent__icon"><?= app_icon('layers') ?></span>
+-                <span><strong>New developments</strong><small>Explore published projects and available units.</small></span>
+-                <span class="market-intent__arrow">↗</span>
+-            </a>
+-            <a class="market-intent market-intent--company" href="<?= e(url('/company')) ?>">
+-                <span class="market-intent__icon"><?= app_icon('building') ?></span>
+-                <span><strong>Companies</strong><small>Discover approved developers and agencies.</small></span>
+-                <span class="market-intent__arrow">↗</span>
+-            </a>
+-        </div>
++                <?php if (!empty($marketPulse['enabled'])): ?>
++                    <aside class="market-pulse" aria-label="Marketplace overview">
++                        <div class="market-pulse__glow" aria-hidden="true"></div>
++                        <div class="market-pulse__head">
++                            <span><?= app_icon('home') ?></span>
++                            <div><strong><?= e((string) ($marketPulse['title'] ?? 'Marketplace')) ?></strong><small><?= e((string) ($marketPulse['subtitle'] ?? 'Approved public inventory')) ?></small></div>
++                        </div>
++                        <div class="market-pulse__stats">
++                            <a href="<?= e(url('/properties?offer=sale')) ?>"><strong><?= e(number_format((int) ($marketStats['sale'] ?? 0))) ?></strong><span>For sale</span></a>
++                            <a href="<?= e(url('/properties?offer=rent')) ?>"><strong><?= e(number_format((int) ($marketStats['rent'] ?? 0))) ?></strong><span>For rent</span></a>
++                            <a href="<?= e(url('/projects')) ?>"><strong><?= e(number_format((int) ($marketStats['projects'] ?? 0))) ?></strong><span>Projects</span></a>
++                            <a href="<?= e(url('/company')) ?>"><strong><?= e(number_format((int) ($marketStats['companies'] ?? 0))) ?></strong><span>Companies</span></a>
++                        </div>
++                        <?php if (trim((string) ($marketPulse['note'] ?? '')) !== ''): ?>
++                            <div class="market-pulse__note"><?= app_icon('shield') ?><span><?= e((string) $marketPulse['note']) ?></span></div>
++                        <?php endif; ?>
++                    </aside>
++                <?php endif; ?>
++            </div>
++        <?php endif; ?>
++
++        <?php if (!empty($quickActions['enabled'])): ?>
++            <div class="market-intent-grid" aria-label="Explore marketplace">
++                <?php
++                $intentRows = [
++                    'sale' => ['href' => '/properties?offer=sale', 'class' => 'sale', 'icon' => 'home', 'title' => 'Buy property', 'description' => 'Browse published homes and investment inventory.'],
++                    'rent' => ['href' => '/properties?offer=rent', 'class' => 'rent', 'icon' => 'key', 'title' => 'Rent property', 'description' => 'Find rental listings by location and budget.'],
++                    'project' => ['href' => '/projects', 'class' => 'project', 'icon' => 'layers', 'title' => 'New developments', 'description' => 'Explore published projects and available units.'],
++                    'company' => ['href' => '/company', 'class' => 'company', 'icon' => 'building', 'title' => 'Companies', 'description' => 'Discover approved developers and agencies.'],
++                ];
++                ?>
++                <?php foreach ($intentRows as $key => $intent): ?>
++                    <?php $item = is_array($quickItems[$key] ?? null) ? $quickItems[$key] : []; ?>
++                    <a class="market-intent market-intent--<?= e((string) $intent['class']) ?>" href="<?= e(url((string) $intent['href'])) ?>">
++                        <span class="market-intent__icon"><?= app_icon((string) $intent['icon']) ?></span>
++                        <span><strong><?= e((string) ($item['title'] ?? $intent['title'])) ?></strong><small><?= e((string) ($item['description'] ?? $intent['description'])) ?></small></span>
++                        <span class="market-intent__arrow">↗</span>
++                    </a>
++                <?php endforeach; ?>
++            </div>
++        <?php endif; ?>
+     </div>
+ </section>
+ 
+diff --git a/application/resources/views/layouts/app.php b/application/resources/views/layouts/app.php
+--- a/application/resources/views/layouts/app.php
++++ b/application/resources/views/layouts/app.php
+@@ -292,9 +292,9 @@ class="theme-toggle"
+                                             <span class="barama-user-menu__theme-label"><?= e(t('Theme')) ?></span>
+                                         </div>
+                                         <div class="barama-user-menu__legal">
+-                                            <a href="<?= e(url('/account/privacy')) ?>"><?= e(t('Privacy')) ?></a>
+-                                            <span><?= e(t('Terms')) ?></span>
+-                                            <span><?= e(t('Disclaimer')) ?></span>
++                                            <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
++                                            <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
++                                            <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
+                                         </div>
+                                     </div>
+                                 </div>
+@@ -504,6 +504,13 @@ class="brand__logo"
+                     <a href="<?= e((string) config('app.support_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Contact Support')) ?></a>
+                     <a href="<?= e(url('/health')) ?>"><?= e(t('System Health')) ?></a>
+                 </nav>
++
++                <nav aria-label="<?= e(t('Legal links')) ?>">
++                    <strong><?= e(t('Legal')) ?></strong>
++                    <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
++                    <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
++                    <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
++                </nav>
+             </div>
+ 
+             <div class="site-footer__bottom">
+diff --git a/application/resources/views/marketplace/projects.php b/application/resources/views/marketplace/projects.php
+--- a/application/resources/views/marketplace/projects.php
++++ b/application/resources/views/marketplace/projects.php
+@@ -5,6 +5,22 @@
+ $page = (int) ($inventory['page'] ?? 1);
+ $pages = (int) ($inventory['pages'] ?? 1);
+ $total = (int) ($inventory['total'] ?? 0);
++
++$locationLabels = [];
++foreach ($locations as $location) {
++    $locationLabels[(string) ($location['id'] ?? '')] = (string) ($location['name'] ?? '');
++}
++
++$activeFilters = array_filter([
++    'Search' => trim((string) ($filters['q'] ?? '')),
++    'Type' => ($filters['type'] ?? '') !== ''
++        ? ucwords(str_replace('_', ' ', (string) $filters['type']))
++        : '',
++    'Location' => $locationLabels[(string) ($filters['location'] ?? '')] ?? '',
++    'Stage' => ($filters['completion'] ?? '') !== ''
++        ? ucwords(str_replace('_', ' ', (string) $filters['completion']))
++        : '',
++]);
+ ?>
+ <section class="marketplace-hero marketplace-hero--discovery marketplace-hero--projects">
+     <div class="container app-container">
+@@ -15,7 +31,7 @@
+ 
+         <form class="discovery-filter discovery-filter--compact" method="get" data-marketplace-filter>
+             <div class="discovery-filter__primary">
+-                <label class="discovery-filter__search"><span><?= app_icon('search') ?></span><input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Project, company, location"></label>
++                <label class="discovery-filter__search"><span><?= app_icon('search') ?></span><input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Project, company, location" aria-label="Search projects"></label>
+                 <label><span class="visually-hidden">Type</span><select name="type"><option value="">All project types</option><?php foreach ($projectTypes as $type): ?><option value="<?= e($type) ?>" <?= ($filters['type'] ?? '') === $type ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $type))) ?></option><?php endforeach; ?></select></label>
+                 <label><span class="visually-hidden">Location</span><select name="location"><option value="">All locations</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (string) ($filters['location'] ?? '') === (string) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                 <label><span class="visually-hidden">Stage</span><select name="completion"><option value="">All stages</option><?php foreach ($completionStatuses as $status): ?><option value="<?= e($status) ?>" <?= ($filters['completion'] ?? '') === $status ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $status))) ?></option><?php endforeach; ?></select></label>
+@@ -28,14 +44,17 @@
+ 
+ <section class="marketplace-section marketplace-results">
+     <div class="container app-container">
+-        <div class="marketplace-results__bar"><div><strong><?= e(number_format($total)) ?> development<?= $total === 1 ? '' : 's' ?></strong><span>Approved and published projects</span></div></div>
++        <div class="marketplace-results__bar">
++            <div><strong><?= e(number_format($total)) ?> development<?= $total === 1 ? '' : 's' ?></strong><span><?= $activeFilters !== [] ? 'Filtered approved projects' : 'Approved and published projects' ?></span></div>
++            <?php if ($activeFilters !== []): ?><div class="filter-chips" aria-label="Active project filters"><?php foreach ($activeFilters as $label => $value): ?><span><small><?= e($label) ?></small><?= e($value) ?></span><?php endforeach; ?></div><?php endif; ?>
++        </div>
+         <?php if ($rows === []): ?>
+             <div class="marketplace-empty marketplace-empty--premium"><?= app_icon('layers') ?><strong>No projects match these filters.</strong><span>Try another location, stage, or project type.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/projects')) ?>">View all projects</a></div>
+         <?php else: ?>
+             <div class="inventory-grid inventory-grid--projects"><?php foreach ($rows as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
+         <?php endif; ?>
+ 
+-        <?php if ($pages > 1): ?><nav class="marketplace-pagination"><span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span><div>
++        <?php if ($pages > 1): ?><nav class="marketplace-pagination" aria-label="Project result pages"><span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span><div>
+             <?php $base = $filters; if ($page > 1): $base['page'] = $page - 1; ?><a href="?<?= e(http_build_query($base)) ?>">Previous</a><?php endif; ?>
+             <?php $base = $filters; if ($page < $pages): $base['page'] = $page + 1; ?><a href="?<?= e(http_build_query($base)) ?>">Next</a><?php endif; ?>
+         </div></nav><?php endif; ?>
+diff --git a/application/resources/views/marketplace/properties.php b/application/resources/views/marketplace/properties.php
+--- a/application/resources/views/marketplace/properties.php
++++ b/application/resources/views/marketplace/properties.php
+@@ -5,14 +5,28 @@
+ $page = (int) ($inventory['page'] ?? 1);
+ $pages = (int) ($inventory['pages'] ?? 1);
+ $total = (int) ($inventory['total'] ?? 0);
+-$activeFilters = array_filter([
+-    'Offer' => ($filters['offer'] ?? '') !== '' ? ucwords((string) $filters['offer']) : '',
++
++$locationLabels = [];
++foreach ($locations as $location) {
++    $locationLabels[(string) ($location['id'] ?? '')] = (string) ($location['name'] ?? '');
++}
++
++$advancedFilters = array_filter([
+     'Type' => ($filters['type'] ?? '') !== '' ? ucwords(str_replace('_', ' ', (string) $filters['type'])) : '',
+     'Bedrooms' => ($filters['bedrooms'] ?? '') !== '' ? (string) $filters['bedrooms'] . '+' : '',
+     'Currency' => (string) ($filters['currency'] ?? ''),
+     'Min' => ($filters['min_price'] ?? '') !== '' ? number_format((float) $filters['min_price'], 0) : '',
+     'Max' => ($filters['max_price'] ?? '') !== '' ? number_format((float) $filters['max_price'], 0) : '',
++    'Sort' => ($filters['sort'] ?? 'newest') !== 'newest'
++        ? ucwords(str_replace('_', ' ', (string) $filters['sort']))
++        : '',
+ ]);
++
++$resultFilters = array_filter(array_merge([
++    'Search' => trim((string) ($filters['q'] ?? '')),
++    'Offer' => ($filters['offer'] ?? '') !== '' ? ucwords((string) $filters['offer']) : '',
++    'Location' => $locationLabels[(string) ($filters['location'] ?? '')] ?? '',
++], $advancedFilters));
+ ?>
+ <section class="marketplace-hero marketplace-hero--discovery">
+     <div class="container app-container">
+@@ -29,7 +43,7 @@
+             <div class="discovery-filter__primary">
+                 <label class="discovery-filter__search">
+                     <span><?= app_icon('search') ?></span>
+-                    <input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Property, company, reference, location">
++                    <input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Property, company, reference, location" aria-label="Search properties">
+                 </label>
+                 <label>
+                     <span class="visually-hidden">Offer</span>
+@@ -51,8 +65,8 @@
+                 <button class="btn btn-primary" type="submit"><?= app_icon('search') ?><span>Search</span></button>
+             </div>
+ 
+-            <details class="discovery-filter__more" <?= $activeFilters !== [] ? 'open' : '' ?>>
+-                <summary><?= app_icon('grid') ?><span>More filters</span><small><?= e((string) count($activeFilters)) ?> active</small></summary>
++            <details class="discovery-filter__more" <?= $advancedFilters !== [] ? 'open' : '' ?>>
++                <summary><?= app_icon('grid') ?><span>More filters</span><small><?= e((string) count($advancedFilters)) ?> active</small></summary>
+                 <div class="discovery-filter__advanced">
+                     <label><span>Property type</span><select name="type"><option value="">All types</option><?php foreach ($propertyTypes as $type): ?><option value="<?= e($type) ?>" <?= ($filters['type'] ?? '') === $type ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $type))) ?></option><?php endforeach; ?></select></label>
+                     <label><span>Bedrooms</span><select name="bedrooms"><option value="">Any</option><?php foreach ([1,2,3,4,5] as $bed): ?><option value="<?= e((string) $bed) ?>" <?= (string) ($filters['bedrooms'] ?? '') === (string) $bed ? 'selected' : '' ?>><?= e((string) $bed) ?>+</option><?php endforeach; ?></select></label>
+@@ -70,8 +84,8 @@
+ <section class="marketplace-section marketplace-results">
+     <div class="container app-container">
+         <div class="marketplace-results__bar">
+-            <div><strong><?= e(number_format($total)) ?> result<?= $total === 1 ? '' : 's' ?></strong><span><?= $activeFilters !== [] ? 'Filtered marketplace inventory' : 'All approved marketplace inventory' ?></span></div>
+-            <?php if ($activeFilters !== []): ?><div class="filter-chips"><?php foreach ($activeFilters as $label => $value): ?><span><small><?= e($label) ?></small><?= e($value) ?></span><?php endforeach; ?></div><?php endif; ?>
++            <div><strong><?= e(number_format($total)) ?> result<?= $total === 1 ? '' : 's' ?></strong><span><?= $resultFilters !== [] ? 'Filtered marketplace inventory' : 'All approved marketplace inventory' ?></span></div>
++            <?php if ($resultFilters !== []): ?><div class="filter-chips" aria-label="Active property filters"><?php foreach ($resultFilters as $label => $value): ?><span><small><?= e($label) ?></small><?= e($value) ?></span><?php endforeach; ?></div><?php endif; ?>
+         </div>
+ 
+         <?php if ($rows === []): ?>
+diff --git a/application/resources/views/marketplace/property.php b/application/resources/views/marketplace/property.php
+--- a/application/resources/views/marketplace/property.php
++++ b/application/resources/views/marketplace/property.php
+@@ -1,13 +1,15 @@
+ <?php
+ declare(strict_types=1);
+ 
+-$price = barama_detail_price(
+-    (string) ($listing['currency'] ?? 'USD'),
+-    (float) ($listing['price'] ?? 0),
+-    ($listing['transaction_type'] ?? '') === 'rent'
+-        ? (string) ($listing['pricing_period'] ?? '')
+-        : null
+-);
++$price = ($listing['price'] ?? null) !== null
++    ? barama_detail_price(
++        (string) ($listing['currency'] ?? 'USD'),
++        (float) $listing['price'],
++        ($listing['transaction_type'] ?? '') === 'rent'
++            ? (string) ($listing['pricing_period'] ?? '')
++            : null
++    )
++    : 'Price on request';
+ 
+ $relatedListings = is_array($relatedListings ?? null) ? $relatedListings : [];
+ $locationLabel = (string) ($listing['location_name'] ?? $listing['address_line'] ?? 'Location available on request');
+@@ -47,6 +49,18 @@
+                     <div><dt><?= app_icon('map') ?><span>Location</span></dt><dd><?= e($locationLabel) ?></dd></div>
+                     <div><dt><?= app_icon('home') ?><span>Property type</span></dt><dd><?= e($typeLabel) ?></dd></div>
+                     <div><dt><?= app_icon('layers') ?><span>Floor area</span></dt><dd><?= e($areaLabel) ?></dd></div>
++                    <?php if (($listing['bedrooms'] ?? null) !== null): ?>
++                        <div><dt><?= app_icon('home') ?><span>Bedrooms</span></dt><dd><?= e(rtrim(rtrim((string) $listing['bedrooms'], '0'), '.')) ?></dd></div>
++                    <?php endif; ?>
++                    <?php if (($listing['bathrooms'] ?? null) !== null): ?>
++                        <div><dt><?= app_icon('grid') ?><span>Bathrooms</span></dt><dd><?= e(rtrim(rtrim((string) $listing['bathrooms'], '0'), '.')) ?></dd></div>
++                    <?php endif; ?>
++                    <?php if (($listing['parking_spaces'] ?? null) !== null): ?>
++                        <div><dt><?= app_icon('key') ?><span>Parking</span></dt><dd><?= e((string) $listing['parking_spaces']) ?> space<?= (int) $listing['parking_spaces'] === 1 ? '' : 's' ?></dd></div>
++                    <?php endif; ?>
++                    <?php if (!empty($listing['furnishing_status'])): ?>
++                        <div><dt><?= app_icon('layers') ?><span>Furnishing</span></dt><dd><?= e($furnishingLabel) ?></dd></div>
++                    <?php endif; ?>
+                     <?php if (!empty($listing['year_built'])): ?>
+                         <div><dt><?= app_icon('calendar') ?><span>Year built</span></dt><dd><?= e((string) $listing['year_built']) ?></dd></div>
+                     <?php endif; ?>
+diff --git a/application/resources/views/workspace/homepage.php b/application/resources/views/workspace/homepage.php
+new file mode 100644
+--- /dev/null
++++ b/application/resources/views/workspace/homepage.php
+@@ -0,0 +1,276 @@
++<?php
++
++declare(strict_types=1);
++
++$homepage = is_array($homepage ?? null)
++    ? $homepage
++    : \Barama\Repositories\SiteContentRepository::defaults()['homepage'];
++$hero = is_array($homepage['hero'] ?? null) ? $homepage['hero'] : [];
++$background = is_array($hero['background'] ?? null) ? $hero['background'] : [];
++$features = is_array($homepage['features'] ?? null) ? $homepage['features'] : [];
++$sections = is_array($homepage['sections'] ?? null) ? $homepage['sections'] : [];
++$order = is_array($homepage['section_order'] ?? null)
++    ? array_values($homepage['section_order'])
++    : ['listings', 'projects', 'companies'];
++$positions = [];
++
++foreach ($order as $index => $sectionKey) {
++    $positions[(string) $sectionKey] = $index + 1;
++}
++
++$rows = [
++    'hero' => [
++        'label' => 'Hero',
++        'description' => 'Headline, copy and full-width Plain, Color, Image, Slider or Video background.',
++        'icon' => 'home',
++        'enabled' => !empty($hero['enabled']),
++        'summary' => ucfirst((string) ($background['type'] ?? 'plain')) . ' background',
++    ],
++    'search' => [
++        'label' => 'Hero Search',
++        'description' => 'Homepage property/company/location search bar and button copy.',
++        'icon' => 'search',
++        'enabled' => !empty($features['search']['enabled']),
++        'summary' => (string) ($features['search']['placeholder'] ?? 'Search'),
++    ],
++    'market_pulse' => [
++        'label' => 'Marketplace Summary',
++        'description' => 'Sale, rent, project and company totals shown beside the hero.',
++        'icon' => 'grid',
++        'enabled' => !empty($features['market_pulse']['enabled']),
++        'summary' => (string) ($features['market_pulse']['title'] ?? 'Marketplace'),
++    ],
++    'quick_actions' => [
++        'label' => 'Quick Discovery',
++        'description' => 'Buy, Rent, New Developments and Companies shortcut cards.',
++        'icon' => 'layers',
++        'enabled' => !empty($features['quick_actions']['enabled']),
++        'summary' => '4 discovery shortcuts',
++    ],
++    'listings' => [
++        'label' => 'Latest Inventory',
++        'description' => 'Fresh property cards and the homepage properties call-to-action.',
++        'icon' => 'tag',
++        'enabled' => !empty($sections['listings']['enabled']),
++        'summary' => (string) ($sections['listings']['title'] ?? 'Fresh on the marketplace'),
++    ],
++    'projects' => [
++        'label' => 'Projects',
++        'description' => 'Published development cards and homepage project call-to-action.',
++        'icon' => 'layers',
++        'enabled' => !empty($sections['projects']['enabled']),
++        'summary' => (string) ($sections['projects']['title'] ?? 'Published projects'),
++    ],
++    'companies' => [
++        'label' => 'Companies',
++        'description' => 'Approved company cards and homepage directory call-to-action.',
++        'icon' => 'building',
++        'enabled' => !empty($sections['companies']['enabled']),
++        'summary' => (string) ($sections['companies']['title'] ?? 'Approved professionals'),
++    ],
++];
++
++$quickItems = is_array($features['quick_actions']['items'] ?? null)
++    ? $features['quick_actions']['items']
++    : [];
++$sliderImages = is_array($background['slider_images'] ?? null)
++    ? array_values($background['slider_images'])
++    : [];
++?>
++<section class="workspace-page content-config-page">
++    <div class="workspace-page__header">
++        <div>
++            <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
++            <h1>Homepage</h1>
++            <p>Control public homepage features independently. Use the switch for visibility and Configure for full customization.</p>
++        </div>
++        <a class="workspace-context-note" href="<?= e(url('/')) ?>" target="_blank" rel="noopener noreferrer">
++            <?= app_icon('globe') ?>
++            View homepage
++        </a>
++    </div>
++
++    <div data-workspace-notice hidden></div>
++
++    <div class="content-config-table-wrap">
++        <table class="content-config-table">
++            <thead>
++                <tr>
++                    <th>Feature</th>
++                    <th>Current configuration</th>
++                    <th>Status</th>
++                    <th class="content-config-table__action">Action</th>
++                </tr>
++            </thead>
++            <tbody>
++                <?php foreach ($rows as $key => $row): ?>
++                    <tr>
++                        <td>
++                            <div class="content-config-feature">
++                                <span class="content-config-feature__icon"><?= app_icon((string) $row['icon']) ?></span>
++                                <span>
++                                    <strong><?= e((string) $row['label']) ?></strong>
++                                    <small><?= e((string) $row['description']) ?></small>
++                                </span>
++                            </div>
++                        </td>
++                        <td><span class="content-config-summary"><?= e((string) $row['summary']) ?></span></td>
++                        <td>
++                            <form action="<?= e(url('/dashboard/homepage/' . $key . '/toggle')) ?>" method="post" data-workspace-form data-toggle-form>
++                                <?= csrf_field() ?>
++                                <input type="hidden" name="enabled" value="<?= !empty($row['enabled']) ? '1' : '0' ?>" data-toggle-value>
++                                <label class="premium-switch">
++                                    <input type="checkbox" <?= !empty($row['enabled']) ? 'checked' : '' ?> data-auto-toggle aria-label="Toggle <?= e((string) $row['label']) ?>">
++                                    <span class="premium-switch__track"><span></span></span>
++                                    <b><?= !empty($row['enabled']) ? 'ON' : 'OFF' ?></b>
++                                </label>
++                            </form>
++                        </td>
++                        <td class="content-config-table__action">
++                            <button class="content-config-button" type="button" data-configure-open="homepage-config-<?= e($key) ?>">
++                                <?= app_icon('settings') ?>
++                                <span>Configure</span>
++                            </button>
++                        </td>
++                    </tr>
++                <?php endforeach; ?>
++            </tbody>
++        </table>
++    </div>
++
++    <dialog class="config-dialog config-dialog--wide" id="homepage-config-hero" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/hero')) ?>" method="post" enctype="multipart/form-data" data-workspace-form>
++            <?= csrf_field() ?>
++            <header class="config-dialog__head">
++                <div><span class="eyebrow">Homepage Hero</span><h2>Configure hero</h2><p>Choose the full hero background type, source and presentation while keeping the marketplace content readable.</p></div>
++                <button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button>
++            </header>
++
++            <div class="config-dialog__body">
++                <div class="config-field-grid">
++                    <label><span>Eyebrow</span><input class="form-control" name="hero_eyebrow" maxlength="80" value="<?= e((string) ($hero['eyebrow'] ?? '')) ?>"></label>
++                    <label><span>Headline</span><input class="form-control" name="hero_title" maxlength="140" required value="<?= e((string) ($hero['title'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="hero_description" rows="3" maxlength="500" required><?= e((string) ($hero['description'] ?? '')) ?></textarea></label>
++                    <label>
++                        <span>Background type</span>
++                        <select class="form-select" name="background_type" data-hero-background-type>
++                            <?php foreach (['plain' => 'Plain Hero', 'color' => 'Color Background', 'image' => 'Image Background', 'slider' => 'Image Slider Background', 'video' => 'Video Background'] as $value => $label): ?>
++                                <option value="<?= e($value) ?>" <?= ($background['type'] ?? 'plain') === $value ? 'selected' : '' ?>><?= e($label) ?></option>
++                            <?php endforeach; ?>
++                        </select>
++                    </label>
++                    <label><span>Dark overlay</span><input class="form-control" type="number" name="overlay_strength" min="0" max="85" value="<?= e((string) ($background['overlay_strength'] ?? 44)) ?>"><small>0–85%. Applied to image, slider and video backgrounds.</small></label>
++                </div>
++
++                <section class="config-source-panel" data-hero-background-panel="plain">
++                    <h3>Plain Hero</h3>
++                    <p>Uses the current clean hero surface with no extra media background.</p>
++                </section>
++
++                <section class="config-source-panel" data-hero-background-panel="color">
++                    <h3>Color Background</h3>
++                    <label><span>Color preset</span><select class="form-select" name="color_preset">
++                        <?php foreach (['ocean' => 'Ocean Blue', 'aurora' => 'Aurora', 'sunset' => 'Sunset', 'violet' => 'Violet', 'emerald' => 'Emerald'] as $value => $label): ?>
++                            <option value="<?= e($value) ?>" <?= ($background['color_preset'] ?? 'ocean') === $value ? 'selected' : '' ?>><?= e($label) ?></option>
++                        <?php endforeach; ?>
++                    </select></label>
++                    <div class="hero-preset-strip" aria-label="Color presets">
++                        <?php foreach (['ocean','aurora','sunset','violet','emerald'] as $preset): ?><span class="hero-preset hero-preset--<?= e($preset) ?>"></span><?php endforeach; ?>
++                    </div>
++                </section>
++
++                <section class="config-source-panel" data-hero-background-panel="image">
++                    <h3>Image Background</h3>
++                    <div class="config-field-grid">
++                        <label><span>Source</span><select class="form-select" name="image_source"><option value="url" <?= ($background['image_source'] ?? 'url') === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= ($background['image_source'] ?? '') === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select></label>
++                        <label><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($background['image_url'] ?? '')) ?>" placeholder="https://example.com/hero.jpg"></label>
++                        <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. The uploaded file is saved to the Barama Media Library.</small></label>
++                        <input type="hidden" name="image_media_uuid" value="<?= e((string) ($background['image_media_uuid'] ?? '')) ?>">
++                        <?php if (!empty($background['image_media_uuid'])): ?><div class="config-media-current config-field-grid__wide"><?= app_icon('image') ?><span>Current uploaded image: <?= e((string) $background['image_media_uuid']) ?></span></div><?php endif; ?>
++                    </div>
++                </section>
++
++                <section class="config-source-panel" data-hero-background-panel="slider">
++                    <h3>Image Slider Background</h3>
++                    <div class="config-field-grid">
++                        <label><span>Slider style</span><select class="form-select" name="slider_style">
++                            <?php foreach (['fade' => 'Fade', 'slide' => 'Slide', 'kenburns' => 'Ken Burns'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($background['slider_style'] ?? 'fade') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>
++                        </select></label>
++                        <label><span>Interval (ms)</span><input class="form-control" type="number" min="2500" max="20000" step="500" name="slider_interval" value="<?= e((string) ($background['slider_interval'] ?? 6000)) ?>"></label>
++                        <label class="config-field-grid__wide premium-inline-toggle"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($background['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
++                        <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"><small>Upload multiple images at once. Maximum 12 active slider images.</small></label>
++                        <label class="config-field-grid__wide"><span>Add image URLs</span><textarea class="form-control" name="slider_urls" rows="3" placeholder="One HTTPS image URL per line"></textarea></label>
++                    </div>
++                    <?php if ($sliderImages !== []): ?>
++                        <div class="config-existing-list">
++                            <strong>Current slider images</strong>
++                            <?php foreach ($sliderImages as $index => $item): ?>
++                                <?php $encoded = (string) ($item['type'] ?? '') . ':' . (string) ($item['value'] ?? ''); ?>
++                                <label>
++                                    <input type="hidden" name="slider_existing[]" value="<?= e($encoded) ?>">
++                                    <input type="checkbox" name="slider_remove[]" value="<?= e((string) $index) ?>">
++                                    <span><?= e(ucfirst((string) ($item['type'] ?? 'image'))) ?> · <?= e((string) ($item['value'] ?? '')) ?></span>
++                                    <small>Remove</small>
++                                </label>
++                            <?php endforeach; ?>
++                        </div>
++                    <?php endif; ?>
++                </section>
++
++                <section class="config-source-panel" data-hero-background-panel="video">
++                    <h3>Video Background</h3>
++                    <div class="config-field-grid">
++                        <label><span>Source</span><select class="form-select" name="video_source"><option value="url" <?= ($background['video_source'] ?? 'url') === 'url' ? 'selected' : '' ?>>Video URL</option><option value="media" <?= ($background['video_source'] ?? '') === 'media' ? 'selected' : '' ?>>Upload video</option><option value="youtube" <?= ($background['video_source'] ?? '') === 'youtube' ? 'selected' : '' ?>>YouTube</option></select></label>
++                        <label><span>Video URL</span><input class="form-control" type="url" name="video_url" maxlength="1000" value="<?= e((string) ($background['video_url'] ?? '')) ?>" placeholder="https://example.com/hero.mp4"></label>
++                        <label class="config-field-grid__wide"><span>Upload video</span><input class="form-control" type="file" name="hero_video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime"><small>Up to 50 MB. Uploaded videos are stored in the Barama Media Library.</small></label>
++                        <label class="config-field-grid__wide"><span>YouTube URL</span><input class="form-control" type="url" name="youtube_url" maxlength="1000" value="<?= e((string) ($background['youtube_url'] ?? '')) ?>" placeholder="https://www.youtube.com/watch?v=..."></label>
++                        <input type="hidden" name="video_media_uuid" value="<?= e((string) ($background['video_media_uuid'] ?? '')) ?>">
++                        <?php if (!empty($background['video_media_uuid'])): ?><div class="config-media-current config-field-grid__wide"><?= app_icon('video') ?><span>Current uploaded video: <?= e((string) $background['video_media_uuid']) ?></span></div><?php endif; ?>
++                    </div>
++                </section>
++            </div>
++
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit"><?= app_icon('check') ?> Save hero configuration</button></footer>
++        </form>
++    </dialog>
++
++    <dialog class="config-dialog" id="homepage-config-search" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/search')) ?>" method="post" data-workspace-form>
++            <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Homepage</span><h2>Configure Hero Search</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++            <div class="config-dialog__body config-field-grid"><label class="config-field-grid__wide"><span>Search placeholder</span><input class="form-control" name="placeholder" maxlength="120" value="<?= e((string) ($features['search']['placeholder'] ?? '')) ?>"></label><label><span>Button label</span><input class="form-control" name="button_label" maxlength="40" value="<?= e((string) ($features['search']['button_label'] ?? 'Search')) ?>"></label></div>
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
++        </form>
++    </dialog>
++
++    <dialog class="config-dialog" id="homepage-config-market_pulse" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/market_pulse')) ?>" method="post" data-workspace-form>
++            <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Homepage</span><h2>Configure Marketplace Summary</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++            <div class="config-dialog__body config-field-grid"><label><span>Title</span><input class="form-control" name="title" maxlength="80" value="<?= e((string) ($features['market_pulse']['title'] ?? '')) ?>"></label><label><span>Subtitle</span><input class="form-control" name="subtitle" maxlength="120" value="<?= e((string) ($features['market_pulse']['subtitle'] ?? '')) ?>"></label><label class="config-field-grid__wide"><span>Approval note</span><textarea class="form-control" name="note" rows="3" maxlength="180"><?= e((string) ($features['market_pulse']['note'] ?? '')) ?></textarea></label></div>
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
++        </form>
++    </dialog>
++
++    <dialog class="config-dialog config-dialog--wide" id="homepage-config-quick_actions" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/quick_actions')) ?>" method="post" data-workspace-form>
++            <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Homepage</span><h2>Configure Quick Discovery</h2><p>Customize the four fixed marketplace destinations without changing their safe routes.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++            <div class="config-dialog__body"><div class="quick-action-config-grid"><?php foreach (['sale' => 'Buy property','rent' => 'Rent property','project' => 'New developments','company' => 'Companies'] as $key => $label): ?><?php $item = is_array($quickItems[$key] ?? null) ? $quickItems[$key] : []; ?><div><strong><?= e($label) ?></strong><label><span>Title</span><input class="form-control" name="items[<?= e($key) ?>][title]" maxlength="80" value="<?= e((string) ($item['title'] ?? '')) ?>"></label><label><span>Description</span><textarea class="form-control" name="items[<?= e($key) ?>][description]" rows="3" maxlength="180><?= e((string) ($item['description'] ?? '')) ?></textarea></label></div><?php endforeach; ?></div></div>
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
++        </form>
++    </dialog>
++
++    <?php foreach (['listings' => 'Latest Inventory','projects' => 'Projects','companies' => 'Companies'] as $key => $label): ?>
++        <?php $section = is_array($sections[$key] ?? null) ? $sections[$key] : []; ?>
++        <dialog class="config-dialog" id="homepage-config-<?= e($key) ?>" data-config-dialog>
++            <form class="config-dialog__panel" action="<?= e(url('/dashboard/homepage/' . $key)) ?>" method="post" data-workspace-form>
++                <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Homepage Section</span><h2>Configure <?= e($label) ?></h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
++                <div class="config-dialog__body config-field-grid">
++                    <label><span>Display order</span><select class="form-select" name="position"><?php for ($position = 1; $position <= 3; $position++): ?><option value="<?= $position ?>" <?= (int) ($positions[$key] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
++                    <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($section['eyebrow'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="140" value="<?= e((string) ($section['title'] ?? '')) ?>"></label>
++                    <label class="config-field-grid__wide"><span>Link label</span><input class="form-control" name="link_label" maxlength="80" value="<?= e((string) ($section['link_label'] ?? '')) ?>"></label>
++                </div>
++                <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save configuration</button></footer>
++            </form>
++        </dialog>
++    <?php endforeach; ?>
++</section>
+diff --git a/application/resources/views/workspace/navigation.php b/application/resources/views/workspace/navigation.php
+new file mode 100644
+--- /dev/null
++++ b/application/resources/views/workspace/navigation.php
+@@ -0,0 +1,111 @@
++<?php
++
++declare(strict_types=1);
++
++$items = is_array($navigationItems ?? null) ? array_values($navigationItems) : [];
++?>
++<section class="workspace-page content-config-page">
++    <div class="workspace-page__header">
++        <div>
++            <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
++            <h1>Navigation</h1>
++            <p>Add, edit, reorder, enable, disable or delete public primary navigation items independently from Homepage customization.</p>
++        </div>
++        <button class="content-config-button content-config-button--primary" type="button" data-configure-open="navigation-create">
++            <?= app_icon('plus') ?>
++            <span>Add navigation</span>
++        </button>
++    </div>
++
++    <div data-workspace-notice hidden></div>
++
++    <div class="content-config-table-wrap">
++        <table class="content-config-table">
++            <thead>
++                <tr>
++                    <th>Navigation item</th>
++                    <th>Internal path</th>
++                    <th>Position</th>
++                    <th>Status</th>
++                    <th class="content-config-table__action">Action</th>
++                </tr>
++            </thead>
++            <tbody>
++                <?php if ($items === []): ?>
++                    <tr><td colspan="5"><div class="workspace-record-empty">No navigation items are configured.</div></td></tr>
++                <?php endif; ?>
++
++                <?php foreach ($items as $index => $item): ?>
++                    <?php
++                    $id = (string) ($item['id'] ?? '');
++                    $enabled = !empty($item['enabled']);
++                    ?>
++                    <tr>
++                        <td>
++                            <div class="content-config-feature">
++                                <span class="content-config-feature__icon"><?= app_icon('menu') ?></span>
++                                <span><strong><?= e((string) ($item['label'] ?? 'Untitled')) ?></strong><small><?= e((string) ($item['active_area'] ?? '') !== '' ? 'Active area: ' . (string) $item['active_area'] : 'Custom internal link') ?></small></span>
++                            </div>
++                        </td>
++                        <td><code class="content-config-path"><?= e((string) ($item['path'] ?? '/')) ?></code></td>
++                        <td><span class="content-config-position"><?= e((string) ($index + 1)) ?></span></td>
++                        <td>
++                            <form action="<?= e(url('/dashboard/navigation/' . rawurlencode($id) . '/toggle')) ?>" method="post" data-workspace-form data-toggle-form>
++                                <?= csrf_field() ?>
++                                <input type="hidden" name="enabled" value="<?= $enabled ? '1' : '0' ?>" data-toggle-value>
++                                <label class="premium-switch">
++                                    <input type="checkbox" <?= $enabled ? 'checked' : '' ?> data-auto-toggle aria-label="Toggle <?= e((string) ($item['label'] ?? 'navigation item')) ?>">
++                                    <span class="premium-switch__track"><span></span></span>
++                                    <b><?= $enabled ? 'ON' : 'OFF' ?></b>
++                                </label>
++                            </form>
++                        </td>
++                        <td class="content-config-table__action">
++                            <button class="content-config-button" type="button" data-configure-open="navigation-config-<?= e($id) ?>">
++                                <?= app_icon('settings') ?>
++                                <span>Configure</span>
++                            </button>
++                        </td>
++                    </tr>
++
++                    <dialog class="config-dialog" id="navigation-config-<?= e($id) ?>" data-config-dialog>
++                        <form class="config-dialog__panel" action="<?= e(url('/dashboard/navigation/' . rawurlencode($id))) ?>" method="post" data-workspace-form>
++                            <?= csrf_field() ?>
++                            <header class="config-dialog__head">
++                                <div><span class="eyebrow">Primary Navigation</span><h2>Configure <?= e((string) ($item['label'] ?? 'item')) ?></h2></div>
++                                <button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button>
++                            </header>
++                            <div class="config-dialog__body config-field-grid">
++                                <label><span>Label</span><input class="form-control" name="label" maxlength="60" required value="<?= e((string) ($item['label'] ?? '')) ?>"></label>
++                                <label><span>Internal path</span><input class="form-control" name="path" maxlength="255" required value="<?= e((string) ($item['path'] ?? '')) ?>" placeholder="/properties"></label>
++                                <label><span>Position</span><select class="form-select" name="position"><?php for ($position = 1; $position <= max(1, count($items)); $position++): ?><option value="<?= $position ?>" <?= $position === $index + 1 ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
++                                <label class="premium-inline-toggle"><input type="checkbox" name="enabled" value="1" <?= $enabled ? 'checked' : '' ?>><span>Enabled</span></label>
++                            </div>
++                            <footer class="config-dialog__footer config-dialog__footer--split">
++                                <button class="btn btn-danger table-action--danger" type="submit" formaction="<?= e(url('/dashboard/navigation/' . rawurlencode($id) . '/delete')) ?>">Delete</button>
++                                <span><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save navigation</button></span>
++                            </footer>
++                        </form>
++                    </dialog>
++                <?php endforeach; ?>
++            </tbody>
++        </table>
++    </div>
++
++    <dialog class="config-dialog" id="navigation-create" data-config-dialog>
++        <form class="config-dialog__panel" action="<?= e(url('/dashboard/navigation')) ?>" method="post" data-workspace-form>
++            <?= csrf_field() ?>
++            <header class="config-dialog__head">
++                <div><span class="eyebrow">Primary Navigation</span><h2>Add navigation item</h2><p>Only safe same-site paths beginning with / are accepted.</p></div>
++                <button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button>
++            </header>
++            <div class="config-dialog__body config-field-grid">
++                <label><span>Label</span><input class="form-control" name="label" maxlength="60" required placeholder="Resources"></label>
++                <label><span>Internal path</span><input class="form-control" name="path" maxlength="255" required placeholder="/pages/resources"></label>
++                <label><span>Position</span><select class="form-select" name="position"><?php for ($position = 1; $position <= count($items) + 1; $position++): ?><option value="<?= $position ?>" <?= $position === count($items) + 1 ? 'selected' : '' ?>><?= $position ?></option><?php endfor; ?></select></label>
++                <label class="premium-inline-toggle"><input type="checkbox" name="enabled" value="1" checked><span>Enabled</span></label>
++            </div>
++            <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit"><?= app_icon('plus') ?> Add navigation</button></footer>
++        </form>
++    </dialog>
++</section>
+diff --git a/application/resources/views/workspace/site-content.php b/application/resources/views/workspace/site-content.php
+deleted file mode 100644
+--- a/application/resources/views/workspace/site-content.php
++++ /dev/null
+@@ -1,146 +0,0 @@
+-<?php
+-
+-declare(strict_types=1);
+-
+-$config = is_array($siteContent ?? null)
+-    ? $siteContent
+-    : \Barama\Repositories\SiteContentRepository::defaults();
+-
+-$homepage = is_array($config['homepage'] ?? null) ? $config['homepage'] : [];
+-$sections = is_array($homepage['sections'] ?? null) ? $homepage['sections'] : [];
+-$order = is_array($homepage['section_order'] ?? null)
+-    ? array_values($homepage['section_order'])
+-    : ['listings', 'projects', 'companies'];
+-$navigation = is_array($config['navigation'] ?? null)
+-    ? array_values($config['navigation'])
+-    : [];
+-
+-while (count($navigation) < 6) {
+-    $navigation[] = [
+-        'label' => '',
+-        'path' => '',
+-        'active_area' => '',
+-        'enabled' => false,
+-    ];
+-}
+-
+-$positions = [];
+-foreach ($order as $index => $sectionKey) {
+-    $positions[(string) $sectionKey] = $index + 1;
+-}
+-?>
+-<section class="workspace-page">
+-    <div class="workspace-page__header">
+-        <div>
+-            <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
+-            <h1>Homepage & Navigation</h1>
+-            <p>Manage public homepage copy, section visibility/order, and same-site primary navigation without changing marketplace ownership or routing.</p>
+-        </div>
+-        <span class="workspace-context-note">
+-            <?= app_icon('globe') ?>
+-            Public site configuration
+-        </span>
+-    </div>
+-
+-    <div data-workspace-notice hidden></div>
+-
+-    <form action="<?= e(url('/dashboard/homepage')) ?>" method="post" data-workspace-form>
+-        <?= csrf_field() ?>
+-
+-        <section class="workspace-record-panel">
+-            <div class="workspace-record-panel__head">
+-                <h2>Homepage hero</h2>
+-                <span>The marketplace search form and approval safeguards remain fixed; only public copy is configurable here.</span>
+-            </div>
+-
+-            <div class="workspace-admin-moderation__form">
+-                <label>
+-                    <span>Eyebrow</span>
+-                    <input class="form-control" name="hero_eyebrow" maxlength="80" value="<?= e((string) ($homepage['hero_eyebrow'] ?? '')) ?>">
+-                </label>
+-
+-                <label>
+-                    <span>Headline</span>
+-                    <input class="form-control" name="hero_title" maxlength="140" required value="<?= e((string) ($homepage['hero_title'] ?? '')) ?>">
+-                </label>
+-
+-                <label class="workspace-admin-moderation__note">
+-                    <span>Description</span>
+-                    <textarea class="form-control" name="hero_description" rows="4" maxlength="500" required><?= e((string) ($homepage['hero_description'] ?? '')) ?></textarea>
+-                </label>
+-            </div>
+-        </section>
+-
+-        <section class="workspace-record-panel">
+-            <div class="workspace-record-panel__head">
+-                <h2>Homepage sections</h2>
+-                <span>Control the three existing marketplace sections without creating unsupported custom block types.</span>
+-            </div>
+-
+-            <?php foreach (['listings' => 'Latest listings', 'projects' => 'Projects', 'companies' => 'Companies'] as $key => $label): ?>
+-                <?php $section = is_array($sections[$key] ?? null) ? $sections[$key] : []; ?>
+-                <div class="workspace-admin-moderation__form">
+-                    <label>
+-                        <span><?= e($label) ?> order</span>
+-                        <select class="form-select" name="section_order[<?= e($key) ?>]">
+-                            <?php for ($position = 1; $position <= 3; $position++): ?>
+-                                <option value="<?= $position ?>" <?= (int) ($positions[$key] ?? 99) === $position ? 'selected' : '' ?>><?= $position ?></option>
+-                            <?php endfor; ?>
+-                        </select>
+-                    </label>
+-
+-                    <label>
+-                        <span>Eyebrow</span>
+-                        <input class="form-control" name="sections[<?= e($key) ?>][eyebrow]" maxlength="80" value="<?= e((string) ($section['eyebrow'] ?? '')) ?>">
+-                    </label>
+-
+-                    <label>
+-                        <span>Title</span>
+-                        <input class="form-control" name="sections[<?= e($key) ?>][title]" maxlength="140" value="<?= e((string) ($section['title'] ?? '')) ?>">
+-                    </label>
+-
+-                    <label>
+-                        <span>Link label</span>
+-                        <input class="form-control" name="sections[<?= e($key) ?>][link_label]" maxlength="80" value="<?= e((string) ($section['link_label'] ?? '')) ?>">
+-                    </label>
+-
+-                    <label>
+-                        <input type="checkbox" name="sections[<?= e($key) ?>][enabled]" value="1" <?= !empty($section['enabled']) ? 'checked' : '' ?>>
+-                        <span>Show this section on the homepage</span>
+-                    </label>
+-                </div>
+-            <?php endforeach; ?>
+-        </section>
+-
+-        <section class="workspace-record-panel">
+-            <div class="workspace-record-panel__head">
+-                <h2>Primary navigation</h2>
+-                <span>Up to six links. Only internal Barama paths beginning with <code>/</code> are accepted.</span>
+-            </div>
+-
+-            <?php foreach (array_slice($navigation, 0, 6) as $index => $item): ?>
+-                <div class="workspace-admin-moderation__form">
+-                    <label>
+-                        <span>Item <?= $index + 1 ?> label</span>
+-                        <input class="form-control" name="nav_label[]" maxlength="60" value="<?= e((string) ($item['label'] ?? '')) ?>">
+-                    </label>
+-
+-                    <label>
+-                        <span>Internal path</span>
+-                        <input class="form-control" name="nav_path[]" maxlength="255" placeholder="/properties" value="<?= e((string) ($item['path'] ?? '')) ?>">
+-                    </label>
+-
+-                    <label>
+-                        <input type="checkbox" name="nav_enabled[<?= $index ?>]" value="1" <?= !empty($item['enabled']) ? 'checked' : '' ?>>
+-                        <span>Enabled</span>
+-                    </label>
+-                </div>
+-            <?php endforeach; ?>
+-        </section>
+-
+-        <button class="btn btn-primary" type="submit">
+-            <?= app_icon('check') ?>
+-            Save homepage & navigation
+-        </button>
+-    </form>
+-</section>
+diff --git a/application/routes/web.php b/application/routes/web.php
+--- a/application/routes/web.php
++++ b/application/routes/web.php
+@@ -533,8 +533,38 @@
+     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+ );
+ $router->post(
+-    '/dashboard/homepage',
+-    [AdminManagementController::class, 'updateSiteContent'],
++    '/dashboard/homepage/{feature}',
++    [AdminManagementController::class, 'updateHomepageFeature'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->post(
++    '/dashboard/homepage/{feature}/toggle',
++    [AdminManagementController::class, 'toggleHomepageFeature'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->get(
++    '/dashboard/navigation',
++    [DashboardController::class, 'navigationManager'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
++);
++$router->post(
++    '/dashboard/navigation',
++    [AdminManagementController::class, 'createNavigation'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->post(
++    '/dashboard/navigation/{id}',
++    [AdminManagementController::class, 'updateNavigation'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->post(
++    '/dashboard/navigation/{id}/toggle',
++    [AdminManagementController::class, 'toggleNavigation'],
++    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
++);
++$router->post(
++    '/dashboard/navigation/{id}/delete',
++    [AdminManagementController::class, 'deleteNavigation'],
+     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+ );
+ $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+diff --git a/assets/css/app.css b/assets/css/app.css
+--- a/assets/css/app.css
++++ b/assets/css/app.css
+@@ -4727,7 +4727,7 @@ body.installer-modal-open {
+ 
+ .site-footer__grid {
+     display: grid;
+-    grid-template-columns: minmax(260px, 1.5fr) repeat(3, minmax(130px, 0.65fr));
++    grid-template-columns: minmax(240px, 1.45fr) repeat(4, minmax(110px, 0.55fr));
+     gap: 2.2rem;
+     padding: 3rem 0 2.25rem;
+ }
+@@ -5851,12 +5851,13 @@ body.installer-modal-open {
+     }
+ 
+     .site-footer__grid {
+-        grid-template-columns: 1fr;
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++        gap: 1.35rem 1rem;
+         padding: 2.3rem 0 1.7rem;
+     }
+ 
+     .site-footer__brand {
+-        grid-column: auto;
++        grid-column: 1 / -1;
+     }
+ }
+ 
+@@ -5961,7 +5962,7 @@ body.installer-modal-open {
+ .market-home__copy h1 {
+     max-width: 760px;
+     margin: 0;
+-    font-size: clamp(2.65rem, 6vw, 5.7rem);
++    font-size: clamp(2.5rem, 5vw, 4.55rem);
+     font-weight: 900;
+     letter-spacing: -0.065em;
+     line-height: 0.94;
+@@ -6085,7 +6086,8 @@ body.installer-modal-open {
+             color-mix(in srgb, var(--barama-surface) 95%, transparent),
+             color-mix(in srgb, var(--barama-primary) 4%, var(--barama-surface)));
+     padding: 1.25rem;
+-    box-shadow: var(--barama-shadow);
++    box-shadow: 0 18px 42px rgba(8, 18, 35, 0.075);
++    backdrop-filter: blur(16px);
+ }
+ 
+ .market-pulse__glow {
+@@ -6292,6 +6294,52 @@ body.installer-modal-open {
+     font-size: clamp(1.35rem, 2vw, 1.8rem);
+ }
+ 
++
++/* Pre-demo Page 1 — homepage featured inventory */
++.marketplace-section--home .inventory-card {
++    --home-card-accent: var(--barama-primary);
++    border-color: color-mix(in srgb, var(--home-card-accent) 14%, var(--barama-border));
++    background:
++        radial-gradient(
++            circle at 100% 0%,
++            color-mix(in srgb, var(--home-card-accent) 7%, transparent),
++            transparent 46%
++        ),
++        linear-gradient(
++            150deg,
++            color-mix(in srgb, var(--barama-surface) 94%, transparent),
++            color-mix(in srgb, var(--home-card-accent) 2.5%, var(--barama-surface))
++        );
++    box-shadow: 0 12px 30px rgba(8, 18, 35, 0.055);
++    backdrop-filter: blur(14px);
++}
++
++.marketplace-section--home .inventory-card--project {
++    --home-card-accent: #7b61ff;
++}
++
++.marketplace-section--home .inventory-card--company {
++    --home-card-accent: var(--barama-success);
++}
++
++.marketplace-section--home .inventory-card:hover {
++    border-color: color-mix(in srgb, var(--home-card-accent) 28%, var(--barama-border));
++    box-shadow: 0 18px 38px rgba(8, 18, 35, 0.085);
++}
++
++.marketplace-section--home .inventory-card__heading h3 a {
++    display: -webkit-box;
++    overflow: hidden;
++    -webkit-box-orient: vertical;
++    -webkit-line-clamp: 2;
++}
++
++.marketplace-section--home .inventory-card__meta {
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
+ /* Discovery filters */
+ .marketplace-hero--discovery {
+     padding-bottom: 1.4rem;
+@@ -6473,6 +6521,23 @@ body.installer-modal-open {
+     padding-top: 1.3rem;
+ }
+ 
++
++.marketplace-results .inventory-card {
++    border-color: color-mix(in srgb, var(--barama-primary) 10%, var(--barama-border));
++    background:
++        linear-gradient(
++            150deg,
++            color-mix(in srgb, var(--barama-surface) 96%, transparent),
++            color-mix(in srgb, var(--barama-primary) 2%, var(--barama-surface))
++        );
++    box-shadow: 0 10px 26px rgba(8, 18, 35, 0.045);
++}
++
++.marketplace-results .inventory-card:hover {
++    border-color: color-mix(in srgb, var(--barama-primary) 24%, var(--barama-border));
++    box-shadow: 0 16px 34px rgba(8, 18, 35, 0.075);
++}
++
+ .marketplace-results__bar {
+     display: flex;
+     min-height: 52px;
+@@ -7074,7 +7139,7 @@ body.installer-modal-open {
+     }
+ 
+     .market-home__copy h1 {
+-        font-size: clamp(2.4rem, 13vw, 4rem);
++        font-size: clamp(2.25rem, 10.5vw, 3.15rem);
+     }
+ 
+     .market-intent-grid {
+@@ -11722,3 +11787,752 @@ body:not(.auth-standalone-body) textarea {
+         font-size: clamp(1.8rem, 8vw, 2.25rem) !important;
+     }
+ }
++
++
++/* BARAMA_PRE_DEMO_CONTENT_DISCOVERY_V100 */
++.content-config-page {
++    width: min(100%, 1500px);
++}
++
++.content-config-page .workspace-page__header {
++    margin-bottom: 1rem;
++}
++
++.content-config-table-wrap {
++    width: 100%;
++    overflow-x: auto;
++    border-top: 1px solid var(--barama-border);
++    border-bottom: 1px solid var(--barama-border);
++    background: transparent;
++}
++
++.content-config-table {
++    width: 100%;
++    min-width: 760px;
++    border-collapse: collapse;
++    background: transparent;
++}
++
++.content-config-table th,
++.content-config-table td {
++    border-bottom: 1px solid color-mix(in srgb, var(--barama-border) 82%, transparent);
++    padding: 0.9rem 0.75rem;
++    vertical-align: middle;
++    text-align: left;
++}
++
++.content-config-table tr:last-child td {
++    border-bottom: 0;
++}
++
++.content-config-table th {
++    color: var(--barama-muted);
++    font-size: 0.64rem;
++    font-weight: 850;
++    letter-spacing: 0.05em;
++    text-transform: uppercase;
++}
++
++.content-config-table__action {
++    width: 140px;
++    text-align: right !important;
++}
++
++.content-config-feature {
++    display: grid;
++    grid-template-columns: 40px minmax(0, 1fr);
++    gap: 0.72rem;
++    align-items: center;
++    min-width: 250px;
++}
++
++.content-config-feature__icon {
++    display: grid;
++    width: 40px;
++    height: 40px;
++    place-items: center;
++    border-radius: 12px;
++    background:
++        linear-gradient(
++            145deg,
++            color-mix(in srgb, var(--barama-primary) 12%, var(--barama-surface)),
++            color-mix(in srgb, var(--barama-primary) 3%, var(--barama-surface))
++        );
++    color: var(--barama-primary);
++}
++
++.content-config-feature__icon svg {
++    width: 17px;
++    height: 17px;
++}
++
++.content-config-feature strong,
++.content-config-feature small {
++    display: block;
++}
++
++.content-config-feature strong {
++    color: var(--barama-text);
++    font-size: 0.78rem;
++    font-weight: 850;
++}
++
++.content-config-feature small {
++    max-width: 520px;
++    margin-top: 0.16rem;
++    color: var(--barama-muted);
++    font-size: 0.64rem;
++    line-height: 1.45;
++}
++
++.content-config-summary {
++    display: inline-block;
++    max-width: 360px;
++    overflow: hidden;
++    color: var(--barama-muted);
++    font-size: 0.7rem;
++    line-height: 1.5;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.content-config-position {
++    display: inline-grid;
++    min-width: 30px;
++    height: 30px;
++    place-items: center;
++    border: 1px solid var(--barama-border);
++    border-radius: 9px;
++    color: var(--barama-muted);
++    font-size: 0.68rem;
++    font-weight: 850;
++}
++
++.content-config-path {
++    border: 0;
++    background: transparent;
++    color: var(--barama-muted);
++    font-size: 0.68rem;
++}
++
++.content-config-button {
++    display: inline-flex;
++    min-height: 36px;
++    align-items: center;
++    justify-content: center;
++    gap: 0.4rem;
++    border: 1px solid var(--barama-border);
++    border-radius: 10px;
++    background: transparent;
++    color: var(--barama-text);
++    padding: 0.45rem 0.7rem;
++    font-size: 0.68rem;
++    font-weight: 820;
++    text-decoration: none;
++}
++
++.content-config-button:hover {
++    border-color: color-mix(in srgb, var(--barama-primary) 30%, var(--barama-border));
++    background: color-mix(in srgb, var(--barama-primary) 5%, transparent);
++    color: var(--barama-primary);
++}
++
++.content-config-button svg {
++    width: 14px;
++    height: 14px;
++}
++
++.content-config-button--primary {
++    border-color: var(--barama-primary);
++    background: var(--barama-primary);
++    color: #fff;
++}
++
++.content-config-button--primary:hover {
++    background: var(--barama-primary-strong);
++    color: #fff;
++}
++
++.premium-switch {
++    display: inline-flex;
++    align-items: center;
++    gap: 0.5rem;
++    margin: 0;
++    cursor: pointer;
++    user-select: none;
++}
++
++.premium-switch > input {
++    position: absolute;
++    width: 1px;
++    height: 1px;
++    overflow: hidden;
++    opacity: 0;
++    pointer-events: none;
++}
++
++.premium-switch__track {
++    position: relative;
++    width: 38px;
++    height: 22px;
++    border: 1px solid var(--barama-border);
++    border-radius: 999px;
++    background: color-mix(in srgb, var(--barama-muted) 12%, var(--barama-surface));
++    transition: background 160ms ease, border-color 160ms ease;
++}
++
++.premium-switch__track > span {
++    position: absolute;
++    top: 3px;
++    left: 3px;
++    width: 14px;
++    height: 14px;
++    border-radius: 999px;
++    background: var(--barama-muted);
++    transition: transform 160ms ease, background 160ms ease;
++}
++
++.premium-switch > input:checked + .premium-switch__track {
++    border-color: color-mix(in srgb, var(--barama-primary) 55%, var(--barama-border));
++    background: color-mix(in srgb, var(--barama-primary) 18%, var(--barama-surface));
++}
++
++.premium-switch > input:checked + .premium-switch__track > span {
++    transform: translateX(16px);
++    background: var(--barama-primary);
++}
++
++.premium-switch > input:focus-visible + .premium-switch__track {
++    outline: 3px solid color-mix(in srgb, var(--barama-primary) 38%, transparent);
++    outline-offset: 2px;
++}
++
++.premium-switch b {
++    min-width: 24px;
++    color: var(--barama-muted);
++    font-size: 0.58rem;
++    font-weight: 900;
++}
++
++.premium-switch > input:checked ~ b {
++    color: var(--barama-primary);
++}
++
++.config-dialog {
++    width: min(720px, calc(100vw - 2rem));
++    max-height: min(88vh, 900px);
++    overflow: hidden;
++    border: 1px solid var(--barama-border);
++    border-radius: 20px;
++    background: var(--barama-surface);
++    color: var(--barama-text);
++    padding: 0;
++    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32);
++}
++
++.config-dialog--wide {
++    width: min(980px, calc(100vw - 2rem));
++}
++
++.config-dialog::backdrop {
++    background: rgba(4, 10, 20, 0.62);
++    backdrop-filter: blur(5px);
++}
++
++.config-dialog__panel {
++    display: flex;
++    max-height: min(88vh, 900px);
++    flex-direction: column;
++    margin: 0;
++}
++
++.config-dialog__head,
++.config-dialog__footer {
++    flex: 0 0 auto;
++}
++
++.config-dialog__head {
++    display: flex;
++    align-items: flex-start;
++    justify-content: space-between;
++    gap: 1rem;
++    border-bottom: 1px solid var(--barama-border);
++    padding: 1.15rem 1.2rem;
++}
++
++.config-dialog__head .eyebrow {
++    margin-bottom: 0.3rem;
++}
++
++.config-dialog__head h2 {
++    margin: 0;
++    font-size: 1.15rem;
++    font-weight: 880;
++    letter-spacing: -0.025em;
++}
++
++.config-dialog__head p {
++    max-width: 650px;
++    margin: 0.35rem 0 0;
++    color: var(--barama-muted);
++    font-size: 0.7rem;
++    line-height: 1.55;
++}
++
++.config-dialog__head > button {
++    display: grid;
++    width: 34px;
++    height: 34px;
++    flex: 0 0 auto;
++    place-items: center;
++    border: 1px solid var(--barama-border);
++    border-radius: 10px;
++    background: transparent;
++    color: var(--barama-muted);
++    transform: rotate(45deg);
++}
++
++.config-dialog__head > button svg {
++    width: 15px;
++    height: 15px;
++}
++
++.config-dialog__body {
++    min-height: 0;
++    overflow-y: auto;
++    padding: 1.15rem 1.2rem;
++}
++
++.config-dialog__footer {
++    display: flex;
++    align-items: center;
++    justify-content: flex-end;
++    gap: 0.55rem;
++    border-top: 1px solid var(--barama-border);
++    padding: 0.9rem 1.2rem;
++}
++
++.config-dialog__footer--split {
++    justify-content: space-between;
++}
++
++.config-dialog__footer--split > span {
++    display: inline-flex;
++    gap: 0.55rem;
++}
++
++.config-field-grid {
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 0.8rem;
++}
++
++.config-field-grid label {
++    display: grid;
++    gap: 0.36rem;
++}
++
++.config-field-grid label > span,
++.config-source-panel label > span {
++    color: var(--barama-muted);
++    font-size: 0.64rem;
++    font-weight: 800;
++}
++
++.config-field-grid label > small,
++.config-source-panel label > small {
++    color: var(--barama-muted);
++    font-size: 0.58rem;
++    line-height: 1.45;
++}
++
++.config-field-grid__wide {
++    grid-column: 1 / -1;
++}
++
++.config-source-panel {
++    margin-top: 1rem;
++    border-top: 1px solid var(--barama-border);
++    padding-top: 1rem;
++}
++
++.config-source-panel[hidden] {
++    display: none !important;
++}
++
++.config-source-panel h3 {
++    margin: 0 0 0.25rem;
++    font-size: 0.82rem;
++    font-weight: 860;
++}
++
++.config-source-panel > p {
++    margin: 0;
++    color: var(--barama-muted);
++    font-size: 0.66rem;
++    line-height: 1.55;
++}
++
++.config-source-panel > label {
++    display: grid;
++    gap: 0.35rem;
++    max-width: 420px;
++    margin-top: 0.75rem;
++}
++
++.premium-inline-toggle {
++    display: inline-flex !important;
++    grid-template-columns: auto 1fr;
++    align-items: center;
++    gap: 0.5rem !important;
++}
++
++.premium-inline-toggle input {
++    width: 16px;
++    height: 16px;
++    accent-color: var(--barama-primary);
++}
++
++.config-existing-list {
++    display: grid;
++    gap: 0.45rem;
++    margin-top: 0.85rem;
++}
++
++.config-existing-list > strong {
++    font-size: 0.68rem;
++}
++
++.config-existing-list label {
++    display: grid;
++    grid-template-columns: auto minmax(0, 1fr) auto;
++    gap: 0.5rem;
++    align-items: center;
++    border-top: 1px solid var(--barama-border);
++    padding-top: 0.45rem;
++}
++
++.config-existing-list label span {
++    min-width: 0;
++    overflow: hidden;
++    color: var(--barama-muted);
++    font-size: 0.62rem;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.config-existing-list label small {
++    color: var(--barama-danger);
++    font-size: 0.56rem;
++    font-weight: 800;
++}
++
++.config-media-current {
++    display: flex;
++    align-items: center;
++    gap: 0.5rem;
++    color: var(--barama-muted);
++    font-size: 0.62rem;
++}
++
++.config-media-current svg {
++    width: 15px;
++    height: 15px;
++    color: var(--barama-primary);
++}
++
++.quick-action-config-grid {
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 0.9rem;
++}
++
++.quick-action-config-grid > div {
++    border-top: 1px solid var(--barama-border);
++    padding-top: 0.7rem;
++}
++
++.quick-action-config-grid > div > strong {
++    display: block;
++    margin-bottom: 0.55rem;
++    font-size: 0.7rem;
++}
++
++.quick-action-config-grid label {
++    display: grid;
++    gap: 0.32rem;
++    margin-top: 0.45rem;
++}
++
++.quick-action-config-grid label > span {
++    color: var(--barama-muted);
++    font-size: 0.6rem;
++    font-weight: 800;
++}
++
++.hero-preset-strip {
++    display: grid;
++    grid-template-columns: repeat(5, minmax(0, 1fr));
++    gap: 0.4rem;
++    margin-top: 0.65rem;
++}
++
++.hero-preset {
++    height: 46px;
++    border: 1px solid color-mix(in srgb, var(--barama-border) 60%, transparent);
++    border-radius: 10px;
++}
++
++.hero-preset--ocean { background: linear-gradient(135deg, #0d5bd8, #38a6ff); }
++.hero-preset--aurora { background: linear-gradient(135deg, #2356d8, #6a5cf6 48%, #21b68a); }
++.hero-preset--sunset { background: linear-gradient(135deg, #d14d72, #f28a43); }
++.hero-preset--violet { background: linear-gradient(135deg, #5038c8, #a052e5); }
++.hero-preset--emerald { background: linear-gradient(135deg, #087f5b, #23b26d); }
++
++@media (max-width: 767.98px) {
++    .content-config-table {
++        min-width: 680px;
++    }
++
++    .config-dialog,
++    .config-dialog--wide {
++        width: calc(100vw - 1rem);
++        max-height: 94vh;
++        border-radius: 16px;
++    }
++
++    .config-dialog__panel {
++        max-height: 94vh;
++    }
++
++    .config-field-grid,
++    .quick-action-config-grid {
++        grid-template-columns: 1fr;
++    }
++
++    .config-field-grid__wide {
++        grid-column: auto;
++    }
++
++    .config-dialog__footer,
++    .config-dialog__footer--split {
++        align-items: stretch;
++        flex-direction: column;
++    }
++
++    .config-dialog__footer--split > span {
++        display: grid;
++        grid-template-columns: 1fr 1fr;
++    }
++
++    .config-dialog__footer .btn {
++        width: 100%;
++    }
++}
++
++
++/* BARAMA_HOMEPAGE_HERO_BACKGROUNDS_V100 */
++.market-home__content {
++    position: relative;
++    z-index: 2;
++}
++
++.market-home__background,
++.market-home__background-overlay {
++    position: absolute;
++    inset: 0;
++    pointer-events: none;
++}
++
++.market-home__background {
++    z-index: 0;
++    overflow: hidden;
++}
++
++.market-home__background-overlay {
++    z-index: 1;
++    background: rgba(3, 9, 18, var(--hero-overlay, 0.44));
++}
++
++.market-home__background--media img,
++.market-home__background--video video,
++.hero-slider__slide {
++    display: block;
++    width: 100%;
++    height: 100%;
++    object-fit: cover;
++}
++
++.market-home__background--video iframe {
++    position: absolute;
++    top: 50%;
++    left: 50%;
++    width: max(100vw, 177.78vh);
++    height: max(56.25vw, 100vh);
++    border: 0;
++    transform: translate(-50%, -50%);
++}
++
++.market-home__background--color {
++    background: linear-gradient(135deg, #0d5bd8, #38a6ff);
++}
++
++.hero-bg-preset--ocean {
++    background:
++        radial-gradient(circle at 82% 12%, rgba(119, 173, 255, 0.42), transparent 28%),
++        linear-gradient(135deg, #0c3c89 0%, #105fd2 52%, #3b8ef3 100%);
++}
++
++.hero-bg-preset--aurora {
++    background:
++        radial-gradient(circle at 78% 18%, rgba(77, 220, 168, 0.38), transparent 27%),
++        linear-gradient(135deg, #173b8e 0%, #5b4bc4 55%, #168c6f 100%);
++}
++
++.hero-bg-preset--sunset {
++    background:
++        radial-gradient(circle at 78% 14%, rgba(255, 189, 116, 0.36), transparent 28%),
++        linear-gradient(135deg, #7b274a 0%, #bd4e6f 52%, #e98348 100%);
++}
++
++.hero-bg-preset--violet {
++    background:
++        radial-gradient(circle at 80% 15%, rgba(215, 153, 255, 0.35), transparent 26%),
++        linear-gradient(135deg, #352b84 0%, #623bb5 54%, #934dcf 100%);
++}
++
++.hero-bg-preset--emerald {
++    background:
++        radial-gradient(circle at 82% 14%, rgba(83, 223, 154, 0.32), transparent 26%),
++        linear-gradient(135deg, #075c4a 0%, #0b8060 54%, #25a96f 100%);
++}
++
++.market-home--rich-background {
++    min-height: 620px;
++}
++
++.market-home--rich-background::before {
++    display: none;
++}
++
++.market-home--rich-background .market-home__copy h1,
++.market-home--rich-background .market-home__copy > p,
++.market-home--rich-background .market-home__actions a,
++.market-home--rich-background .market-intent strong {
++    color: #fff;
++}
++
++.market-home--rich-background .eyebrow,
++.market-home--rich-background .market-home__actions a:hover {
++    color: #cfe0ff;
++}
++
++.market-home--rich-background .market-searchbar {
++    border-color: rgba(255, 255, 255, 0.18);
++    background: rgba(7, 18, 36, 0.58);
++    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.18);
++}
++
++.market-home--rich-background .market-searchbar input,
++.market-home--rich-background .market-searchbar select {
++    color: #fff;
++}
++
++.market-home--rich-background .market-searchbar input::placeholder {
++    color: rgba(255, 255, 255, 0.64);
++}
++
++.market-home--rich-background .market-searchbar select option {
++    color: #101827;
++}
++
++.market-home--rich-background .market-searchbar__query > span {
++    color: rgba(255, 255, 255, 0.68);
++}
++
++.market-home--rich-background .market-pulse,
++.market-home--rich-background .market-intent {
++    border-color: rgba(255, 255, 255, 0.16);
++    background:
++        linear-gradient(
++            145deg,
++            rgba(8, 18, 35, 0.68),
++            rgba(19, 37, 68, 0.52)
++        );
++    backdrop-filter: blur(18px);
++}
++
++.market-home--rich-background .market-pulse__head strong,
++.market-home--rich-background .market-pulse__stats strong {
++    color: #fff;
++}
++
++.market-home--rich-background .market-pulse__head small,
++.market-home--rich-background .market-pulse__stats span,
++.market-home--rich-background .market-pulse__note,
++.market-home--rich-background .market-intent small,
++.market-home--rich-background .market-intent__arrow {
++    color: rgba(255, 255, 255, 0.7);
++}
++
++.market-home--rich-background .market-pulse__stats a {
++    border-color: rgba(255, 255, 255, 0.13);
++    background: rgba(255, 255, 255, 0.045);
++}
++
++.market-home--rich-background .market-intent__icon {
++    background: rgba(255, 255, 255, 0.08);
++}
++
++.hero-slider__slide {
++    position: absolute;
++    inset: 0;
++    opacity: 0;
++    transform: scale(1.015);
++    transition: opacity 900ms ease, transform 1200ms ease;
++}
++
++.hero-slider__slide.is-active {
++    z-index: 1;
++    opacity: 1;
++    transform: scale(1);
++}
++
++.hero-slider--slide .hero-slider__slide {
++    transform: translateX(5%) scale(1.01);
++    transition: opacity 700ms ease, transform 900ms ease;
++}
++
++.hero-slider--slide .hero-slider__slide.is-active {
++    transform: translateX(0) scale(1);
++}
++
++.hero-slider--kenburns .hero-slider__slide.is-active {
++    animation: barama-hero-kenburns 9s ease-out both;
++}
++
++@keyframes barama-hero-kenburns {
++    from { transform: scale(1.02); }
++    to { transform: scale(1.09); }
++}
++
++@media (max-width: 767.98px) {
++    .market-home--rich-background {
++        min-height: 0;
++    }
++
++    .market-home__background--video iframe {
++        width: max(177.78vw, 140vh);
++        height: max(100vw, 78.75vh);
++    }
++}
++
++@media (prefers-reduced-motion: reduce) {
++    .hero-slider__slide,
++    .hero-slider--slide .hero-slider__slide,
++    .hero-slider--kenburns .hero-slider__slide.is-active {
++        animation: none !important;
++        transition: none !important;
++        transform: none !important;
++    }
++}
+diff --git a/assets/js/app.js b/assets/js/app.js
+--- a/assets/js/app.js
++++ b/assets/js/app.js
+@@ -184,15 +184,18 @@
+             }
+ 
+             try {
+-                const response = await window.fetch(form.action, {
+-                    method: form.method || 'POST',
++                const response = await window.fetch(
++                    submitter?.formAction || form.action,
++                    {
++                    method: submitter?.formMethod || form.method || 'POST',
+                     body: new FormData(form),
+                     credentials: 'same-origin',
+                     headers: {
+                         'Accept': 'application/json',
+                         'X-Requested-With': 'XMLHttpRequest'
+                     }
+-                });
++                }
++                );
+ 
+                 const payload = await response.json().catch(() => null);
+ 
+@@ -1482,3 +1485,159 @@
+         });
+     });
+ })();
++
++
++/* BARAMA_PRE_DEMO_CONTENT_DISCOVERY_V100 */
++(() => {
++    'use strict';
++
++    const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
++
++    document.querySelectorAll('[data-configure-open]').forEach((button) => {
++        button.addEventListener('click', () => {
++            const id = button.getAttribute('data-configure-open');
++            const dialog = id ? document.getElementById(id) : null;
++
++            if (!(dialog instanceof HTMLDialogElement)) {
++                return;
++            }
++
++            if (!dialog.open) {
++                dialog.showModal();
++            }
++
++            window.setTimeout(() => {
++                dialog.querySelector('input:not([type="hidden"]), select, textarea, button')
++                    ?.focus();
++            }, 0);
++        });
++    });
++
++    dialogs.forEach((dialog) => {
++        dialog.querySelectorAll('[data-configure-close]').forEach((button) => {
++            button.addEventListener('click', () => dialog.close());
++        });
++
++        dialog.addEventListener('click', (event) => {
++            if (event.target === dialog) {
++                dialog.close();
++            }
++        });
++    });
++
++    document.querySelectorAll('[data-toggle-form]').forEach((form) => {
++        const input = form.querySelector('[data-auto-toggle]');
++        const value = form.querySelector('[data-toggle-value]');
++        const label = form.querySelector('.premium-switch b');
++
++        if (!(input instanceof HTMLInputElement) || !(value instanceof HTMLInputElement)) {
++            return;
++        }
++
++        input.addEventListener('change', () => {
++            value.value = input.checked ? '1' : '0';
++
++            if (label) {
++                label.textContent = input.checked ? 'ON' : 'OFF';
++            }
++
++            if (typeof form.requestSubmit === 'function') {
++                form.requestSubmit();
++            } else {
++                form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
++            }
++        });
++    });
++
++    document.querySelectorAll('[data-hero-background-type]').forEach((select) => {
++        const dialog = select.closest('[data-config-dialog]');
++        if (!dialog) return;
++
++        const panels = Array.from(
++            dialog.querySelectorAll('[data-hero-background-panel]')
++        );
++
++        const update = () => {
++            panels.forEach((panel) => {
++                panel.hidden = panel.getAttribute('data-hero-background-panel') !== select.value;
++            });
++        };
++
++        select.addEventListener('change', update);
++        update();
++    });
++})();
++
++
++/* BARAMA_HOMEPAGE_HERO_SLIDER_V100 */
++(() => {
++    'use strict';
++
++    const reducedMotion = window.matchMedia
++        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
++        : false;
++
++    document.querySelectorAll('[data-hero-slider]').forEach((slider) => {
++        const slides = Array.from(slider.querySelectorAll('.hero-slider__slide'));
++
++        if (slides.length < 2) {
++            return;
++        }
++
++        const autoplay = slider.getAttribute('data-hero-slider-autoplay') === '1';
++
++        if (!autoplay || reducedMotion) {
++            return;
++        }
++
++        const requested = Number.parseInt(
++            slider.getAttribute('data-hero-slider-interval') || '6000',
++            10
++        );
++        const interval = Number.isFinite(requested)
++            ? Math.max(2500, Math.min(20000, requested))
++            : 6000;
++
++        let index = Math.max(
++            0,
++            slides.findIndex((slide) => slide.classList.contains('is-active'))
++        );
++        let timer = null;
++
++        const show = (next) => {
++            slides.forEach((slide, slideIndex) => {
++                slide.classList.toggle('is-active', slideIndex === next);
++            });
++            index = next;
++        };
++
++        const start = () => {
++            if (timer !== null || document.hidden) {
++                return;
++            }
++
++            timer = window.setInterval(() => {
++                show((index + 1) % slides.length);
++            }, interval);
++        };
++
++        const stop = () => {
++            if (timer === null) {
++                return;
++            }
++
++            window.clearInterval(timer);
++            timer = null;
++        };
++
++        document.addEventListener('visibilitychange', () => {
++            if (document.hidden) {
++                stop();
++            } else {
++                start();
++            }
++        });
++
++        start();
++    });
++})();
+diff --git a/docs/PRE_DEMO_PAGE_AUDIT.md b/docs/PRE_DEMO_PAGE_AUDIT.md
+new file mode 100644
+--- /dev/null
++++ b/docs/PRE_DEMO_PAGE_AUDIT.md
+@@ -0,0 +1,58 @@
++# Barama Real Estate — Pre-Demo Page-by-Page Audit
++
++The demo site must not be reinstalled until every mandatory surface below is accepted.
++
++## Status model
++
++- `TODO` — not audited yet
++- `CODE READY` — source/UI correction committed; visual/live verification still required
++- `ACCEPTED` — responsive, Light/Dark, functional, route and regression checks passed
++
++## Global constraints
++
++- Keep one canonical `assets/css/app.css` and one canonical `assets/js/app.js`.
++- No Node.js production dependency.
++- Public pages use the global public header/footer.
++- Auth pages remain standalone and must not render the global header/footer.
++- Account, Developer and Admin workspaces use their own workspace shell, never the public header/footer.
++- Guest Sign in/Create account stay inside the user-icon dropdown.
++- Use clean routes; do not reintroduce query-routing links.
++- Preserve Light/Dark behavior, keyboard focus, responsive layouts and existing security middleware.
++- Featured cards must be premium, concise, non-flat, and use restrained transparent modern-color surfaces.
++- Do not reinstall the test/demo site until this tracker is fully accepted.
++
++## Audit sequence
++
++| # | Surface | Route(s) | Status | Notes |
++|---:|---|---|---|---|
++| 0 | Shared public shell | Header / footer / mobile nav | CODE READY | Guest legal links repaired; Legal footer group added; mobile footer kept two-column. |
++| 1 | Homepage | `/` | CODE READY | Search-first structure preserved; full Hero background supports Plain/Color/Image/Slider/Video; independent Hero/Search/Summary/Quick Discovery/section toggles added. |
++| 1A | Homepage Manager | `/dashboard/homepage` | CODE READY | Transparent premium feature table; every homepage feature uses ON/OFF switch + Configure dialog; uploaded hero media is stored in Media Library. |
++| 1B | Navigation Manager | `/dashboard/navigation` | CODE READY | Split from Homepage; add/edit/delete/reorder/toggle/configure functions; safe internal-path validation and last-enabled protection. |
++| 2 | Property marketplace | `/properties` | CODE READY | Filter state/counts repaired; search accessibility fixed; filtered SEO guard completed; result cards refined. |
++| 3 | Property detail | `/properties/{slug}` | CODE READY | Price-on-request fallback fixed; summary completed with bedrooms/bathrooms/parking/furnishing; contain-fit image/video/YouTube media and 2–6 related-card density verified. |
++| 4 | Projects marketplace | `/projects` | CODE READY | Search accessibility fixed; active filter chips added; filtered result state and pagination labeling aligned with Properties. |
++| 5 | Project detail | `/projects/{slug}` | TODO | Featured media, business information, publisher contact, related projects. |
++| 6 | Companies directory | `/company` | TODO | Search/filter, company cards, responsive directory. |
++| 7 | Company detail | `/company/{slug}` | TODO | Featured media, company information, publisher contact, properties/projects. |
++| 8 | Public CMS + legal | `/pages/{slug}` | TODO | Privacy, Terms, Disclaimer and other managed pages. |
++| 9 | Authentication | `/login`, `/register`, `/forgot-password`, reset/verify routes | TODO | Standalone premium shell; no public header/footer; password UX and validation. |
++| 10 | Customer account | `/account/**` | TODO | Workspace header/sidebar, profile, activity, saved/viewing/inquiry/settings/privacy flows. |
++| 11 | Developer / Company | `/developer/**` | TODO | Workspace shell, listings, projects, properties, leads, team, subscription/settings. |
++| 12 | Admin dashboard | `/dashboard/**` | TODO | Shared admin shell followed by module-by-module audit. |
++| 13 | Errors | 404 / 500 | TODO | Global layout rules, useful recovery actions, no raw errors. |
++| 14 | Installer | `/installer/` | TODO | Exactly five steps, license flow, SVG fields, responsive Light/Dark, no server-config edits. |
++| 15 | Updater | `/updater/` | TODO | Re-auth, license, backup/rollback, migration and downgrade protection. |
++| 16 | Final customer package | ZIP + fresh demo install | TODO | Exact-package QA only after all pages above are ACCEPTED. |
++
++## Current release boundary
++
++The page audit branch is based on the clean Communications v1.19.2 candidate commit:
++
++`00ad5729aab91b995a9b02fa01d1edf79cebe1af`
++
++Branch:
++
++`fix/pre-demo-page-audit`
++
++The Communications release PR remains separate and must not be merged/deployed merely because page cleanup has started.
