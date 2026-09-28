@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "product": "barama-real-estate",
+  "release_id": "admin-communications-phase7-v1.19.2",
+  "title": "Communications Phase 7 v1.19.2 — Announcements & Audience Delivery",
+  "accepted_base_commit": "650abde669939d1537f35881c090f0b37cef4c81",
+  "production_source_commit": "7ac3776e44650070835cb9ad737e5f71ca12b4d2",
+  "pull_request": 6,
+  "target_domain": "baramarealestate.tonsamith.com",
+  "target_root": "/www/wwwroot/baramarealestate.tonsamith.com",
+  "php_binary": "/www/server/php/84/bin/php",
+  "migration": "0020_create_announcement_foundation.php",
+  "permission": {
+    "slug": "communication.manage",
+    "allowed_role_slugs": [
+      "administrator"
+    ]
+  },
+  "required_routes": [
+    "/dashboard/announcements",
+    "/dashboard/announcements/{id}",
+    "/dashboard/announcements/{id}/status",
+    "/dashboard/announcements/{id}/publish"
+  ],
+  "required_tables": {
+    "communication_announcements": [
+      "id",
+      "uuid",
+      "title",
+      "message",
+      "cta_label",
+      "cta_url",
+      "audience",
+      "priority",
+      "send_in_app",
+      "send_email",
+      "status",
+      "scheduled_at",
+      "published_at",
+      "cancelled_at",
+      "archived_at",
+      "created_by_user_id",
+      "updated_by_user_id",
+      "published_by_user_id",
+      "created_at",
+      "updated_at"
+    ],
+    "communication_announcement_deliveries": [
+      "id",
+      "announcement_id",
+      "user_id",
+      "notification_id",
+      "email_outbox_id",
+      "delivery_state",
+      "created_at"
+    ]
+  },
+  "required_indexes": {
+    "communication_announcements": [
+      "communication_announcements_uuid_unique",
+      "communication_announcements_status_schedule_index",
+      "communication_announcements_audience_status_index"
+    ],
+    "communication_announcement_deliveries": [
+      "communication_announcement_delivery_recipient_unique",
+      "communication_announcement_delivery_user_index"
+    ]
+  },
+  "production_files": [
+    {
+      "path": "application/app/Http/Controllers/AccountController.php",
+      "git_blob_sha": "c7323a106aebf716a091caac3ab9a901ca0be4e9"
+    },
+    {
+      "path": "application/app/Http/Controllers/AdminManagementController.php",
+      "git_blob_sha": "b246090b1e2d07e535f3d353594ee1fef96eb115"
+    },
+    {
+      "path": "application/app/Http/Controllers/DashboardController.php",
+      "git_blob_sha": "487d03a7620ba808018093a8ff3c67831cff3312"
+    },
+    {
+      "path": "application/app/Repositories/AnnouncementRepository.php",
+      "git_blob_sha": "85b99a1e936ebf2792909219dd55ab077cffb047"
+    },
+    {
+      "path": "application/app/Repositories/NotificationRepository.php",
+      "git_blob_sha": "b90da327fe71c2c464999c149b2e388d050ce642"
+    },
+    {
+      "path": "application/app/Services/AnnouncementDeliveryService.php",
+      "git_blob_sha": "3d4e5a7369913df59f9aff6a4ded76ddff26463b"
+    },
+    {
+      "path": "application/app/Services/AnnouncementManagementService.php",
+      "git_blob_sha": "8169b441c892b9fe929ac6c8a303767cac3510b1"
+    },
+    {
+      "path": "application/app/Services/EmailTemplateManagementService.php",
+      "git_blob_sha": "744755d26875fff801e04ee0ca2bf09381161076"
+    },
+    {
+      "path": "application/app/Services/NotificationService.php",
+      "git_blob_sha": "059fb998f1b5d4f4b6edf0d83146143cacbcd17f"
+    },
+    {
+      "path": "application/database/migrations/0020_create_announcement_foundation.php",
+      "git_blob_sha": "6a152d72ec92ed3523ecae9d8ca02b1a6f699034"
+    },
+    {
+      "path": "application/resources/views/account/index.php",
+      "git_blob_sha": "f333e69d4a0745e418b053c3245078d7a492164d"
+    },
+    {
+      "path": "application/resources/views/workspace/communications-announcements.php",
+      "git_blob_sha": "83768e77b1377c0c882cc0140cd49790fc7ed03b"
+    },
+    {
+      "path": "application/resources/views/workspace/communications-email-templates.php",
+      "git_blob_sha": "fe393329a8416d67fa2ab205eaf30d35ea5ec0b3"
+    },
+    {
+      "path": "application/routes/web.php",
+      "git_blob_sha": "30bf9278f0a94e3e5fa6599d609f17af06b9fd0a"
+    },
+    {
+      "path": "docs/NOTIFICATIONS.md",
+      "git_blob_sha": "a33fd5c89e7ec977425d4c8e96bc06f78414e58d"
+    },
+    {
+      "path": "tools/notifications.php",
+      "git_blob_sha": "af02bf2d60c2b248e1b99c49f115f831ff5a6064"
+    }
+  ],
+  "qa_only_files": [
+    ".github/workflows/quality.yml",
+    "tools/communications-announcement-smoke.php"
+  ],
+  "invariants": [
+    "No Node.js production dependency",
+    "No Nginx change required",
+    "No service restart required",
+    "Announcement delivery reuses canonical notifications and email_outbox",
+    "Per-recipient delivery is unique on announcement_id + user_id",
+    "Published announcement delivery is idempotent",
+    "Scheduled announcement runner is integrated through tools/notifications.php"
+  ]
+}
