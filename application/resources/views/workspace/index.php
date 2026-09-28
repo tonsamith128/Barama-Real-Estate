@@ -172,10 +172,26 @@ $actionButton = static function (
         . '</button></form>';
 };
 
+$renderRowMenu = static function (array $items, string $key): string {
+    $safeKey = preg_replace('/[^a-z0-9_-]+/i', '-', $key) ?: 'record';
+    $menuId = 'workspace-row-actions-menu-' . trim($safeKey, '-');
+
+    return '<div class="workspace-row-actions" data-workspace-row-actions>'
+        . '<button class="workspace-row-actions__trigger" type="button" '
+        . 'data-workspace-row-actions-trigger aria-expanded="false" '
+        . 'aria-controls="' . e($menuId) . '" aria-label="Record actions" title="Actions">'
+        . '<span aria-hidden="true">&#8942;</span></button>'
+        . '<div id="' . e($menuId) . '" class="workspace-row-actions__menu" '
+        . 'data-workspace-row-actions-menu hidden>'
+        . implode('', $items)
+        . '</div></div>';
+};
+
 $renderActions = static function (array $row) use (
     $workspaceType,
     $activeSection,
     $actionButton,
+    $renderRowMenu,
     $humanize,
     $currentUserId
 ): string {
@@ -187,6 +203,44 @@ $renderActions = static function (array $row) use (
 
     $status = (string) ($row['status'] ?? $row['stage'] ?? '');
     $buttons = [];
+
+    if ($workspaceType === 'admin' && $activeSection === 'properties') {
+        $slug = trim((string) ($row['slug'] ?? ''));
+        $listingsCount = (int) ($row['listings_count'] ?? 0);
+        $viewUrl = url('/dashboard/manage/property/' . $id);
+
+        if ($status === 'approved') {
+            $buttons[] = $actionButton('property', $id, 'archived', 'Archive', 'danger');
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
+                . 'title="Archive is available for approved properties.">Archive</button>';
+        }
+
+        if ($slug !== '') {
+            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
+                . 'data-copy-value="' . e($slug) . '">Copy slug</button>';
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled>Copy slug</button>';
+        }
+
+        if ($status === 'archived' && $listingsCount === 0) {
+            $buttons[] = '<form action="' . e(url('/dashboard/properties/' . $id . '/delete'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="table-action table-action--danger" type="submit">Delete</button></form>';
+        } else {
+            $deleteHint = $status !== 'archived'
+                ? 'Archive the property before deleting it.'
+                : 'Remove or archive all property listings before deleting it.';
+            $buttons[] = '<button class="table-action table-action--danger table-action--disabled" '
+                . 'type="button" disabled title="' . e($deleteHint) . '">Delete</button>';
+        }
+
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl . '?edit=1#workspace-record-edit') . '">Edit</a>';
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl) . '">View</a>';
+
+        return $renderRowMenu($buttons, 'admin-property-' . $id);
+    }
 
     $viewResource = $workspaceType === 'developer'
         ? match ($activeSection) {
@@ -562,10 +616,7 @@ $renderActions = static function (array $row) use (
                 true
             ))
     ) {
-        return '<details class="workspace-row-actions">'
-            . '<summary aria-label="Record actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>'
-            . '<div class="workspace-row-actions__menu">' . implode('', $buttons) . '</div>'
-            . '</details>';
+        return $renderRowMenu($buttons, $workspaceType . '-' . $activeSection . '-' . $id);
     }
 
     return '<div class="table-actions">' . implode('', $buttons) . '</div>';
