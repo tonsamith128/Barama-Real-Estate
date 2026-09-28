@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 $headerUser = auth_user();
 $isAuthenticated = $headerUser !== null;
+$isAdministrator = $isAuthenticated && auth()->hasRole('administrator');
 $currentLocale = app_locale();
 $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
 $localeReturn = (string) (parse_url($requestUri, PHP_URL_PATH) ?: '/');
@@ -213,42 +214,6 @@ $appJsVersion = is_file($appJsFile)
                     </nav>
 
                     <div class="header-auth">
-                        <?php if ($isAuthenticated): ?>
-                            <div class="account-switcher">
-                                <?php if (auth_workspace_can('account')): ?>
-                                <a class="account-switcher__identity <?= ($activeArea ?? '') === 'account' ? 'is-active' : '' ?>" href="<?= e(url('/account')) ?>">
-                                    <span class="account-switcher__avatar"><?= app_icon('user') ?></span>
-                                    <span>
-                                        <strong><?= e((string) ($headerUser['name'] ?? t('My account'))) ?></strong>
-                                        <small><?= e(t('My Account')) ?></small>
-                                    </span>
-                                </a>
-                                <?php endif; ?>
-
-                                <?php if (auth_workspace_can('developer')): ?>
-                                    <a class="account-switcher__shortcut <?= ($activeArea ?? '') === 'developer' ? 'is-active' : '' ?>" href="<?= e(url('/developer')) ?>" title="<?= e(t('Company / Vendor')) ?>">
-                                        <?= app_icon('building') ?>
-                                        <span><?= e(t('Company / Vendor')) ?></span>
-                                    </a>
-                                <?php endif; ?>
-
-                                <?php if (auth_workspace_can('dashboard')): ?>
-                                    <a class="account-switcher__shortcut <?= ($activeArea ?? '') === 'dashboard' ? 'is-active' : '' ?>" href="<?= e(url('/dashboard')) ?>" title="<?= e(t('Dashboard')) ?>">
-                                        <?= app_icon('grid') ?>
-                                        <span><?= e(t('Dashboard')) ?></span>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-
-                            <form class="header-signout" action="<?= e(url('/logout')) ?>" method="post">
-                                <?= csrf_field() ?>
-                                <button type="submit" aria-label="<?= e(t('Sign out')) ?>" title="<?= e(t('Sign out')) ?>">
-                                    <?= app_icon('lock') ?>
-                                    <span><?= e(t('Sign out')) ?></span>
-                                </button>
-                            </form>
-                        <?php endif; ?>
-
                         <form class="header-locale" action="<?= e(url('/locale')) ?>" method="post" data-locale-switch>
                             <?= csrf_field() ?>
                             <input type="hidden" name="return" value="<?= e($localeReturn) ?>">
@@ -261,33 +226,74 @@ $appJsVersion = is_file($appJsFile)
                             </select>
                         </form>
 
-                        <?php if ($isAuthenticated): ?>
-                        <button
-                            class="theme-toggle"
-                            type="button"
-                            data-theme-toggle
-                            aria-label="<?= e(t('Toggle light and dark mode')) ?>"
-                            title="<?= e(t('Toggle theme')) ?>"
+                        <div
+                            class="barama-user-menu-wrap<?= $isAuthenticated ? ' barama-user-menu-wrap--authenticated' : '' ?>"
+                            data-public-user-menu
                         >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Z"/>
-                            </svg>
-                        </button>
-                        <?php else: ?>
-                            <!-- BARAMA_PUBLIC_ACCOUNT_MENU_SERVER_V100 -->
-                            <div class="barama-user-menu-wrap" data-public-user-menu>
-                                <button
-                                    class="barama-user-trigger"
-                                    type="button"
-                                    data-public-user-trigger
-                                    aria-label="<?= e(t('Account menu')) ?>"
-                                    aria-haspopup="menu"
-                                    aria-expanded="false"
-                                >
-                                    <?= app_icon('user') ?>
-                                </button>
+                            <button
+                                class="barama-user-trigger"
+                                type="button"
+                                data-public-user-trigger
+                                aria-label="<?= e(t('Account menu')) ?>"
+                                aria-haspopup="menu"
+                                aria-expanded="false"
+                            >
+                                <?= app_icon('user') ?>
+                            </button>
 
-                                <div class="barama-user-menu" data-public-user-panel role="menu" hidden>
+                            <div class="barama-user-menu" data-public-user-panel role="menu" hidden>
+                                <?php if ($isAuthenticated): ?>
+                                    <div class="barama-user-menu__head barama-user-menu__head--profile">
+                                        <span class="barama-user-menu__profile-avatar" aria-hidden="true"><?= app_icon('user') ?></span>
+                                        <span class="barama-user-menu__profile-copy">
+                                            <strong><?= e((string) ($headerUser['name'] ?? t('Profile'))) ?></strong>
+                                            <small><?= e(t('Profile')) ?></small>
+                                        </span>
+                                    </div>
+
+                                    <div class="barama-user-menu__actions">
+                                        <?php if ($isAdministrator): ?>
+                                            <a class="barama-user-action" href="<?= e(url('/account')) ?>" role="menuitem">
+                                                <span class="barama-user-action__icon"><?= app_icon('user') ?></span>
+                                                <span>
+                                                    <strong><?= e(t('Account')) ?></strong>
+                                                    <small><?= e(t('Manage account settings and profile details.')) ?></small>
+                                                </span>
+                                                <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+                                            </a>
+
+                                            <a class="barama-user-action" href="<?= e(url('/developer')) ?>" role="menuitem">
+                                                <span class="barama-user-action__icon"><?= app_icon('building') ?></span>
+                                                <span>
+                                                    <strong><?= e(t('Company')) ?></strong>
+                                                    <small><?= e(t('Open the company and vendor workspace.')) ?></small>
+                                                </span>
+                                                <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+                                            </a>
+
+                                            <a class="barama-user-action" href="<?= e(url('/dashboard')) ?>" role="menuitem">
+                                                <span class="barama-user-action__icon"><?= app_icon('grid') ?></span>
+                                                <span>
+                                                    <strong><?= e(t('Dashboard')) ?></strong>
+                                                    <small><?= e(t('Open the Admin Control Center.')) ?></small>
+                                                </span>
+                                                <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+                                            </a>
+                                        <?php endif; ?>
+
+                                        <form class="barama-user-menu__signout" action="<?= e(url('/logout')) ?>" method="post">
+                                            <?= csrf_field() ?>
+                                            <button class="barama-user-action barama-user-action--button" type="submit" role="menuitem">
+                                                <span class="barama-user-action__icon"><?= app_icon('lock') ?></span>
+                                                <span>
+                                                    <strong><?= e(t('Sign Out')) ?></strong>
+                                                    <small><?= e(t('End this signed-in session.')) ?></small>
+                                                </span>
+                                                <span class="barama-user-action__arrow" aria-hidden="true">→</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php else: ?>
                                     <div class="barama-user-menu__head">
                                         <strong><?= e(t('Account')) ?></strong>
                                         <small><?= e(t('Sign in or create an account to manage your Barama activity.')) ?></small>
@@ -312,31 +318,9 @@ $appJsVersion = is_file($appJsFile)
                                             <span class="barama-user-action__arrow" aria-hidden="true">→</span>
                                         </a>
                                     </div>
-
-                                    <div class="barama-user-menu__footer">
-                                        <div class="barama-user-menu__theme">
-                                            <button
-                                    class="theme-toggle"
-                                    type="button"
-                                    data-theme-toggle
-                                    aria-label="<?= e(t('Toggle light and dark mode')) ?>"
-                                    title="<?= e(t('Toggle theme')) ?>"
-                                >
-                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 1 1 1-1Z"/>
-                                    </svg>
-                                </button>
-                                            <span class="barama-user-menu__theme-label"><?= e(t('Theme')) ?></span>
-                                        </div>
-                                        <div class="barama-user-menu__legal">
-                                            <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
-                                            <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
-                                            <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
-                                        </div>
-                                    </div>
-                                </div>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -542,17 +526,33 @@ $appJsVersion = is_file($appJsFile)
                     <a href="<?= e(url('/health')) ?>"><?= e(t('System Health')) ?></a>
                 </nav>
 
-                <nav aria-label="<?= e(t('Legal links')) ?>">
-                    <strong><?= e(t('Legal')) ?></strong>
-                    <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
-                    <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
-                    <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
-                </nav>
             </div>
 
             <div class="site-footer__bottom">
-                <span>© <span data-current-year></span> Barama Real Estate · Version <?= e(APP_VERSION) ?></span>
-                <span><?= e(t('Built by Ton Samith')) ?></span>
+                <div class="site-footer__meta">
+                    <span>© <span data-current-year></span> Barama Real Estate · Version <?= e(APP_VERSION) ?></span>
+                    <span><?= e(t('Built by Ton Samith')) ?></span>
+                </div>
+
+                <div class="site-footer__utility">
+                    <nav class="site-footer__legal" aria-label="<?= e(t('Legal links')) ?>">
+                        <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
+                        <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
+                        <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
+                    </nav>
+
+                    <button
+                        class="theme-toggle site-footer__theme"
+                        type="button"
+                        data-theme-toggle
+                        aria-label="<?= e(t('Toggle light and dark mode')) ?>"
+                        title="<?= e(t('Toggle theme')) ?>"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </footer>
