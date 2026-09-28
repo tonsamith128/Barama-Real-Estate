@@ -58,7 +58,16 @@ $required = [
     'application/database/migrations/0009_create_account_onboarding.php',
     'application/database/migrations/0010_release_security_hardening.php',
     'application/database/migrations/0011_create_workspace_preferences.php',
+    'application/database/migrations/0012_create_cms_pages.php',
+    'application/database/migrations/0013_create_billing_foundation.php',
+    'application/database/migrations/0014_create_invoice_transaction_foundation.php',
+    'application/database/migrations/0015_create_coupon_discount_foundation.php',
+    'application/database/migrations/0016_create_tax_rule_foundation.php',
+    'application/database/migrations/0017_create_payment_webhook_foundation.php',
+    'application/database/migrations/0018_create_communication_permission.php',
+    'application/database/migrations/0019_create_email_template_foundation.php',
     'application/database/migrations/0021_create_newsletter_subscribers.php',
+    'application/database/migrations/0022_create_contact_messages.php',
     'application/app/Domain/RealEstate/DomainRules.php',
     'application/app/Repositories/LocationRepository.php',
     'application/app/Repositories/CompanyRepository.php',
@@ -317,10 +326,20 @@ $expectedMigrationNames = [
     '0009_create_account_onboarding.php',
     '0010_release_security_hardening.php',
     '0011_create_workspace_preferences.php',
+    '0012_create_cms_pages.php',
+    '0013_create_billing_foundation.php',
+    '0014_create_invoice_transaction_foundation.php',
+    '0015_create_coupon_discount_foundation.php',
+    '0016_create_tax_rule_foundation.php',
+    '0017_create_payment_webhook_foundation.php',
+    '0018_create_communication_permission.php',
+    '0019_create_email_template_foundation.php',
+    '0021_create_newsletter_subscribers.php',
+    '0022_create_contact_messages.php',
 ];
 
 $migrationNames === $expectedMigrationNames
-    ? $pass('Database migration sequence matches canonical 0001-0011.')
+    ? $pass('Database migration sequence matches the canonical catalog through 0022.')
     : $fail('Database migration sequence drift detected: ' . implode(', ', $migrationNames));
 
 $migrationPrefixes = array_map(

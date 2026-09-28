@@ -13,6 +13,16 @@ final class CmsController
 {
     public function show(Request $request, string $slug): Response
     {
+        $normalizedSlug = strtolower(trim($slug));
+
+        if (in_array($normalizedSlug, ['about', 'about-us'], true)) {
+            return Response::redirect(url('/about'), 301);
+        }
+
+        if (in_array($normalizedSlug, ['contact', 'contact-us'], true)) {
+            return Response::redirect(url('/contact'), 301);
+        }
+
         $page = (new PageRepository())->publishedBySlug($slug);
 
         if ($page === null) {

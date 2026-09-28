@@ -9,6 +9,7 @@ use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\AppearanceRepository;
+use Barama\Repositories\ContactMessageRepository;
 use Barama\Repositories\EmailTemplateRepository;
 use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\NotificationRepository;
@@ -67,7 +68,7 @@ final class DashboardController
         ],
         'pages' => [
             'title' => 'Page Manager',
-            'description' => 'Create and maintain public content pages with controlled publishing and SEO metadata.',
+            'description' => 'Create and maintain standard public CMS pages. About Us and Contact Us are managed separately as built-in structured pages.',
         ],
         'seo' => [
             'title' => 'SEO Center',
@@ -127,6 +128,47 @@ final class DashboardController
             'homepage' => is_array($config['homepage'] ?? null)
                 ? $config['homepage']
                 : [],
+        ]));
+    }
+
+    public function about(Request $request): Response
+    {
+        $config = (new SiteContentRepository())->get();
+
+        return Response::html(View::render('workspace/builtin-page', [
+            'pageTitle' => 'About · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'about',
+            'builtInPageType' => 'about',
+            'builtInPage' => is_array($config['about'] ?? null)
+                ? $config['about']
+                : SiteContentRepository::defaults()['about'],
+            'contactMessages' => [],
+            'contactMessageSummary' => [],
+        ]));
+    }
+
+    public function contact(Request $request): Response
+    {
+        $config = (new SiteContentRepository())->get();
+        $messages = new ContactMessageRepository();
+
+        return Response::html(View::render('workspace/builtin-page', [
+            'pageTitle' => 'Contact · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'contact',
+            'builtInPageType' => 'contact',
+            'builtInPage' => is_array($config['contact'] ?? null)
+                ? $config['contact']
+                : SiteContentRepository::defaults()['contact'],
+            'contactMessages' => $messages->recent(30),
+            'contactMessageSummary' => $messages->summary(),
         ]));
     }
 
@@ -732,8 +774,8 @@ final class DashboardController
             ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
             ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
             ['label' => 'Navigation', 'path' => '/dashboard/navigation', 'icon' => 'menu'],
-            ['label' => 'About', 'path' => '/dashboard/pages?q=About', 'icon' => 'users'],
-            ['label' => 'Contact', 'path' => '/dashboard/pages?q=Contact', 'icon' => 'mail'],
+            ['label' => 'About', 'path' => '/dashboard/about', 'icon' => 'users'],
+            ['label' => 'Contact', 'path' => '/dashboard/contact', 'icon' => 'mail'],
             ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
             ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],

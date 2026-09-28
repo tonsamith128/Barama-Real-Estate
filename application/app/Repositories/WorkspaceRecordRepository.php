@@ -307,6 +307,7 @@ final class WorkspaceRecordRepository
                        LEFT JOIN users created_by ON created_by.id = p.created_by_user_id
                        LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
                        WHERE p.id = :id
+                         AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")
                        LIMIT 1',
             'user' => 'SELECT u.id, u.uuid, u.name, u.email, u.status, u.auth_version,
                               u.email_verified_at, u.last_login_at, u.created_at, u.updated_at,

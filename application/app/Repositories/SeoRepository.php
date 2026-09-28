@@ -57,7 +57,8 @@ final class SeoRepository
                           FROM cms_pages p
                           WHERE p.status = "published"
                             AND p.published_at IS NOT NULL
-                            AND p.robots_directive = "index,follow"',
+                            AND p.robots_directive = "index,follow"
+                            AND LOWER(p.slug) NOT IN ("about", "about-us", "contact", "contact-us")',
             ],
         ];
 

@@ -88,6 +88,12 @@ final class PageManagementService
             throw new InvalidArgumentException('CMS page was not found.');
         }
 
+        if (in_array(strtolower((string) $page['slug']), ['about', 'about-us', 'contact', 'contact-us'], true)) {
+            throw new DomainException(
+                'About Us and Contact Us are built-in pages. Manage them from their dedicated dashboard sections.'
+            );
+        }
+
         $status = strtolower(trim($status));
 
         $transitions = [
@@ -165,6 +171,12 @@ final class PageManagementService
         ) {
             throw new InvalidArgumentException(
                 'Page slug may contain lowercase letters, numbers, and single hyphens only.'
+            );
+        }
+
+        if (in_array($slug, ['about', 'about-us', 'contact', 'contact-us'], true)) {
+            throw new InvalidArgumentException(
+                'About Us and Contact Us are built-in pages. Manage them from their dedicated dashboard sections.'
             );
         }
 

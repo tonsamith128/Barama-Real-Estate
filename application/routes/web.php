@@ -8,8 +8,11 @@ use Barama\Http\Controllers\AccountController;
 use Barama\Http\Controllers\AccountManagementController;
 use Barama\Http\Controllers\AdminManagementController;
 use Barama\Http\Controllers\AppearanceController;
+use Barama\Http\Controllers\BuiltInPageAdminController;
+use Barama\Http\Controllers\BuiltInPageController;
 use Barama\Http\Controllers\AuthController;
 use Barama\Http\Controllers\CompanyController;
+use Barama\Http\Controllers\ContactMessageController;
 use Barama\Http\Controllers\CmsController;
 use Barama\Http\Controllers\DashboardController;
 use Barama\Http\Controllers\DeveloperController;
@@ -47,6 +50,9 @@ $router->get('/media/{uuid}', [PublicMediaController::class, 'show']);
 
 $router->get('/company', [CompanyController::class, 'index']);
 $router->get('/company/{slug}', [CompanyController::class, 'show']);
+$router->get('/about', [BuiltInPageController::class, 'about']);
+$router->get('/contact', [BuiltInPageController::class, 'contact']);
+$router->post('/contact/messages', [ContactMessageController::class, 'store'], $csrf);
 $router->get('/pages/{slug}', [CmsController::class, 'show']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
@@ -542,6 +548,16 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 $router->get(
+    '/dashboard/about',
+    [DashboardController::class, 'about'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->get(
+    '/dashboard/contact',
+    [DashboardController::class, 'contact'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->get(
     '/dashboard/navigation',
     [DashboardController::class, 'navigationManager'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
@@ -566,6 +582,22 @@ $router->post(
     [AdminManagementController::class, 'deleteNavigation'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
+$router->post(
+    '/dashboard/built-in-pages/{page}/{section}',
+    [BuiltInPageAdminController::class, 'update'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/built-in-pages/{page}/{section}/toggle',
+    [BuiltInPageAdminController::class, 'toggle'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/contact/messages/{id}/status',
+    [BuiltInPageAdminController::class, 'contactMessageStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+
 $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
