@@ -216,9 +216,13 @@ $renderActions = static function (array $row) use (
                 . 'title="Archive is available for approved properties.">Archive</button>';
         }
 
-        if ($slug !== '') {
+        $propertyUrl = $slug !== ''
+            ? url('/properties/' . rawurlencode($slug))
+            : '';
+
+        if ($propertyUrl !== '') {
             $buttons[] = '<button class="table-action" type="button" data-copy-slug '
-                . 'data-copy-value="' . e($slug) . '">Copy slug</button>';
+                . 'data-copy-value="' . e($propertyUrl) . '">Copy slug</button>';
         } else {
             $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled>Copy slug</button>';
         }
