@@ -16,6 +16,7 @@ use Barama\Services\EmailTemplateManagementService;
 use Barama\Services\FinanceManagementService;
 use Barama\Services\PageManagementService;
 use Barama\Services\SiteContentManagementService;
+use Barama\Services\SiteMediaStorageService;
 use Barama\Services\UserAdministrationService;
 use DomainException;
 use InvalidArgumentException;
@@ -356,13 +357,129 @@ final class AdminManagementController
         });
     }
 
-    public function updateSiteContent(Request $request): Response
+    public function updateHomepageFeature(Request $request, string $feature): Response
     {
-        return $this->execute(function () use ($request): array {
-            (new SiteContentManagementService())->update($request->all());
+        return $this->execute(function () use ($request, $feature): array {
+            $input = $request->all();
+
+            if (strtolower(trim($feature)) === 'hero') {
+                $files = $request->files();
+                $storage = new SiteMediaStorageService();
+
+                $image = $files['hero_image_file'] ?? null;
+                if (is_array($image) && (int) ($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $stored = $storage->store($image, 'homepage_hero_image');
+                    $input['uploaded_image_uuid'] = $stored['uuid'];
+                }
+
+                $slider = $files['hero_slider_files'] ?? null;
+                if (is_array($slider)) {
+                    $stored = $storage->storeMany($slider, 'homepage_hero_slider');
+                    $input['uploaded_slider_uuids'] = array_map(
+                        static fn (array $item): string => (string) $item['uuid'],
+                        $stored
+                    );
+                }
+
+                $video = $files['hero_video_file'] ?? null;
+                if (is_array($video) && (int) ($video['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $stored = $storage->store($video, 'homepage_hero_video');
+                    $input['uploaded_video_uuid'] = $stored['uuid'];
+                }
+            }
+
+            (new SiteContentManagementService())->updateHomepageFeature(
+                $feature,
+                $input
+            );
 
             return [
-                'message' => 'Homepage and primary navigation updated.',
+                'feature' => $feature,
+                'message' => 'Homepage feature configuration updated.',
+            ];
+        });
+    }
+
+    public function toggleHomepageFeature(Request $request, string $feature): Response
+    {
+        return $this->execute(function () use ($request, $feature): array {
+            $enabled = in_array(
+                strtolower(trim((string) $request->input('enabled', '0'))),
+                ['1', 'true', 'on', 'yes'],
+                true
+            );
+
+            (new SiteContentManagementService())->setHomepageFeatureEnabled(
+                $feature,
+                $enabled
+            );
+
+            return [
+                'feature' => $feature,
+                'enabled' => $enabled,
+                'message' => $enabled
+                    ? 'Homepage feature enabled.'
+                    : 'Homepage feature disabled.',
+            ];
+        });
+    }
+
+    public function createNavigation(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'navigation_id' => (new SiteContentManagementService())
+                ->createNavigation($request->all()),
+            'message' => 'Navigation item created.',
+        ], 201);
+    }
+
+    public function updateNavigation(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            (new SiteContentManagementService())->updateNavigation(
+                $id,
+                $request->all()
+            );
+
+            return [
+                'navigation_id' => $id,
+                'message' => 'Navigation item updated.',
+            ];
+        });
+    }
+
+    public function toggleNavigation(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            $enabled = in_array(
+                strtolower(trim((string) $request->input('enabled', '0'))),
+                ['1', 'true', 'on', 'yes'],
+                true
+            );
+
+            (new SiteContentManagementService())->setNavigationEnabled(
+                $id,
+                $enabled
+            );
+
+            return [
+                'navigation_id' => $id,
+                'enabled' => $enabled,
+                'message' => $enabled
+                    ? 'Navigation item enabled.'
+                    : 'Navigation item disabled.',
+            ];
+        });
+    }
+
+    public function deleteNavigation(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            (new SiteContentManagementService())->deleteNavigation($id);
+
+            return [
+                'navigation_id' => $id,
+                'message' => 'Navigation item deleted.',
             ];
         });
     }

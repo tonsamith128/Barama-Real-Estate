@@ -98,14 +98,35 @@ final class DashboardController
 
     public function homepage(Request $request): Response
     {
-        return Response::html(View::render('workspace/site-content', [
-            'pageTitle' => 'Homepage & Navigation · Admin',
+        $config = (new SiteContentRepository())->get();
+
+        return Response::html(View::render('workspace/homepage', [
+            'pageTitle' => 'Homepage · Admin',
             'activeArea' => 'dashboard',
             'workspaceType' => 'admin',
             'workspaceLabel' => 'Admin Control Center',
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => 'homepage',
-            'siteContent' => (new SiteContentRepository())->get(),
+            'homepage' => is_array($config['homepage'] ?? null)
+                ? $config['homepage']
+                : [],
+        ]));
+    }
+
+    public function navigationManager(Request $request): Response
+    {
+        $config = (new SiteContentRepository())->get();
+
+        return Response::html(View::render('workspace/navigation', [
+            'pageTitle' => 'Navigation · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'navigation',
+            'navigationItems' => is_array($config['navigation'] ?? null)
+                ? array_values($config['navigation'])
+                : [],
         ]));
     }
 
@@ -664,9 +685,6 @@ final class DashboardController
             ['label' => 'Approval Queue', 'path' => '/dashboard/approvals', 'icon' => 'shield'],
 
             ['heading' => 'Marketplace'],
-            ['label' => 'Companies / Developers', 'path' => '/dashboard/companies', 'icon' => 'building'],
-            ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
-            ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
             ['label' => 'Listings', 'path' => '/dashboard/listings', 'icon' => 'tag'],
 
             ['heading' => 'CRM'],
@@ -678,7 +696,14 @@ final class DashboardController
             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
 
             ['heading' => 'Content & Discovery'],
-            ['label' => 'Homepage & Navigation', 'path' => '/dashboard/homepage', 'icon' => 'home'],
+            ['label' => 'Appearance', 'path' => '/dashboard/settings', 'icon' => 'settings'],
+            ['label' => 'Homepage', 'path' => '/dashboard/homepage', 'icon' => 'home'],
+            ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
+            ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
+            ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
+            ['label' => 'Navigation', 'path' => '/dashboard/navigation', 'icon' => 'menu'],
+            ['label' => 'About', 'path' => '/dashboard/pages?q=About', 'icon' => 'users'],
+            ['label' => 'Contact', 'path' => '/dashboard/pages?q=Contact', 'icon' => 'mail'],
             ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
             ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],
