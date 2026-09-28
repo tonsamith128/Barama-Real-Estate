@@ -233,6 +233,13 @@ if (!function_exists('app_icon')) {
     }
 }
 
+if (!function_exists('barama_rich_text')) {
+    function barama_rich_text(?string $value): string
+    {
+        return \Barama\Support\RichText::render($value);
+    }
+}
+
 /* BARAMA_SINGLE_DETAIL_MEDIA_HELPERS_V100 */
 if (!function_exists('barama_youtube_embed_url')) {
     function barama_youtube_embed_url(string $value): ?string
