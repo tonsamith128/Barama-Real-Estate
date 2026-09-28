@@ -319,6 +319,28 @@ $appJsVersion = is_file($appJsFile)
                                         </a>
                                     </div>
                                 <?php endif; ?>
+
+                                <div class="barama-user-menu__footer">
+                                    <div class="barama-user-menu__theme">
+                                        <button
+                                            class="theme-toggle"
+                                            type="button"
+                                            data-theme-toggle
+                                            aria-label="<?= e(t('Toggle light and dark mode')) ?>"
+                                            title="<?= e(t('Toggle theme')) ?>"
+                                        >
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="barama-user-menu__legal">
+                                        <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
+                                        <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
+                                        <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -541,17 +563,6 @@ $appJsVersion = is_file($appJsFile)
                         <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
                     </nav>
 
-                    <button
-                        class="theme-toggle site-footer__theme"
-                        type="button"
-                        data-theme-toggle
-                        aria-label="<?= e(t('Toggle light and dark mode')) ?>"
-                        title="<?= e(t('Toggle theme')) ?>"
-                    >
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm9-7a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1ZM5 11a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1Zm13.36-5.36a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0ZM7.76 16.24a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.42l.7-.7a1 1 0 0 1 1.42 0Zm10.6.7a1 1 0 0 1-1.42 1.42l-.7-.7a1 1 0 1 1 1.42-1.42l.7.7ZM7.76 7.76a1 1 0 0 1-1.42 0l-.7-.7a1 1 0 0 1 1.42-1.42l.7.7a1 1 0 0 1 0 1.42ZM12 19a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Z"/>
-                        </svg>
-                    </button>
                 </div>
             </div>
         </div>

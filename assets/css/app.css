@@ -15334,3 +15334,101 @@ body:not(.auth-standalone-body) textarea {
         font-size: 0.75rem !important;
     }
 }
+
+
+/* BARAMA_PUBLIC_HEADER_RIGHT_NAV_DROPDOWN_FOOTER_V110 */
+@media (min-width: 992px) {
+    .site-navigation {
+        justify-content: flex-end;
+    }
+
+    .main-nav {
+        margin-left: auto;
+    }
+
+    .header-auth {
+        margin-left: 0;
+    }
+}
+
+/* Keep the account popover footer compact: theme at left, legal helper links at right. */
+.barama-user-menu__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 9px;
+    padding: 10px 6px 3px;
+    border-top: 1px solid var(--barama-border);
+}
+
+.barama-user-menu__theme {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+}
+
+.barama-user-menu__theme .theme-toggle {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 10px !important;
+    background: transparent;
+}
+
+.barama-user-menu__theme .theme-toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+.barama-user-menu__legal {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px 8px;
+    text-align: right;
+}
+
+.barama-user-menu__legal a {
+    color: var(--barama-muted);
+    font-size: 0.58rem !important;
+    font-weight: 650;
+    line-height: 1.35;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.barama-user-menu__legal a:hover,
+.barama-user-menu__legal a:focus-visible {
+    color: var(--barama-primary);
+    text-decoration: underline;
+}
+
+@media (max-width: 991.98px) {
+    .main-nav {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .header-auth {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .barama-user-menu__footer {
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    .barama-user-menu__legal {
+        gap: 3px 7px;
+    }
+
+    .barama-user-menu__legal a {
+        font-size: 0.56rem !important;
+    }
+}
