@@ -12,6 +12,7 @@ use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\CommunicationsManagementService;
 use Barama\Services\DomainWorkflowService;
+use Barama\Services\EmailTemplateManagementService;
 use Barama\Services\FinanceManagementService;
 use Barama\Services\PageManagementService;
 use Barama\Services\SiteContentManagementService;
@@ -296,6 +297,61 @@ final class AdminManagementController
                 'email_outbox_id' => (int) $id,
                 'status' => 'cancelled',
                 'message' => 'Mail item cancelled.',
+            ];
+        });
+    }
+
+    public function createEmailTemplate(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'email_template_id' => (new EmailTemplateManagementService())
+                ->create($request->all()),
+            'message' => 'Email template created as inactive.',
+        ], 201);
+    }
+
+    public function updateEmailTemplate(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException(
+                    'A valid email template ID is required.'
+                );
+            }
+
+            (new EmailTemplateManagementService())->update(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'email_template_id' => (int) $id,
+                'message' => 'Email template updated.',
+            ];
+        });
+    }
+
+    public function updateEmailTemplateStatus(
+        Request $request,
+        string $id
+    ): Response {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException(
+                    'A valid email template ID is required.'
+                );
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new EmailTemplateManagementService())->setStatus(
+                (int) $id,
+                $status
+            );
+
+            return [
+                'email_template_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Email template status updated.',
             ];
         });
     }
