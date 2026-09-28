@@ -86,6 +86,64 @@ final class PropertyManagementService
     }
 
     /** @param array<string, mixed> $input */
+    public function updateAsAdministrator(int $propertyId, array $input): void
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('dashboard.access')) {
+            throw new DomainException('Administrator access is required.');
+        }
+
+        $properties = new PropertyWriteRepository();
+        $property = $properties->findById($propertyId);
+
+        if ($property === null || $property['company_id'] === null) {
+            throw new InvalidArgumentException('Property was not found.');
+        }
+
+        $ownerUserId = $property['owner_user_id'] !== null
+            ? (int) $property['owner_user_id']
+            : (int) $user['id'];
+
+        $this->persist(
+            $propertyId,
+            (int) $property['company_id'],
+            $ownerUserId,
+            $input
+        );
+    }
+
+    public function deleteAsAdministrator(int $propertyId): void
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('dashboard.access')) {
+            throw new DomainException('Administrator access is required.');
+        }
+
+        $properties = new PropertyWriteRepository();
+        $property = $properties->findById($propertyId);
+
+        if ($property === null) {
+            throw new InvalidArgumentException('Property was not found.');
+        }
+
+        if ((string) ($property['status'] ?? '') !== 'archived') {
+            throw new DomainException('Archive the property before deleting it.');
+        }
+
+        if ($properties->activeListingCount($propertyId) > 0) {
+            throw new DomainException(
+                'Remove or archive the property listings before deleting this property.'
+            );
+        }
+
+        $properties->softDelete($propertyId);
+    }
+
+    /** @param array<string, mixed> $input */
     private function persist(
         ?int $propertyId,
         int $companyId,
