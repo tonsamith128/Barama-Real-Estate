@@ -415,7 +415,10 @@ final class DashboardController
         ];
         $sortDefault = (string) ($workspacePreferences['default_sort'] ?? 'updated_desc');
         $sort = mb_substr(trim((string) $request->input('sort', $rememberFilters && !$hasFilterQuery ? ($savedFilters['sort'] ?? $sortDefault) : $sortDefault)), 0, 40);
-        $pageSize = in_array((int) ($workspacePreferences['page_size'] ?? 20), [10, 20, 50], true) ? (int) ($workspacePreferences['page_size'] ?? 20) : 20;
+        $preferredPageSize = in_array((int) ($workspacePreferences['page_size'] ?? 20), [10, 20, 50], true)
+            ? (int) ($workspacePreferences['page_size'] ?? 20)
+            : 20;
+        $pageSize = $section === 'properties' ? 10 : $preferredPageSize;
         if ($rememberFilters && $hasFilterQuery && $settingsUser !== null) {
             $workspacePreferences['last_filters'] = ['q'=>$search, 'status'=>$filters['status'], 'type'=>$filters['type'], 'location'=>$filters['location'], 'sort'=>$sort];
             $settingsRepository->save((int) $settingsUser['id'], 'dashboard', $workspacePreferences);
