@@ -11,6 +11,7 @@ use Barama\Repositories\CompanyMembershipWriteRepository;
 use Barama\Repositories\CompanyRepository;
 use Barama\Repositories\CompanyWriteRepository;
 use Barama\Support\DomainInput;
+use Barama\Support\RichText;
 use Barama\Support\Slugger;
 use DomainException;
 use InvalidArgumentException;
@@ -70,7 +71,7 @@ final class CompanyManagementService
                 'phone' => DomainInput::optionalString($input, 'phone', 60),
                 'website' => DomainInput::optionalString($input, 'website', 255),
                 'address_line' => DomainInput::optionalString($input, 'address_line', 255),
-                'description' => DomainInput::optionalString($input, 'description', 10000),
+                'description' => RichText::sanitize(DomainInput::optionalString($input, 'description', 10000)),
             ]);
 
             (new CompanyMembershipWriteRepository())->upsert(
@@ -199,7 +200,7 @@ final class CompanyManagementService
             'phone' => DomainInput::optionalString($input, 'phone', 60),
             'website' => DomainInput::optionalString($input, 'website', 255),
             'address_line' => DomainInput::optionalString($input, 'address_line', 255),
-            'description' => DomainInput::optionalString($input, 'description', 10000),
+            'description' => RichText::sanitize(DomainInput::optionalString($input, 'description', 10000)),
         ]);
     }
 }

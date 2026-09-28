@@ -749,7 +749,14 @@ $details = match ($recordResource) {
                         : ($recordResource === 'viewing' ? 'Customer message' : 'Description'));
                 ?>
                 <?php if (!empty($longText)): ?>
-                    <div class="workspace-record-copy"><h3><?= e($copyHeading) ?></h3><p><?= nl2br(e((string) $longText)) ?></p></div>
+                    <div class="workspace-record-copy">
+                        <h3><?= e($copyHeading) ?></h3>
+                        <?php if (in_array($recordResource, ['company', 'project', 'property', 'listing'], true)): ?>
+                            <div class="rich-text-content rich-text-content--workspace"><?= \Barama\Support\RichText::render((string) $longText) ?></div>
+                        <?php else: ?>
+                            <p><?= nl2br(e((string) $longText)) ?></p>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
             </section>
 
@@ -849,7 +856,10 @@ $details = match ($recordResource) {
                                 <label><span>Tax number</span><input class="form-control" name="tax_number" value="<?= e((string) ($record['tax_number'] ?? '')) ?>" maxlength="120"></label>
                                 <label><span>Location</span><select class="form-select" name="location_id"><option value="">No location</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (int) ($record['location_id'] ?? 0) === (int) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
                                 <label class="workspace-form__span-2"><span>Address</span><input class="form-control" name="address_line" value="<?= e((string) ($record['address_line'] ?? '')) ?>" maxlength="255"></label>
-                                <label class="workspace-form__span-2"><span>Description</span><textarea class="form-control" name="description" rows="7" maxlength="10000"><?= e((string) ($record['description'] ?? '')) ?></textarea></label>
+                                <?= \Barama\Core\View::partial('workspace/description-editor', [
+                                    'value' => (string) ($record['description'] ?? ''),
+                                    'editorId' => 'workspace-description-' . $recordResource . '-' . (int) $record['id'],
+                                ]) ?>
                             </div>
                             <button class="btn btn-primary" type="submit">Save changes</button>
                         </form>
@@ -868,7 +878,10 @@ $details = match ($recordResource) {
                                 <label><span>Launch date</span><input class="form-control" type="date" name="launch_date" value="<?= e((string) ($record['launch_date'] ?? '')) ?>"></label>
                                 <label><span>Expected completion</span><input class="form-control" type="date" name="expected_completion_date" value="<?= e((string) ($record['expected_completion_date'] ?? '')) ?>"></label>
                                 <label class="workspace-form__span-2"><span>Address</span><input class="form-control" name="address_line" value="<?= e((string) ($record['address_line'] ?? '')) ?>" maxlength="255"></label>
-                                <label class="workspace-form__span-2"><span>Description</span><textarea class="form-control" name="description" rows="7" maxlength="10000"><?= e((string) ($record['description'] ?? '')) ?></textarea></label>
+                                <?= \Barama\Core\View::partial('workspace/description-editor', [
+                                    'value' => (string) ($record['description'] ?? ''),
+                                    'editorId' => 'workspace-description-' . $recordResource . '-' . (int) $record['id'],
+                                ]) ?>
                             </div>
                             <button class="btn btn-primary" type="submit">Save changes</button>
                         </form>
@@ -896,7 +909,10 @@ $details = match ($recordResource) {
                                 <label><span>Land area unit</span><input class="form-control" name="land_area_unit" value="<?= e((string) ($record['land_area_unit'] ?? '')) ?>" maxlength="20"></label>
                                 <label><span>Furnishing</span><input class="form-control" name="furnishing_status" value="<?= e((string) ($record['furnishing_status'] ?? '')) ?>" maxlength="32"></label>
                                 <label class="workspace-form__span-2"><span>Address</span><input class="form-control" name="address_line" value="<?= e((string) ($record['address_line'] ?? '')) ?>" maxlength="255"></label>
-                                <label class="workspace-form__span-2"><span>Description</span><textarea class="form-control" name="description" rows="7" maxlength="10000"><?= e((string) ($record['description'] ?? '')) ?></textarea></label>
+                                <?= \Barama\Core\View::partial('workspace/description-editor', [
+                                    'value' => (string) ($record['description'] ?? ''),
+                                    'editorId' => 'workspace-description-' . $recordResource . '-' . (int) $record['id'],
+                                ]) ?>
                             </div>
                             <button class="btn btn-primary" type="submit">Save changes</button>
                         </form>

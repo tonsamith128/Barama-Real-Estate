@@ -97,7 +97,7 @@ if (is_array($startingListing)) {
                         <section class="detail-section detail-section--clean detail-section--first">
                             <span class="eyebrow">Development overview</span>
                             <h2>About this project</h2>
-                            <p><?= nl2br(e((string) $project['description'])) ?></p>
+                            <div class="rich-text-content rich-text-content--detail"><?= \Barama\Support\RichText::render((string) $project['description']) ?></div>
                         </section>
                     <?php endif; ?>
                 </div>
