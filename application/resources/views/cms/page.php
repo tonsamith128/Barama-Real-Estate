@@ -55,7 +55,7 @@ $readingMinutes = max(1, (int) ceil($wordCount / 220));
                     <?php endif; ?>
 
                     <div class="content-page__meta" aria-label="Page information">
-                        <span><?= app_icon($isLegalPage ? 'shield' : 'file') ?><strong><?= e($isLegalPage ? 'Legal page' : 'Public page') ?></strong></span>
+                        <span><?= app_icon($isLegalPage ? 'shield' : 'layers') ?><strong><?= e($isLegalPage ? 'Legal page' : 'Public page') ?></strong></span>
                         <?php if ($displayDateLabel !== ''): ?>
                             <span><?= app_icon('calendar') ?><strong>Updated</strong><time datetime="<?= e($displayDateIso) ?>"><?= e($displayDateLabel) ?></time></span>
                         <?php endif; ?>
@@ -88,7 +88,7 @@ $readingMinutes = max(1, (int) ceil($wordCount / 220));
                             <small>Last updated <?= e($displayDateLabel) ?></small>
                         <?php endif; ?>
                     </div>
-                    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/')) ?>"><?= app_icon('arrow-left') ?><span>Back to home</span></a>
+                    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/')) ?>"><?= app_icon('home') ?><span>Back to home</span></a>
                 </aside>
             </div>
         </article>
