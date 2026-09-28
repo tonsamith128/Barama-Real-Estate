@@ -245,7 +245,7 @@ final class WorkspaceReadRepository
                 ['user_id' => $userId, 'search' => $search],
             ],
             'projects' => [
-                'SELECT p.id, p.name, p.slug, p.project_type, p.completion_status, p.status,
+                'SELECT p.id, p.name, p.project_type, p.completion_status, p.status,
                         p.location_id, p.updated_at, c.name AS company_name,
                         loc.name AS location_name,
                         (SELECT COUNT(*) FROM properties prop WHERE prop.project_id = p.id AND prop.deleted_at IS NULL) AS properties_count
@@ -1471,7 +1471,7 @@ final class WorkspaceReadRepository
                 ['search' => $search],
             ],
             'projects' => [
-                'SELECT p.id, p.name, p.project_type, p.completion_status,
+                'SELECT p.id, p.name, p.slug, p.project_type, p.completion_status,
                         p.location_id, p.status, p.updated_at,
                         c.name AS company_name, c.status AS company_status,
                         loc.name AS location_name,
