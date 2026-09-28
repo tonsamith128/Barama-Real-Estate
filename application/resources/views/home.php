@@ -83,26 +83,31 @@ if ($backgroundType === 'video') {
     } elseif ($videoSource === 'youtube') {
         $youtubeEmbed = barama_youtube_embed_url((string) ($background['youtube_url'] ?? ''));
         if ($youtubeEmbed !== null) {
-            $youtubeEmbed .= '&autoplay=1&mute=1&controls=0&playsinline=1&loop=1';
+            $youtubePath = (string) parse_url($youtubeEmbed, PHP_URL_PATH);
+            $youtubeId = basename($youtubePath);
+            $youtubeEmbed .= '&autoplay=1&mute=1&controls=0&playsinline=1&loop=1'
+                . ($youtubeId !== '' ? '&playlist=' . rawurlencode($youtubeId) : '');
         }
     } else {
         $videoSrc = trim((string) ($background['video_url'] ?? ''));
     }
 }
 
-$hasHeroBackground = $backgroundType === 'color'
+$hasHeroBackground = $heroEnabled && (
+    $backgroundType === 'color'
     || ($backgroundType === 'image' && $imageSrc !== '')
     || ($backgroundType === 'slider' && $sliderSources !== [])
-    || ($backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null));
+    || ($backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null))
+);
 ?>
 <section class="market-home market-home--background-<?= e($backgroundType) ?> <?= $hasHeroBackground ? 'market-home--rich-background' : '' ?>">
-    <?php if ($backgroundType === 'color'): ?>
+    <?php if ($heroEnabled && $backgroundType === 'color'): ?>
         <div class="market-home__background market-home__background--color hero-bg-preset--<?= e($colorPreset) ?>" aria-hidden="true"></div>
-    <?php elseif ($backgroundType === 'image' && $imageSrc !== ''): ?>
+    <?php elseif ($heroEnabled && $backgroundType === 'image' && $imageSrc !== ''): ?>
         <div class="market-home__background market-home__background--media" aria-hidden="true">
             <img src="<?= e($imageSrc) ?>" alt="" decoding="async">
         </div>
-    <?php elseif ($backgroundType === 'slider' && $sliderSources !== []): ?>
+    <?php elseif ($heroEnabled && $backgroundType === 'slider' && $sliderSources !== []): ?>
         <div
             class="market-home__background market-home__background--slider hero-slider hero-slider--<?= e((string) ($background['slider_style'] ?? 'fade')) ?>"
             data-hero-slider
@@ -114,7 +119,7 @@ $hasHeroBackground = $backgroundType === 'color'
                 <img class="hero-slider__slide <?= $index === 0 ? 'is-active' : '' ?>" src="<?= e($source) ?>" alt="" decoding="async" <?= $index === 0 ? '' : 'loading="lazy"' ?>>
             <?php endforeach; ?>
         </div>
-    <?php elseif ($backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null)): ?>
+    <?php elseif ($heroEnabled && $backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null)): ?>
         <div class="market-home__background market-home__background--video" aria-hidden="true">
             <?php if ($youtubeEmbed !== null): ?>
                 <iframe src="<?= e($youtubeEmbed) ?>" title="" tabindex="-1" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -170,10 +175,12 @@ $hasHeroBackground = $backgroundType === 'color'
                         </form>
                     <?php endif; ?>
 
-                    <div class="market-home__actions">
-                        <a href="<?= e(url('/projects')) ?>"><?= app_icon('layers') ?><span>Explore developments</span></a>
-                        <a href="<?= e(url('/company')) ?>"><?= app_icon('building') ?><span>Browse companies</span></a>
-                    </div>
+                    <?php if ($heroEnabled): ?>
+                        <div class="market-home__actions">
+                            <a href="<?= e(url('/projects')) ?>"><?= app_icon('layers') ?><span>Explore developments</span></a>
+                            <a href="<?= e(url('/company')) ?>"><?= app_icon('building') ?><span>Browse companies</span></a>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <?php if (!empty($marketPulse['enabled'])): ?>
