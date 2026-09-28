@@ -37,14 +37,9 @@ final class NewsletterSubscriptionService
         $source = trim($source, '-_');
         $source = $source !== '' ? mb_substr($source, 0, 60) : 'homepage';
 
-        $ipHash = trim($ip) !== ''
-            ? hash('sha256', 'newsletter-ip|' . trim($ip))
-            : null;
-
         return (new NewsletterSubscriberRepository())->subscribe(
             $email,
-            $source,
-            $ipHash
+            $source
         );
     }
 }
