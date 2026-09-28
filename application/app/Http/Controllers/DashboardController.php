@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\AppearanceRepository;
 use Barama\Repositories\EmailTemplateRepository;
 use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\NotificationRepository;
@@ -94,6 +95,22 @@ final class DashboardController
     public function section(Request $request, string $section): Response
     {
         return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    public function appearance(Request $request): Response
+    {
+        $appearance = (new AppearanceRepository())->get();
+
+        return Response::html(View::render('workspace/appearance', [
+            'pageTitle' => 'Appearance · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'appearance',
+            'appearance' => $appearance,
+            'appearanceVersion' => AppearanceRepository::version($appearance),
+        ]));
     }
 
     public function homepage(Request $request): Response
@@ -696,7 +713,7 @@ final class DashboardController
             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
 
             ['heading' => 'Content & Discovery'],
-            ['label' => 'Appearance', 'path' => '/dashboard/settings', 'icon' => 'settings'],
+            ['label' => 'Appearance', 'path' => '/dashboard/appearance', 'icon' => 'settings'],
             ['label' => 'Homepage', 'path' => '/dashboard/homepage', 'icon' => 'home'],
             ['label' => 'Properties', 'path' => '/dashboard/properties', 'icon' => 'home'],
             ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],

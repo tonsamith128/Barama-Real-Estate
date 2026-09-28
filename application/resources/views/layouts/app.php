@@ -40,6 +40,28 @@ if ($queryString !== '') {
 /* BARAMA_WORKSPACE_HEADER_V100 */
 /* BARAMA_WORKSPACE_BOUNDARY_HEADER_V100 */
 $isWorkspacePage = isset($workspaceNavigation) && is_array($workspaceNavigation);
+
+$frontendAppearance = null;
+$frontendAppearanceVersion = '';
+$frontendAppearanceSkin = 'modern';
+
+if (!$isWorkspacePage) {
+    try {
+        $appearanceRepository = new \Barama\Repositories\AppearanceRepository();
+        $frontendAppearance = $appearanceRepository->get();
+        $frontendAppearanceVersion = \Barama\Repositories\AppearanceRepository::version(
+            $frontendAppearance
+        );
+        $frontendAppearanceSkin = (new \Barama\Services\AppearanceManagementService())
+            ->skinName($frontendAppearance);
+    } catch (\Throwable) {
+        $frontendAppearance = \Barama\Repositories\AppearanceRepository::defaults();
+        $frontendAppearanceVersion = \Barama\Repositories\AppearanceRepository::version(
+            $frontendAppearance
+        );
+    }
+}
+
 $publicNavigation = (!$isStandaloneAuthPage && !$isWorkspacePage)
     ? (new \Barama\Repositories\SiteContentRepository())->navigation()
     : [];
@@ -77,7 +99,7 @@ $seoImage = trim((string) ($metaImage ?? ''));
 $seoType = trim((string) ($metaType ?? 'website'));
 ?>
 <!doctype html>
-<html lang="<?= e(app_locale()) ?>" data-bs-theme="light">
+<html lang="<?= e(app_locale()) ?>" data-bs-theme="light"<?= !$isWorkspacePage ? ' class="barama-public-root appearance-skin-' . e($frontendAppearanceSkin) . '"' : '' ?>>
 <head>
     <script data-barama-theme-prepaint>
         (() => {
@@ -134,8 +156,14 @@ $seoType = trim((string) ($metaType ?? 'website'));
         rel="stylesheet"
     >
     <link href="<?= e(asset('css/app.css')) ?>" rel="stylesheet">
+    <?php if (!$isWorkspacePage): ?>
+        <link href="<?= e(url('/appearance.css?v=' . rawurlencode($frontendAppearanceVersion))) ?>" rel="stylesheet">
+    <?php endif; ?>
 </head>
-<body class="<?= $isStandaloneAuthPage ? 'auth-standalone-body' : '' ?>">
+<body class="<?= e(trim(
+    ($isStandaloneAuthPage ? 'auth-standalone-body ' : '')
+    . (!$isWorkspacePage ? 'barama-public-surface appearance-skin-' . $frontendAppearanceSkin : '')
+)) ?>">
     <?php if (!$isStandaloneAuthPage && !$isWorkspacePage): ?>
     <header class="site-header" data-site-header>
         <div class="container app-container">

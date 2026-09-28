@@ -1493,6 +1493,159 @@
 
     const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
 
+    document.querySelectorAll('[data-appearance-form]').forEach((form) => {
+        if (form.dataset.appearanceFormBound === '1') {
+            return;
+        }
+
+        form.dataset.appearanceFormBound = '1';
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const submitter = event.submitter;
+            const dialog = form.closest('[data-config-dialog]');
+
+            const dialogNotice = (() => {
+                if (!(dialog instanceof HTMLDialogElement)) {
+                    return null;
+                }
+
+                let notice = dialog.querySelector('[data-appearance-dialog-notice]');
+
+                if (notice) {
+                    return notice;
+                }
+
+                notice = document.createElement('div');
+                notice.className = 'config-dialog__notice';
+                notice.hidden = true;
+                notice.setAttribute('data-appearance-dialog-notice', '');
+
+                const footer = dialog.querySelector('.config-dialog__footer');
+                footer?.before(notice);
+
+                return notice;
+            })();
+
+            const showDialogNotice = (message, type = 'error') => {
+                if (!dialogNotice) {
+                    return;
+                }
+
+                dialogNotice.hidden = false;
+                dialogNotice.classList.remove('is-success', 'is-error');
+                dialogNotice.classList.add(type === 'success' ? 'is-success' : 'is-error');
+                dialogNotice.textContent = message;
+            };
+
+            const clearDialogNotice = () => {
+                if (!dialogNotice) {
+                    return;
+                }
+
+                dialogNotice.hidden = true;
+                dialogNotice.classList.remove('is-success', 'is-error');
+                dialogNotice.textContent = '';
+            };
+
+            if (
+                submitter?.classList.contains('table-action--danger')
+                && !window.confirm('Reset frontend appearance to Barama defaults?')
+            ) {
+                return;
+            }
+
+            clearDialogNotice();
+
+            if (typeof window.fetch !== 'function') {
+                HTMLFormElement.prototype.submit.call(form);
+                return;
+            }
+
+            if (submitter) {
+                submitter.disabled = true;
+                submitter.setAttribute('aria-busy', 'true');
+            }
+
+            try {
+                const response = await window.fetch(
+                    submitter?.formAction || form.action,
+                    {
+                        method: submitter?.formMethod || form.method || 'POST',
+                        body: new FormData(form),
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }
+                );
+
+                const responseText = await response.text();
+                let payload = null;
+
+                if (responseText.trim() !== '') {
+                    try {
+                        payload = JSON.parse(responseText);
+                    } catch (_) {
+                        payload = null;
+                    }
+                }
+
+                if (!response.ok || payload?.ok !== true) {
+                    const fallback = response.status === 419
+                        ? 'Your session token expired. Refresh this page and try again.'
+                        : 'Appearance could not be saved.';
+
+                    throw new Error(payload?.message || fallback);
+                }
+
+                if (dialog instanceof HTMLDialogElement && dialog.open) {
+                    dialog.close();
+                }
+
+                const workspaceNotice = document.querySelector('[data-workspace-notice]');
+                if (workspaceNotice) {
+                    workspaceNotice.hidden = false;
+                    workspaceNotice.classList.remove('is-success', 'is-error');
+                    workspaceNotice.classList.add('is-success');
+                    workspaceNotice.textContent = payload?.data?.message
+                        || 'Appearance changes saved successfully.';
+                    workspaceNotice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                window.setTimeout(() => {
+                    window.location.reload();
+                }, 350);
+            } catch (error) {
+                showDialogNotice(
+                    error instanceof Error
+                        ? error.message
+                        : 'Appearance could not be saved.',
+                    'error'
+                );
+
+                if (!(dialog instanceof HTMLDialogElement)) {
+                    const workspaceNotice = document.querySelector('[data-workspace-notice]');
+                    if (workspaceNotice) {
+                        workspaceNotice.hidden = false;
+                        workspaceNotice.classList.remove('is-success', 'is-error');
+                        workspaceNotice.classList.add('is-error');
+                        workspaceNotice.textContent = error instanceof Error
+                            ? error.message
+                            : 'Appearance could not be saved.';
+                    }
+                }
+            } finally {
+                if (submitter) {
+                    submitter.disabled = false;
+                    submitter.removeAttribute('aria-busy');
+                }
+            }
+        });
+    });
+
     document.querySelectorAll('[data-configure-open]').forEach((button) => {
         button.addEventListener('click', () => {
             const id = button.getAttribute('data-configure-open');

@@ -7,6 +7,7 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Services\AdminMediaManagementService;
+use Barama\Services\AppearanceManagementService;
 use Barama\Services\BillingOperationsService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
@@ -357,6 +358,56 @@ final class AdminManagementController
         });
     }
 
+    public function updateAppearanceFeature(Request $request, string $feature): Response
+    {
+        return $this->executeAppearance(function () use ($request, $feature): array {
+            (new AppearanceManagementService())->updateFeature(
+                $feature,
+                $request->all()
+            );
+
+            return [
+                'feature' => $feature,
+                'message' => 'Appearance configuration updated.',
+            ];
+        });
+    }
+
+    public function toggleAppearanceFeature(Request $request, string $feature): Response
+    {
+        return $this->executeAppearance(function () use ($request, $feature): array {
+            $enabled = in_array(
+                strtolower(trim((string) $request->input('enabled', '0'))),
+                ['1', 'true', 'on', 'yes'],
+                true
+            );
+
+            (new AppearanceManagementService())->setFeatureEnabled(
+                $feature,
+                $enabled
+            );
+
+            return [
+                'feature' => $feature,
+                'enabled' => $enabled,
+                'message' => $enabled
+                    ? 'Appearance feature enabled.'
+                    : 'Appearance feature disabled.',
+            ];
+        });
+    }
+
+    public function resetAppearance(Request $request): Response
+    {
+        return $this->executeAppearance(function (): array {
+            (new AppearanceManagementService())->reset();
+
+            return [
+                'message' => 'Frontend appearance reset to Barama defaults.',
+            ];
+        });
+    }
+
     public function updateHomepageFeature(Request $request, string $feature): Response
     {
         return $this->execute(function () use ($request, $feature): array {
@@ -703,6 +754,77 @@ final class AdminManagementController
                 'message' => 'Active sessions were invalidated for this account.',
             ];
         });
+    }
+
+    /**
+     * Appearance writes keep JSON for the enhanced UI but retain a native
+     * redirect fallback so configuration remains usable if browser scripting
+     * or an intermediary blocks the AJAX response.
+     *
+     * @param callable(): array<string, mixed> $action
+     */
+    private function executeAppearance(callable $action): Response
+    {
+        $ajax = strtolower(trim((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')))
+            === 'xmlhttprequest';
+
+        try {
+            $data = $action();
+
+            if ($ajax) {
+                return Response::json([
+                    'ok' => true,
+                    'data' => $data,
+                ]);
+            }
+
+            return Response::redirect('/dashboard/appearance?appearance_saved=1');
+        } catch (InvalidArgumentException $exception) {
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $exception->getMessage(),
+                ], 422);
+            }
+
+            return Response::redirect(
+                '/dashboard/appearance?appearance_error='
+                . rawurlencode($exception->getMessage())
+            );
+        } catch (DomainException $exception) {
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $exception->getMessage(),
+                ], 403);
+            }
+
+            return Response::redirect(
+                '/dashboard/appearance?appearance_error='
+                . rawurlencode($exception->getMessage())
+            );
+        } catch (\Throwable $exception) {
+            error_log(
+                '[Barama Appearance] '
+                . $exception::class
+                . ': '
+                . $exception->getMessage()
+            );
+
+            $message = 'Appearance could not be saved. Please retry or review the server error log.';
+
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $message,
+                ], 500);
+            }
+
+            return Response::redirect(
+                '/dashboard/appearance?appearance_error='
+                . rawurlencode($message)
+            );
+        }
     }
 
     /**
