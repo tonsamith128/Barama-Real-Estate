@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Barama\Services;
 
 use Barama\Repositories\EmailTemplateRepository;
+use PDOException;
 
 final class EmailTemplateRendererService
 {
@@ -18,9 +19,20 @@ final class EmailTemplateRendererService
         array $variables,
         array $fallback
     ): array {
-        $template = (new EmailTemplateRepository())->activeByKey(
-            strtolower(trim($templateKey))
-        );
+        try {
+            $template = (new EmailTemplateRepository())->activeByKey(
+                strtolower(trim($templateKey))
+            );
+        } catch (PDOException $exception) {
+            if (
+                $exception->getCode() === '42S02'
+                || str_contains($exception->getMessage(), 'communication_email_templates')
+            ) {
+                $template = null;
+            } else {
+                throw $exception;
+            }
+        }
 
         if ($template === null) {
             return [
