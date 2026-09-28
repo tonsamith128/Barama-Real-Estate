@@ -10,6 +10,7 @@ use Barama\Repositories\CatalogRepository;
 use Barama\Repositories\ProjectWriteRepository;
 use Barama\Repositories\PropertyWriteRepository;
 use Barama\Support\DomainInput;
+use Barama\Support\RichText;
 use Barama\Support\IdGenerator;
 use Barama\Support\Slugger;
 use DomainException;
@@ -190,7 +191,7 @@ final class PropertyManagementService
             'furnishing_status' => DomainInput::optionalString($input, 'furnishing_status', 32),
             'year_built' => DomainInput::optionalPositiveInt($input, 'year_built'),
             'address_line' => DomainInput::optionalString($input, 'address_line', 255),
-            'description' => DomainInput::optionalString($input, 'description', 10000),
+            'description' => RichText::sanitize(DomainInput::optionalString($input, 'description', 10000)),
         ];
 
         $properties = new PropertyWriteRepository();

@@ -1990,3 +1990,193 @@
         init();
     }
 })();
+
+/* BARAMA_WORKSPACE_RICH_DESCRIPTION_EDITOR_V100 */
+(() => {
+    'use strict';
+
+    const safeLink = (raw) => {
+        let value = String(raw || '').trim();
+
+        if (value === '') return '';
+        if (/^#[A-Za-z0-9._:-]+$/.test(value)) return value;
+        if (/^\/(?!\/)/.test(value)) return value;
+
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            return 'mailto:' + value;
+        }
+
+        if (/^\+?[0-9][0-9+().\-\s]{6,}$/.test(value)) {
+            return 'tel:' + value;
+        }
+
+        if (/^mailto:/i.test(value)) {
+            const address = value.slice(7).split('?')[0].trim();
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address) ? value : null;
+        }
+
+        if (/^tel:/i.test(value)) {
+            return /^tel:[0-9+().\-\s]+$/i.test(value) ? value : null;
+        }
+
+        if (!/^[A-Za-z][A-Za-z0-9+.-]*:/.test(value)) {
+            value = 'https://' + value;
+        }
+
+        try {
+            const parsed = new URL(value, window.location.origin);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+                ? parsed.href
+                : null;
+        } catch (_) {
+            return null;
+        }
+    };
+
+    const initialize = (editor) => {
+        if (editor.dataset.richTextReady === 'true') return;
+
+        const source = editor.querySelector('[data-rich-text-source]');
+        const shell = editor.querySelector('[data-rich-text-shell]');
+        const surface = editor.querySelector('[data-rich-text-surface]');
+        const toolbar = editor.querySelector('[data-rich-text-toolbar]');
+
+        if (!source || !shell || !surface || !toolbar) return;
+
+        editor.dataset.richTextReady = 'true';
+        source.hidden = true;
+        shell.hidden = false;
+
+        const sync = () => {
+            source.value = surface.innerHTML.trim();
+        };
+
+        const selectionInsideSurface = () => {
+            const selection = window.getSelection();
+            const anchor = selection?.anchorNode;
+            return Boolean(anchor && (anchor === surface || surface.contains(anchor)));
+        };
+
+        const hardenLinks = () => {
+            surface.querySelectorAll('a[href]').forEach((anchor) => {
+                const href = anchor.getAttribute('href') || '';
+                if (/^https?:/i.test(href)) {
+                    anchor.setAttribute('target', '_blank');
+                    anchor.setAttribute('rel', 'noopener noreferrer');
+                } else {
+                    anchor.removeAttribute('target');
+                    anchor.removeAttribute('rel');
+                }
+            });
+        };
+
+        const updateToolbarState = () => {
+            if (!selectionInsideSurface()) return;
+
+            toolbar.querySelectorAll('[data-rich-toggle]').forEach((button) => {
+                const command = button.getAttribute('data-rich-command');
+                const block = button.getAttribute('data-rich-block');
+                let active = false;
+
+                try {
+                    if (command) {
+                        active = Boolean(document.queryCommandState(command));
+                    } else if (block) {
+                        const value = String(document.queryCommandValue('formatBlock') || '')
+                            .replace(/[<>]/g, '')
+                            .toLowerCase();
+                        active = value === block.toLowerCase();
+                    }
+                } catch (_) {
+                    active = false;
+                }
+
+                button.classList.toggle('is-active', active);
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        };
+
+        const run = (button) => {
+            const command = button.getAttribute('data-rich-command');
+            const block = button.getAttribute('data-rich-block');
+
+            surface.focus();
+
+            if (block) {
+                document.execCommand('formatBlock', false, block);
+                sync();
+                updateToolbarState();
+                return;
+            }
+
+            if (!command) return;
+
+            if (command === 'createLink') {
+                const selection = window.getSelection();
+
+                if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+                    window.alert('Select the text you want to turn into a link first.');
+                    return;
+                }
+
+                const input = window.prompt('Enter a link URL, email, phone number, or internal path:');
+                if (input === null) return;
+
+                if (input.trim() === '') {
+                    document.execCommand('unlink', false, null);
+                } else {
+                    const href = safeLink(input);
+
+                    if (href === null) {
+                        window.alert('Please enter a valid HTTP(S), email, phone, internal, or anchor link.');
+                        return;
+                    }
+
+                    document.execCommand('createLink', false, href);
+                    hardenLinks();
+                }
+            } else {
+                document.execCommand(command, false, null);
+            }
+
+            sync();
+            updateToolbarState();
+        };
+
+        toolbar.querySelectorAll('button[data-rich-command], button[data-rich-block]').forEach((button) => {
+            button.addEventListener('pointerdown', (event) => event.preventDefault());
+            button.addEventListener('click', () => run(button));
+        });
+
+        surface.addEventListener('input', () => {
+            sync();
+            updateToolbarState();
+        });
+
+        surface.addEventListener('paste', (event) => {
+            const text = event.clipboardData?.getData('text/plain');
+            if (typeof text !== 'string') return;
+
+            event.preventDefault();
+            document.execCommand('insertText', false, text);
+            sync();
+        });
+
+        ['keyup', 'mouseup', 'focus'].forEach((eventName) => {
+            surface.addEventListener(eventName, updateToolbarState);
+        });
+
+        document.addEventListener('selectionchange', updateToolbarState);
+        editor.closest('form')?.addEventListener('submit', sync, true);
+    };
+
+    const init = () => {
+        document.querySelectorAll('[data-rich-text-editor]').forEach(initialize);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+        init();
+    }
+})();

@@ -98,7 +98,7 @@ $websiteHost = $websiteUrl !== ''
                         <section class="detail-section detail-section--clean detail-section--first">
                             <span class="eyebrow">Company profile</span>
                             <h2>About <?= e((string) $company['name']) ?></h2>
-                            <p><?= nl2br(e((string) $company['description'])) ?></p>
+                            <div class="rich-text-content rich-text-content--detail"><?= \Barama\Support\RichText::render((string) $company['description']) ?></div>
                         </section>
                     <?php endif; ?>
                 </div>

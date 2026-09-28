@@ -118,7 +118,7 @@ $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($lis
                     <section class="detail-section detail-section--clean detail-section--first">
                         <span class="eyebrow">Property overview</span>
                         <h2>About this property</h2>
-                        <p><?= nl2br(e((string) $listing['property_description'])) ?></p>
+                        <div class="rich-text-content rich-text-content--detail"><?= \Barama\Support\RichText::render((string) $listing['property_description']) ?></div>
                     </section>
                 <?php endif; ?>
                 </div>
