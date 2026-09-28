@@ -391,8 +391,10 @@ final class NotificationRepository
         $statement = Database::connection()->prepare(
             'UPDATE email_outbox
              SET status = "pending",
+                 attempts = 0,
                  available_at = CURRENT_TIMESTAMP,
                  locked_at = NULL,
+                 sent_at = NULL,
                  last_error = NULL,
                  updated_at = CURRENT_TIMESTAMP
              WHERE id = :id'
