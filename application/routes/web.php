@@ -9,6 +9,7 @@ use Barama\Http\Controllers\AccountManagementController;
 use Barama\Http\Controllers\AdminManagementController;
 use Barama\Http\Controllers\AuthController;
 use Barama\Http\Controllers\CompanyController;
+use Barama\Http\Controllers\CmsController;
 use Barama\Http\Controllers\DashboardController;
 use Barama\Http\Controllers\DeveloperController;
 use Barama\Http\Controllers\DeveloperManagementController;
@@ -18,6 +19,7 @@ use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
 use Barama\Http\Controllers\MarketplaceController;
 use Barama\Http\Controllers\PublicMediaController;
+use Barama\Http\Controllers\SeoController;
 use Barama\Http\Middleware\AuthMiddleware;
 use Barama\Http\Middleware\CsrfMiddleware;
 use Barama\Http\Middleware\GuestMiddleware;
@@ -28,6 +30,8 @@ $guestPost = [new GuestMiddleware(), new CsrfMiddleware()];
 $csrf = [new CsrfMiddleware()];
 
 $router->get('/', [HomeController::class, 'index']);
+$router->get('/robots.txt', [SeoController::class, 'robots']);
+$router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
 
 $router->post('/locale', [LocaleController::class, 'update'], $csrf);
 
@@ -39,6 +43,7 @@ $router->get('/media/{uuid}', [PublicMediaController::class, 'show']);
 
 $router->get('/company', [CompanyController::class, 'index']);
 $router->get('/company/{slug}', [CompanyController::class, 'show']);
+$router->get('/pages/{slug}', [CmsController::class, 'show']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
 
@@ -332,6 +337,16 @@ $router->get(
     [DashboardController::class, 'record'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
 );
+$router->get(
+    '/dashboard/homepage',
+    [DashboardController::class, 'homepage'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/homepage',
+    [AdminManagementController::class, 'updateSiteContent'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
 $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
@@ -360,6 +375,26 @@ $router->post(
     '/dashboard/amenities/{id}/status',
     [AdminManagementController::class, 'updateAmenityStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/pages',
+    [AdminManagementController::class, 'createPage'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/pages/{id}',
+    [AdminManagementController::class, 'updatePage'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/pages/{id}/status',
+    [AdminManagementController::class, 'updatePageStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/media/{id}/alt-text',
+    [AdminManagementController::class, 'updateMediaAltText'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
 );
 $router->post(
     '/dashboard/media/{id}/orphan',

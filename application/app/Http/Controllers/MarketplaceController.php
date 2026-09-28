@@ -18,11 +18,23 @@ final class MarketplaceController
     {
         $repository = new MarketplaceRepository();
         $filters = $this->listingFilters($request);
+        $page = $this->page($request);
+        $isFiltered = $page > 1
+            || (string) ($filters['q'] ?? '') !== ''
+            || (string) ($filters['offer'] ?? '') !== ''
+            || (string) ($filters['type'] ?? '') !== ''
+            || (string) ($filters['location'] ?? '') !== ''
+            || (string) ($filters['bedrooms'] ?? '') !== ''
+            || (string) ($filters['min_price'] ?? '') !== ''
+            || (string) ($filters['max_price'] ?? '') !== '';
 
         return Response::html(View::render('marketplace/properties', [
             'pageTitle' => 'Properties for Sale & Rent',
+            'metaDescription' => 'Browse approved real-estate listings for sale and rent, including homes, land, apartments, commercial property, and other marketplace inventory.',
+            'canonicalUrl' => url('/properties'),
+            'metaRobots' => $isFiltered ? 'noindex,follow' : 'index,follow,max-image-preview:large',
             'activeArea' => 'properties',
-            'inventory' => $repository->listings($filters, $this->page($request)),
+            'inventory' => $repository->listings($filters, $page),
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
             'propertyTypes' => DomainRules::PROPERTY_TYPES,
@@ -68,11 +80,37 @@ final class MarketplaceController
         ));
         $related = array_slice($related, 0, 3);
 
+        $gallery = $repository->gallery('listing', (int) $listing['id']);
+        $metaImage = '';
+
+        foreach ($gallery as $media) {
+            if (
+                str_starts_with((string) ($media['mime_type'] ?? ''), 'image/')
+                && !empty($media['uuid'])
+            ) {
+                $metaImage = url('/media/' . rawurlencode((string) $media['uuid']));
+                break;
+            }
+        }
+
+        $metaDescription = trim((string) ($listing['property_description'] ?? ''));
+
+        if ($metaDescription === '') {
+            $metaDescription = (string) $listing['title']
+                . (!empty($listing['location_name']) ? ' in ' . (string) $listing['location_name'] : '')
+                . ' · ' . ucfirst((string) ($listing['transaction_type'] ?? 'property'))
+                . ' listing on Barama Real Estate.';
+        }
+
         return Response::html(View::render('marketplace/property', [
             'pageTitle' => (string) $listing['title'],
+            'metaDescription' => mb_substr($metaDescription, 0, 280),
+            'canonicalUrl' => url('/properties/' . rawurlencode((string) $listing['slug'])),
+            'metaImage' => $metaImage,
+            'metaType' => 'article',
             'activeArea' => 'properties',
             'listing' => $listing,
-            'gallery' => $repository->gallery('listing', (int) $listing['id']),
+            'gallery' => $gallery,
             'viewer' => $user,
             'engagementState' => $engagementState,
             'relatedListings' => $related,
@@ -89,10 +127,20 @@ final class MarketplaceController
             'location' => trim((string) $request->input('location', '')),
         ];
 
+        $page = $this->page($request);
+        $isFiltered = $page > 1
+            || (string) ($filters['q'] ?? '') !== ''
+            || (string) ($filters['type'] ?? '') !== ''
+            || (string) ($filters['completion'] ?? '') !== ''
+            || (string) ($filters['location'] ?? '') !== '';
+
         return Response::html(View::render('marketplace/projects', [
             'pageTitle' => 'New Developments',
+            'metaDescription' => 'Explore published real-estate development projects from approved companies on Barama Real Estate.',
+            'canonicalUrl' => url('/projects'),
+            'metaRobots' => $isFiltered ? 'noindex,follow' : 'index,follow,max-image-preview:large',
             'activeArea' => 'projects',
-            'inventory' => $repository->projects($filters, $this->page($request)),
+            'inventory' => $repository->projects($filters, $page),
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
             'projectTypes' => DomainRules::PROJECT_TYPES,
@@ -112,11 +160,37 @@ final class MarketplaceController
             );
         }
 
+        $gallery = $repository->gallery('project', (int) $project['id']);
+        $metaImage = '';
+
+        foreach ($gallery as $media) {
+            if (
+                str_starts_with((string) ($media['mime_type'] ?? ''), 'image/')
+                && !empty($media['uuid'])
+            ) {
+                $metaImage = url('/media/' . rawurlencode((string) $media['uuid']));
+                break;
+            }
+        }
+
+        $metaDescription = trim((string) ($project['description'] ?? ''));
+
+        if ($metaDescription === '') {
+            $metaDescription = (string) $project['name']
+                . (!empty($project['location_name']) ? ' in ' . (string) $project['location_name'] : '')
+                . ' by ' . (string) ($project['company_name'] ?? 'an approved company')
+                . ' on Barama Real Estate.';
+        }
+
         return Response::html(View::render('marketplace/project', [
             'pageTitle' => (string) $project['name'],
+            'metaDescription' => mb_substr($metaDescription, 0, 280),
+            'canonicalUrl' => url('/projects/' . rawurlencode((string) $project['slug'])),
+            'metaImage' => $metaImage,
+            'metaType' => 'article',
             'activeArea' => 'projects',
             'project' => $project,
-            'gallery' => $repository->gallery('project', (int) $project['id']),
+            'gallery' => $gallery,
             'listings' => $repository->projectListings((int) $project['id'], 6),
             'viewer' => auth_user(),
         ]));

@@ -79,6 +79,17 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
             . '</span>';
     }
 
+    if (in_array($key, ['issue_state', 'description_state', 'image_state', 'alt_state', 'index_state'], true)) {
+        $normalizedValue = strtolower((string) $value);
+        $tone = in_array($normalizedValue, ['ready', 'indexable'], true)
+            ? 'approved'
+            : (in_array($normalizedValue, ['attention', 'missing'], true) ? 'pending' : 'neutral');
+
+        return '<span class="status-badge status-badge--' . e($tone) . '">'
+            . e($humanize($value))
+            . '</span>';
+    }
+
     if ($key === 'size_bytes') {
         $bytes = (int) $value;
         if ($bytes >= 1048576) {
@@ -194,6 +205,9 @@ $renderActions = static function (array $row) use (
             'inquiries' => 'inquiry',
             'leads' => 'lead',
             'viewings' => 'viewing',
+            'media' => 'media',
+            'pages' => 'page',
+            'seo' => (string) ($row['entity_type'] ?? ''),
             'users' => 'user',
             'verification' => 'user',
             'audit' => 'audit',
@@ -435,6 +449,39 @@ $renderActions = static function (array $row) use (
             } elseif (in_array($status, ['rejected', 'expired'], true)) {
                 $buttons[] = $actionButton('listing', $id, 'draft', 'Restore to draft');
             }
+        } elseif ($activeSection === 'pages') {
+            if ($status === 'draft') {
+                $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="published">'
+                    . '<button class="table-action table-action--primary" type="submit">Publish</button></form>';
+                $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="archived">'
+                    . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
+            } elseif ($status === 'published') {
+                $buttons[] = '<a class="table-action" href="' . e(url(
+                    '/pages/' . rawurlencode((string) ($row['slug'] ?? ''))
+                )) . '" target="_blank" rel="noopener noreferrer">View page</a>';
+                $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="draft">'
+                    . '<button class="table-action" type="submit">Unpublish</button></form>';
+                $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="archived">'
+                    . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
+            } elseif ($status === 'archived') {
+                $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                    . '" method="post" data-workspace-form>'
+                    . csrf_field()
+                    . '<input type="hidden" name="status" value="draft">'
+                    . '<button class="table-action table-action--primary" type="submit">Restore draft</button></form>';
+            }
         } elseif ($activeSection === 'catalog') {
             $entityType = (string) ($row['entity_type'] ?? '');
             $usageCount = (int) ($row['usage_count'] ?? 0);
@@ -504,7 +551,7 @@ $renderActions = static function (array $row) use (
 
     if (
         ($workspaceType === 'admin'
-            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'users', 'verification', 'audit'], true))
+            && in_array($activeSection, ['approvals', 'companies', 'projects', 'properties', 'listings', 'inquiries', 'leads', 'viewings', 'catalog', 'media', 'pages', 'seo', 'users', 'verification', 'audit'], true))
         || ($workspaceType === 'developer'
             && in_array(
                 $activeSection,
@@ -544,6 +591,16 @@ $renderActions = static function (array $row) use (
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Canonical real-estate platform data
+            </span>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('globe') ?>
+                Public content · controlled publishing
+            </span>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'seo'): ?>
+            <span class="workspace-context-note">
+                <?= app_icon('search') ?>
+                Public discovery · read-only governance
             </span>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'users'): ?>
             <span class="workspace-context-note">
@@ -1019,6 +1076,17 @@ $renderActions = static function (array $row) use (
                     </select>
                     <input name="note" maxlength="500" placeholder="Decision note · required when rejecting">
                     <button type="submit" disabled data-bulk-submit>Apply action</button>
+                </form>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
+            <div class="workspace-bulk-bar">
+                <form action="<?= e(url('/dashboard/pages')) ?>" method="post" data-workspace-form>
+                    <?= csrf_field() ?>
+                    <input name="title" maxlength="191" placeholder="New page title" aria-label="New page title" required>
+                    <input name="slug" maxlength="160" placeholder="url-slug (optional)" aria-label="Page URL slug">
+                    <button type="submit">Create draft page</button>
                 </form>
             </div>
         <?php endif; ?>

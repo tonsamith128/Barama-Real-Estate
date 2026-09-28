@@ -278,6 +278,36 @@ final class WorkspaceRecordRepository
                        LEFT JOIN properties p ON p.id = inquiry.property_id AND p.deleted_at IS NULL
                        LEFT JOIN listings listing ON listing.id = inquiry.listing_id AND listing.deleted_at IS NULL
                        WHERE l.id = :id AND l.deleted_at IS NULL LIMIT 1',
+            'media' => 'SELECT m.*,
+                               COALESCE(u.name, "System") AS uploaded_by,
+                               (SELECT COUNT(*) FROM media_attachments ma
+                                WHERE ma.media_asset_id = m.id) AS attachment_count,
+                               (SELECT COUNT(*) FROM media_attachments ma
+                                WHERE ma.media_asset_id = m.id
+                                  AND ma.is_primary = 1) AS primary_count,
+                               (SELECT GROUP_CONCAT(
+                                    CONCAT(
+                                        ma.entity_type, "#", ma.entity_id,
+                                        " · ", ma.collection,
+                                        CASE WHEN ma.is_primary = 1 THEN " · primary" ELSE "" END
+                                    )
+                                    ORDER BY ma.is_primary DESC, ma.id ASC
+                                    SEPARATOR ", "
+                                )
+                                FROM media_attachments ma
+                                WHERE ma.media_asset_id = m.id) AS attachment_context
+                        FROM media_assets m
+                        LEFT JOIN users u ON u.id = m.created_by_user_id
+                        WHERE m.id = :id
+                        LIMIT 1',
+            'page' => 'SELECT p.*,
+                              COALESCE(created_by.name, "System") AS created_by_name,
+                              COALESCE(updated_by.name, "System") AS updated_by_name
+                       FROM cms_pages p
+                       LEFT JOIN users created_by ON created_by.id = p.created_by_user_id
+                       LEFT JOIN users updated_by ON updated_by.id = p.updated_by_user_id
+                       WHERE p.id = :id
+                       LIMIT 1',
             'user' => 'SELECT u.id, u.uuid, u.name, u.email, u.status, u.auth_version,
                               u.email_verified_at, u.last_login_at, u.created_at, u.updated_at,
                               COALESCE(role_summary.roles, "user") AS roles,
@@ -372,7 +402,7 @@ final class WorkspaceRecordRepository
 
         return [
             'record' => $record,
-            'history' => in_array($resource, ['user', 'audit'], true)
+            'history' => in_array($resource, ['media', 'page', 'user', 'audit'], true)
                 ? []
                 : $this->history($resource, $id),
             'media' => in_array($resource, ['company', 'project', 'property', 'listing'], true)

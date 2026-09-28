@@ -53,6 +53,7 @@ $requiredTables = [
     'company_invitations',
     'email_verification_tokens',
     'security_audit_events',
+    'cms_pages',
 ];
 
 $statement = $pdo->query(
@@ -110,6 +111,7 @@ $requiredPermissions = [
     'media.manage',
     'inquiry.manage',
     'lead.manage',
+    'page.manage',
 ];
 
 $permissionRows = $pdo
@@ -158,6 +160,32 @@ $adminPermissionCount = (int) $pdo->query(
 
 if ($adminPermissionCount !== 2) {
     $failures[] = 'Administrator catalog permission assignment is incomplete.';
+}
+
+$adminPagePermissionCount = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM role_permissions
+     INNER JOIN roles ON roles.id = role_permissions.role_id
+     INNER JOIN permissions ON permissions.id = role_permissions.permission_id
+     WHERE roles.slug = 'administrator'
+       AND permissions.slug = 'page.manage'"
+)->fetchColumn();
+
+if ($adminPagePermissionCount !== 1) {
+    $failures[] = 'Administrator CMS page permission assignment is incomplete.';
+}
+
+$developerPagePermissionCount = (int) $pdo->query(
+    "SELECT COUNT(*)
+     FROM role_permissions
+     INNER JOIN roles ON roles.id = role_permissions.role_id
+     INNER JOIN permissions ON permissions.id = role_permissions.permission_id
+     WHERE roles.slug = 'developer'
+       AND permissions.slug = 'page.manage'"
+)->fetchColumn();
+
+if ($developerPagePermissionCount !== 0) {
+    $failures[] = 'CMS page management must not be assigned to the Developer role.';
 }
 
 if (!DomainRules::canTransition('listing', 'pending', 'published')) {

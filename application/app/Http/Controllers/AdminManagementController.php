@@ -10,6 +10,8 @@ use Barama\Services\AdminMediaManagementService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
 use Barama\Services\DomainWorkflowService;
+use Barama\Services\PageManagementService;
+use Barama\Services\SiteContentManagementService;
 use Barama\Services\UserAdministrationService;
 use DomainException;
 use InvalidArgumentException;
@@ -62,6 +64,79 @@ final class AdminManagementController
                 'amenity_id' => (int) $id,
                 'status' => $status,
                 'message' => 'Amenity status updated.',
+            ];
+        });
+    }
+
+    public function updateSiteContent(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            (new SiteContentManagementService())->update($request->all());
+
+            return [
+                'message' => 'Homepage and primary navigation updated.',
+            ];
+        });
+    }
+
+    public function createPage(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'page_id' => (new PageManagementService())->create($request->all()),
+            'message' => 'CMS page created as draft.',
+        ], 201);
+    }
+
+    public function updatePage(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid page ID is required.');
+            }
+
+            (new PageManagementService())->update((int) $id, $request->all());
+
+            return [
+                'page_id' => (int) $id,
+                'message' => 'CMS page content and SEO settings updated.',
+            ];
+        });
+    }
+
+    public function updatePageStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid page ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new PageManagementService())->setStatus((int) $id, $status);
+
+            return [
+                'page_id' => (int) $id,
+                'status' => $status,
+                'message' => 'CMS page status updated.',
+            ];
+        });
+    }
+
+    public function updateMediaAltText(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid media ID is required.');
+            }
+
+            $altText = trim((string) $request->input('alt_text', ''));
+            (new AdminMediaManagementService())->updateAltText(
+                (int) $id,
+                $altText !== '' ? $altText : null
+            );
+
+            return [
+                'media_id' => (int) $id,
+                'message' => 'Media alt text updated.',
             ];
         });
     }

@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
+use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
 use Barama\Repositories\WorkspaceSettingsRepository;
@@ -59,6 +60,14 @@ final class DashboardController
             'title' => 'Real Estate Media',
             'description' => 'Inspect listing media attachment context, primary-image usage, storage metadata, and safe orphan cleanup across the platform.',
         ],
+        'pages' => [
+            'title' => 'Page Manager',
+            'description' => 'Create and maintain public content pages with controlled publishing and SEO metadata.',
+        ],
+        'seo' => [
+            'title' => 'SEO Center',
+            'description' => 'Audit indexable public records for description, social-image, and image-alt-text coverage without taking over company content ownership.',
+        ],
         'users' => [
             'title' => 'Users',
             'description' => 'Manage account status and administrator access without bypassing the canonical role system.',
@@ -83,11 +92,24 @@ final class DashboardController
         return $this->renderSection($request, strtolower(trim($section)));
     }
 
+    public function homepage(Request $request): Response
+    {
+        return Response::html(View::render('workspace/site-content', [
+            'pageTitle' => 'Homepage & Navigation · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'homepage',
+            'siteContent' => (new SiteContentRepository())->get(),
+        ]));
+    }
+
     public function record(Request $request, string $resource, string $id): Response
     {
         $resource = strtolower(trim($resource));
 
-        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'viewing', 'user', 'audit'], true)
+        if (!in_array($resource, ['company', 'project', 'property', 'listing', 'inquiry', 'lead', 'viewing', 'media', 'page', 'user', 'audit'], true)
             || !ctype_digit($id)
             || (int) $id < 1
         ) {
@@ -110,6 +132,7 @@ final class DashboardController
         $title = (string) (
             $record['name']
             ?? $record['title']
+            ?? $record['original_name']
             ?? $record['property_title']
             ?? $record['contact_name']
             ?? $record['event_type']
@@ -269,8 +292,24 @@ final class DashboardController
             'media' => [
                 ['label' => 'Media assets', 'value' => $marketplace['total'] ?? 0, 'icon' => 'image', 'href' => '/dashboard/media'],
                 ['label' => 'Images', 'value' => $marketplace['images'] ?? 0, 'icon' => 'image'],
+                ['label' => 'Missing alt text', 'value' => $marketplace['missing_alt'] ?? 0, 'icon' => 'alert'],
                 ['label' => 'PDF documents', 'value' => $marketplace['pdfs'] ?? 0, 'icon' => 'layers'],
                 ['label' => 'Orphaned assets', 'value' => $marketplace['orphaned'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/media?status=orphan'],
+            ],
+            'pages' => [
+                ['label' => 'All pages', 'value' => $marketplace['total'] ?? 0, 'icon' => 'edit', 'href' => '/dashboard/pages'],
+                ['label' => 'Draft', 'value' => $marketplace['draft'] ?? 0, 'icon' => 'edit', 'href' => '/dashboard/pages?status=draft'],
+                ['label' => 'Published', 'value' => $marketplace['published'] ?? 0, 'icon' => 'globe', 'href' => '/dashboard/pages?status=published'],
+                ['label' => 'Archived', 'value' => $marketplace['archived'] ?? 0, 'icon' => 'layers', 'href' => '/dashboard/pages?status=archived'],
+                ['label' => 'Indexable', 'value' => $marketplace['indexable'] ?? 0, 'icon' => 'search'],
+            ],
+            'seo' => [
+                ['label' => 'Public records', 'value' => $marketplace['total'] ?? 0, 'icon' => 'globe', 'href' => '/dashboard/seo'],
+                ['label' => 'Attention required', 'value' => $marketplace['attention'] ?? 0, 'icon' => 'alert', 'href' => '/dashboard/seo?status=attention'],
+                ['label' => 'Indexable', 'value' => $marketplace['indexable'] ?? 0, 'icon' => 'search'],
+                ['label' => 'Missing description', 'value' => $marketplace['missing_description'] ?? 0, 'icon' => 'edit'],
+                ['label' => 'Missing social image', 'value' => $marketplace['missing_social_image'] ?? 0, 'icon' => 'image'],
+                ['label' => 'Missing alt text', 'value' => $marketplace['missing_alt_text'] ?? 0, 'icon' => 'alert'],
             ],
             'inquiries' => [
                 ['label' => 'All inquiries', 'value' => $marketplace['total'] ?? 0, 'icon' => 'message', 'href' => '/dashboard/inquiries'],
@@ -358,6 +397,16 @@ final class DashboardController
                 'title' => 'No media assets match this view',
                 'detail' => 'Real-estate listing images and documents will appear here with their attachment context.',
             ],
+            'pages' => [
+                'icon' => 'edit',
+                'title' => 'No CMS pages match this view',
+                'detail' => 'Create a page or adjust status, title, slug, or SEO search filters.',
+            ],
+            'seo' => [
+                'icon' => 'search',
+                'title' => 'No SEO governance records match this view',
+                'detail' => 'Published public records will appear here with indexability, description, social-image, and alt-text coverage.',
+            ],
             'companies' => [
                 'icon' => 'building',
                 'title' => 'No companies match this view',
@@ -437,7 +486,12 @@ final class DashboardController
 
             ['heading' => 'Platform Data'],
             ['label' => 'Locations & Amenities', 'path' => '/dashboard/catalog', 'icon' => 'map'],
+
+            ['heading' => 'Content & Discovery'],
+            ['label' => 'Homepage & Navigation', 'path' => '/dashboard/homepage', 'icon' => 'home'],
+            ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
             ['label' => 'Media Library', 'path' => '/dashboard/media', 'icon' => 'image'],
+            ['label' => 'SEO Center', 'path' => '/dashboard/seo', 'icon' => 'search'],
 
             ['heading' => 'Users & Security'],
             ['label' => 'Users', 'path' => '/dashboard/users', 'icon' => 'users'],
@@ -480,6 +534,8 @@ final class DashboardController
             'inquiry' => 'inquiries',
             'lead' => 'leads',
             'viewing' => 'viewings',
+            'media' => 'media',
+            'page' => 'pages',
             'user' => 'users',
             'audit' => 'audit',
             default => 'overview',
@@ -598,6 +654,28 @@ final class DashboardController
                     'name_asc' => 'Filename A–Z',
                     'size_desc' => 'Largest files',
                     'size_asc' => 'Smallest files',
+                ],
+            ],
+            'pages' => [
+                'statuses' => ['draft', 'published', 'archived'],
+                'types' => ['index,follow', 'noindex,follow', 'noindex,nofollow'],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Title A–Z',
+                    'name_desc' => 'Title Z–A',
+                ],
+            ],
+            'seo' => [
+                'statuses' => ['attention', 'ready'],
+                'types' => ['listing', 'project', 'company', 'page'],
+                'location' => false,
+                'sorts' => [
+                    'updated_desc' => 'Recently updated',
+                    'updated_asc' => 'Oldest updated',
+                    'name_asc' => 'Title A–Z',
+                    'name_desc' => 'Title Z–A',
                 ],
             ],
             'users' => [
@@ -748,9 +826,30 @@ final class DashboardController
                 'attachment_state' => 'State',
                 'attachment_count' => 'Attachments',
                 'primary_count' => 'Primary',
+                'alt_text' => 'Alt text',
                 'mime_type' => 'Type',
                 'size_bytes' => 'Size',
                 'created_at' => 'Uploaded',
+            ],
+            'pages' => [
+                'title' => 'Page',
+                'slug' => 'URL slug',
+                'robots_directive' => 'Robots',
+                'status' => 'Status',
+                'published_at' => 'Published',
+                'updated_by_name' => 'Updated by',
+                'updated_at' => 'Updated',
+            ],
+            'seo' => [
+                'entity_type' => 'Type',
+                'title' => 'Public record',
+                'path' => 'Public path',
+                'index_state' => 'Index',
+                'description_state' => 'Description',
+                'image_state' => 'Social image',
+                'alt_state' => 'Image alt text',
+                'issue_state' => 'Governance',
+                'updated_at' => 'Updated',
             ],
             'users' => [
                 'name' => 'User',

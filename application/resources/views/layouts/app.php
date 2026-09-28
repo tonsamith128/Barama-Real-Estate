@@ -40,6 +40,9 @@ if ($queryString !== '') {
 /* BARAMA_WORKSPACE_HEADER_V100 */
 /* BARAMA_WORKSPACE_BOUNDARY_HEADER_V100 */
 $isWorkspacePage = isset($workspaceNavigation) && is_array($workspaceNavigation);
+$publicNavigation = (!$isStandaloneAuthPage && !$isWorkspacePage)
+    ? (new \Barama\Repositories\SiteContentRepository())->navigation()
+    : [];
 $workspaceHeaderUserName = trim((string) ($headerUser['name'] ?? ''));
 $workspaceHeaderUserName = $workspaceHeaderUserName !== '' ? $workspaceHeaderUserName : t('My account');
 $workspaceHeaderUserEmail = trim((string) ($headerUser['email'] ?? ''));
@@ -54,6 +57,24 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
     'developer' => t('Company / Vendor Workspace'),
     default => t('Customer Account'),
 });
+
+$seoTitle = trim((string) ($pageTitle ?? config('app.name')));
+$seoDescription = trim(strip_tags((string) ($metaDescription ?? 'Barama Real Estate marketplace and property management platform.')));
+$seoDescription = (string) preg_replace('/\s+/u', ' ', $seoDescription);
+$seoDescription = mb_substr($seoDescription, 0, 300);
+$seoCanonical = trim((string) ($canonicalUrl ?? ''));
+
+if ($seoCanonical === '') {
+    $seoCanonical = url($authRoutePath);
+}
+
+$seoRobots = trim((string) ($metaRobots ?? (
+    $isStandaloneAuthPage || $isWorkspacePage
+        ? 'noindex,nofollow'
+        : 'index,follow,max-image-preview:large'
+)));
+$seoImage = trim((string) ($metaImage ?? ''));
+$seoType = trim((string) ($metaType ?? 'website'));
 ?>
 <!doctype html>
 <html lang="<?= e(app_locale()) ?>" data-bs-theme="light">
@@ -93,8 +114,20 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
     <link rel="icon" href="<?= e(asset('images/branding/favicon-16x16.png')) ?>" sizes="16x16" type="image/png">
     <link rel="shortcut icon" href="<?= e(url('/favicon.ico')) ?>">
     <link rel="apple-touch-icon" href="<?= e(asset('images/branding/apple-touch-icon.png')) ?>">
-    <title><?= e($pageTitle ?? config('app.name')) ?></title>
-    <meta name="description" content="Barama Real Estate marketplace and property management platform.">
+    <title><?= e($seoTitle) ?></title>
+    <meta name="description" content="<?= e($seoDescription) ?>">
+    <meta name="robots" content="<?= e($seoRobots) ?>">
+    <link rel="canonical" href="<?= e($seoCanonical) ?>">
+    <meta property="og:type" content="<?= e($seoType) ?>">
+    <meta property="og:site_name" content="<?= e((string) config('app.name')) ?>">
+    <meta property="og:title" content="<?= e($seoTitle) ?>">
+    <meta property="og:description" content="<?= e($seoDescription) ?>">
+    <meta property="og:url" content="<?= e($seoCanonical) ?>">
+    <?php if ($seoImage !== ''): ?><meta property="og:image" content="<?= e($seoImage) ?>"><?php endif; ?>
+    <meta name="twitter:card" content="<?= $seoImage !== '' ? 'summary_large_image' : 'summary' ?>">
+    <meta name="twitter:title" content="<?= e($seoTitle) ?>">
+    <meta name="twitter:description" content="<?= e($seoDescription) ?>">
+    <?php if ($seoImage !== ''): ?><meta name="twitter:image" content="<?= e($seoImage) ?>"><?php endif; ?>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -130,10 +163,16 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
 
                 <div class="site-navigation" id="site-navigation" data-site-navigation>
                     <nav class="main-nav" aria-label="<?= e(t('Primary navigation')) ?>">
-                        <a class="<?= ($activeArea ?? '') === 'home' ? 'is-active' : '' ?>" href="<?= e(url('/')) ?>"><?= e(t('Home')) ?></a>
-                        <a class="<?= ($activeArea ?? '') === 'properties' ? 'is-active' : '' ?>" href="<?= e(url('/properties')) ?>"><?= e(t('Properties')) ?></a>
-                        <a class="<?= ($activeArea ?? '') === 'projects' ? 'is-active' : '' ?>" href="<?= e(url('/projects')) ?>"><?= e(t('Projects')) ?></a>
-                        <a class="<?= ($activeArea ?? '') === 'company' ? 'is-active' : '' ?>" href="<?= e(url('/company')) ?>"><?= e(t('Companies')) ?></a>
+                        <?php foreach ($publicNavigation as $navigationItem): ?>
+                            <?php
+                            $navigationArea = (string) ($navigationItem['active_area'] ?? '');
+                            $navigationPath = (string) ($navigationItem['path'] ?? '/');
+                            ?>
+                            <a
+                                class="<?= $navigationArea !== '' && ($activeArea ?? '') === $navigationArea ? 'is-active' : '' ?>"
+                                href="<?= e(url($navigationPath)) ?>"
+                            ><?= e(t((string) ($navigationItem['label'] ?? 'Link'))) ?></a>
+                        <?php endforeach; ?>
                     </nav>
 
                     <div class="header-auth">
@@ -436,9 +475,14 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
 
                 <nav aria-label="<?= e(t('Marketplace links')) ?>">
                     <strong><?= e(t('Marketplace')) ?></strong>
-                    <a href="<?= e(url('/properties')) ?>"><?= e(t('Properties')) ?></a>
-                    <a href="<?= e(url('/projects')) ?>"><?= e(t('Projects')) ?></a>
-                    <a href="<?= e(url('/company')) ?>"><?= e(t('Companies')) ?></a>
+                    <?php foreach ($publicNavigation as $navigationItem): ?>
+                        <?php if ((string) ($navigationItem['path'] ?? '/') === '/'): ?>
+                            <?php continue; ?>
+                        <?php endif; ?>
+                        <a href="<?= e(url((string) ($navigationItem['path'] ?? '/'))) ?>">
+                            <?= e(t((string) ($navigationItem['label'] ?? 'Link'))) ?>
+                        </a>
+                    <?php endforeach; ?>
                 </nav>
 
                 <nav aria-label="<?= e(t('Account links')) ?>">
