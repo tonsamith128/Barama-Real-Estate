@@ -1,0 +1,64 @@
+name: Build PR27 aaPanel Bundle
+
+on:
+  push:
+    branches:
+      - artifact/pr27-aaPanel-v1.0.0
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build guarded aaPanel ZIP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout artifact branch
+        uses: actions/checkout@v4
+
+      - name: Build deployment bundle
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          NAME="Barama-BuiltIn-About-Contact-v1.0.0"
+          OUT="build"
+          DIR="${OUT}/${NAME}"
+
+          rm -rf "${OUT}"
+          mkdir -p "${DIR}"
+
+          cp artifacts/Barama-BuiltIn-About-Contact-v1.0.0.patch "${DIR}/pr27.patch"
+          cp artifacts/pr27-package/install.sh "${DIR}/install.sh"
+          cp artifacts/pr27-package/check.sh "${DIR}/check.sh"
+          cp artifacts/pr27-package/verify_db.php "${DIR}/verify_db.php"
+          cp artifacts/pr27-package/README.md "${DIR}/README.md"
+
+          chmod 700 "${DIR}/install.sh" "${DIR}/check.sh"
+          chmod 600 "${DIR}/verify_db.php"
+          chmod 644 "${DIR}/README.md" "${DIR}/pr27.patch"
+
+          (
+            cd "${DIR}"
+            sha256sum README.md check.sh install.sh pr27.patch verify_db.php > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+
+          (
+            cd "${OUT}"
+            zip -qr "${NAME}.zip" "${NAME}"
+            sha256sum "${NAME}.zip" > "${NAME}.zip.sha256"
+          )
+
+          unzip -t "${OUT}/${NAME}.zip"
+          cat "${OUT}/${NAME}.zip.sha256"
+
+      - name: Upload aaPanel bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Barama-BuiltIn-About-Contact-v1.0.0-aaPanel
+          path: |
+            build/Barama-BuiltIn-About-Contact-v1.0.0.zip
+            build/Barama-BuiltIn-About-Contact-v1.0.0.zip.sha256
+          if-no-files-found: error
+          retention-days: 7
