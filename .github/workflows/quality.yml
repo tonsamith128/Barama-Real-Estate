@@ -97,6 +97,9 @@ jobs:
       - name: Run Communications announcement delivery smoke test
         run: php tools/communications-announcement-smoke.php
 
+      - name: Verify Communications v1.19.2 release bundle
+        run: php tools/communications-v1192-package-smoke.php
+
       - name: Run SMTP transport smoke test
         run: php tools/smtp-smoke.php
 
