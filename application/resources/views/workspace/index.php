@@ -8,7 +8,21 @@ $page = (int) ($records['page'] ?? 1);
 $pages = (int) ($records['pages'] ?? 1);
 $perPage = (int) ($records['per_page'] ?? 0);
 $perPage = $perPage > 0 ? $perPage : max(1, count($rows));
-$showPropertyNumbers = $workspaceType === 'admin' && $activeSection === 'properties';
+$showAdminMarketplaceNumbers = $workspaceType === 'admin'
+    && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+$adminEditorResource = $workspaceType === 'admin'
+    ? match ($activeSection) {
+        'companies' => 'company',
+        'projects' => 'project',
+        'properties' => 'property',
+        default => null,
+    }
+    : null;
+$adminEditorTitleKey = match ($activeSection) {
+    'companies', 'projects' => 'name',
+    'properties' => 'title',
+    default => null,
+};
 $companies = is_array($formOptions['companies'] ?? null) ? $formOptions['companies'] : [];
 $projects = is_array($formOptions['projects'] ?? null) ? $formOptions['projects'] : [];
 $properties = is_array($formOptions['properties'] ?? null) ? $formOptions['properties'] : [];
@@ -203,6 +217,91 @@ $renderActions = static function (array $row) use (
 
     $status = (string) ($row['status'] ?? $row['stage'] ?? '');
     $buttons = [];
+
+    if ($workspaceType === 'admin' && $activeSection === 'companies') {
+        $slug = trim((string) ($row['slug'] ?? ''));
+        $projectsCount = (int) ($row['projects_count'] ?? 0);
+        $propertiesCount = (int) ($row['properties_count'] ?? 0);
+        $viewUrl = url('/dashboard/manage/company/' . $id);
+
+        if (in_array($status, ['draft', 'approved', 'rejected', 'suspended'], true)) {
+            $buttons[] = $actionButton('company', $id, 'archived', 'Archive', 'danger');
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
+                . 'title="Archive is not available from the current company status.">Archive</button>';
+        }
+
+        $companyUrl = $slug !== ''
+            ? url('/company/' . rawurlencode($slug))
+            : '';
+
+        if ($companyUrl !== '') {
+            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
+                . 'data-copy-value="' . e($companyUrl) . '">Copy slug</button>';
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled>Copy slug</button>';
+        }
+
+        if ($status === 'archived' && $projectsCount === 0 && $propertiesCount === 0) {
+            $buttons[] = '<form action="' . e(url('/dashboard/companies/' . $id . '/delete'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="table-action table-action--danger" type="submit">Delete</button></form>';
+        } else {
+            $deleteHint = $status !== 'archived'
+                ? 'Archive the company before deleting it.'
+                : 'Remove or delete all company projects and properties before deleting it.';
+            $buttons[] = '<button class="table-action table-action--danger table-action--disabled" '
+                . 'type="button" disabled title="' . e($deleteHint) . '">Delete</button>';
+        }
+
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl . '?edit=1#workspace-record-edit') . '">Edit</a>';
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl) . '">View</a>';
+
+        return $renderRowMenu($buttons, 'admin-company-' . $id);
+    }
+
+    if ($workspaceType === 'admin' && $activeSection === 'projects') {
+        $slug = trim((string) ($row['slug'] ?? ''));
+        $propertiesCount = (int) ($row['properties_count'] ?? 0);
+        $viewUrl = url('/dashboard/manage/project/' . $id);
+
+        if (in_array($status, ['draft', 'approved', 'published', 'rejected'], true)) {
+            $buttons[] = $actionButton('project', $id, 'archived', 'Archive', 'danger');
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
+                . 'title="Archive is not available from the current project status.">Archive</button>';
+        }
+
+        $projectUrl = $slug !== ''
+            ? url('/projects/' . rawurlencode($slug))
+            : '';
+
+        if ($projectUrl !== '') {
+            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
+                . 'data-copy-value="' . e($projectUrl) . '">Copy slug</button>';
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled>Copy slug</button>';
+        }
+
+        if ($status === 'archived' && $propertiesCount === 0) {
+            $buttons[] = '<form action="' . e(url('/dashboard/projects/' . $id . '/delete'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<button class="table-action table-action--danger" type="submit">Delete</button></form>';
+        } else {
+            $deleteHint = $status !== 'archived'
+                ? 'Archive the project before deleting it.'
+                : 'Remove or delete all project properties before deleting it.';
+            $buttons[] = '<button class="table-action table-action--danger table-action--disabled" '
+                . 'type="button" disabled title="' . e($deleteHint) . '">Delete</button>';
+        }
+
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl . '?edit=1#workspace-record-edit') . '">Edit</a>';
+        $buttons[] = '<a class="table-action" href="' . e($viewUrl) . '">View</a>';
+
+        return $renderRowMenu($buttons, 'admin-project-' . $id);
+    }
 
     if ($workspaceType === 'admin' && $activeSection === 'properties') {
         $slug = trim((string) ($row['slug'] ?? ''));
@@ -1158,7 +1257,7 @@ $renderActions = static function (array $row) use (
                                 <input type="checkbox" data-bulk-toggle aria-label="Select all records on this page">
                             </th>
                         <?php endif; ?>
-                        <?php if ($showPropertyNumbers): ?>
+                        <?php if ($showAdminMarketplaceNumbers): ?>
                             <th scope="col" class="workspace-table__number">No</th>
                         <?php endif; ?>
                         <?php foreach ($columns as $label): ?>
@@ -1170,7 +1269,7 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showPropertyNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showAdminMarketplaceNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
                                 <span class="workspace-empty__icon"><?= app_icon((string) ($emptyState['icon'] ?? 'search')) ?></span>
                                 <strong><?= e((string) ($emptyState['title'] ?? 'No records found')) ?></strong>
                                 <span><?= e((string) ($emptyState['detail'] ?? 'Records matching this section and search will appear here.')) ?></span>
@@ -1191,11 +1290,27 @@ $renderActions = static function (array $row) use (
                                         >
                                     </td>
                                 <?php endif; ?>
-                                <?php if ($showPropertyNumbers): ?>
+                                <?php if ($showAdminMarketplaceNumbers): ?>
                                     <td class="workspace-table__number"><?= e((string) (((max(1, $page) - 1) * $perPage) + $rowIndex + 1)) ?></td>
                                 <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
-                                    <td><?= $formatCell($key, $row) ?></td>
+                                    <td>
+                                        <?php if (
+                                            $adminEditorResource !== null
+                                            && $adminEditorTitleKey !== null
+                                            && $key === $adminEditorTitleKey
+                                        ): ?>
+                                            <a
+                                                class="workspace-table__title-link"
+                                                href="<?= e(
+                                                    url('/dashboard/manage/' . $adminEditorResource . '/' . (int) ($row['id'] ?? 0))
+                                                    . '?edit=1#workspace-record-edit'
+                                                ) ?>"
+                                            ><?= e((string) ($row[$key] ?? '—')) ?></a>
+                                        <?php else: ?>
+                                            <?= $formatCell($key, $row) ?>
+                                        <?php endif; ?>
+                                    </td>
                                 <?php endforeach; ?>
                                 <td class="workspace-table__actions"><?= $renderActions($row) ?></td>
                             </tr>

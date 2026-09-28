@@ -16,6 +16,8 @@ use Barama\Services\DomainWorkflowService;
 use Barama\Services\EmailTemplateManagementService;
 use Barama\Services\FinanceManagementService;
 use Barama\Services\PageManagementService;
+use Barama\Services\CompanyManagementService;
+use Barama\Services\ProjectManagementService;
 use Barama\Services\PropertyManagementService;
 use Barama\Services\SiteContentManagementService;
 use Barama\Services\SiteMediaStorageService;
@@ -610,6 +612,76 @@ final class AdminManagementController
             return [
                 'media_id' => (int) $id,
                 'message' => 'Orphaned media asset deleted.',
+            ];
+        });
+    }
+
+    public function updateCompany(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid company ID is required.');
+            }
+
+            (new CompanyManagementService())->updateAsAdministrator(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'company_id' => (int) $id,
+                'message' => 'Company updated successfully.',
+            ];
+        });
+    }
+
+    public function deleteCompany(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid company ID is required.');
+            }
+
+            (new CompanyManagementService())->deleteAsAdministrator((int) $id);
+
+            return [
+                'company_id' => (int) $id,
+                'message' => 'Company deleted successfully.',
+            ];
+        });
+    }
+
+    public function updateProject(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid project ID is required.');
+            }
+
+            (new ProjectManagementService())->updateAsAdministrator(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'project_id' => (int) $id,
+                'message' => 'Project updated successfully.',
+            ];
+        });
+    }
+
+    public function deleteProject(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid project ID is required.');
+            }
+
+            (new ProjectManagementService())->deleteAsAdministrator((int) $id);
+
+            return [
+                'project_id' => (int) $id,
+                'message' => 'Project deleted successfully.',
             ];
         });
     }

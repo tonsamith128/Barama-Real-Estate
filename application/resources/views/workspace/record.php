@@ -46,7 +46,7 @@ $editable = (
     )
     || (
         $workspaceType === 'admin'
-        && $recordResource === 'property'
+        && in_array($recordResource, ['company', 'project', 'property'], true)
         && $adminEditMode
     );
 
@@ -832,7 +832,11 @@ $details = match ($recordResource) {
                     <div class="workspace-record-panel__head"><h2>Edit <?= e($humanize($recordResource)) ?></h2><span><?= e($workspaceType === 'admin' ? 'Administrator edit · current workflow status is preserved.' : 'Changes remain in the review workflow.') ?></span></div>
 
                     <?php if ($recordResource === 'company'): ?>
-                        <form action="<?= e(url('/developer/companies/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-form">
+                        <form action="<?= e(url(
+                            $workspaceType === 'admin'
+                                ? '/dashboard/companies/' . (int) $record['id']
+                                : '/developer/companies/' . (int) $record['id']
+                        )) ?>" method="post" data-workspace-form class="workspace-form">
                             <?= csrf_field() ?>
                             <div class="workspace-form__grid">
                                 <label><span>Company name</span><input class="form-control" name="name" value="<?= e((string) $record['name']) ?>" required maxlength="180"></label>
@@ -850,7 +854,11 @@ $details = match ($recordResource) {
                             <button class="btn btn-primary" type="submit">Save changes</button>
                         </form>
                     <?php elseif ($recordResource === 'project'): ?>
-                        <form action="<?= e(url('/developer/projects/' . (int) $record['id'])) ?>" method="post" data-workspace-form class="workspace-form">
+                        <form action="<?= e(url(
+                            $workspaceType === 'admin'
+                                ? '/dashboard/projects/' . (int) $record['id']
+                                : '/developer/projects/' . (int) $record['id']
+                        )) ?>" method="post" data-workspace-form class="workspace-form">
                             <?= csrf_field() ?>
                             <div class="workspace-form__grid">
                                 <label><span>Project name</span><input class="form-control" name="name" value="<?= e((string) $record['name']) ?>" required maxlength="191"></label>

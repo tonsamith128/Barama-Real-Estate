@@ -82,4 +82,29 @@ final class ProjectWriteRepository
 
         return $statement->fetchColumn() !== false;
     }
+
+    public function activePropertyCount(int $projectId): int
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT COUNT(*)
+             FROM properties
+             WHERE project_id = :project_id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['project_id' => $projectId]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function softDelete(int $projectId): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE projects
+             SET deleted_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id
+               AND deleted_at IS NULL'
+        );
+        $statement->execute(['id' => $projectId]);
+    }
 }

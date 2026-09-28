@@ -108,6 +108,67 @@ final class CompanyManagementService
             );
         }
 
+        $this->persistUpdate($companyId, $input);
+    }
+
+    /** @param array<string, mixed> $input */
+    public function updateAsAdministrator(int $companyId, array $input): void
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('dashboard.access')) {
+            throw new DomainException('Administrator access is required.');
+        }
+
+        $company = (new CompanyRepository())->findById($companyId);
+
+        if ($company === null) {
+            throw new InvalidArgumentException('Company was not found.');
+        }
+
+        $this->persistUpdate($companyId, $input);
+    }
+
+    public function deleteAsAdministrator(int $companyId): void
+    {
+        $auth = new AuthService();
+        $user = $auth->user();
+
+        if ($user === null || !$auth->can('dashboard.access')) {
+            throw new DomainException('Administrator access is required.');
+        }
+
+        $company = (new CompanyRepository())->findById($companyId);
+
+        if ($company === null) {
+            throw new InvalidArgumentException('Company was not found.');
+        }
+
+        if ((string) ($company['status'] ?? '') !== 'archived') {
+            throw new DomainException('Archive the company before deleting it.');
+        }
+
+        $companies = new CompanyWriteRepository();
+
+        if ($companies->activeProjectCount($companyId) > 0) {
+            throw new DomainException(
+                'Remove or archive and delete all company projects before deleting this company.'
+            );
+        }
+
+        if ($companies->activePropertyCount($companyId) > 0) {
+            throw new DomainException(
+                'Remove or archive and delete all company properties before deleting this company.'
+            );
+        }
+
+        $companies->softDelete($companyId);
+    }
+
+    /** @param array<string, mixed> $input */
+    private function persistUpdate(int $companyId, array $input): void
+    {
         $name = DomainInput::requiredString($input, 'name', 180, 2);
         $companyType = DomainInput::requiredString($input, 'company_type', 40);
 

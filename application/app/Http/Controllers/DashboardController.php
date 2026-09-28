@@ -368,7 +368,7 @@ final class DashboardController
         );
 
         $workspaceRead = new WorkspaceReadRepository();
-        $adminEditMode = $resource === 'property'
+        $adminEditMode = in_array($resource, ['company', 'project', 'property'], true)
             && in_array((string) $request->input('edit', ''), ['1', 'true', 'yes'], true);
 
         return Response::html(View::render('workspace/record', [
@@ -426,7 +426,9 @@ final class DashboardController
         $preferredPageSize = in_array((int) ($workspacePreferences['page_size'] ?? 20), [10, 20, 50], true)
             ? (int) ($workspacePreferences['page_size'] ?? 20)
             : 20;
-        $pageSize = $section === 'properties' ? 10 : $preferredPageSize;
+        $pageSize = in_array($section, ['companies', 'projects', 'properties'], true)
+            ? 10
+            : $preferredPageSize;
         if ($rememberFilters && $hasFilterQuery && $settingsUser !== null) {
             $workspacePreferences['last_filters'] = ['q'=>$search, 'status'=>$filters['status'], 'type'=>$filters['type'], 'location'=>$filters['location'], 'sort'=>$sort];
             $settingsRepository->save((int) $settingsUser['id'], 'dashboard', $workspacePreferences);
