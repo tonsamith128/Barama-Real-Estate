@@ -86,6 +86,9 @@ jobs:
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 
+      - name: Run Communications announcement delivery smoke test
+        run: php tools/communications-announcement-smoke.php
+
       - name: Run SMTP transport smoke test
         run: php tools/smtp-smoke.php
 
