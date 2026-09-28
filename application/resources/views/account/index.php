@@ -328,11 +328,11 @@ $propertySearchUrl = static function (array $search): string {
     <?php elseif ($activeSection === 'notifications'): ?>
         <div class="account-notification-layout">
             <section class="account-panel">
-                <div class="account-panel__head"><h2>Real-estate notification preferences</h2><span>Control matching property listings, viewing requests, and property inquiry updates only.</span></div>
+                <div class="account-panel__head"><h2>Notification preferences</h2><span>Control notification channels and real-estate activity categories. Platform announcements follow your channel switches.</span></div>
                 <form action="<?= e(url('/account/notification-preferences')) ?>" method="post" data-account-action class="account-form account-notification-preferences">
                     <?= csrf_field() ?>
-                    <label class="workspace-check"><input type="checkbox" name="in_app_enabled" value="1" <?= !empty($notificationPreferences['in_app_enabled']) ? 'checked' : '' ?>><span>In-app property notifications</span></label>
-                    <label class="workspace-check"><input type="checkbox" name="email_enabled" value="1" <?= !empty($notificationPreferences['email_enabled']) ? 'checked' : '' ?>><span>Email property notifications</span></label>
+                    <label class="workspace-check"><input type="checkbox" name="in_app_enabled" value="1" <?= !empty($notificationPreferences['in_app_enabled']) ? 'checked' : '' ?>><span>In-app notifications</span></label>
+                    <label class="workspace-check"><input type="checkbox" name="email_enabled" value="1" <?= !empty($notificationPreferences['email_enabled']) ? 'checked' : '' ?>><span>Email notifications</span></label>
                     <div class="account-preference-divider"></div>
                     <label class="workspace-check"><input type="checkbox" name="saved_search_alerts" value="1" <?= !empty($notificationPreferences['saved_search_alerts']) ? 'checked' : '' ?>><span>Matching property listing alerts</span></label>
                     <label class="workspace-check"><input type="checkbox" name="viewing_updates" value="1" <?= !empty($notificationPreferences['viewing_updates']) ? 'checked' : '' ?>><span>Property viewing updates</span></label>
@@ -343,31 +343,31 @@ $propertySearchUrl = static function (array $search): string {
 
             <section class="account-panel">
                 <div class="account-panel__head account-panel__head--actions">
-                    <div><h2>Property activity inbox</h2><span><?= e((string) $summary['notifications']) ?> unread marketplace notification<?= (int) $summary['notifications'] === 1 ? '' : 's' ?></span></div>
+                    <div><h2>Notification inbox</h2><span><?= e((string) $summary['notifications']) ?> unread marketplace notification<?= (int) $summary['notifications'] === 1 ? '' : 's' ?></span></div>
                     <?php if ($summary['notifications'] > 0): ?><form action="<?= e(url('/account/notifications/read-all')) ?>" method="post" data-account-action><?= csrf_field() ?><button class="btn btn-outline-secondary btn-sm" type="submit">Mark all read</button></form><?php endif; ?>
                 </div>
 
                 <form method="get" class="account-personalization-filter account-personalization-filter--notifications">
-                    <label class="account-personalization-search"><span><?= app_icon('search') ?></span><input name="q" maxlength="80" value="<?= e($personalizationSearch) ?>" placeholder="Search property notifications"></label>
+                    <label class="account-personalization-search"><span><?= app_icon('search') ?></span><input name="q" maxlength="80" value="<?= e($personalizationSearch) ?>" placeholder="Search notifications"></label>
                     <label><span>State</span><select name="state"><option value="">Read & unread</option><option value="unread" <?= ($personalizationFilters['state'] ?? '') === 'unread' ? 'selected' : '' ?>>Unread</option><option value="read" <?= ($personalizationFilters['state'] ?? '') === 'read' ? 'selected' : '' ?>>Read</option></select></label>
-                    <label><span>Activity</span><select name="category"><option value="">All property activity</option><option value="saved_search_alerts" <?= ($personalizationFilters['category'] ?? '') === 'saved_search_alerts' ? 'selected' : '' ?>>Property matches</option><option value="viewing_updates" <?= ($personalizationFilters['category'] ?? '') === 'viewing_updates' ? 'selected' : '' ?>>Viewings</option><option value="inquiry_updates" <?= ($personalizationFilters['category'] ?? '') === 'inquiry_updates' ? 'selected' : '' ?>>Inquiries</option></select></label>
+                    <label><span>Activity</span><select name="category"><option value="">All notifications</option><option value="announcements" <?= ($personalizationFilters['category'] ?? '') === 'announcements' ? 'selected' : '' ?>>Announcements</option><option value="saved_search_alerts" <?= ($personalizationFilters['category'] ?? '') === 'saved_search_alerts' ? 'selected' : '' ?>>Property matches</option><option value="viewing_updates" <?= ($personalizationFilters['category'] ?? '') === 'viewing_updates' ? 'selected' : '' ?>>Viewings</option><option value="inquiry_updates" <?= ($personalizationFilters['category'] ?? '') === 'inquiry_updates' ? 'selected' : '' ?>>Inquiries</option></select></label>
                     <button class="btn btn-primary btn-sm" type="submit">Filter</button>
                     <?php if ($personalizationHasFilters): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/account/notifications')) ?>">Reset</a><?php endif; ?>
                 </form>
 
                 <?php if ($notifications === []): ?>
-                    <div class="account-empty account-empty--compact"><?= app_icon('bell') ?><strong><?= $personalizationHasFilters ? 'No property notifications match these filters.' : 'No property notifications yet.' ?></strong><span><?= $personalizationHasFilters ? 'Adjust or reset the filters to see other marketplace activity.' : 'Matching listings, inquiry updates, and viewing activity will appear here.' ?></span></div>
+                    <div class="account-empty account-empty--compact"><?= app_icon('bell') ?><strong><?= $personalizationHasFilters ? 'No notifications match these filters.' : 'No notifications yet.' ?></strong><span><?= $personalizationHasFilters ? 'Adjust or reset the filters to see other marketplace activity.' : 'Platform announcements, matching listings, inquiry updates, and viewing activity will appear here.' ?></span></div>
                 <?php else: ?>
                     <div class="account-notification-list">
                         <?php foreach ($notifications as $notification): ?>
                             <article class="account-notification-item <?= empty($notification['read_at']) ? 'is-unread' : '' ?>">
-                                <div class="account-notification-item__icon"><?= app_icon(match ((string) $notification['category']) {'viewing_updates' => 'calendar','inquiry_updates' => 'message','saved_search_alerts' => 'home',default => 'bell',}) ?></div>
+                                <div class="account-notification-item__icon"><?= app_icon(match ((string) $notification['category']) {'viewing_updates' => 'calendar','inquiry_updates' => 'message','saved_search_alerts' => 'home','announcements' => 'bell',default => 'bell',}) ?></div>
                                 <div class="account-notification-item__body">
-                                    <div class="account-notification-item__meta"><span><?= e(match ((string) $notification['category']) {'saved_search_alerts' => 'Property match','viewing_updates' => 'Viewing update','inquiry_updates' => 'Inquiry update',default => $humanize($notification['category']),}) ?></span><time><?= e(date('M j, Y H:i', strtotime((string) $notification['created_at']))) ?></time></div>
+                                    <div class="account-notification-item__meta"><span><?= e(match ((string) $notification['category']) {'saved_search_alerts' => 'Property match','viewing_updates' => 'Viewing update','inquiry_updates' => 'Inquiry update','announcements' => 'Announcement',default => $humanize($notification['category']),}) ?></span><time><?= e(date('M j, Y H:i', strtotime((string) $notification['created_at']))) ?></time></div>
                                     <h3><?= e((string) $notification['title']) ?></h3>
                                     <p><?= e((string) $notification['message']) ?></p>
                                     <div class="account-notification-item__actions">
-                                        <?php if (!empty($notification['action_url'])): ?><a href="<?= e(url((string) $notification['action_url'])) ?>">Open property activity</a><?php endif; ?>
+                                        <?php if (!empty($notification['action_url'])): ?><a href="<?= e(url((string) $notification['action_url'])) ?>"><?= (string) $notification['category'] === 'announcements' ? 'Open announcement' : 'Open property activity' ?></a><?php endif; ?>
                                         <?php if (empty($notification['read_at'])): ?><form action="<?= e(url('/account/notifications/' . (int) $notification['id'] . '/read')) ?>" method="post" data-account-action><?= csrf_field() ?><button type="submit">Mark read</button></form><?php else: ?><span class="account-read-state"><?= app_icon('check') ?> Read</span><?php endif; ?>
                                     </div>
                                 </div>

@@ -13,36 +13,41 @@ final class NotificationService
         'saved_search_alerts',
         'viewing_updates',
         'inquiry_updates',
+        'announcements',
     ];
 
     /**
      * @param array{
      *   type:string,title:string,message:string,action_url?:?string,
-     *   entity_type?:?string,entity_id?:?int,dedupe_key:string,
-     *   email_subject?:?string,email_html?:?string,email_text?:?string
+     *   action_label?:?string,entity_type?:?string,entity_id?:?int,
+     *   dedupe_key:string,email_subject?:?string,email_html?:?string,
+     *   email_text?:?string,in_app?:bool,email?:bool
      * } $data
+     * @return array{notification_id:?int,email_outbox_id:?int}
      */
-    public function notifyUser(int $userId, string $category, array $data): void
+    public function notifyUser(int $userId, string $category, array $data): array
     {
         $this->assertCategory($category);
 
+        $result = ['notification_id' => null, 'email_outbox_id' => null];
         $repository = new NotificationRepository();
         $user = $repository->user($userId);
 
         if ($user === null || (string) $user['status'] !== 'active') {
-            return;
+            return $result;
         }
 
         $preferences = $repository->preferences($userId);
 
-        if (!$preferences[$category]) {
-            return;
+        if ($category !== 'announcements' && empty($preferences[$category])) {
+            return $result;
         }
 
-        $notificationId = null;
+        $allowInApp = !array_key_exists('in_app', $data) || (bool) $data['in_app'];
+        $allowEmail = !array_key_exists('email', $data) || (bool) $data['email'];
 
-        if ($preferences['in_app_enabled']) {
-            $notificationId = $repository->createNotification([
+        if ($allowInApp && $preferences['in_app_enabled']) {
+            $result['notification_id'] = $repository->createNotification([
                 'user_id' => $userId,
                 'category' => $category,
                 'type' => $data['type'],
@@ -55,14 +60,14 @@ final class NotificationService
             ]);
         }
 
-        if (!$preferences['email_enabled']) {
-            return;
+        if (!$allowEmail || !$preferences['email_enabled']) {
+            return $result;
         }
 
         $email = strtolower(trim((string) $user['email']));
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return;
+            return $result;
         }
 
         [$html, $text] = $this->emailBodies($data);
@@ -70,43 +75,44 @@ final class NotificationService
 
         if (!$this->hasExplicitEmailBodies($data)) {
             $action = trim((string) ($data['action_url'] ?? ''));
+            $actionLabel = trim((string) ($data['action_label'] ?? ''));
             $rendered = (new EmailTemplateRendererService())->render(
                 (string) $data['type'],
                 [
                     'title' => (string) $data['title'],
                     'message' => (string) $data['message'],
                     'action_url' => $action !== '' ? url($action) : '',
+                    'action_label' => $actionLabel !== '' ? $actionLabel : 'Open in Barama Real Estate',
                     'recipient_name' => (string) $user['name'],
                     'app_name' => (string) config('app.name', 'Barama Real Estate'),
                     'app_url' => rtrim((string) config('app.url', ''), '/'),
                 ],
-                [
-                    'subject' => $subject,
-                    'html' => $html,
-                    'text' => $text,
-                ]
+                ['subject' => $subject, 'html' => $html, 'text' => $text]
             );
             $subject = $rendered['subject'];
             $html = $rendered['html'];
             $text = $rendered['text'];
         }
 
-        $repository->queueEmail([
+        $result['email_outbox_id'] = $repository->queueEmail([
             'user_id' => $userId,
-            'notification_id' => $notificationId,
+            'notification_id' => $result['notification_id'],
             'to_address' => $email,
             'subject' => $subject,
             'html_body' => $html,
             'text_body' => $text,
             'dedupe_key' => 'user:' . $userId . ':' . $data['dedupe_key'],
         ]);
+
+        return $result;
     }
 
     /**
      * @param array{
      *   type:string,title:string,message:string,action_url?:?string,
-     *   entity_type?:?string,entity_id?:?int,dedupe_key:string,
-     *   email_subject?:?string,email_html?:?string,email_text?:?string
+     *   action_label?:?string,entity_type?:?string,entity_id?:?int,
+     *   dedupe_key:string,email_subject?:?string,email_html?:?string,
+     *   email_text?:?string,in_app?:bool,email?:bool
      * } $data
      */
     public function notifyCompany(int $companyId, string $category, array $data): void
@@ -116,18 +122,12 @@ final class NotificationService
 
         foreach ($repository->companyRecipients($companyId) as $recipient) {
             $recipientData = $data;
-            $recipientData['dedupe_key'] = $data['dedupe_key']
-                . ':recipient:' . (int) $recipient['id'];
-
+            $recipientData['dedupe_key'] = $data['dedupe_key'] . ':recipient:' . (int) $recipient['id'];
             $this->notifyUser((int) $recipient['id'], $category, $recipientData);
         }
     }
 
-    /**
-     * Queue a transactional email for a guest/contact address that has no user preferences.
-     *
-     * @param array{subject:string,html:string,text:string,dedupe_key:string} $data
-     */
+    /** @param array{subject:string,html:string,text:string,dedupe_key:string} $data */
     public function notifyAddress(string $email, array $data): void
     {
         $email = strtolower(trim($email));
@@ -187,14 +187,16 @@ final class NotificationService
         $title = e((string) $data['title']);
         $message = nl2br(e((string) $data['message']));
         $action = trim((string) ($data['action_url'] ?? ''));
+        $actionLabel = trim((string) ($data['action_label'] ?? ''));
 
         $html = '<p><strong>' . $title . '</strong></p><p>' . $message . '</p>';
         $text = (string) $data['title'] . "\n\n" . (string) $data['message'];
 
         if ($action !== '') {
             $absolute = url($action);
-            $html .= '<p><a href="' . e($absolute) . '">Open in Barama Real Estate</a></p>';
-            $text .= "\n\nOpen: " . $absolute;
+            $label = $actionLabel !== '' ? $actionLabel : 'Open in Barama Real Estate';
+            $html .= '<p><a href="' . e($absolute) . '">' . e($label) . '</a></p>';
+            $text .= "\n\n" . $label . ': ' . $absolute;
         }
 
         return [$html, $text];

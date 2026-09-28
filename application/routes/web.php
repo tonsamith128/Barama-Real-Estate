@@ -468,6 +468,31 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
 );
 $router->get(
+    '/dashboard/announcements',
+    [DashboardController::class, 'announcements'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+);
+$router->post(
+    '/dashboard/announcements',
+    [AdminManagementController::class, 'createAnnouncement'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/announcements/{id}',
+    [AdminManagementController::class, 'updateAnnouncement'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/announcements/{id}/status',
+    [AdminManagementController::class, 'updateAnnouncementStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/announcements/{id}/publish',
+    [AdminManagementController::class, 'publishAnnouncement'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->get(
     '/dashboard/email-templates',
     [DashboardController::class, 'emailTemplates'],
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]

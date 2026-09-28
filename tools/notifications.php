@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Barama\Core\Database;
+use Barama\Services\AnnouncementDeliveryService;
 use Barama\Services\OutboxDeliveryService;
 use Barama\Services\SavedSearchAlertService;
 
@@ -34,27 +35,26 @@ if ((int) $lockStatement->fetchColumn() !== 1) {
 }
 
 try {
+    if ($command === 'announcements') {
+        $result = (new AnnouncementDeliveryService())->processDue($limit);
+        fwrite(STDOUT, sprintf(
+            "[PASS] Announcements: %d due item(s) processed, %d published, %d recipient delivery record(s).\n",
+            $result['processed'], $result['published'], $result['recipients']
+        ));
+        exit(0);
+    }
+
     if ($command === 'alerts') {
         if (!in_array($frequency, ['all', 'daily', 'weekly'], true)) {
             fwrite(STDERR, "Usage: php tools/notifications.php alerts [all|daily|weekly] [--force] [--limit=N]\n");
             exit(2);
         }
 
-        $result = (new SavedSearchAlertService())->process(
-            $frequency,
-            $limit,
-            $force
-        );
-
-        fwrite(
-            STDOUT,
-            sprintf(
-                "[PASS] Alerts: %d search(es) processed, %d new match(es), %d digest notification(s).\n",
-                $result['processed'],
-                $result['matched'],
-                $result['notified']
-            )
-        );
+        $result = (new SavedSearchAlertService())->process($frequency, $limit, $force);
+        fwrite(STDOUT, sprintf(
+            "[PASS] Alerts: %d search(es) processed, %d new match(es), %d digest notification(s).\n",
+            $result['processed'], $result['matched'], $result['notified']
+        ));
         exit(0);
     }
 
@@ -62,45 +62,29 @@ try {
         $outboxLimit = ctype_digit((string) ($argv[2] ?? ''))
             ? max(1, min(500, (int) $argv[2]))
             : $limit;
-
         $result = (new OutboxDeliveryService())->deliver($outboxLimit);
-
-        fwrite(
-            STDOUT,
-            sprintf(
-                "[PASS] Outbox: %d processed, %d sent, %d failed.\n",
-                $result['processed'],
-                $result['sent'],
-                $result['failed']
-            )
-        );
+        fwrite(STDOUT, sprintf(
+            "[PASS] Outbox: %d processed, %d sent, %d failed.\n",
+            $result['processed'], $result['sent'], $result['failed']
+        ));
         exit($result['failed'] > 0 ? 1 : 0);
     }
 
     if ($command !== 'run') {
-        fwrite(
-            STDERR,
-            "Usage: php tools/notifications.php [run|alerts|outbox] [all|daily|weekly] [--force] [--limit=N]\n"
-        );
+        fwrite(STDERR, "Usage: php tools/notifications.php [run|announcements|alerts|outbox] [all|daily|weekly] [--force] [--limit=N]\n");
         exit(2);
     }
 
+    $announcements = (new AnnouncementDeliveryService())->processDue($limit);
     $alerts = (new SavedSearchAlertService())->process('all', $limit, $force);
     $outbox = (new OutboxDeliveryService())->deliver($limit);
 
-    fwrite(
-        STDOUT,
-        sprintf(
-            "[PASS] Notifications: %d search(es), %d new match(es), %d digest(s); outbox %d processed, %d sent, %d failed.\n",
-            $alerts['processed'],
-            $alerts['matched'],
-            $alerts['notified'],
-            $outbox['processed'],
-            $outbox['sent'],
-            $outbox['failed']
-        )
-    );
-
+    fwrite(STDOUT, sprintf(
+        "[PASS] Notifications: announcements %d published to %d recipient(s); %d search(es), %d new match(es), %d digest(s); outbox %d processed, %d sent, %d failed.\n",
+        $announcements['published'], $announcements['recipients'],
+        $alerts['processed'], $alerts['matched'], $alerts['notified'],
+        $outbox['processed'], $outbox['sent'], $outbox['failed']
+    ));
     exit($outbox['failed'] > 0 ? 1 : 0);
 } finally {
     $release = $pdo->prepare('SELECT RELEASE_LOCK(:lock_name)');
