@@ -6,6 +6,8 @@ $rows = is_array($records['rows'] ?? null) ? $records['rows'] : [];
 $total = (int) ($records['total'] ?? 0);
 $page = (int) ($records['page'] ?? 1);
 $pages = (int) ($records['pages'] ?? 1);
+$perPage = max(1, (int) ($records['per_page'] ?? count($rows) ?: 1));
+$showPropertyNumbers = $workspaceType === 'admin' && $activeSection === 'properties';
 $companies = is_array($formOptions['companies'] ?? null) ? $formOptions['companies'] : [];
 $projects = is_array($formOptions['projects'] ?? null) ? $formOptions['projects'] : [];
 $properties = is_array($formOptions['properties'] ?? null) ? $formOptions['properties'] : [];
@@ -1100,6 +1102,9 @@ $renderActions = static function (array $row) use (
                                 <input type="checkbox" data-bulk-toggle aria-label="Select all records on this page">
                             </th>
                         <?php endif; ?>
+                        <?php if ($showPropertyNumbers): ?>
+                            <th scope="col" class="workspace-table__number">No</th>
+                        <?php endif; ?>
                         <?php foreach ($columns as $label): ?>
                             <th scope="col"><?= e($label) ?></th>
                         <?php endforeach; ?>
@@ -1109,14 +1114,14 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showPropertyNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
                                 <span class="workspace-empty__icon"><?= app_icon((string) ($emptyState['icon'] ?? 'search')) ?></span>
                                 <strong><?= e((string) ($emptyState['title'] ?? 'No records found')) ?></strong>
                                 <span><?= e((string) ($emptyState['detail'] ?? 'Records matching this section and search will appear here.')) ?></span>
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($rows as $row): ?>
+                        <?php foreach ($rows as $rowIndex => $row): ?>
                             <tr>
                                 <?php if ($bulkMode): ?>
                                     <td class="workspace-table__check">
@@ -1129,6 +1134,9 @@ $renderActions = static function (array $row) use (
                                             aria-label="Select <?= e((string) ($row['title'] ?? 'record')) ?>"
                                         >
                                     </td>
+                                <?php endif; ?>
+                                <?php if ($showPropertyNumbers): ?>
+                                    <td class="workspace-table__number"><?= e((string) (((max(1, $page) - 1) * $perPage) + $rowIndex + 1)) ?></td>
                                 <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
                                     <td><?= $formatCell($key, $row) ?></td>
