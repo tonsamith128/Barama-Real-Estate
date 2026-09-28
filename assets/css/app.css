@@ -12536,3 +12536,68 @@ body:not(.auth-standalone-body) textarea {
         transform: none !important;
     }
 }
+
+
+/* BARAMA_PROJECT_DETAIL_AUDIT_V100 */
+.project-facts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin: 1rem 0 0;
+}
+
+.project-facts-grid > div {
+    min-width: 0;
+    min-height: 104px;
+    border: 1px solid var(--barama-border);
+    border-radius: 16px;
+    background:
+        linear-gradient(
+            145deg,
+            color-mix(in srgb, var(--barama-surface) 96%, transparent),
+            color-mix(in srgb, var(--barama-primary) 3%, var(--barama-surface))
+        );
+    padding: 0.9rem;
+    box-shadow: 0 10px 26px rgba(8, 18, 35, 0.04);
+}
+
+.project-facts-grid dt {
+    display: flex;
+    gap: 0.42rem;
+    align-items: center;
+    color: var(--barama-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.project-facts-grid dt svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    color: var(--barama-primary);
+}
+
+.project-facts-grid dd {
+    overflow-wrap: anywhere;
+    margin: 0.55rem 0 0;
+    color: var(--barama-text);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    font-weight: 850;
+}
+
+@media (max-width: 767.98px) {
+    .project-facts-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .project-facts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .project-facts-grid > div {
+        min-height: 88px;
+    }
+}
