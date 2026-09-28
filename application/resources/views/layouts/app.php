@@ -97,6 +97,15 @@ $seoRobots = trim((string) ($metaRobots ?? (
 )));
 $seoImage = trim((string) ($metaImage ?? ''));
 $seoType = trim((string) ($metaType ?? 'website'));
+
+$appCssFile = BASE_PATH . '/assets/css/app.css';
+$appJsFile = BASE_PATH . '/assets/js/app.js';
+$appCssVersion = is_file($appCssFile)
+    ? (string) (filemtime($appCssFile) ?: APP_VERSION)
+    : APP_VERSION;
+$appJsVersion = is_file($appJsFile)
+    ? (string) (filemtime($appJsFile) ?: APP_VERSION)
+    : APP_VERSION;
 ?>
 <!doctype html>
 <html lang="<?= e(app_locale()) ?>" data-bs-theme="light"<?= !$isWorkspacePage ? ' class="barama-public-root appearance-skin-' . e($frontendAppearanceSkin) . '"' : '' ?>>
@@ -155,7 +164,7 @@ $seoType = trim((string) ($metaType ?? 'website'));
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
     >
-    <link href="<?= e(asset('css/app.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('css/app.css') . '?v=' . rawurlencode($appCssVersion)) ?>" rel="stylesheet">
     <?php if (!$isWorkspacePage): ?>
         <link href="<?= e(url('/appearance.css?v=' . rawurlencode($frontendAppearanceVersion))) ?>" rel="stylesheet">
     <?php endif; ?>
@@ -549,6 +558,6 @@ $seoType = trim((string) ($metaType ?? 'website'));
     </footer>
     <?php endif; ?>
 
-    <script src="<?= e(asset('js/app.js')) ?>" defer></script>
+    <script src="<?= e(asset('js/app.js') . '?v=' . rawurlencode($appJsVersion)) ?>" defer></script>
 </body>
 </html>
