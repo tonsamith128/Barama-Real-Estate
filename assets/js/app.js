@@ -1794,3 +1794,80 @@
         start();
     });
 })();
+
+
+/* BARAMA_HOMEPAGE_SUBSCRIBE_V100 */
+(() => {
+    'use strict';
+
+    document.querySelectorAll('[data-home-subscribe-form]').forEach((form) => {
+        const notice = form.parentElement?.querySelector('[data-home-subscribe-notice]');
+        const successMessage = form.getAttribute('data-success-message')
+            || 'Thank you. You are subscribed to Barama updates.';
+
+        form.addEventListener('submit', async (event) => {
+            if (typeof window.fetch !== 'function') {
+                return;
+            }
+
+            event.preventDefault();
+
+            const submitter = event.submitter;
+
+            if (submitter) {
+                submitter.disabled = true;
+                submitter.setAttribute('aria-busy', 'true');
+            }
+
+            if (notice) {
+                notice.hidden = true;
+                notice.classList.remove('is-success', 'is-error');
+                notice.textContent = '';
+            }
+
+            try {
+                const response = await window.fetch(form.action, {
+                    method: form.method || 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const payload = await response.json().catch(() => null);
+
+                if (!response.ok || payload?.ok !== true) {
+                    throw new Error(
+                        payload?.message || 'Subscription could not be completed.'
+                    );
+                }
+
+                if (notice) {
+                    notice.hidden = false;
+                    notice.classList.add('is-success');
+                    notice.textContent = successMessage;
+                }
+
+                const email = form.querySelector('input[name="email"]');
+                if (email instanceof HTMLInputElement) {
+                    email.value = '';
+                }
+            } catch (error) {
+                if (notice) {
+                    notice.hidden = false;
+                    notice.classList.add('is-error');
+                    notice.textContent = error instanceof Error
+                        ? error.message
+                        : 'Subscription could not be completed.';
+                }
+            } finally {
+                if (submitter) {
+                    submitter.disabled = false;
+                    submitter.removeAttribute('aria-busy');
+                }
+            }
+        });
+    });
+})();

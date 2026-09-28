@@ -19,6 +19,7 @@ use Barama\Http\Controllers\HomeController;
 use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
 use Barama\Http\Controllers\MarketplaceController;
+use Barama\Http\Controllers\NewsletterController;
 use Barama\Http\Controllers\PublicMediaController;
 use Barama\Http\Controllers\PaymentWebhookController;
 use Barama\Http\Controllers\SeoController;
@@ -49,6 +50,7 @@ $router->get('/company/{slug}', [CompanyController::class, 'show']);
 $router->get('/pages/{slug}', [CmsController::class, 'show']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
+$router->post('/subscribe', [NewsletterController::class, 'store'], $csrf);
 $router->post(
     '/payments/webhooks/{provider}',
     [PaymentWebhookController::class, 'receive']
