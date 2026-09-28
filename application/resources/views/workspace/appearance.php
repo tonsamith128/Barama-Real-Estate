@@ -59,7 +59,7 @@ $paletteKeys = [
         </div>
         <div class="appearance-manager__header-actions">
             <a class="content-config-button" href="<?= e(url('/')) ?>" target="_blank" rel="noopener noreferrer"><?= app_icon('globe') ?><span>Preview frontend</span></a>
-            <form action="<?= e(url('/dashboard/appearance/reset')) ?>" method="post" data-workspace-form>
+            <form action="<?= e(url('/dashboard/appearance/reset')) ?>" method="post" data-appearance-form>
                 <?= csrf_field() ?>
                 <button class="content-config-button table-action--danger" type="submit"><?= app_icon('settings') ?><span>Reset defaults</span></button>
             </form>
@@ -72,7 +72,17 @@ $paletteKeys = [
         <small>Public and authentication pages only · Admin, Developer and Account workspaces keep their canonical UI.</small>
     </div>
 
-    <div data-workspace-notice hidden></div>
+    <?php
+    $appearanceSaved = (string) ($_GET['appearance_saved'] ?? '');
+    $appearanceError = trim((string) ($_GET['appearance_error'] ?? ''));
+    ?>
+    <div data-workspace-notice<?= ($appearanceSaved === '1' || $appearanceError !== '') ? '' : ' hidden' ?> class="<?= $appearanceError !== '' ? 'is-error' : ($appearanceSaved === '1' ? 'is-success' : '') ?>">
+        <?php if ($appearanceError !== ''): ?>
+            <?= e($appearanceError) ?>
+        <?php elseif ($appearanceSaved === '1'): ?>
+            Appearance changes saved successfully.
+        <?php endif; ?>
+    </div>
 
     <div class="content-config-table-wrap">
         <table class="content-config-table">
@@ -96,7 +106,7 @@ $paletteKeys = [
                         </td>
                         <td><span class="content-config-summary"><?= e((string) $row['summary']) ?></span></td>
                         <td>
-                            <form action="<?= e(url('/dashboard/appearance/' . $key . '/toggle')) ?>" method="post" data-workspace-form data-toggle-form>
+                            <form action="<?= e(url('/dashboard/appearance/' . $key . '/toggle')) ?>" method="post" data-appearance-form data-toggle-form>
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="enabled" value="<?= $enabled ? '1' : '0' ?>" data-toggle-value>
                                 <label class="premium-switch">
@@ -116,7 +126,7 @@ $paletteKeys = [
     </div>
 
     <dialog class="config-dialog" id="appearance-config-typography" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/typography')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/typography')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?>
             <header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Typography</h2><p>Fine-tune reading rhythm and heading character across every frontend page.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
@@ -130,7 +140,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-font_family" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/font_family')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/font_family')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?>
             <header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Font Family</h2><p>Uses local system-safe stacks only; no external font dependency is introduced.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
@@ -143,7 +153,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-font_size" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/font_size')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/font_size')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?>
             <header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Font Size</h2><p>The base size changes rem-based typography across the entire frontend.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
@@ -156,7 +166,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog config-dialog--wide" id="appearance-config-color" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/color')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/color')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?>
             <header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Color</h2><p>Separate Light and Dark palettes keep both themes fully customizable and accessible.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body appearance-color-grid">
@@ -173,7 +183,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-background" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/background')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/background')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?>
             <header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Background</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
@@ -188,7 +198,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-font_style" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/font_style')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/font_style')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?>
             <header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Font Style</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
@@ -203,7 +213,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-border" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/border')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/border')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Border</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Width (px)</span><input class="form-control" type="number" name="width" min="0" max="3" value="<?= e((string)$appearance['border']['width']) ?>"></label>
@@ -214,7 +224,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-shadow" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/shadow')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/shadow')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Shadow</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Elevation</span><select class="form-select" name="level"><?php foreach (['none'=>'None','soft'=>'Soft','medium'=>'Medium','strong'=>'Strong'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $appearance['shadow']['level']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
@@ -224,7 +234,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-preset" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/preset')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/preset')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Preset</h2><p>When Preset is ON it temporarily overrides coordinated tokens; your custom module values remain stored underneath.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body"><div class="appearance-preset-grid"><?php foreach (['barama'=>'Barama','ocean'=>'Ocean','luxury'=>'Luxury','warm'=>'Warm','minimal'=>'Minimal','mono'=>'Mono'] as $v=>$l): ?><label class="appearance-preset-option"><input type="radio" name="name" value="<?= e($v) ?>" <?= $appearance['preset']['name']===$v?'checked':'' ?>><span><strong><?= e($l) ?></strong><small><?= e(match($v){'ocean'=>'Blue glass marketplace','luxury'=>'Serif + warm metallic accents','warm'=>'Warm coral surfaces','minimal'=>'Neutral sharp system','mono'=>'Monospace technical skin',default=>'Canonical Barama design'}) ?></small></span></label><?php endforeach; ?></div></div>
             <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save preset</button></footer>
@@ -232,7 +242,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-skin" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/skin')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/skin')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Skin</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid"><label class="config-field-grid__wide"><span>Surface skin</span><select class="form-select" name="name"><?php foreach (['modern'=>'Modern','soft'=>'Soft','sharp'=>'Sharp','glass'=>'Glass','luxury'=>'Luxury'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $appearance['skin']['name']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></label></div>
             <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save skin</button></footer>
@@ -240,7 +250,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-layout" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/layout')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/layout')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Layout</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Container width (px)</span><input class="form-control" type="number" min="1040" max="1600" step="10" name="container_width" value="<?= e((string)$appearance['layout']['container_width']) ?>"></label>
@@ -252,7 +262,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-radius_spacing" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/radius_spacing')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/radius_spacing')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Radius & Spacing</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <?php foreach (['radius_sm'=>['Small radius',0,24],'radius_md'=>['Medium radius',0,32],'radius_lg'=>['Large radius',0,48],'control_radius'=>['Control radius',0,24],'card_radius'=>['Card radius',0,32]] as $field=>$spec): ?><label><span><?= e($spec[0]) ?> (px)</span><input class="form-control" type="number" name="<?= e($field) ?>" min="<?= $spec[1] ?>" max="<?= $spec[2] ?>" value="<?= e((string)$appearance['radius_spacing'][$field]) ?>"></label><?php endforeach; ?>
@@ -262,7 +272,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-buttons" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/buttons')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/buttons')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Buttons</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Style</span><select class="form-select" name="style"><?php foreach (['solid'=>'Solid','soft'=>'Soft','outline'=>'Outline','gradient'=>'Gradient'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $appearance['buttons']['style']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
@@ -274,7 +284,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-cards" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/cards')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/cards')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Cards</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Style</span><select class="form-select" name="style"><?php foreach (['elevated'=>'Elevated','outlined'=>'Outlined','flat'=>'Flat','glass'=>'Glass'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $appearance['cards']['style']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
@@ -286,7 +296,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-forms" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/forms')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/forms')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Forms</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Control style</span><select class="form-select" name="style"><?php foreach (['outlined'=>'Outlined','filled'=>'Filled','soft'=>'Soft'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $appearance['forms']['style']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
@@ -298,7 +308,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-header" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/header')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/header')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Header & Navigation</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Header height (px)</span><input class="form-control" type="number" min="60" max="96" name="height" value="<?= e((string)$appearance['header']['height']) ?>"></label>
@@ -311,7 +321,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-footer" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/footer')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/footer')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Footer</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Style</span><select class="form-select" name="style"><?php foreach (['standard'=>'Standard','minimal'=>'Minimal','contrast'=>'Contrast'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $appearance['footer']['style']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
@@ -322,7 +332,7 @@ $paletteKeys = [
     </dialog>
 
     <dialog class="config-dialog" id="appearance-config-motion" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/motion')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/appearance/motion')) ?>" method="post" data-appearance-form>
             <?= csrf_field() ?><header class="config-dialog__head"><div><span class="eyebrow">Appearance</span><h2>Motion & Effects</h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Transition duration (ms)</span><input class="form-control" type="number" min="0" max="500" step="10" name="duration" value="<?= e((string)$appearance['motion']['duration']) ?>"></label>
