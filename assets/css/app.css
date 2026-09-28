@@ -12536,3 +12536,189 @@ body:not(.auth-standalone-body) textarea {
         transform: none !important;
     }
 }
+
+
+/* BARAMA_APPEARANCE_MANAGER_V100 */
+.appearance-manager__header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.appearance-manager__header-actions form {
+    margin: 0;
+}
+
+.appearance-manager__status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.8rem;
+    align-items: center;
+    margin: 0 0 1rem;
+    border-top: 1px solid var(--barama-border);
+    border-bottom: 1px solid var(--barama-border);
+    background: transparent;
+    padding: 0.72rem 0;
+    color: var(--barama-muted);
+    font-size: 0.66rem;
+}
+
+.appearance-manager__status > span {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    color: var(--barama-text);
+    font-weight: 820;
+}
+
+.appearance-manager__status svg {
+    width: 14px;
+    height: 14px;
+    color: var(--barama-success);
+}
+
+.appearance-manager__status code {
+    border: 1px solid var(--barama-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--barama-primary);
+    padding: 0.28rem 0.42rem;
+    font-size: 0.6rem;
+}
+
+.appearance-manager__status small {
+    margin-left: auto;
+    color: var(--barama-muted);
+    font-size: 0.6rem;
+}
+
+.appearance-color-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.appearance-color-grid > section {
+    border-top: 1px solid var(--barama-border);
+    padding-top: 0.8rem;
+}
+
+.appearance-color-grid h3 {
+    margin: 0 0 0.7rem;
+    font-size: 0.82rem;
+    font-weight: 880;
+}
+
+.appearance-color-fields {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.appearance-color-fields label {
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) minmax(0, 1.2fr);
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.appearance-color-fields label > span {
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.appearance-color-control {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.appearance-color-control input[type="color"] {
+    width: 42px;
+    height: 34px;
+    overflow: hidden;
+    border: 1px solid var(--barama-border);
+    border-radius: 9px;
+    background: transparent;
+    padding: 2px;
+}
+
+.appearance-color-control code {
+    overflow: hidden;
+    color: var(--barama-muted);
+    font-size: 0.6rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.appearance-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.appearance-preset-option {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: start;
+    border: 1px solid var(--barama-border);
+    border-radius: 14px;
+    background: transparent;
+    padding: 0.75rem;
+    cursor: pointer;
+}
+
+.appearance-preset-option:has(input:checked) {
+    border-color: color-mix(in srgb, var(--barama-primary) 58%, var(--barama-border));
+    background: color-mix(in srgb, var(--barama-primary) 6%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--barama-primary) 10%, transparent);
+}
+
+.appearance-preset-option input {
+    margin-top: 0.18rem;
+    accent-color: var(--barama-primary);
+}
+
+.appearance-preset-option strong,
+.appearance-preset-option small {
+    display: block;
+}
+
+.appearance-preset-option strong {
+    color: var(--barama-text);
+    font-size: 0.7rem;
+    font-weight: 850;
+}
+
+.appearance-preset-option small {
+    margin-top: 0.18rem;
+    color: var(--barama-muted);
+    font-size: 0.58rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 767.98px) {
+    .appearance-manager__header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .appearance-manager__status {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .appearance-manager__status small {
+        margin-left: 0;
+    }
+
+    .appearance-color-grid,
+    .appearance-preset-grid {
+        grid-template-columns: 1fr;
+    }
+}
