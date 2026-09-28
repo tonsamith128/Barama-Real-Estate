@@ -88,6 +88,9 @@ jobs:
       - name: Run release security hardening smoke test
         run: php tools/security-hardening-smoke.php
 
+      - name: Run Communications v1.19.2 read-only acceptance
+        run: php tools/communications-v1192-readonly.php --allow-non-live
+
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 
