@@ -1,13 +1,19 @@
 <?php
 declare(strict_types=1);
 
+$projectListings = is_array($listings ?? null) ? array_values($listings) : [];
+$relatedProjects = is_array($relatedProjects ?? null) ? array_values($relatedProjects) : [];
 $locationLabel = (string) ($project['location_name'] ?? $project['address_line'] ?? 'Location available on request');
 $projectType = ucwords(str_replace('_', ' ', (string) ($project['project_type'] ?? 'Development')));
 $stageLabel = ucwords(str_replace('_', ' ', (string) ($project['completion_status'] ?? 'Published')));
+$launchDate = trim((string) ($project['launch_date'] ?? ''));
+$completionDate = trim((string) ($project['expected_completion_date'] ?? ''));
+$developerPhone = trim((string) ($project['company_phone'] ?? ''));
+$developerEmail = trim((string) ($project['company_email'] ?? ''));
 
 $startingListing = null;
-foreach (is_array($listings ?? null) ? $listings : [] as $candidate) {
-    if (!isset($candidate['price'])) {
+foreach ($projectListings as $candidate) {
+    if (!array_key_exists('price', $candidate) || $candidate['price'] === null) {
         continue;
     }
 
@@ -27,7 +33,7 @@ if (is_array($startingListing)) {
     );
 }
 ?>
-<section class="listing-detail listing-detail--premium single-detail single-detail--project">
+<section class="listing-detail listing-detail--premium single-detail single-detail--project project-detail">
     <div class="container app-container">
         <nav class="detail-breadcrumb" aria-label="Breadcrumb">
             <a href="<?= e(url('/projects')) ?>">Projects</a>
@@ -60,14 +66,17 @@ if (is_array($startingListing)) {
                 <dl class="detail-summary-list">
                     <div><dt><?= app_icon('building') ?><span>Developer</span></dt><dd><a href="<?= e(url('/company/' . rawurlencode((string) $project['company_slug']))) ?>"><?= e((string) $project['company_name']) ?></a></dd></div>
                     <div><dt><?= app_icon('map') ?><span>Location</span></dt><dd><?= e($locationLabel) ?></dd></div>
-                    <div><dt><?= app_icon('calendar') ?><span>Launch date</span></dt><dd><?= e((string) ($project['launch_date'] ?? '—')) ?></dd></div>
-                    <div><dt><?= app_icon('check') ?><span>Completion</span></dt><dd><?= e((string) ($project['expected_completion_date'] ?? '—')) ?></dd></div>
-                    <div><dt><?= app_icon('home') ?><span>Available properties</span></dt><dd><?= e((string) count(is_array($listings ?? null) ? $listings : [])) ?> shown</dd></div>
+                    <div><dt><?= app_icon('calendar') ?><span>Launch date</span></dt><dd><?= e($launchDate !== '' ? $launchDate : '—') ?></dd></div>
+                    <div><dt><?= app_icon('check') ?><span>Completion</span></dt><dd><?= e($completionDate !== '' ? $completionDate : '—') ?></dd></div>
+                    <div><dt><?= app_icon('home') ?><span>Available properties</span></dt><dd><?= e((string) count($projectListings)) ?> shown</dd></div>
                 </dl>
 
                 <div class="detail-summary-actions">
                     <a class="btn btn-primary w-100" href="#project-inquiry"><?= app_icon('message') ?><span>Ask about this project</span></a>
                     <a class="btn btn-outline-secondary w-100" href="<?= e(url('/company/' . rawurlencode((string) $project['company_slug']))) ?>"><?= app_icon('building') ?><span>View developer</span></a>
+                    <?php if ($developerPhone !== ''): ?>
+                        <a class="btn btn-outline-secondary w-100" href="tel:<?= e($developerPhone) ?>"><?= app_icon('phone') ?><span>Call developer</span></a>
+                    <?php endif; ?>
                 </div>
             </aside>
         </div>
@@ -75,24 +84,80 @@ if (is_array($startingListing)) {
         <div class="detail-layout detail-layout--premium detail-layout--content">
             <div class="detail-main single-detail__content-surface">
                 <div class="single-detail__intro-surface">
-                <header class="single-detail__title-block">
-                                    <div class="property-detail-head__badges">
-                                        <span class="detail-status">Published development</span>
-                                        <span class="detail-status detail-status--soft"><?= e($stageLabel) ?></span>
-                                    </div>
-                                    <h1><?= e((string) $project['name']) ?></h1>
-                                    <p class="single-detail__location"><?= app_icon('map') ?><span><?= e($locationLabel) ?></span></p>
-                                </header>
-                <?php if (!empty($project['description'])): ?>
-                    <section class="detail-section detail-section--clean detail-section--first">
-                        <span class="eyebrow">Development overview</span>
-                        <h2>About this project</h2>
-                        <p><?= nl2br(e((string) $project['description'])) ?></p>
-                    </section>
-                <?php endif; ?>
+                    <header class="single-detail__title-block">
+                        <div class="property-detail-head__badges">
+                            <span class="detail-status">Published development</span>
+                            <span class="detail-status detail-status--soft"><?= e($stageLabel) ?></span>
+                        </div>
+                        <h1><?= e((string) $project['name']) ?></h1>
+                        <p class="single-detail__location"><?= app_icon('map') ?><span><?= e($locationLabel) ?></span></p>
+                    </header>
+
+                    <?php if (!empty($project['description'])): ?>
+                        <section class="detail-section detail-section--clean detail-section--first">
+                            <span class="eyebrow">Development overview</span>
+                            <h2>About this project</h2>
+                            <p><?= nl2br(e((string) $project['description'])) ?></p>
+                        </section>
+                    <?php endif; ?>
                 </div>
 
-                
+                <section class="detail-section detail-section--clean">
+                    <span class="eyebrow">Project details</span>
+                    <h2>Development at a glance</h2>
+                    <dl class="project-facts-grid">
+                        <div>
+                            <dt><?= app_icon('layers') ?><span>Project type</span></dt>
+                            <dd><?= e($projectType) ?></dd>
+                        </div>
+                        <div>
+                            <dt><?= app_icon('check') ?><span>Status</span></dt>
+                            <dd><?= e($stageLabel) ?></dd>
+                        </div>
+                        <div>
+                            <dt><?= app_icon('calendar') ?><span>Launch date</span></dt>
+                            <dd><?= e($launchDate !== '' ? $launchDate : 'Not specified') ?></dd>
+                        </div>
+                        <div>
+                            <dt><?= app_icon('calendar') ?><span>Expected completion</span></dt>
+                            <dd><?= e($completionDate !== '' ? $completionDate : 'Not specified') ?></dd>
+                        </div>
+                        <div>
+                            <dt><?= app_icon('map') ?><span>Location</span></dt>
+                            <dd><?= e($locationLabel) ?></dd>
+                        </div>
+                        <div>
+                            <dt><?= app_icon('home') ?><span>Published inventory</span></dt>
+                            <dd><?= e((string) count($projectListings)) ?> propert<?= count($projectListings) === 1 ? 'y' : 'ies' ?></dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="detail-section detail-section--clean">
+                    <span class="eyebrow">Developer</span>
+                    <h2>Published by an approved company</h2>
+                    <div class="detail-link-grid">
+                        <a class="detail-company-link" href="<?= e(url('/company/' . rawurlencode((string) $project['company_slug']))) ?>">
+                            <?= app_icon('building') ?>
+                            <span><strong><?= e((string) $project['company_name']) ?></strong><small>View developer profile</small></span>
+                            <b>↗</b>
+                        </a>
+                        <?php if ($developerPhone !== ''): ?>
+                            <a class="detail-company-link" href="tel:<?= e($developerPhone) ?>">
+                                <?= app_icon('phone') ?>
+                                <span><strong><?= e($developerPhone) ?></strong><small>Call the developer</small></span>
+                                <b>↗</b>
+                            </a>
+                        <?php endif; ?>
+                        <?php if ($developerEmail !== ''): ?>
+                            <a class="detail-company-link" href="mailto:<?= e($developerEmail) ?>">
+                                <?= app_icon('mail') ?>
+                                <span><strong><?= e($developerEmail) ?></strong><small>Email the developer</small></span>
+                                <b>↗</b>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </section>
             </div>
 
             <aside class="inquiry-card inquiry-card--sticky inquiry-card--premium" id="project-inquiry">
@@ -121,21 +186,38 @@ if (is_array($startingListing)) {
             </aside>
         </div>
 
-        <?php if ($listings !== []): ?>
-                            <section class="detail-section detail-section--clean single-detail__wide-section">
-                                <div class="section-heading-row section-heading-row--compact">
-                                    <div><span class="eyebrow">Available inventory</span><h2>Properties in this project</h2></div>
-                                    <a href="<?= e(url('/properties?q=' . rawurlencode((string) $project['name']))) ?>">View all</a>
-                                </div>
-                                <div class="inventory-grid inventory-grid--detail">
-                                    <?php foreach ($listings as $listing): ?>
-                                        <?= \Barama\Core\View::partial('components/inventory-card', [
-                                            'kind' => 'listing',
-                                            'item' => array_merge($listing, ['company_name' => $project['company_name']]),
-                                        ]) ?>
-                                    <?php endforeach; ?>
-                                </div>
-                            </section>
-                        <?php endif; ?>
+        <?php if ($projectListings !== []): ?>
+            <section class="detail-section detail-section--clean single-detail__wide-section">
+                <div class="section-heading-row section-heading-row--compact">
+                    <div><span class="eyebrow">Available inventory</span><h2>Properties in this project</h2></div>
+                    <a href="<?= e(url('/properties?q=' . rawurlencode((string) $project['name']))) ?>">View all</a>
+                </div>
+                <div class="inventory-grid inventory-grid--detail">
+                    <?php foreach ($projectListings as $listing): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', [
+                            'kind' => 'listing',
+                            'item' => array_merge($listing, ['company_name' => $project['company_name']]),
+                        ]) ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <?php if ($relatedProjects !== []): ?>
+            <section class="detail-related single-detail__wide-section">
+                <div class="section-heading-row section-heading-row--compact">
+                    <div><span class="eyebrow">More from this developer</span><h2>Related projects</h2></div>
+                    <a href="<?= e(url('/projects?q=' . rawurlencode((string) $project['company_name']))) ?>">View developer projects</a>
+                </div>
+                <div class="inventory-grid inventory-grid--detail">
+                    <?php foreach ($relatedProjects as $item): ?>
+                        <?= \Barama\Core\View::partial('components/inventory-card', [
+                            'kind' => 'project',
+                            'item' => array_merge($item, ['company_name' => $project['company_name']]),
+                        ]) ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
     </div>
 </section>
