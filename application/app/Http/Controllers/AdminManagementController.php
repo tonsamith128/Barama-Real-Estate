@@ -7,6 +7,7 @@ namespace Barama\Http\Controllers;
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Services\AdminMediaManagementService;
+use Barama\Services\AnnouncementManagementService;
 use Barama\Services\BillingOperationsService;
 use Barama\Services\BulkModerationService;
 use Barama\Services\CatalogManagementService;
@@ -265,6 +266,62 @@ final class AdminManagementController
             'transaction_id' => (new FinanceManagementService())->createTransaction($request->all()),
             'message' => 'Immutable transaction recorded.',
         ], 201);
+    }
+
+    public function createAnnouncement(Request $request): Response
+    {
+        return $this->execute(fn (): array => [
+            'announcement_id' => (new AnnouncementManagementService())->create($request->all()),
+            'message' => 'Announcement created as draft.',
+        ], 201);
+    }
+
+    public function updateAnnouncement(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid announcement ID is required.');
+            }
+
+            (new AnnouncementManagementService())->update((int) $id, $request->all());
+
+            return [
+                'announcement_id' => (int) $id,
+                'message' => 'Announcement updated.',
+            ];
+        });
+    }
+
+    public function updateAnnouncementStatus(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid announcement ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new AnnouncementManagementService())->setStatus((int) $id, $status, $request->all());
+
+            return [
+                'announcement_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Announcement status updated.',
+            ];
+        });
+    }
+
+    public function publishAnnouncement(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid announcement ID is required.');
+            }
+
+            $result = (new AnnouncementManagementService())->publishNow((int) $id);
+            $result['message'] = 'Announcement published and delivery queued.';
+
+            return $result;
+        });
     }
 
     public function requeueMail(Request $request, string $id): Response

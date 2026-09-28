@@ -201,7 +201,7 @@ final class NotificationRepository
     ): array {
         $where = [
             'user_id = :user_id',
-            'category IN ("saved_search_alerts", "viewing_updates", "inquiry_updates")',
+            'category IN ("saved_search_alerts", "viewing_updates", "inquiry_updates", "announcements")',
             'CONCAT_WS(" ", title, message, type) LIKE :search',
         ];
         $params = [
@@ -215,7 +215,7 @@ final class NotificationRepository
             $where[] = 'read_at IS NOT NULL';
         }
 
-        if (in_array($category, ['saved_search_alerts', 'viewing_updates', 'inquiry_updates'], true)) {
+        if (in_array($category, ['saved_search_alerts', 'viewing_updates', 'inquiry_updates', 'announcements'], true)) {
             $where[] = 'category = :category';
             $params['category'] = $category;
         }

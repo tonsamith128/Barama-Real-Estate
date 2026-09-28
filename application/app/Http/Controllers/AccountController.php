@@ -208,7 +208,7 @@ final class AccountController
             if (!in_array($personalizationState, ['', 'unread', 'read'], true)) {
                 $personalizationState = '';
             }
-            if (!in_array($personalizationType, ['', 'saved_search_alerts', 'viewing_updates', 'inquiry_updates'], true)) {
+            if (!in_array($personalizationType, ['', 'saved_search_alerts', 'viewing_updates', 'inquiry_updates', 'announcements'], true)) {
                 $personalizationType = '';
             }
 

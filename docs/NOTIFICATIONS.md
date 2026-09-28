@@ -20,6 +20,7 @@ Current user-controlled categories:
 - saved_search_alerts
 - viewing_updates
 - inquiry_updates
+- announcements (platform-managed; follows the user's global in-app/email channel switches)
 
 Users can independently enable or disable:
 
@@ -27,7 +28,7 @@ Users can independently enable or disable:
 - email notifications
 - each event category
 
-If a category is disabled, both in-app and email delivery for that category are suppressed.
+If a user-controlled category is disabled, both in-app and email delivery for that category are suppressed. Platform announcements do not add a separate preference flag; they respect the user's global in-app and email channel switches.
 
 ## Event integration
 
@@ -119,10 +120,11 @@ Use the PHP CLI entrypoint:
 
 php tools/notifications.php run --limit=100
 
-This performs due saved-search matching and then drains the email outbox.
+This publishes due scheduled announcements, performs due saved-search matching, and then drains the email outbox.
 
 Other supported commands:
 
+php tools/notifications.php announcements --limit=100
 php tools/notifications.php alerts daily --limit=100
 php tools/notifications.php alerts weekly --limit=100
 php tools/notifications.php alerts all --force --limit=100
@@ -162,3 +164,14 @@ The customer still receives the simple CLI command below for scheduled notificat
 php tools/notifications.php run --limit=100
 
 Real provider delivery and hosting cron configuration are validated during final live-server acceptance.
+
+
+## Admin announcements
+
+Phase 7 adds administrator announcements through \`/dashboard/announcements\` using the existing \`communication.manage\` permission. Announcements start as drafts and support draft, scheduled, published, cancelled, and archived lifecycle states.
+
+Publishing reuses the canonical \`notifications\` and \`email_outbox\` tables and records a per-recipient delivery ledger. Published content is immutable; corrections should be sent as a new announcement. Scheduled publication is processed by the canonical notification runner and is idempotent through row locking, existing delivery dedupe keys, and a unique announcement-recipient ledger.
+
+Audience targeting is limited to active users using the platform's canonical role model: all active users, customers, developers, or administrators. Announcement email rendering supports the \`announcement_published\` template key and falls back to the standard notification email when no active template exists.
+
+No announcement records are seeded by migration.
