@@ -822,6 +822,7 @@ $renderActions = static function (array $row) use (
     </div>
 
     <?php if ($hasMarketplacePageConfiguration): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/marketplace-config-v109.css')) ?>">
         <dialog class="config-dialog config-dialog--wide marketplace-page-config-dialog" id="marketplace-page-configuration-control" data-config-dialog>
             <form
                 class="config-dialog__panel"
@@ -829,7 +830,7 @@ $renderActions = static function (array $row) use (
                 method="post"
                 enctype="multipart/form-data"
                 novalidate
-                data-marketplace-config-form
+                data-marketplace-config-form-v109
             >
                 <?= csrf_field() ?>
                 <header class="config-dialog__head">
@@ -866,9 +867,9 @@ $renderActions = static function (array $row) use (
                         <div class="config-source-panel" data-hero-background-panel="image">
                             <h3>Image Background</h3>
                             <div class="config-field-grid">
-                                <label><span>Source</span><select class="form-select" name="image_source" data-marketplace-image-source><option value="auto" <?= $marketplaceImageSource === 'auto' ? 'selected' : '' ?>>Automatic published image</option><option value="url" <?= $marketplaceImageSource === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= $marketplaceImageSource === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select></label>
+                                <label><span>Source</span><select class="form-select" name="image_source" data-marketplace-image-source><option value="auto" <?= $marketplaceImageSource === 'auto' ? 'selected' : '' ?>>Automatic Barama default</option><option value="url" <?= $marketplaceImageSource === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= $marketplaceImageSource === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select><small>Automatic uses the bundled Barama Hero image for this page.</small></label>
                                 <label><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['image_url'] ?? '')) ?>" placeholder="https://example.com/hero.jpg"></label>
-                                <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library. If URL and upload are both empty, Barama automatically uses a published image from this marketplace page.</small></label>
+                                <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library. If no custom image is supplied, Barama uses the bundled default Hero image.</small></label>
                                 <input type="hidden" name="image_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) ?>">
                             </div>
                         </div>
@@ -893,7 +894,7 @@ $renderActions = static function (array $row) use (
                                 <label><span>Interval (ms)</span><input class="form-control" type="number" name="slider_interval" min="2500" max="20000" step="500" value="<?= e((string) ($marketplaceHeroBackground['slider_interval'] ?? 6000)) ?>"></label>
                                 <label class="config-check-field"><input type="hidden" name="slider_autoplay" value="0"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($marketplaceHeroBackground['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
                                 <label class="config-field-grid__wide"><span>Add image URLs</span><textarea class="form-control" name="slider_urls" rows="3" placeholder="One HTTPS image URL per line"></textarea></label>
-                                <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"><small>If no slider URLs or uploads are provided, Barama automatically uses up to 3 published images from this marketplace page.</small></label>
+                                <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"><small>If no slider URLs or uploads are provided, Barama uses the bundled three-image default slider.</small></label>
                             </div>
                         </div>
                         <div class="config-source-panel" data-hero-background-panel="video">
@@ -952,6 +953,7 @@ $renderActions = static function (array $row) use (
                 </footer>
             </form>
         </dialog>
+        <script src="<?= e(asset('js/marketplace-config-v109.js')) ?>"></script>
     <?php endif; ?>
 
     <div class="workspace-stats" aria-label="Workspace summary">
