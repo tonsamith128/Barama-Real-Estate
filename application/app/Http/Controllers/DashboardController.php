@@ -477,6 +477,13 @@ final class DashboardController
         }
 
         $repository = new WorkspaceReadRepository();
+        $siteContent = in_array($section, ['properties', 'projects', 'companies'], true)
+            ? (new SiteContentRepository())->get()
+            : [];
+        $marketplacePageConfig = in_array($section, ['properties', 'projects', 'companies'], true)
+            && is_array($siteContent['marketplace_pages'][$section] ?? null)
+                ? $siteContent['marketplace_pages'][$section]
+                : [];
         $summary = $repository->adminSummary();
         $marketplaceSummary = $repository->adminMarketplaceSummary($section);
         $records = $repository->adminSection(
@@ -510,6 +517,7 @@ final class DashboardController
             'formOptions' => [
                 'locations' => $repository->adminLocations(),
             ],
+            'marketplacePageConfig' => $marketplacePageConfig,
         ]));
     }
 
