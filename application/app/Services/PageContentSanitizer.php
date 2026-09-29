@@ -22,7 +22,7 @@ final class PageContentSanitizer
         }
 
         if (!str_contains($content, '<')) {
-            return mb_substr($content, 0, 100000);
+            return $content;
         }
 
         $content = preg_replace('#<(script|style|iframe|object|embed|form|input|button|textarea|select|option)[^>]*>.*?</\\1>#is', '', $content) ?? '';
@@ -86,7 +86,7 @@ final class PageContentSanitizer
             $content
         ) ?? '';
 
-        return mb_substr(trim($content), 0, 100000);
+        return trim($content);
     }
 
     public static function toHtml(string $stored): string
