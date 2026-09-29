@@ -35,6 +35,12 @@
             return;
         }
 
+        try {
+            document.execCommand('defaultParagraphSeparator', false, 'p');
+        } catch (_) {
+            // Browser may not expose this command; sanitizer still normalizes blocks.
+        }
+
         const showToast = (message, error = false) => {
             if (!(toast instanceof HTMLElement)) return;
             toast.textContent = message || (error ? 'The request could not be completed.' : 'Saved.');
