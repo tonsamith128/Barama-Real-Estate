@@ -287,3 +287,147 @@ jobs:
           path: browser-qa-artifacts/*.png
           if-no-files-found: ignore
           retention-days: 7
+
+  diagnostic-repository:
+    name: Diagnostic · SiteContentRepository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Repositories/SiteContentRepository.php
+
+  diagnostic-content-service:
+    name: Diagnostic · SiteContentManagementService
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Services/SiteContentManagementService.php
+
+  diagnostic-media-service:
+    name: Diagnostic · SiteMediaStorageService
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Services/SiteMediaStorageService.php
+
+  diagnostic-admin-controller:
+    name: Diagnostic · AdminManagementController
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Http/Controllers/AdminManagementController.php
+
+  diagnostic-dashboard-controller:
+    name: Diagnostic · DashboardController
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Http/Controllers/DashboardController.php
+
+  diagnostic-marketplace-controller:
+    name: Diagnostic · MarketplaceController
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Http/Controllers/MarketplaceController.php
+
+  diagnostic-company-controller:
+    name: Diagnostic · CompanyController
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/app/Http/Controllers/CompanyController.php
+
+  diagnostic-routes:
+    name: Diagnostic · routes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/routes/web.php
+
+  diagnostic-workspace:
+    name: Diagnostic · workspace view
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/resources/views/workspace/index.php
+
+  diagnostic-hero:
+    name: Diagnostic · marketplace hero
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/resources/views/components/marketplace-page-hero.php
+
+  diagnostic-properties:
+    name: Diagnostic · properties view
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/resources/views/marketplace/properties.php
+
+  diagnostic-projects:
+    name: Diagnostic · projects view
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/resources/views/marketplace/projects.php
+
+  diagnostic-companies:
+    name: Diagnostic · companies view
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - run: php -l application/resources/views/company/index.php
+
