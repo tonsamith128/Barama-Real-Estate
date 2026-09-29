@@ -15726,3 +15726,33 @@ body:not(.auth-standalone-body) textarea {
 .marketplace-config-hero__background--slider {
     backdrop-filter: none !important;
 }
+
+
+/* BARAMA_MARKETPLACE_HERO_HEADING_FLOW_V112 */
+/*
+ * Preserve the current marketplace Hero layout.
+ * Short headings stay on one line when space is available.
+ * Longer headings naturally wrap at the existing responsive width.
+ */
+@media (min-width: 768px) {
+    .marketplace-config-hero .marketplace-hero__grid > div:first-child {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .marketplace-config-hero .marketplace-hero__grid h1 {
+        width: max-content;
+        max-width: min(100%, 780px);
+        white-space: normal;
+        text-wrap: wrap;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .marketplace-config-hero .marketplace-hero__grid h1 {
+        width: auto;
+        max-width: 100%;
+        white-space: normal;
+        text-wrap: wrap;
+    }
+}
