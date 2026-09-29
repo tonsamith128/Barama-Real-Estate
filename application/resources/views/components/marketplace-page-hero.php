@@ -35,19 +35,19 @@ $colorPreset = (string) ($background['color_preset'] ?? 'ocean');
 
 $bundledHeroDefaults = match ($pageKind) {
     'projects' => [
-        url('/assets/images/marketplace-defaults/projects-hero-01.webp'),
-        url('/assets/images/marketplace-defaults/projects-hero-02.webp'),
-        url('/assets/images/marketplace-defaults/projects-hero-03.webp'),
+        url('/assets/images/marketplace-defaults/projects-hero-01.webp') . '?v=111',
+        url('/assets/images/marketplace-defaults/projects-hero-02.webp') . '?v=111',
+        url('/assets/images/marketplace-defaults/projects-hero-03.webp') . '?v=111',
     ],
     'companies' => [
-        url('/assets/images/marketplace-defaults/companies-hero-01.webp'),
-        url('/assets/images/marketplace-defaults/companies-hero-02.webp'),
-        url('/assets/images/marketplace-defaults/companies-hero-03.webp'),
+        url('/assets/images/marketplace-defaults/companies-hero-01.webp') . '?v=111',
+        url('/assets/images/marketplace-defaults/companies-hero-02.webp') . '?v=111',
+        url('/assets/images/marketplace-defaults/companies-hero-03.webp') . '?v=111',
     ],
     default => [
-        url('/assets/images/marketplace-defaults/properties-hero-01.webp'),
-        url('/assets/images/marketplace-defaults/properties-hero-02.webp'),
-        url('/assets/images/marketplace-defaults/properties-hero-03.webp'),
+        url('/assets/images/marketplace-defaults/properties-hero-01.webp') . '?v=111',
+        url('/assets/images/marketplace-defaults/properties-hero-02.webp') . '?v=111',
+        url('/assets/images/marketplace-defaults/properties-hero-03.webp') . '?v=111',
     ],
 };
 
