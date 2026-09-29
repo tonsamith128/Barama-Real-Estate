@@ -61,4 +61,28 @@ if ($installedVersion !== APP_VERSION) {
 }
 
 $app = require __DIR__ . '/application/bootstrap/app.php';
+
+/* BARAMA_GLOBAL_404_V114
+ * Nginx error_page internally calls index.php with __barama_error=404.
+ * Return a 200 body here; Nginx preserves the external 404 status.
+ */
+if ((string) ($_GET['__barama_error'] ?? '') === '404') {
+    $originalPath = (string) (
+        parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'
+    );
+
+    Barama\Core\Response::html(
+        Barama\Core\View::render('errors/404', [
+            'pageTitle' => 'Page not found',
+            'metaDescription' => 'The requested page could not be found on Barama Real Estate.',
+            'metaRobots' => 'noindex,follow',
+            'canonicalUrl' => url($originalPath),
+            'activeArea' => '',
+        ]),
+        200
+    )->send();
+
+    exit;
+}
+
 $app->run();
