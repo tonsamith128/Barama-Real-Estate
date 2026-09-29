@@ -193,11 +193,21 @@ final class SiteContentManagementService
         ];
 
         $repository->save($config);
-        $this->audit(
-            'admin.marketplace_page_configuration_updated',
-            (int) $actor['id'],
-            ['page' => $page]
-        );
+
+        try {
+            $this->audit(
+                'admin.marketplace_page_configuration_updated',
+                (int) $actor['id'],
+                ['page' => $page]
+            );
+        } catch (\Throwable $exception) {
+            error_log(
+                '[Barama Marketplace Configuration Audit] '
+                . $exception::class
+                . ': '
+                . $exception->getMessage()
+            );
+        }
     }
 
     /** @param array<string,mixed> $input */
