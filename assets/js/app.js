@@ -1497,6 +1497,140 @@
 
     const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
 
+    document.querySelectorAll('[data-marketplace-config-form]').forEach((form) => {
+        if (form.dataset.marketplaceConfigBound === '1') {
+            return;
+        }
+
+        form.dataset.marketplaceConfigBound = '1';
+
+        const notice = form.querySelector('[data-marketplace-config-notice]');
+
+        const showNotice = (message, type = 'error') => {
+            if (!notice) return;
+            notice.hidden = false;
+            notice.classList.remove('is-success', 'is-error');
+            notice.classList.add(type === 'success' ? 'is-success' : 'is-error');
+            notice.textContent = message;
+        };
+
+        const clearNotice = () => {
+            if (!notice) return;
+            notice.hidden = true;
+            notice.classList.remove('is-success', 'is-error');
+            notice.textContent = '';
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearNotice();
+
+            const submitter = event.submitter;
+            const title = form.querySelector('[name="hero_title"]');
+            const description = form.querySelector('[name="hero_description"]');
+
+            if (title instanceof HTMLInputElement && title.value.trim() === '') {
+                showNotice('Hero headline is required.');
+                title.focus();
+                return;
+            }
+
+            if (description instanceof HTMLTextAreaElement && description.value.trim() === '') {
+                showNotice('Hero description is required.');
+                description.focus();
+                return;
+            }
+
+            const formData = new FormData(form);
+            const backgroundType = String(formData.get('background_type') || 'plain');
+            const imageSource = String(formData.get('image_source') || 'auto');
+
+            if (backgroundType !== 'image') {
+                formData.delete('hero_image_file');
+                formData.delete('image_url');
+                formData.delete('image_media_uuid');
+            } else if (imageSource === 'auto') {
+                formData.set('image_source', 'auto');
+                formData.delete('image_url');
+                formData.delete('image_media_uuid');
+            } else if (imageSource === 'url') {
+                formData.delete('image_media_uuid');
+            } else if (imageSource === 'media') {
+                formData.delete('image_url');
+            }
+
+            if (backgroundType !== 'slider') {
+                formData.delete('hero_slider_files[]');
+                formData.delete('slider_existing[]');
+                formData.delete('slider_remove[]');
+                formData.delete('slider_urls');
+            }
+
+            if (backgroundType !== 'video') {
+                formData.delete('hero_video_file');
+                formData.delete('video_url');
+                formData.delete('video_media_uuid');
+                formData.delete('youtube_url');
+            }
+
+            if (submitter) {
+                submitter.disabled = true;
+                submitter.setAttribute('aria-busy', 'true');
+            }
+
+            try {
+                const response = await window.fetch(form.action, {
+                    method: form.method || 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const responseText = await response.text();
+                let payload = null;
+
+                if (responseText.trim() !== '') {
+                    try {
+                        payload = JSON.parse(responseText);
+                    } catch (_) {
+                        payload = null;
+                    }
+                }
+
+                if (!response.ok || payload?.ok !== true) {
+                    const fallback = response.status === 419
+                        ? 'Your session token expired. Refresh this page and try again.'
+                        : 'Marketplace page configuration could not be saved.';
+                    throw new Error(payload?.message || fallback);
+                }
+
+                showNotice(
+                    payload?.data?.message || 'Marketplace page configuration saved.',
+                    'success'
+                );
+
+                window.setTimeout(() => {
+                    window.location.reload();
+                }, 450);
+            } catch (error) {
+                showNotice(
+                    error instanceof Error
+                        ? error.message
+                        : 'Marketplace page configuration could not be saved.',
+                    'error'
+                );
+            } finally {
+                if (submitter) {
+                    submitter.disabled = false;
+                    submitter.removeAttribute('aria-busy');
+                }
+            }
+        });
+    });
+
     document.querySelectorAll('[data-appearance-form]').forEach((form) => {
         if (form.dataset.appearanceFormBound === '1') {
             return;
