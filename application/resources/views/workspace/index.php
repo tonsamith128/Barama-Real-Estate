@@ -10,6 +10,26 @@ $perPage = (int) ($records['per_page'] ?? 0);
 $perPage = $perPage > 0 ? $perPage : max(1, count($rows));
 $showAdminMarketplaceNumbers = $workspaceType === 'admin'
     && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+$hasMarketplacePageConfiguration = $workspaceType === 'admin'
+    && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+$marketplacePageDefaults = $hasMarketplacePageConfiguration
+    ? (\Barama\Repositories\SiteContentRepository::defaults()['marketplace_pages'][$activeSection] ?? [])
+    : [];
+$marketplacePageConfig = $hasMarketplacePageConfiguration
+    ? array_replace_recursive(
+        is_array($marketplacePageDefaults) ? $marketplacePageDefaults : [],
+        is_array($marketplacePageConfig ?? null) ? $marketplacePageConfig : []
+    )
+    : [];
+$marketplaceHero = is_array($marketplacePageConfig['hero'] ?? null) ? $marketplacePageConfig['hero'] : [];
+$marketplaceHeroBackground = is_array($marketplaceHero['background'] ?? null) ? $marketplaceHero['background'] : [];
+$marketplaceSearchConfig = is_array($marketplacePageConfig['search'] ?? null) ? $marketplacePageConfig['search'] : [];
+$marketplaceSaleRentConfig = is_array($marketplacePageConfig['sale_rent'] ?? null) ? $marketplacePageConfig['sale_rent'] : [];
+$marketplaceLocationsConfig = is_array($marketplacePageConfig['locations'] ?? null) ? $marketplacePageConfig['locations'] : [];
+$marketplaceGridConfig = is_array($marketplacePageConfig['grid'] ?? null) ? $marketplacePageConfig['grid'] : [];
+$marketplaceSliderImages = is_array($marketplaceHeroBackground['slider_images'] ?? null)
+    ? array_values($marketplaceHeroBackground['slider_images'])
+    : [];
 $adminEditorResource = $workspaceType === 'admin'
     ? match ($activeSection) {
         'companies' => 'company',
@@ -774,6 +794,15 @@ $renderActions = static function (array $row) use (
                 <?= app_icon('lock') ?>
                 Immutable security events
             </span>
+        <?php elseif ($hasMarketplacePageConfiguration): ?>
+            <button
+                class="content-config-button workspace-marketplace-configure"
+                type="button"
+                data-configure-open="marketplace-page-configuration-control"
+            >
+                <?= app_icon('settings') ?>
+                <span>Configure</span>
+            </button>
         <?php elseif ($workspaceType === 'admin'): ?>
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
@@ -781,6 +810,124 @@ $renderActions = static function (array $row) use (
             </span>
         <?php endif; ?>
     </div>
+
+    <?php if ($hasMarketplacePageConfiguration): ?>
+        <dialog class="config-dialog config-dialog--wide marketplace-page-config-dialog" id="marketplace-page-configuration-control" data-config-dialog>
+            <form
+                class="config-dialog__panel"
+                action="<?= e(url('/dashboard/marketplace-pages/' . $activeSection . '/configuration')) ?>"
+                method="post"
+                enctype="multipart/form-data"
+                data-workspace-form
+            >
+                <?= csrf_field() ?>
+                <header class="config-dialog__head">
+                    <div>
+                        <span class="eyebrow"><?= e(ucfirst($activeSection)) ?> Public Page</span>
+                        <h2>CONFIGURATION CONTROL</h2>
+                        <p>Configure the public hero, discovery controls, locations and responsive inventory grid from one place.</p>
+                    </div>
+                    <button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button>
+                </header>
+
+                <div class="config-dialog__body marketplace-page-config-body">
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head">
+                            <span><?= app_icon('home') ?></span>
+                            <div><strong>Hero section</strong><small>Visibility, content and background presentation.</small></div>
+                        </div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="hero_enabled" value="1" <?= !empty($marketplaceHero['enabled']) ? 'checked' : '' ?>><span>Enable Hero section</span></label>
+                            <label><span>Eyebrow</span><input class="form-control" name="hero_eyebrow" maxlength="80" value="<?= e((string) ($marketplaceHero['eyebrow'] ?? '')) ?>"></label>
+                            <label class="config-field-grid__wide"><span>Headline</span><input class="form-control" name="hero_title" maxlength="140" required value="<?= e((string) ($marketplaceHero['title'] ?? '')) ?>"></label>
+                            <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="hero_description" rows="3" maxlength="500" required><?= e((string) ($marketplaceHero['description'] ?? '')) ?></textarea></label>
+                            <label><span>Background type</span><select class="form-select" name="background_type" data-hero-background-type><?php foreach (['plain' => 'Plain Hero','color' => 'Color Background','image' => 'Image Background','slider' => 'Image Slider Background','video' => 'Video Background'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['type'] ?? 'plain') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                            <label><span>Dark overlay</span><input class="form-control" type="number" name="overlay_strength" min="0" max="85" value="<?= e((string) ($marketplaceHeroBackground['overlay_strength'] ?? 38)) ?>"><small>0–85%. Used for media backgrounds.</small></label>
+                        </div>
+
+                        <div class="config-source-panel" data-hero-background-panel="plain">
+                            <h3>Plain Hero</h3><p>Keep the clean Barama discovery surface with no media background.</p>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="color">
+                            <h3>Color Background</h3>
+                            <label><span>Color preset</span><select class="form-select" name="color_preset"><?php foreach (['ocean' => 'Ocean Blue','aurora' => 'Aurora','sunset' => 'Sunset','violet' => 'Violet','emerald' => 'Emerald'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['color_preset'] ?? 'ocean') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="image">
+                            <h3>Image Background</h3>
+                            <div class="config-field-grid">
+                                <label><span>Source</span><select class="form-select" name="image_source"><option value="url" <?= ($marketplaceHeroBackground['image_source'] ?? 'url') === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= ($marketplaceHeroBackground['image_source'] ?? '') === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select></label>
+                                <label><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['image_url'] ?? '')) ?>" placeholder="https://example.com/hero.jpg"></label>
+                                <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library.</small></label>
+                                <input type="hidden" name="image_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) ?>">
+                            </div>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="slider">
+                            <h3>Image Slider Background</h3>
+                            <?php foreach ($marketplaceSliderImages as $index => $item): ?><?php if (is_array($item) && !empty($item['type']) && !empty($item['value'])): ?><input type="hidden" name="slider_existing[]" value="<?= e((string) $item['type'] . ':' . (string) $item['value']) ?>"><?php endif; ?><?php endforeach; ?>
+                            <div class="config-field-grid">
+                                <label><span>Slider style</span><select class="form-select" name="slider_style"><?php foreach (['fade' => 'Fade','slide' => 'Slide','kenburns' => 'Ken Burns'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['slider_style'] ?? 'fade') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                                <label><span>Interval (ms)</span><input class="form-control" type="number" name="slider_interval" min="2500" max="20000" step="500" value="<?= e((string) ($marketplaceHeroBackground['slider_interval'] ?? 6000)) ?>"></label>
+                                <label class="config-check-field"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($marketplaceHeroBackground['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
+                                <label class="config-field-grid__wide"><span>Add image URLs</span><textarea class="form-control" name="slider_urls" rows="3" placeholder="One HTTPS image URL per line"></textarea></label>
+                                <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"></label>
+                            </div>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="video">
+                            <h3>Video Background</h3>
+                            <div class="config-field-grid">
+                                <label><span>Source</span><select class="form-select" name="video_source"><option value="url" <?= ($marketplaceHeroBackground['video_source'] ?? 'url') === 'url' ? 'selected' : '' ?>>Video URL</option><option value="media" <?= ($marketplaceHeroBackground['video_source'] ?? '') === 'media' ? 'selected' : '' ?>>Upload / Media Library</option><option value="youtube" <?= ($marketplaceHeroBackground['video_source'] ?? '') === 'youtube' ? 'selected' : '' ?>>YouTube</option></select></label>
+                                <label><span>Video URL</span><input class="form-control" type="url" name="video_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['video_url'] ?? '')) ?>"></label>
+                                <label><span>YouTube URL</span><input class="form-control" type="url" name="youtube_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['youtube_url'] ?? '')) ?>"></label>
+                                <label><span>Upload video</span><input class="form-control" type="file" name="hero_video_file" accept="video/mp4,video/webm"></label>
+                                <input type="hidden" name="video_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['video_media_uuid'] ?? '')) ?>">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('search') ?></span><div><strong>Hero Search function</strong><small>Control the public discovery bar without changing safe query routes.</small></div></div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="search_enabled" value="1" <?= !empty($marketplaceSearchConfig['enabled']) ? 'checked' : '' ?>><span>Enable Hero Search</span></label>
+                            <label><span>Button label</span><input class="form-control" name="search_button_label" maxlength="40" value="<?= e((string) ($marketplaceSearchConfig['button_label'] ?? 'Search')) ?>"></label>
+                            <label class="config-field-grid__wide"><span>Search placeholder</span><input class="form-control" name="search_placeholder" maxlength="120" value="<?= e((string) ($marketplaceSearchConfig['placeholder'] ?? '')) ?>"></label>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('tag') ?></span><div><strong>Sale &amp; Rent function</strong><small><?= $activeSection === 'properties' ? 'Controls the offer filter in the Hero Search.' : 'Adds direct Sale and Rent discovery shortcuts to the Properties marketplace.' ?></small></div></div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="sale_rent_enabled" value="1" <?= !empty($marketplaceSaleRentConfig['enabled']) ? 'checked' : '' ?>><span>Enable Sale &amp; Rent</span></label>
+                            <label><span>All label</span><input class="form-control" name="sale_rent_all_label" maxlength="60" value="<?= e((string) ($marketplaceSaleRentConfig['all_label'] ?? 'Sale & rent')) ?>"></label>
+                            <label><span>Sale label</span><input class="form-control" name="sale_label" maxlength="60" value="<?= e((string) ($marketplaceSaleRentConfig['sale_label'] ?? 'For sale')) ?>"></label>
+                            <label><span>Rent label</span><input class="form-control" name="rent_label" maxlength="60" value="<?= e((string) ($marketplaceSaleRentConfig['rent_label'] ?? 'For rent')) ?>"></label>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('map') ?></span><div><strong>All Locations</strong><small>Use the active canonical locations catalog in the public discovery filter.</small></div></div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="locations_enabled" value="1" <?= !empty($marketplaceLocationsConfig['enabled']) ? 'checked' : '' ?>><span>Enable location selector</span></label>
+                            <label><span>All locations label</span><input class="form-control" name="locations_all_label" maxlength="60" value="<?= e((string) ($marketplaceLocationsConfig['all_label'] ?? 'All locations')) ?>"></label>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('grid') ?></span><div><strong>Grid Layout</strong><small>Control desktop columns, pagination size and result-count visibility. Tablet/mobile remain responsive.</small></div></div>
+                        <div class="config-field-grid">
+                            <label><span>Desktop columns</span><select class="form-select" name="grid_columns"><?php foreach ([2,3,4] as $columns): ?><option value="<?= $columns ?>" <?= (int) ($marketplaceGridConfig['columns'] ?? 3) === $columns ? 'selected' : '' ?>><?= $columns ?> columns</option><?php endforeach; ?></select></label>
+                            <label><span>Items per page</span><select class="form-select" name="grid_page_size"><?php foreach ([6,9,12,16,18,24,30,36,48] as $size): ?><option value="<?= $size ?>" <?= (int) ($marketplaceGridConfig['page_size'] ?? 18) === $size ? 'selected' : '' ?>><?= $size ?> items</option><?php endforeach; ?></select></label>
+                            <label class="config-check-field"><input type="checkbox" name="grid_show_result_count" value="1" <?= !empty($marketplaceGridConfig['show_result_count']) ? 'checked' : '' ?>><span>Show result count in Hero</span></label>
+                        </div>
+                    </section>
+                </div>
+
+                <footer class="config-dialog__footer">
+                    <button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button>
+                    <button class="btn btn-primary" type="submit">Save configuration</button>
+                </footer>
+            </form>
+        </dialog>
+    <?php endif; ?>
 
     <div class="workspace-stats" aria-label="Workspace summary">
         <?php foreach ($stats as $stat): ?>
