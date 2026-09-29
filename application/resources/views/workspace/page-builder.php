@@ -52,7 +52,7 @@ $svg = static function (string $name): string {
 };
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>">
-<script src="<?= e(asset('js/page-builder-v117.js') . '?v=117') ?>" defer></script>
+<script src="<?= e(asset('js/page-builder-v119.js') . '?v=119') ?>" defer></script>
 
 <section
     class="page-builder"
