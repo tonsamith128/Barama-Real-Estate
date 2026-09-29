@@ -113,7 +113,7 @@
                     return;
                 }
 
-                exec(command);
+                exec(command, button.dataset.editorValue || null);
             });
         });
 
