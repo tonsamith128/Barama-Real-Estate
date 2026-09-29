@@ -26,6 +26,11 @@ final class PageContentSanitizer
         }
 
         $content = preg_replace('#<(script|style|iframe|object|embed|form|input|button|textarea|select|option)[^>]*>.*?</\\1>#is', '', $content) ?? '';
+
+        // Browser contenteditable surfaces may emit div blocks for Enter.
+        // Normalize them to semantic paragraphs before the allowlist pass.
+        $content = preg_replace('/<div\\b[^>]*>/i', '<p>', $content) ?? '';
+        $content = preg_replace('/<\\/div>/i', '</p>', $content) ?? '';
         $content = preg_replace('/<!--.*?-->/s', '', $content) ?? '';
 
         $allowed = '<' . implode('><', self::ALLOWED_TAGS) . '>';
