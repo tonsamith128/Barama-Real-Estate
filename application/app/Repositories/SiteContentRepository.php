@@ -396,7 +396,7 @@ final class SiteContentRepository
                         'title' => 'Find Your Property',
                         'description' => 'Search approved sale and rental listings by location, property type, bedrooms, and budget.',
                         'background' => [
-                            'type' => 'plain',
+                            'type' => 'color',
                             'color_preset' => 'ocean',
                             'overlay_strength' => 38,
                             'image_source' => 'url',
@@ -440,7 +440,7 @@ final class SiteContentRepository
                         'title' => 'Explore Approved Projects',
                         'description' => 'Discover published developments by location, project type, and construction stage.',
                         'background' => [
-                            'type' => 'plain',
+                            'type' => 'color',
                             'color_preset' => 'violet',
                             'overlay_strength' => 38,
                             'image_source' => 'url',
@@ -484,7 +484,7 @@ final class SiteContentRepository
                         'title' => 'Discover Approved Companies',
                         'description' => 'Explore public profiles with published projects and active marketplace inventory.',
                         'background' => [
-                            'type' => 'plain',
+                            'type' => 'color',
                             'color_preset' => 'emerald',
                             'overlay_strength' => 38,
                             'image_source' => 'url',
