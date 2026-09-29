@@ -145,6 +145,84 @@ final class MarketplaceRepository
         );
     }
 
+    /**
+     * @return array<int,string>
+     */
+    public function heroImageUuids(string $page, int $limit = 3): array
+    {
+        $page = strtolower(trim($page));
+        $limit = max(1, min(6, $limit));
+        $queryLimit = $limit * 4;
+
+        $sql = match ($page) {
+            'properties' => 'SELECT m.uuid
+                FROM listings l
+                INNER JOIN properties p ON p.id = l.property_id
+                INNER JOIN companies c ON c.id = p.company_id
+                INNER JOIN media_attachments ma
+                    ON ma.entity_type = "listing" AND ma.entity_id = l.id
+                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                WHERE l.status = "published"
+                  AND l.published_at IS NOT NULL
+                  AND l.deleted_at IS NULL
+                  AND (l.expires_at IS NULL OR l.expires_at > CURRENT_TIMESTAMP)
+                  AND p.status = "approved"
+                  AND p.deleted_at IS NULL
+                  AND c.status = "approved"
+                  AND c.published_at IS NOT NULL
+                  AND c.deleted_at IS NULL
+                  AND m.mime_type LIKE "image/%"
+                ORDER BY l.published_at DESC, ma.is_primary DESC, ma.position ASC, ma.id DESC
+                LIMIT :limit',
+            'projects' => 'SELECT m.uuid
+                FROM projects p
+                INNER JOIN companies c ON c.id = p.company_id
+                INNER JOIN media_attachments ma
+                    ON ma.entity_type = "project" AND ma.entity_id = p.id
+                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                WHERE p.status = "published"
+                  AND p.published_at IS NOT NULL
+                  AND p.deleted_at IS NULL
+                  AND c.status = "approved"
+                  AND c.published_at IS NOT NULL
+                  AND c.deleted_at IS NULL
+                  AND m.mime_type LIKE "image/%"
+                ORDER BY p.published_at DESC, ma.is_primary DESC, ma.position ASC, ma.id DESC
+                LIMIT :limit',
+            'companies' => 'SELECT m.uuid
+                FROM companies c
+                INNER JOIN media_attachments ma
+                    ON ma.entity_type = "company" AND ma.entity_id = c.id
+                INNER JOIN media_assets m ON m.id = ma.media_asset_id
+                WHERE c.status = "approved"
+                  AND c.published_at IS NOT NULL
+                  AND c.deleted_at IS NULL
+                  AND m.mime_type LIKE "image/%"
+                ORDER BY c.verified_at DESC, c.published_at DESC, ma.is_primary DESC, ma.position ASC, ma.id DESC
+                LIMIT :limit',
+            default => throw new InvalidArgumentException('Unsupported marketplace hero image page.'),
+        };
+
+        $statement = Database::connection()->prepare($sql);
+        $statement->bindValue(':limit', $queryLimit, PDO::PARAM_INT);
+        $statement->execute();
+
+        $uuids = [];
+        foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $uuid) {
+            $uuid = trim((string) $uuid);
+            if ($uuid === '' || in_array($uuid, $uuids, true)) {
+                continue;
+            }
+
+            $uuids[] = $uuid;
+            if (count($uuids) >= $limit) {
+                break;
+            }
+        }
+
+        return $uuids;
+    }
+
     /** @return array<string,mixed>|null */
     public function listingBySlug(string $slug): ?array
     {
