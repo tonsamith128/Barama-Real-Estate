@@ -96,7 +96,12 @@ final class Router
         }
 
         return Response::html(
-            View::render('errors/404', ['pageTitle' => 'Page not found']),
+            View::render('errors/404', [
+                'pageTitle' => 'Page not found',
+                'metaDescription' => 'The requested page could not be found on Barama Real Estate.',
+                'metaRobots' => 'noindex,follow',
+                'activeArea' => '',
+            ]),
             404
         );
     }
