@@ -110,12 +110,12 @@ final class SiteContentManagementService
             is_array($current['hero'] ?? null) ? $current['hero'] : []
         );
         $hero['enabled'] = $this->boolean(
-            $input['hero_enabled'] ?? (!empty($current['hero']['enabled']) ? '1' : '0')
+            $input['hero_enabled'] ?? '0'
         );
 
         $search = [
             'enabled' => $this->boolean(
-                $input['search_enabled'] ?? (!empty($current['search']['enabled']) ? '1' : '0')
+                $input['search_enabled'] ?? '0'
             ),
             'placeholder' => $this->text(
                 $input['search_placeholder'] ?? $current['search']['placeholder'] ?? '',
@@ -131,7 +131,7 @@ final class SiteContentManagementService
 
         $saleRent = [
             'enabled' => $this->boolean(
-                $input['sale_rent_enabled'] ?? (!empty($current['sale_rent']['enabled']) ? '1' : '0')
+                $input['sale_rent_enabled'] ?? '0'
             ),
             'all_label' => $this->text(
                 $input['sale_rent_all_label'] ?? $current['sale_rent']['all_label'] ?? 'Sale & rent',
@@ -152,7 +152,7 @@ final class SiteContentManagementService
 
         $locations = [
             'enabled' => $this->boolean(
-                $input['locations_enabled'] ?? (!empty($current['locations']['enabled']) ? '1' : '0')
+                $input['locations_enabled'] ?? '0'
             ),
             'all_label' => $this->text(
                 $input['locations_all_label'] ?? $current['locations']['all_label'] ?? 'All locations',
@@ -179,8 +179,7 @@ final class SiteContentManagementService
             'columns' => $columns,
             'page_size' => $pageSize,
             'show_result_count' => $this->boolean(
-                $input['grid_show_result_count']
-                    ?? (!empty($current['grid']['show_result_count']) ? '1' : '0')
+                $input['grid_show_result_count'] ?? '0'
             ),
         ];
 
