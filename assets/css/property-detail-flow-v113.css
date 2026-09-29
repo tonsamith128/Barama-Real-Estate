@@ -1,0 +1,107 @@
+/* BARAMA_PROPERTY_DETAIL_INDEPENDENT_COLUMNS_V113 */
+/*
+ * Single-property page only.
+ * Keep the accepted visual design, but make the left content column flow
+ * independently from a taller Hero summary/sidebar.
+ */
+.single-detail--property .property-detail-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1.62fr) minmax(320px, 0.68fr);
+    gap: clamp(1rem, 2.2vw, 1.65rem);
+    align-items: stretch;
+}
+
+.single-detail--property .property-detail-flow__main,
+.single-detail--property .property-detail-flow__sidebar {
+    min-width: 0;
+}
+
+.single-detail--property .property-detail-flow__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    margin-top: 0 !important;
+}
+
+.single-detail--property .property-detail-flow__sidebar {
+    display: flex;
+    align-self: stretch;
+    flex-direction: column;
+    gap: 1.4rem;
+}
+
+.single-detail--property .property-detail-flow__main > .single-detail__primary,
+.single-detail--property .property-detail-flow__main > .detail-main,
+.single-detail--property .property-detail-flow__sidebar > .detail-summary-card,
+.single-detail--property .property-detail-flow__sidebar > .inquiry-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.single-detail--property .property-detail-flow__sidebar > .detail-summary-card--sticky {
+    position: static !important;
+    top: auto !important;
+}
+
+.single-detail--property .property-detail-flow__sidebar > .inquiry-card--sticky {
+    position: sticky !important;
+    top: 96px;
+    align-self: stretch;
+}
+
+/* Keep the existing content-surface refinements active in the new left column. */
+.single-detail--property .property-detail-flow__main.detail-layout--content {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    isolation: auto;
+}
+
+/*
+ * Tablet/mobile preserve the original semantic reading order:
+ * media -> summary -> main property content -> inquiry.
+ */
+@media (max-width: 991.98px) {
+    .single-detail--property .property-detail-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .single-detail--property .property-detail-flow__main,
+    .single-detail--property .property-detail-flow__sidebar {
+        display: contents;
+    }
+
+    .single-detail--property .property-detail-flow .single-detail__primary {
+        order: 1;
+    }
+
+    .single-detail--property .property-detail-flow .detail-summary-card {
+        order: 2;
+    }
+
+    .single-detail--property .property-detail-flow .detail-main {
+        order: 3;
+    }
+
+    .single-detail--property .property-detail-flow .inquiry-card {
+        order: 4;
+    }
+
+    .single-detail--property .property-detail-flow .detail-summary-card--sticky,
+    .single-detail--property .property-detail-flow .inquiry-card--sticky {
+        position: static !important;
+        top: auto !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .single-detail--property .property-detail-flow {
+        gap: 1rem;
+    }
+}
