@@ -35,19 +35,19 @@ $colorPreset = (string) ($background['color_preset'] ?? 'ocean');
 
 $bundledHeroDefaults = match ($pageKind) {
     'projects' => [
-        url('/assets/images/marketplace-defaults/barama-project-default.svg'),
-        url('/assets/images/marketplace-defaults/barama-property-default.svg'),
-        url('/assets/images/marketplace-defaults/barama-company-default.svg'),
+        url('/assets/images/marketplace-defaults/projects-hero-01.webp'),
+        url('/assets/images/marketplace-defaults/projects-hero-02.webp'),
+        url('/assets/images/marketplace-defaults/projects-hero-03.webp'),
     ],
     'companies' => [
-        url('/assets/images/marketplace-defaults/barama-company-default.svg'),
-        url('/assets/images/marketplace-defaults/barama-project-default.svg'),
-        url('/assets/images/marketplace-defaults/barama-property-default.svg'),
+        url('/assets/images/marketplace-defaults/companies-hero-01.webp'),
+        url('/assets/images/marketplace-defaults/companies-hero-02.webp'),
+        url('/assets/images/marketplace-defaults/companies-hero-03.webp'),
     ],
     default => [
-        url('/assets/images/marketplace-defaults/barama-property-default.svg'),
-        url('/assets/images/marketplace-defaults/barama-project-default.svg'),
-        url('/assets/images/marketplace-defaults/barama-company-default.svg'),
+        url('/assets/images/marketplace-defaults/properties-hero-01.webp'),
+        url('/assets/images/marketplace-defaults/properties-hero-02.webp'),
+        url('/assets/images/marketplace-defaults/properties-hero-03.webp'),
     ],
 };
 
