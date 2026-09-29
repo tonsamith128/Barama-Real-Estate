@@ -380,7 +380,7 @@ $renderActions = static function (array $row) use (
     if ($workspaceType === 'admin' && $activeSection === 'pages') {
         $slug = trim((string) ($row['slug'] ?? ''));
         $editUrl = url('/dashboard/pages/' . $id . '/edit');
-        $publicUrl = $slug !== '' ? url('/pages/' . rawurlencode($slug)) : '';
+        $publicUrl = $slug !== '' ? url('/' . rawurlencode($slug)) : '';
 
         $buttons[] = '<a class="table-action table-action--primary" href="' . e($editUrl) . '">Edit</a>';
 
@@ -705,7 +705,7 @@ $renderActions = static function (array $row) use (
                     . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
             } elseif ($status === 'published') {
                 $buttons[] = '<a class="table-action" href="' . e(url(
-                    '/pages/' . rawurlencode((string) ($row['slug'] ?? ''))
+                    '/' . rawurlencode((string) ($row['slug'] ?? ''))
                 )) . '" target="_blank" rel="noopener noreferrer">View page</a>';
                 $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
                     . '" method="post" data-workspace-form>'
