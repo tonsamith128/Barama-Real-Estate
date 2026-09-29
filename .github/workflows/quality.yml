@@ -431,3 +431,10 @@ jobs:
           coverage: none
       - run: php -l application/resources/views/company/index.php
 
+
+  diagnostic-runner:
+    name: Diagnostic · runner only
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "RUNNER_OK"
+
