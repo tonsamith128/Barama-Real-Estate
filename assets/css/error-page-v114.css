@@ -1,0 +1,234 @@
+/* BARAMA_GLOBAL_404_V114 */
+.barama-error-page {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(4.5rem, 9vw, 8rem) 0;
+    min-height: clamp(560px, 72vh, 760px);
+    display: flex;
+    align-items: center;
+    background:
+        radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--barama-primary) 16%, transparent) 0 11rem, transparent 11.1rem),
+        radial-gradient(circle at 14% 82%, color-mix(in srgb, var(--barama-primary) 9%, transparent) 0 9rem, transparent 9.1rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--barama-surface-soft) 48%, transparent), transparent 64%);
+}
+
+.barama-error-page::before,
+.barama-error-page::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid color-mix(in srgb, var(--barama-primary) 18%, transparent);
+    border-radius: 999px;
+}
+
+.barama-error-page::before {
+    width: 360px;
+    height: 360px;
+    right: -120px;
+    top: 72px;
+}
+
+.barama-error-page::after {
+    width: 220px;
+    height: 220px;
+    left: -86px;
+    bottom: 34px;
+}
+
+.barama-error-page__shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(300px, .68fr);
+    gap: clamp(2rem, 6vw, 5.5rem);
+    align-items: center;
+}
+
+.barama-error-page__code {
+    display: inline-flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+    color: var(--barama-primary);
+    font-size: clamp(4.75rem, 10vw, 8.5rem);
+    font-weight: 900;
+    letter-spacing: -.075em;
+    line-height: .82;
+}
+
+.barama-error-page__copy {
+    max-width: 720px;
+}
+
+.barama-error-page__copy .eyebrow {
+    margin-bottom: .8rem;
+}
+
+.barama-error-page__copy h1 {
+    margin: 0;
+    max-width: 760px;
+    color: var(--barama-text);
+    font-size: clamp(2.15rem, 4.2vw, 4rem);
+    font-weight: 850;
+    letter-spacing: -.045em;
+    line-height: 1.02;
+}
+
+.barama-error-page__copy > p {
+    margin: 1.15rem 0 0;
+    max-width: 650px;
+    color: var(--barama-muted);
+    font-size: clamp(1rem, 1.5vw, 1.12rem);
+    line-height: 1.75;
+}
+
+.barama-error-page__path {
+    display: inline-flex;
+    max-width: 100%;
+    margin-top: 1.1rem;
+    padding: .48rem .72rem;
+    border: 1px solid var(--barama-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--barama-surface) 78%, transparent);
+    color: var(--barama-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: .76rem;
+    overflow-wrap: anywhere;
+}
+
+.barama-error-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1.65rem;
+}
+
+.barama-error-page__actions .btn {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    border-radius: 12px;
+    padding-inline: 1.05rem;
+    font-weight: 780;
+}
+
+.barama-error-page__panel {
+    border: 1px solid var(--barama-border);
+    border-radius: var(--barama-radius-lg);
+    background: color-mix(in srgb, var(--barama-surface) 92%, transparent);
+    box-shadow: var(--barama-shadow);
+    padding: clamp(1.35rem, 3vw, 2rem);
+}
+
+.barama-error-page__panel-head {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--barama-border);
+}
+
+.barama-error-page__panel-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--barama-primary) 13%, var(--barama-surface));
+    color: var(--barama-primary);
+}
+
+.barama-error-page__panel-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.barama-error-page__panel-head strong {
+    display: block;
+    color: var(--barama-text);
+    font-size: 1rem;
+}
+
+.barama-error-page__panel-head span {
+    display: block;
+    margin-top: .2rem;
+    color: var(--barama-muted);
+    font-size: .82rem;
+}
+
+.barama-error-page__links {
+    display: grid;
+    gap: .62rem;
+    margin-top: 1rem;
+}
+
+.barama-error-page__links a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 48px;
+    padding: .75rem .85rem;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: var(--barama-text);
+    font-weight: 760;
+    text-decoration: none;
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease;
+}
+
+.barama-error-page__links a:hover {
+    transform: translateX(3px);
+    border-color: var(--barama-border);
+    background: var(--barama-surface-soft);
+}
+
+.barama-error-page__links small {
+    color: var(--barama-primary);
+    font-size: 1rem;
+}
+
+html[data-bs-theme="dark"] .barama-error-page__panel {
+    background: color-mix(in srgb, var(--barama-surface) 95%, #07101d 5%);
+}
+
+@media (max-width: 991.98px) {
+    .barama-error-page {
+        min-height: auto;
+        padding: 4.5rem 0;
+    }
+
+    .barama-error-page__shell {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .barama-error-page__panel {
+        max-width: 620px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .barama-error-page {
+        padding: 3.25rem 0;
+    }
+
+    .barama-error-page__code {
+        font-size: 5rem;
+    }
+
+    .barama-error-page__actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .barama-error-page__actions .btn {
+        width: 100%;
+    }
+}
