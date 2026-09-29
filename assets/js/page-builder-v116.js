@@ -65,9 +65,9 @@
                 slug.value = value;
             }
 
-            const url = baseUrl.replace(/\/$/, '') + '/pages/' + value;
+            const url = baseUrl.replace(/\/$/, '') + '/' + value;
             if (fullUrl instanceof HTMLElement) {
-                fullUrl.textContent = value ? url : baseUrl.replace(/\/$/, '') + '/pages/…';
+                fullUrl.textContent = value ? url : baseUrl.replace(/\/$/, '') + '/…';
                 fullUrl.dataset.copyValue = value ? url : '';
             }
         };
