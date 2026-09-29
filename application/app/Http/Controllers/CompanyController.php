@@ -9,12 +9,18 @@ use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\MarketplaceRepository;
+use Barama\Repositories\SiteContentRepository;
 
 final class CompanyController
 {
     public function index(Request $request): Response
     {
         $repository = new MarketplaceRepository();
+        $siteContent = (new SiteContentRepository())->get();
+        $pageConfig = is_array($siteContent['marketplace_pages']['companies'] ?? null)
+            ? $siteContent['marketplace_pages']['companies']
+            : SiteContentRepository::defaults()['marketplace_pages']['companies'];
+        $pageSize = max(6, min(48, (int) ($pageConfig['grid']['page_size'] ?? 16)));
         $filters = [
             'q' => mb_substr(trim((string) $request->input('q', '')), 0, 100),
             'type' => trim((string) $request->input('type', '')),
@@ -41,8 +47,10 @@ final class CompanyController
             'activeArea' => 'company',
             'inventory' => $repository->companies(
                 $filters,
-                $currentPage
+                $currentPage,
+                $pageSize
             ),
+            'pageConfig' => $pageConfig,
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
             'companyTypes' => DomainRules::COMPANY_TYPES,
