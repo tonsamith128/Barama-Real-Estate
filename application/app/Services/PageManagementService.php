@@ -176,9 +176,9 @@ final class PageManagementService
             );
         }
 
-        if (in_array($slug, ['about', 'about-us', 'contact', 'contact-us'], true)) {
+        if (CmsRoutePolicy::isReservedSlug($slug)) {
             throw new InvalidArgumentException(
-                'About Us and Contact Us are built-in pages. Manage them from their dedicated dashboard sections.'
+                'This page URL slug is reserved by the Barama platform. Choose a different slug.'
             );
         }
 
