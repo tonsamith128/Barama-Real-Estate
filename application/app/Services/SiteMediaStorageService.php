@@ -34,13 +34,21 @@ final class SiteMediaStorageService
 
         $collection = strtolower(trim($collection));
 
-        if (!in_array($collection, [
+        $isHomepageCollection = in_array($collection, [
             'homepage_hero_image',
             'homepage_hero_slider',
             'homepage_hero_video',
-        ], true)) {
-            throw new InvalidArgumentException('Unsupported homepage media collection.');
+        ], true);
+        $isMarketplaceCollection = preg_match(
+            '/^marketplace_(properties|projects|companies)_hero_(image|slider|video)$/',
+            $collection
+        ) === 1;
+
+        if (!$isHomepageCollection && !$isMarketplaceCollection) {
+            throw new InvalidArgumentException('Unsupported site hero media collection.');
         }
+
+        $isVideoCollection = str_ends_with($collection, '_hero_video');
 
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
 
@@ -83,14 +91,14 @@ final class SiteMediaStorageService
         }
 
         if (
-            $collection !== 'homepage_hero_video'
+            !$isVideoCollection
             && !str_starts_with($mime, 'image/')
         ) {
             throw new InvalidArgumentException('Hero image and slider uploads must be images.');
         }
 
         if (
-            $collection === 'homepage_hero_video'
+            $isVideoCollection
             && !str_starts_with($mime, 'video/')
         ) {
             throw new InvalidArgumentException('Hero video upload must be a supported video file.');
