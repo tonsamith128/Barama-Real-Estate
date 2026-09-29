@@ -89,6 +89,118 @@ final class SiteContentManagementService
     }
 
     /** @param array<string,mixed> $input */
+    public function updateMarketplacePage(string $page, array $input): void
+    {
+        $actor = $this->administrator();
+        $page = strtolower(trim($page));
+
+        if (!in_array($page, ['properties', 'projects', 'companies'], true)) {
+            throw new InvalidArgumentException('Unknown marketplace page.');
+        }
+
+        $repository = new SiteContentRepository();
+        $config = $repository->get();
+        $defaults = SiteContentRepository::defaults()['marketplace_pages'][$page];
+        $current = is_array($config['marketplace_pages'][$page] ?? null)
+            ? array_replace_recursive($defaults, $config['marketplace_pages'][$page])
+            : $defaults;
+
+        $hero = $this->validatedHero(
+            $input,
+            is_array($current['hero'] ?? null) ? $current['hero'] : []
+        );
+        $hero['enabled'] = $this->boolean(
+            $input['hero_enabled'] ?? (!empty($current['hero']['enabled']) ? '1' : '0')
+        );
+
+        $search = [
+            'enabled' => $this->boolean(
+                $input['search_enabled'] ?? (!empty($current['search']['enabled']) ? '1' : '0')
+            ),
+            'placeholder' => $this->text(
+                $input['search_placeholder'] ?? $current['search']['placeholder'] ?? '',
+                120,
+                'Marketplace search placeholder'
+            ),
+            'button_label' => $this->text(
+                $input['search_button_label'] ?? $current['search']['button_label'] ?? 'Search',
+                40,
+                'Marketplace search button label'
+            ),
+        ];
+
+        $saleRent = [
+            'enabled' => $this->boolean(
+                $input['sale_rent_enabled'] ?? (!empty($current['sale_rent']['enabled']) ? '1' : '0')
+            ),
+            'all_label' => $this->text(
+                $input['sale_rent_all_label'] ?? $current['sale_rent']['all_label'] ?? 'Sale & rent',
+                60,
+                'Sale and rent label'
+            ),
+            'sale_label' => $this->text(
+                $input['sale_label'] ?? $current['sale_rent']['sale_label'] ?? 'For sale',
+                60,
+                'Sale label'
+            ),
+            'rent_label' => $this->text(
+                $input['rent_label'] ?? $current['sale_rent']['rent_label'] ?? 'For rent',
+                60,
+                'Rent label'
+            ),
+        ];
+
+        $locations = [
+            'enabled' => $this->boolean(
+                $input['locations_enabled'] ?? (!empty($current['locations']['enabled']) ? '1' : '0')
+            ),
+            'all_label' => $this->text(
+                $input['locations_all_label'] ?? $current['locations']['all_label'] ?? 'All locations',
+                60,
+                'All locations label'
+            ),
+        ];
+
+        $columns = filter_var(
+            $input['grid_columns'] ?? $current['grid']['columns'] ?? 3,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 2, 'max_range' => 4]]
+        );
+        $columns = $columns === false ? 3 : (int) $columns;
+
+        $pageSize = filter_var(
+            $input['grid_page_size'] ?? $current['grid']['page_size'] ?? 18,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 6, 'max_range' => 48]]
+        );
+        $pageSize = $pageSize === false ? (int) ($defaults['grid']['page_size'] ?? 18) : (int) $pageSize;
+
+        $grid = [
+            'columns' => $columns,
+            'page_size' => $pageSize,
+            'show_result_count' => $this->boolean(
+                $input['grid_show_result_count']
+                    ?? (!empty($current['grid']['show_result_count']) ? '1' : '0')
+            ),
+        ];
+
+        $config['marketplace_pages'][$page] = [
+            'hero' => $hero,
+            'search' => $search,
+            'sale_rent' => $saleRent,
+            'locations' => $locations,
+            'grid' => $grid,
+        ];
+
+        $repository->save($config);
+        $this->audit(
+            'admin.marketplace_page_configuration_updated',
+            (int) $actor['id'],
+            ['page' => $page]
+        );
+    }
+
+    /** @param array<string,mixed> $input */
     public function createNavigation(array $input): string
     {
         $actor = $this->administrator();
