@@ -10,6 +10,8 @@ $perPage = (int) ($records['per_page'] ?? 0);
 $perPage = $perPage > 0 ? $perPage : max(1, count($rows));
 $showAdminMarketplaceNumbers = $workspaceType === 'admin'
     && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+$showAdminPageNumbers = $workspaceType === 'admin' && $activeSection === 'pages';
+$showAdminRowNumbers = $showAdminMarketplaceNumbers || $showAdminPageNumbers;
 $hasMarketplacePageConfiguration = $workspaceType === 'admin'
     && in_array($activeSection, ['companies', 'projects', 'properties'], true);
 $marketplacePageDefaults = $hasMarketplacePageConfiguration
@@ -375,6 +377,57 @@ $renderActions = static function (array $row) use (
         return $renderRowMenu($buttons, 'admin-property-' . $id);
     }
 
+    if ($workspaceType === 'admin' && $activeSection === 'pages') {
+        $slug = trim((string) ($row['slug'] ?? ''));
+        $editUrl = url('/dashboard/pages/' . $id . '/edit');
+        $publicUrl = $slug !== '' ? url('/pages/' . rawurlencode($slug)) : '';
+
+        $buttons[] = '<a class="table-action table-action--primary" href="' . e($editUrl) . '">Edit</a>';
+
+        if ($publicUrl !== '') {
+            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
+                . 'data-copy-value="' . e($publicUrl) . '">Copy URL</button>';
+        }
+
+        if ($status === 'published' && $publicUrl !== '') {
+            $buttons[] = '<a class="table-action" href="' . e($publicUrl)
+                . '" target="_blank" rel="noopener">View</a>';
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
+                . 'title="Publish this page before opening the public URL.">View</button>';
+        }
+
+        if ($status === 'draft') {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="published">'
+                . '<button class="table-action" type="submit">Publish</button></form>';
+        } elseif ($status === 'published') {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="draft">'
+                . '<button class="table-action" type="submit">Move to draft</button></form>';
+        }
+
+        if (in_array($status, ['draft', 'published'], true)) {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="archived">'
+                . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
+        } elseif ($status === 'archived') {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="draft">'
+                . '<button class="table-action" type="submit">Restore draft</button></form>';
+        }
+
+        return $renderRowMenu($buttons, 'admin-page-' . $id);
+    }
+
     $viewResource = $workspaceType === 'developer'
         ? match ($activeSection) {
             'overview', 'inquiries' => 'inquiry',
@@ -396,7 +449,6 @@ $renderActions = static function (array $row) use (
             'leads' => 'lead',
             'viewings' => 'viewing',
             'media' => 'media',
-            'pages' => 'page',
             'seo' => (string) ($row['entity_type'] ?? ''),
             'users' => 'user',
             'verification' => 'user',
@@ -756,7 +808,10 @@ $renderActions = static function (array $row) use (
 };
 ?>
 
-<section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?>">
+<?php if ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>">
+<?php endif; ?>
+<section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?><?= $workspaceType === 'admin' && $activeSection === 'pages' ? ' workspace-page--pages' : '' ?>">
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel) ?></span>
@@ -780,10 +835,10 @@ $renderActions = static function (array $row) use (
                 Canonical real-estate platform data
             </span>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
-            <span class="workspace-context-note">
-                <?= app_icon('globe') ?>
-                Public content · controlled publishing
-            </span>
+            <a class="workspace-context-note workspace-context-note--create" href="<?= e(url('/dashboard/pages/new')) ?>">
+                <?= app_icon('plus') ?>
+                <span>Create New Page</span>
+            </a>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'seo'): ?>
             <span class="workspace-context-note">
                 <?= app_icon('search') ?>
@@ -1411,17 +1466,6 @@ $renderActions = static function (array $row) use (
             </div>
         <?php endif; ?>
 
-        <?php if ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
-            <div class="workspace-bulk-bar">
-                <form action="<?= e(url('/dashboard/pages')) ?>" method="post" data-workspace-form>
-                    <?= csrf_field() ?>
-                    <input name="title" maxlength="191" placeholder="New page title" aria-label="New page title" required>
-                    <input name="slug" maxlength="160" placeholder="url-slug (optional)" aria-label="Page URL slug">
-                    <button type="submit">Create draft page</button>
-                </form>
-            </div>
-        <?php endif; ?>
-
         <div class="workspace-table-wrap">
             <table class="workspace-table">
                 <thead>
@@ -1431,7 +1475,7 @@ $renderActions = static function (array $row) use (
                                 <input type="checkbox" data-bulk-toggle aria-label="Select all records on this page">
                             </th>
                         <?php endif; ?>
-                        <?php if ($showAdminMarketplaceNumbers): ?>
+                        <?php if ($showAdminRowNumbers): ?>
                             <th scope="col" class="workspace-table__number">No</th>
                         <?php endif; ?>
                         <?php foreach ($columns as $label): ?>
@@ -1443,7 +1487,7 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showAdminMarketplaceNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showAdminRowNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
                                 <span class="workspace-empty__icon"><?= app_icon((string) ($emptyState['icon'] ?? 'search')) ?></span>
                                 <strong><?= e((string) ($emptyState['title'] ?? 'No records found')) ?></strong>
                                 <span><?= e((string) ($emptyState['detail'] ?? 'Records matching this section and search will appear here.')) ?></span>
@@ -1464,12 +1508,17 @@ $renderActions = static function (array $row) use (
                                         >
                                     </td>
                                 <?php endif; ?>
-                                <?php if ($showAdminMarketplaceNumbers): ?>
+                                <?php if ($showAdminRowNumbers): ?>
                                     <td class="workspace-table__number"><?= e((string) (((max(1, $page) - 1) * $perPage) + $rowIndex + 1)) ?></td>
                                 <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
                                     <td>
-                                        <?php if (
+                                        <?php if ($showAdminPageNumbers && $key === 'title'): ?>
+                                            <a
+                                                class="workspace-table__title-link"
+                                                href="<?= e(url('/dashboard/pages/' . (int) ($row['id'] ?? 0) . '/edit')) ?>"
+                                            ><?= e((string) ($row[$key] ?? '—')) ?></a>
+                                        <?php elseif (
                                             $adminEditorResource !== null
                                             && $adminEditorTitleKey !== null
                                             && $key === $adminEditorTitleKey
