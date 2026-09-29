@@ -22,7 +22,7 @@ $activeFilters = array_filter([
     'Location' => $locationLabels[(string) ($filters['location'] ?? '')] ?? '',
 ]);
 ?>
-<?= \\Barama\\Core\\View::partial('components/marketplace-page-hero', [
+<?= \Barama\Core\View::partial('components/marketplace-page-hero', [
     'pageKind' => 'companies',
     'pageConfig' => $pageConfig ?? [],
     'total' => $total,
