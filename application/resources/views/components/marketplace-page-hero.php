@@ -33,12 +33,37 @@ if (!in_array($backgroundType, ['plain', 'color', 'image', 'slider', 'video'], t
 $overlayStrength = max(0, min(85, (int) ($background['overlay_strength'] ?? 44)));
 $colorPreset = (string) ($background['color_preset'] ?? 'ocean');
 
+$automaticHeroSources = [];
+foreach ((array) ($defaultHeroMediaUuids ?? []) as $uuid) {
+    $uuid = trim((string) $uuid);
+    if ($uuid === '') {
+        continue;
+    }
+
+    $source = url('/media/' . rawurlencode($uuid));
+    if (!in_array($source, $automaticHeroSources, true)) {
+        $automaticHeroSources[] = $source;
+    }
+
+    if (count($automaticHeroSources) >= 3) {
+        break;
+    }
+}
+
+if ($automaticHeroSources === []) {
+    $automaticHeroSources[] = url('/assets/images/barama-homepage-hero-v1.webp');
+}
+
 $imageSrc = '';
 if ($heroEnabled && $backgroundType === 'image') {
     if (($background['image_source'] ?? '') === 'media' && !empty($background['image_media_uuid'])) {
         $imageSrc = url('/media/' . rawurlencode((string) $background['image_media_uuid']));
     } else {
         $imageSrc = trim((string) ($background['image_url'] ?? ''));
+    }
+
+    if ($imageSrc === '') {
+        $imageSrc = (string) ($automaticHeroSources[0] ?? '');
     }
 }
 
@@ -59,6 +84,10 @@ if ($heroEnabled && $backgroundType === 'slider') {
         $sliderSources[] = $type === 'media'
             ? url('/media/' . rawurlencode($value))
             : $value;
+    }
+
+    if ($sliderSources === []) {
+        $sliderSources = $automaticHeroSources;
     }
 }
 
