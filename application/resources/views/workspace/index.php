@@ -863,11 +863,24 @@ $renderActions = static function (array $row) use (
                         </div>
                         <div class="config-source-panel" data-hero-background-panel="slider">
                             <h3>Image Slider Background</h3>
-                            <?php foreach ($marketplaceSliderImages as $index => $item): ?><?php if (is_array($item) && !empty($item['type']) && !empty($item['value'])): ?><input type="hidden" name="slider_existing[]" value="<?= e((string) $item['type'] . ':' . (string) $item['value']) ?>"><?php endif; ?><?php endforeach; ?>
+                            <?php if ($marketplaceSliderImages !== []): ?>
+                                <div class="marketplace-slider-existing">
+                                    <?php foreach ($marketplaceSliderImages as $index => $item): ?>
+                                        <?php if (is_array($item) && !empty($item['type']) && !empty($item['value'])): ?>
+                                            <label>
+                                                <input type="hidden" name="slider_existing[]" value="<?= e((string) $item['type'] . ':' . (string) $item['value']) ?>">
+                                                <input type="checkbox" name="slider_remove[]" value="<?= e((string) $index) ?>">
+                                                <span>Remove slide <?= e((string) ($index + 1)) ?></span>
+                                                <small><?= e((string) $item['type']) ?> · <?= e(mb_substr((string) $item['value'], 0, 72)) ?></small>
+                                            </label>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="config-field-grid">
                                 <label><span>Slider style</span><select class="form-select" name="slider_style"><?php foreach (['fade' => 'Fade','slide' => 'Slide','kenburns' => 'Ken Burns'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['slider_style'] ?? 'fade') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
                                 <label><span>Interval (ms)</span><input class="form-control" type="number" name="slider_interval" min="2500" max="20000" step="500" value="<?= e((string) ($marketplaceHeroBackground['slider_interval'] ?? 6000)) ?>"></label>
-                                <label class="config-check-field"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($marketplaceHeroBackground['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
+                                <label class="config-check-field"><input type="hidden" name="slider_autoplay" value="0"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($marketplaceHeroBackground['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
                                 <label class="config-field-grid__wide"><span>Add image URLs</span><textarea class="form-control" name="slider_urls" rows="3" placeholder="One HTTPS image URL per line"></textarea></label>
                                 <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"></label>
                             </div>
