@@ -30,6 +30,16 @@ $marketplaceGridConfig = is_array($marketplacePageConfig['grid'] ?? null) ? $mar
 $marketplaceSliderImages = is_array($marketplaceHeroBackground['slider_images'] ?? null)
     ? array_values($marketplaceHeroBackground['slider_images'])
     : [];
+$marketplaceImageSource = strtolower(trim((string) ($marketplaceHeroBackground['image_source'] ?? 'url')));
+if (
+    trim((string) ($marketplaceHeroBackground['image_url'] ?? '')) === ''
+    && trim((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) === ''
+) {
+    $marketplaceImageSource = 'auto';
+}
+if (!in_array($marketplaceImageSource, ['auto', 'url', 'media'], true)) {
+    $marketplaceImageSource = 'auto';
+}
 $adminEditorResource = $workspaceType === 'admin'
     ? match ($activeSection) {
         'companies' => 'company',
@@ -818,7 +828,8 @@ $renderActions = static function (array $row) use (
                 action="<?= e(url('/dashboard/marketplace-pages/' . $activeSection . '/configuration')) ?>"
                 method="post"
                 enctype="multipart/form-data"
-                data-workspace-form
+                novalidate
+                data-marketplace-config-form
             >
                 <?= csrf_field() ?>
                 <header class="config-dialog__head">
@@ -855,7 +866,7 @@ $renderActions = static function (array $row) use (
                         <div class="config-source-panel" data-hero-background-panel="image">
                             <h3>Image Background</h3>
                             <div class="config-field-grid">
-                                <label><span>Source</span><select class="form-select" name="image_source"><option value="url" <?= ($marketplaceHeroBackground['image_source'] ?? 'url') === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= ($marketplaceHeroBackground['image_source'] ?? '') === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select></label>
+                                <label><span>Source</span><select class="form-select" name="image_source" data-marketplace-image-source><option value="auto" <?= $marketplaceImageSource === 'auto' ? 'selected' : '' ?>>Automatic published image</option><option value="url" <?= $marketplaceImageSource === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= $marketplaceImageSource === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select></label>
                                 <label><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['image_url'] ?? '')) ?>" placeholder="https://example.com/hero.jpg"></label>
                                 <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library. If URL and upload are both empty, Barama automatically uses a published image from this marketplace page.</small></label>
                                 <input type="hidden" name="image_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) ?>">
@@ -934,9 +945,10 @@ $renderActions = static function (array $row) use (
                     </section>
                 </div>
 
+                <div class="config-dialog__notice" data-marketplace-config-notice hidden aria-live="polite"></div>
                 <footer class="config-dialog__footer">
                     <button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button>
-                    <button class="btn btn-primary" type="submit">Save configuration</button>
+                    <button class="btn btn-primary" type="submit" data-marketplace-config-submit>Save configuration</button>
                 </footer>
             </form>
         </dialog>
