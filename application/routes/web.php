@@ -53,7 +53,7 @@ $router->get('/company/{slug}', [CompanyController::class, 'show']);
 $router->get('/about', [BuiltInPageController::class, 'about']);
 $router->get('/contact', [BuiltInPageController::class, 'contact']);
 $router->post('/contact/messages', [ContactMessageController::class, 'store'], $csrf);
-$router->get('/pages/{slug}', [CmsController::class, 'show']);
+$router->get('/pages/{slug}', [CmsController::class, 'legacy']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
 $router->post('/subscribe', [NewsletterController::class, 'store'], $csrf);
@@ -741,3 +741,10 @@ $router->get('/health', static function (Request $request): Response {
         'version' => APP_VERSION,
     ]);
 });
+
+/*
+ * Keep this final one-segment route last.
+ * All canonical Barama routes above take precedence; remaining root slugs
+ * are resolved as managed CMS pages.
+ */
+$router->get('/{slug}', [CmsController::class, 'show']);
