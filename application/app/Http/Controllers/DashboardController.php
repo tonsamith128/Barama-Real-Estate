@@ -13,6 +13,7 @@ use Barama\Repositories\ContactMessageRepository;
 use Barama\Repositories\EmailTemplateRepository;
 use Barama\Repositories\FinanceRepository;
 use Barama\Repositories\NotificationRepository;
+use Barama\Repositories\PageRepository;
 use Barama\Repositories\SiteContentRepository;
 use Barama\Repositories\WorkspaceReadRepository;
 use Barama\Repositories\WorkspaceRecordRepository;
@@ -186,6 +187,62 @@ final class DashboardController
             'navigationItems' => is_array($config['navigation'] ?? null)
                 ? array_values($config['navigation'])
                 : [],
+        ]));
+    }
+
+    public function createPageBuilder(Request $request): Response
+    {
+        return Response::html(View::render('workspace/page-builder', [
+            'pageTitle' => 'Create New Page · Admin',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'pages',
+            'pageBuilderMode' => 'create',
+            'record' => [
+                'id' => 0,
+                'title' => '',
+                'slug' => '',
+                'excerpt' => '',
+                'content_text' => '',
+                'status' => 'draft',
+                'seo_title' => '',
+                'seo_description' => '',
+                'robots_directive' => 'index,follow',
+                'published_at' => null,
+                'updated_at' => null,
+            ],
+        ]));
+    }
+
+    public function editPageBuilder(Request $request, string $id): Response
+    {
+        if (!ctype_digit($id) || (int) $id < 1) {
+            return Response::html(
+                View::render('errors/404', ['pageTitle' => 'Page not found']),
+                404
+            );
+        }
+
+        $record = (new PageRepository())->find((int) $id);
+
+        if ($record === null) {
+            return Response::html(
+                View::render('errors/404', ['pageTitle' => 'Page not found']),
+                404
+            );
+        }
+
+        return Response::html(View::render('workspace/page-builder', [
+            'pageTitle' => (string) ($record['title'] ?? 'Page') . ' · Page Builder',
+            'activeArea' => 'dashboard',
+            'workspaceType' => 'admin',
+            'workspaceLabel' => 'Admin Control Center',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => 'pages',
+            'pageBuilderMode' => 'edit',
+            'record' => $record,
         ]));
     }
 
@@ -387,6 +444,10 @@ final class DashboardController
                 View::render('errors/404', ['pageTitle' => 'Record not found']),
                 404
             );
+        }
+
+        if ($resource === 'page') {
+            return Response::redirect('/dashboard/pages/' . (int) $id . '/edit');
         }
 
         $data = (new WorkspaceRecordRepository())->adminRecord($resource, (int) $id);
