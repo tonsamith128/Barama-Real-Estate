@@ -746,6 +746,20 @@ $renderActions = static function (array $row) use (
 };
 ?>
 
+<?php if ($hasMarketplacePageConfiguration): ?>
+    <?php
+    $marketplaceRecoveryCss = BASE_PATH . '/assets/css/marketplace-admin-workspace-recovery.css';
+    $marketplaceRecoveryVersion = is_file($marketplaceRecoveryCss)
+        ? (string) (filemtime($marketplaceRecoveryCss) ?: APP_VERSION)
+        : APP_VERSION;
+    ?>
+    <link
+        rel="stylesheet"
+        href="<?= e(asset('css/marketplace-admin-workspace-recovery.css') . '?v=' . rawurlencode($marketplaceRecoveryVersion)) ?>"
+        data-barama-marketplace-admin-recovery
+    >
+<?php endif; ?>
+
 <section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?>">
     <div class="workspace-page__header">
         <div>
