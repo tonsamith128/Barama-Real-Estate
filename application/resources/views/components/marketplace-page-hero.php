@@ -33,26 +33,25 @@ if (!in_array($backgroundType, ['plain', 'color', 'image', 'slider', 'video'], t
 $overlayStrength = max(0, min(85, (int) ($background['overlay_strength'] ?? 44)));
 $colorPreset = (string) ($background['color_preset'] ?? 'ocean');
 
-$automaticHeroSources = [];
-foreach ((array) ($defaultHeroMediaUuids ?? []) as $uuid) {
-    $uuid = trim((string) $uuid);
-    if ($uuid === '') {
-        continue;
-    }
+$bundledHeroDefaults = match ($pageKind) {
+    'projects' => [
+        url('/assets/images/marketplace-defaults/barama-project-default.svg'),
+        url('/assets/images/marketplace-defaults/barama-property-default.svg'),
+        url('/assets/images/marketplace-defaults/barama-company-default.svg'),
+    ],
+    'companies' => [
+        url('/assets/images/marketplace-defaults/barama-company-default.svg'),
+        url('/assets/images/marketplace-defaults/barama-project-default.svg'),
+        url('/assets/images/marketplace-defaults/barama-property-default.svg'),
+    ],
+    default => [
+        url('/assets/images/marketplace-defaults/barama-property-default.svg'),
+        url('/assets/images/marketplace-defaults/barama-project-default.svg'),
+        url('/assets/images/marketplace-defaults/barama-company-default.svg'),
+    ],
+};
 
-    $source = url('/media/' . rawurlencode($uuid));
-    if (!in_array($source, $automaticHeroSources, true)) {
-        $automaticHeroSources[] = $source;
-    }
-
-    if (count($automaticHeroSources) >= 3) {
-        break;
-    }
-}
-
-if ($automaticHeroSources === []) {
-    $automaticHeroSources[] = url('/assets/images/barama-homepage-hero-v1.webp');
-}
+$automaticHeroSources = $bundledHeroDefaults;
 
 $imageSrc = '';
 if ($heroEnabled && $backgroundType === 'image') {
