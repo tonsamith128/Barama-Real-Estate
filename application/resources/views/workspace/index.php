@@ -746,7 +746,7 @@ $renderActions = static function (array $row) use (
 };
 ?>
 
-<section class="workspace-page">
+<section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?>">
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel) ?></span>
