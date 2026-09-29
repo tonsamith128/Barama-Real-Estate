@@ -132,6 +132,7 @@ $saleRentAllLabel = trim((string) ($saleRentConfig['all_label'] ?? 'Sale & rent'
 $saleLabel = trim((string) ($saleRentConfig['sale_label'] ?? 'For sale'));
 $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
 ?>
+<link rel="stylesheet" href="<?= e(asset('css/marketplace-hero-heading-v112.css')) ?>">
 <section class="marketplace-hero marketplace-hero--discovery marketplace-hero--<?= e($pageKind) ?> marketplace-config-hero marketplace-config-hero--background-<?= e($backgroundType) ?> <?= $hasHeroBackground ? 'marketplace-config-hero--rich-background' : '' ?>">
     <?php if ($heroEnabled && $backgroundType === 'color'): ?>
         <div class="marketplace-config-hero__background marketplace-config-hero__background--color hero-bg-preset--<?= e($colorPreset) ?>" aria-hidden="true"></div>
