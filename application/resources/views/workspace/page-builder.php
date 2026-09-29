@@ -12,7 +12,7 @@ $pageTitleValue = (string) ($record['title'] ?? '');
 $pageSlugValue = (string) ($record['slug'] ?? '');
 $pageContentValue = (string) ($record['content_text'] ?? '');
 $pageEditorHtml = PageContentSanitizer::toHtml($pageContentValue);
-$pagePublicUrl = $pageSlugValue !== '' ? url('/pages/' . rawurlencode($pageSlugValue)) : '';
+$pagePublicUrl = $pageSlugValue !== '' ? url('/' . rawurlencode($pageSlugValue)) : '';
 $pageIsPublished = $pageBuilderMode === 'edit' && $pageStatus === 'published';
 $pageFormAction = $pageBuilderMode === 'create'
     ? url('/dashboard/pages')
@@ -128,7 +128,7 @@ $svg = static function (string $name): string {
                     ><?= $svg('copy') ?></button>
                 </div>
                 <small class="page-builder__full-url" data-page-full-url data-copy-value="<?= e($pagePublicUrl) ?>">
-                    <?= e($pagePublicUrl !== '' ? $pagePublicUrl : rtrim(url('/'), '/') . '/pages/…') ?>
+                    <?= e($pagePublicUrl !== '' ? $pagePublicUrl : rtrim(url('/'), '/') . '/…') ?>
                 </small>
             </label>
 
