@@ -1497,6 +1497,7 @@
 
     const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
 
+    /* BARAMA_MARKETPLACE_CONFIG_SAVE_V108 */
     document.querySelectorAll('[data-marketplace-config-form]').forEach((form) => {
         if (form.dataset.marketplaceConfigBound === '1') {
             return;
