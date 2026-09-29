@@ -369,22 +369,32 @@ final class SiteContentManagementService
         $overlay = $overlay === false ? 44 : (int) $overlay;
 
         $imageSource = strtolower(trim((string) ($input['image_source'] ?? $background['image_source'] ?? 'url')));
-        $imageSource = in_array($imageSource, ['url', 'media'], true) ? $imageSource : 'url';
-        $imageUrl = $this->optionalExternalUrl(
-            $input['image_url'] ?? $background['image_url'] ?? '',
-            'Hero image URL'
-        );
-        $imageMediaUuid = $this->uuid(
-            $input['uploaded_image_uuid']
-                ?? $input['image_media_uuid']
-                ?? $background['image_media_uuid']
-                ?? '',
-            'Hero image media'
-        );
+        $allowedImageSources = $allowAutomaticImageDefaults
+            ? ['auto', 'url', 'media']
+            : ['url', 'media'];
+        $imageSource = in_array($imageSource, $allowedImageSources, true)
+            ? $imageSource
+            : ($allowAutomaticImageDefaults ? 'auto' : 'url');
 
         if (!empty($input['uploaded_image_uuid'])) {
             $imageSource = 'media';
         }
+
+        $imageUrl = $imageSource === 'url'
+            ? $this->optionalExternalUrl(
+                $input['image_url'] ?? $background['image_url'] ?? '',
+                'Hero image URL'
+            )
+            : '';
+        $imageMediaUuid = $imageSource === 'media'
+            ? $this->uuid(
+                $input['uploaded_image_uuid']
+                    ?? $input['image_media_uuid']
+                    ?? $background['image_media_uuid']
+                    ?? '',
+                'Hero image media'
+            )
+            : '';
 
         $sliderStyle = strtolower(trim((string) ($input['slider_style'] ?? $background['slider_style'] ?? 'fade')));
 
