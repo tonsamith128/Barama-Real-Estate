@@ -11,6 +11,38 @@ use Barama\Repositories\PageRepository;
 
 final class CmsController
 {
+    public function legacy(Request $request, string $slug): Response
+    {
+        $normalizedSlug = strtolower(trim($slug));
+
+        if (in_array($normalizedSlug, ['about', 'about-us'], true)) {
+            return Response::redirect(url('/about'), 301);
+        }
+
+        if (in_array($normalizedSlug, ['contact', 'contact-us'], true)) {
+            return Response::redirect(url('/contact'), 301);
+        }
+
+        $page = (new PageRepository())->publishedBySlug($slug);
+
+        if ($page === null) {
+            return Response::html(
+                View::render('errors/404', [
+                    'pageTitle' => 'Page not found',
+                    'metaDescription' => 'The requested page could not be found on Barama Real Estate.',
+                    'metaRobots' => 'noindex,follow',
+                    'activeArea' => '',
+                ]),
+                404
+            );
+        }
+
+        return Response::redirect(
+            url('/' . rawurlencode((string) $page['slug'])),
+            301
+        );
+    }
+
     public function show(Request $request, string $slug): Response
     {
         $normalizedSlug = strtolower(trim($slug));
@@ -52,7 +84,7 @@ final class CmsController
                 ? (string) $page['seo_title']
                 : (string) $page['title'],
             'metaDescription' => $description,
-            'canonicalUrl' => url('/pages/' . rawurlencode((string) $page['slug'])),
+            'canonicalUrl' => url('/' . rawurlencode((string) $page['slug'])),
             'metaRobots' => (string) $page['robots_directive'],
             'activeArea' => 'cms',
             'page' => $page,
