@@ -25,7 +25,7 @@ $activeFilters = array_filter([
         : '',
 ]);
 ?>
-<?= \\Barama\\Core\\View::partial('components/marketplace-page-hero', [
+<?= \Barama\Core\View::partial('components/marketplace-page-hero', [
     'pageKind' => 'projects',
     'pageConfig' => $pageConfig ?? [],
     'total' => $total,
