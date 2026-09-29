@@ -31,7 +31,7 @@ $resultFilters = array_filter(array_merge([
     'Location' => $locationLabels[(string) ($filters['location'] ?? '')] ?? '',
 ], $advancedFilters));
 ?>
-<?= \\Barama\\Core\\View::partial('components/marketplace-page-hero', [
+<?= \Barama\Core\View::partial('components/marketplace-page-hero', [
     'pageKind' => 'properties',
     'pageConfig' => $pageConfig ?? [],
     'total' => $total,
