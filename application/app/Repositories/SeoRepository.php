@@ -52,7 +52,7 @@ final class SeoRepository
                             AND c.deleted_at IS NULL',
             ],
             [
-                'sql' => 'SELECT CONCAT("/pages/", p.slug) AS path,
+                'sql' => 'SELECT CONCAT("/", p.slug) AS path,
                                  p.updated_at AS last_modified
                           FROM cms_pages p
                           WHERE p.status = "published"
