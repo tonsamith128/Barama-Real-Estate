@@ -60,7 +60,21 @@ jobs:
           coverage: none
 
       - name: Run repository QA
-        run: php tools/qa.php
+        run: |
+          mkdir -p build/debug
+          set +e
+          php tools/qa.php 2>&1 | tee build/debug/repository-qa.log
+          STATUS=${PIPESTATUS[0]}
+          exit "$STATUS"
+
+      - name: Upload repository QA diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-qa-diagnostic-${{ github.sha }}
+          path: build/debug/repository-qa.log
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
