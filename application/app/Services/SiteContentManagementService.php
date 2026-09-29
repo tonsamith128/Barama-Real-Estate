@@ -107,7 +107,8 @@ final class SiteContentManagementService
 
         $hero = $this->validatedHero(
             $input,
-            is_array($current['hero'] ?? null) ? $current['hero'] : []
+            is_array($current['hero'] ?? null) ? $current['hero'] : [],
+            true
         );
         $hero['enabled'] = $this->boolean(
             $input['hero_enabled'] ?? '0'
@@ -325,8 +326,11 @@ final class SiteContentManagementService
     }
 
     /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
-    private function validatedHero(array $input, array $current): array
-    {
+    private function validatedHero(
+        array $input,
+        array $current,
+        bool $allowAutomaticImageDefaults = false
+    ): array {
         $defaults = SiteContentRepository::defaults()['homepage']['hero'];
         $current = array_replace_recursive($defaults, $current);
         $background = is_array($current['background'] ?? null)
@@ -465,7 +469,7 @@ final class SiteContentManagementService
             $videoSource = 'media';
         }
 
-        if ($type === 'image') {
+        if ($type === 'image' && !$allowAutomaticImageDefaults) {
             if ($imageSource === 'media' && $imageMediaUuid === '') {
                 throw new InvalidArgumentException('Upload or select a hero image before enabling Image Background.');
             }
@@ -474,7 +478,7 @@ final class SiteContentManagementService
             }
         }
 
-        if ($type === 'slider' && $sliderImages === []) {
+        if ($type === 'slider' && $sliderImages === [] && !$allowAutomaticImageDefaults) {
             throw new InvalidArgumentException('Add at least one image before enabling Image Slider Background.');
         }
 
