@@ -15712,3 +15712,17 @@ body:not(.auth-standalone-body) textarea {
         grid-template-columns: 1fr !important;
     }
 }
+
+
+/* BARAMA_MARKETPLACE_HERO_CLARITY_V111 */
+.marketplace-config-hero__background--media img,
+.marketplace-config-hero__background--slider img {
+    filter: none !important;
+    image-rendering: auto;
+    -webkit-font-smoothing: auto;
+}
+
+.marketplace-config-hero__background--media,
+.marketplace-config-hero__background--slider {
+    backdrop-filter: none !important;
+}
