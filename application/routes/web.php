@@ -633,6 +633,16 @@ $router->post(
     [AdminManagementController::class, 'updateAmenityStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
 );
+$router->get(
+    '/dashboard/pages/new',
+    [DashboardController::class, 'createPageBuilder'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->get(
+    '/dashboard/pages/{id}/edit',
+    [DashboardController::class, 'editPageBuilder'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
 $router->post(
     '/dashboard/pages',
     [AdminManagementController::class, 'createPage'],
