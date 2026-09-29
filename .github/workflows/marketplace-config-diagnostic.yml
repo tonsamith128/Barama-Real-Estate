@@ -1,4 +1,5 @@
 name: Marketplace Config Diagnostic Lint
+# Temporary branch-only syntax diagnostic.
 
 on:
   push:
