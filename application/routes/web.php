@@ -532,6 +532,12 @@ $router->post(
     [AdminManagementController::class, 'toggleAppearanceFeature'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
+$router->post(
+    '/dashboard/marketplace-pages/{page}/configuration',
+    [AdminManagementController::class, 'updateMarketplacePageConfiguration'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+
 $router->get(
     '/dashboard/homepage',
     [DashboardController::class, 'homepage'],
