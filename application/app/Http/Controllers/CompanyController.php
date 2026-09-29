@@ -51,6 +51,7 @@ final class CompanyController
                 $pageSize
             ),
             'pageConfig' => $pageConfig,
+            'defaultHeroMediaUuids' => $repository->heroImageUuids('companies', 3),
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
             'companyTypes' => DomainRules::COMPANY_TYPES,
