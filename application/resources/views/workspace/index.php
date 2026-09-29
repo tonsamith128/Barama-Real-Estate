@@ -746,20 +746,6 @@ $renderActions = static function (array $row) use (
 };
 ?>
 
-<?php if ($hasMarketplacePageConfiguration): ?>
-    <?php
-    $marketplaceRecoveryCss = BASE_PATH . '/assets/css/marketplace-admin-workspace-recovery.css';
-    $marketplaceRecoveryVersion = is_file($marketplaceRecoveryCss)
-        ? (string) (filemtime($marketplaceRecoveryCss) ?: APP_VERSION)
-        : APP_VERSION;
-    ?>
-    <link
-        rel="stylesheet"
-        href="<?= e(asset('css/marketplace-admin-workspace-recovery.css') . '?v=' . rawurlencode($marketplaceRecoveryVersion)) ?>"
-        data-barama-marketplace-admin-recovery
-    >
-<?php endif; ?>
-
 <section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?>">
     <div class="workspace-page__header">
         <div>
@@ -941,7 +927,7 @@ $renderActions = static function (array $row) use (
                     <section class="marketplace-config-section">
                         <div class="marketplace-config-section__head"><span><?= app_icon('grid') ?></span><div><strong>Grid Layout</strong><small>Control desktop columns, pagination size and result-count visibility. Tablet/mobile remain responsive.</small></div></div>
                         <div class="config-field-grid">
-                            <label><span>Desktop columns</span><select class="form-select" name="grid_columns"><?php foreach ([2,3,4] as $columns): ?><option value="<?= $columns ?>" <?= (int) ($marketplaceGridConfig['columns'] ?? 3) === $columns ? 'selected' : '' ?>><?= $columns ?> columns</option><?php endforeach; ?></select></label>
+                            <label><span>Desktop columns</span><select class="form-select" name="grid_columns"><?php foreach ([2,3,4] as $gridColumnOption): ?><option value="<?= $gridColumnOption ?>" <?= (int) ($marketplaceGridConfig['columns'] ?? 3) === $gridColumnOption ? 'selected' : '' ?>><?= $gridColumnOption ?> columns</option><?php endforeach; ?></select></label>
                             <label><span>Items per page</span><select class="form-select" name="grid_page_size"><?php foreach ([6,9,12,16,18,24,30,36,48] as $size): ?><option value="<?= $size ?>" <?= (int) ($marketplaceGridConfig['page_size'] ?? 18) === $size ? 'selected' : '' ?>><?= $size ?> items</option><?php endforeach; ?></select></label>
                             <label class="config-check-field"><input type="checkbox" name="grid_show_result_count" value="1" <?= !empty($marketplaceGridConfig['show_result_count']) ? 'checked' : '' ?>><span>Show result count in Hero</span></label>
                         </div>
