@@ -150,7 +150,9 @@ final class PageManagementService
         $title = trim((string) ($input['title'] ?? ''));
         $slug = strtolower(trim((string) ($input['slug'] ?? '')));
         $excerpt = trim((string) ($input['excerpt'] ?? ''));
-        $content = trim((string) ($input['content_text'] ?? ''));
+        $content = PageContentSanitizer::sanitize(
+            (string) ($input['content_text'] ?? '')
+        );
         $seoTitle = trim((string) ($input['seo_title'] ?? ''));
         $seoDescription = trim((string) ($input['seo_description'] ?? ''));
         $robots = strtolower(trim((string) ($input['robots_directive'] ?? 'index,follow')));
