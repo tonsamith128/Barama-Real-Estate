@@ -17,6 +17,7 @@ $typeLabel = ucwords(str_replace('_', ' ', (string) ($listing['property_type'] ?
 $furnishingLabel = ucwords(str_replace('_', ' ', (string) ($listing['furnishing_status'] ?? '—')));
 $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($listing['area_unit'] ?? '')) ?: '—';
 ?>
+<link rel="stylesheet" href="<?= e(asset('css/property-detail-flow-v113.css')) ?>">
 <section class="listing-detail listing-detail--premium single-detail single-detail--property">
     <div class="container app-container">
         <nav class="detail-breadcrumb" aria-label="Breadcrumb">
@@ -25,7 +26,9 @@ $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($lis
             <span><?= e((string) $listing['title']) ?></span>
         </nav>
 
-        <div class="single-detail__hero-grid">
+        <?php /* BARAMA_PROPERTY_DETAIL_INDEPENDENT_COLUMNS_V113 */ ?>
+        <div class="property-detail-flow">
+            <div class="property-detail-flow__main detail-layout--content">
             <div class="single-detail__primary">
                 <?= barama_detail_media_stage(
                     is_array($gallery ?? null) ? $gallery : [],
@@ -34,6 +37,54 @@ $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($lis
                 ) ?>
             </div>
 
+            <div class="detail-main single-detail__content-surface">
+                <div class="single-detail__intro-surface">
+                <header class="single-detail__title-block">
+                                    <div class="property-detail-head__badges">
+                                        <span class="detail-status"><?= e(($listing['transaction_type'] ?? '') === 'rent' ? 'For rent' : 'For sale') ?></span>
+                                        <?php if (!empty($listing['negotiable'])): ?>
+                                            <span class="detail-status detail-status--soft">Negotiable</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <h1><?= e((string) $listing['title']) ?></h1>
+                                    <p class="single-detail__location">
+                                        <?= app_icon('map') ?>
+                                        <span><?= e($locationLabel) ?></span>
+                                    </p>
+                                </header>
+                <?php if (!empty($listing['property_description'])): ?>
+                    <section class="detail-section detail-section--clean detail-section--first">
+                        <span class="eyebrow">Property overview</span>
+                        <h2>About this property</h2>
+                        <div class="rich-text-content rich-text-content--detail"><?= \Barama\Support\RichText::render((string) $listing['property_description']) ?></div>
+                    </section>
+                <?php endif; ?>
+                </div>
+
+                <section class="detail-section detail-section--clean">
+                    <span class="eyebrow">Publisher</span>
+                    <h2>Listed by an approved company</h2>
+                    <div class="detail-link-grid">
+                        <a class="detail-company-link" href="<?= e(url('/company/' . rawurlencode((string) $listing['company_slug']))) ?>">
+                            <?= app_icon('building') ?>
+                            <span><strong><?= e((string) $listing['company_name']) ?></strong><small>View company profile</small></span>
+                            <b>↗</b>
+                        </a>
+                        <?php if (!empty($listing['project_slug'])): ?>
+                            <a class="detail-company-link" href="<?= e(url('/projects/' . rawurlencode((string) $listing['project_slug']))) ?>">
+                                <?= app_icon('layers') ?>
+                                <span><strong><?= e((string) $listing['project_name']) ?></strong><small>View development project</small></span>
+                                <b>↗</b>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                
+            </div>
+            </div>
+
+            <div class="property-detail-flow__sidebar">
             <aside class="detail-summary-card detail-summary-card--sticky" aria-label="Property summary">
                 <span class="eyebrow">Listed price</span>
                 <strong class="detail-summary-card__price"><?= e($price) ?></strong>
@@ -96,54 +147,6 @@ $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($lis
                     <?php endif; ?>
                 </div>
             </aside>
-        </div>
-
-        <div class="detail-layout detail-layout--premium detail-layout--content">
-            <div class="detail-main single-detail__content-surface">
-                <div class="single-detail__intro-surface">
-                <header class="single-detail__title-block">
-                                    <div class="property-detail-head__badges">
-                                        <span class="detail-status"><?= e(($listing['transaction_type'] ?? '') === 'rent' ? 'For rent' : 'For sale') ?></span>
-                                        <?php if (!empty($listing['negotiable'])): ?>
-                                            <span class="detail-status detail-status--soft">Negotiable</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <h1><?= e((string) $listing['title']) ?></h1>
-                                    <p class="single-detail__location">
-                                        <?= app_icon('map') ?>
-                                        <span><?= e($locationLabel) ?></span>
-                                    </p>
-                                </header>
-                <?php if (!empty($listing['property_description'])): ?>
-                    <section class="detail-section detail-section--clean detail-section--first">
-                        <span class="eyebrow">Property overview</span>
-                        <h2>About this property</h2>
-                        <div class="rich-text-content rich-text-content--detail"><?= \Barama\Support\RichText::render((string) $listing['property_description']) ?></div>
-                    </section>
-                <?php endif; ?>
-                </div>
-
-                <section class="detail-section detail-section--clean">
-                    <span class="eyebrow">Publisher</span>
-                    <h2>Listed by an approved company</h2>
-                    <div class="detail-link-grid">
-                        <a class="detail-company-link" href="<?= e(url('/company/' . rawurlencode((string) $listing['company_slug']))) ?>">
-                            <?= app_icon('building') ?>
-                            <span><strong><?= e((string) $listing['company_name']) ?></strong><small>View company profile</small></span>
-                            <b>↗</b>
-                        </a>
-                        <?php if (!empty($listing['project_slug'])): ?>
-                            <a class="detail-company-link" href="<?= e(url('/projects/' . rawurlencode((string) $listing['project_slug']))) ?>">
-                                <?= app_icon('layers') ?>
-                                <span><strong><?= e((string) $listing['project_name']) ?></strong><small>View development project</small></span>
-                                <b>↗</b>
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                </section>
-
-                
-            </div>
 
             <aside class="inquiry-card inquiry-card--sticky inquiry-card--premium">
                 <div class="inquiry-card__head">
@@ -181,6 +184,7 @@ $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($lis
                     <span><strong><?= e((string) $listing['company_name']) ?></strong><small>Approved marketplace publisher</small></span>
                 </div>
             </aside>
+            </div>
         </div>
 
         <?php if ($relatedListings !== []): ?>
