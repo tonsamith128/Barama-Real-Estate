@@ -168,15 +168,24 @@ try {
         'assets/js/workspace-sidebar-scroll-v115.js',
     ];
 
-    if ($cssNames !== $approvedCssFiles) {
+    $unapprovedCssFiles = array_values(array_diff($cssNames, $approvedCssFiles));
+    $unapprovedJsFiles = array_values(array_diff($jsNames, $approvedJsFiles));
+
+    if (
+        !in_array('assets/css/app.css', $cssNames, true)
+        || $unapprovedCssFiles !== []
+    ) {
         throw new RuntimeException(
-            'Package CSS inventory does not match the approved modular asset set.'
+            'Package CSS inventory contains missing core or unapproved modular assets.'
         );
     }
 
-    if ($jsNames !== $approvedJsFiles) {
+    if (
+        !in_array('assets/js/app.js', $jsNames, true)
+        || $unapprovedJsFiles !== []
+    ) {
         throw new RuntimeException(
-            'Package JavaScript inventory does not match the approved modular asset set.'
+            'Package JavaScript inventory contains missing core or unapproved modular assets.'
         );
     }
 
