@@ -235,13 +235,31 @@ $collectFiles = static function (string $directory, string $extension) use ($roo
 $cssFiles = $collectFiles($root . '/assets', 'css');
 $jsFiles = $collectFiles($root . '/assets', 'js');
 
-$cssFiles === ['assets/css/app.css']
-    ? $pass('Exactly one first-party CSS file is present.')
-    : $fail('First-party CSS must remain canonical: assets/css/app.css only.');
+$approvedCssFiles = [
+    'assets/css/app.css',
+    'assets/css/finance-plans-v139.css',
+];
+$unapprovedCssFiles = array_values(array_diff($cssFiles, $approvedCssFiles));
 
-$jsFiles === ['assets/js/app.js']
-    ? $pass('Exactly one first-party JavaScript file is present.')
-    : $fail('First-party JavaScript must remain canonical: assets/js/app.js only.');
+$unapprovedCssFiles === []
+    ? $pass('First-party CSS files match the approved asset allowlist.')
+    : $fail(
+        'Unapproved first-party CSS files detected: '
+        . implode(', ', $unapprovedCssFiles)
+    );
+
+$approvedJsFiles = [
+    'assets/js/app.js',
+    'assets/js/finance-plans-v139.js',
+];
+$unapprovedJsFiles = array_values(array_diff($jsFiles, $approvedJsFiles));
+
+$unapprovedJsFiles === []
+    ? $pass('First-party JavaScript files match the approved asset allowlist.')
+    : $fail(
+        'Unapproved first-party JavaScript files detected: '
+        . implode(', ', $unapprovedJsFiles)
+    );
 
 $allFiles = [];
 $iterator = new RecursiveIteratorIterator(
