@@ -238,60 +238,72 @@ foreach ($entries as $entry) {
     }
 }
 
-$firstPartyCss = array_values(array_filter(
+$sourcePaths = static function (
+    string $pattern,
+    string $prefix
+) use ($root): array {
+    $files = glob($root . '/' . $pattern) ?: [];
+    $result = array_map(
+        static fn (string $file): string => $prefix . basename($file),
+        $files
+    );
+    sort($result, SORT_STRING);
+
+    return $result;
+};
+
+$packageCss = array_values(array_filter(
     $entries,
     static fn (string $entry): bool =>
         preg_match('#^assets/css/[^/]+\.css$#i', $entry) === 1
 ));
-$firstPartyJs = array_values(array_filter(
+$packageJs = array_values(array_filter(
     $entries,
     static fn (string $entry): bool =>
         preg_match('#^assets/js/[^/]+\.js$#i', $entry) === 1
 ));
+sort($packageCss, SORT_STRING);
+sort($packageJs, SORT_STRING);
 
-if ($firstPartyCss !== ['assets/css/app.css']) {
+$sourceCss = $sourcePaths('assets/css/*.css', 'assets/css/');
+$sourceJs = $sourcePaths('assets/js/*.js', 'assets/js/');
+
+if ($packageCss !== $sourceCss) {
     throw new RuntimeException(
-        'Customer package first-party stylesheet policy is not canonical.'
+        'Customer package stylesheet inventory does not match canonical source.'
     );
 }
 
-if ($firstPartyJs !== ['assets/js/app.js']) {
+if ($packageJs !== $sourceJs) {
     throw new RuntimeException(
-        'Customer package first-party JavaScript policy is not canonical.'
+        'Customer package JavaScript inventory does not match canonical source.'
     );
 }
 
-$expectedMigrationEntries = [
-    'application/database/migrations/0001_create_auth_core.php',
-    'application/database/migrations/0002_seed_auth_roles_permissions.php',
-    'application/database/migrations/0003_create_real_estate_domain.php',
-    'application/database/migrations/0004_seed_real_estate_permissions.php',
-    'application/database/migrations/0005_create_domain_workflow_support.php',
-    'application/database/migrations/0006_create_customer_engagement.php',
-    'application/database/migrations/0007_create_notification_delivery.php',
-    'application/database/migrations/0008_create_application_settings.php',
-    'application/database/migrations/0009_create_account_onboarding.php',
-    'application/database/migrations/0010_release_security_hardening.php',
-    'application/database/migrations/0011_create_workspace_preferences.php',
-];
-
-$migrationEntries = array_values(array_filter(
+$packageMigrations = array_values(array_filter(
     $entries,
     static fn (string $entry): bool =>
-        preg_match('#^application/database/migrations/\d{4}_[^/]+\.php$#', $entry) === 1
+        preg_match(
+            '#^application/database/migrations/\d{4}_[^/]+\.php$#',
+            $entry
+        ) === 1
 ));
-sort($migrationEntries, SORT_STRING);
+sort($packageMigrations, SORT_STRING);
 
-if ($migrationEntries !== $expectedMigrationEntries) {
+$sourceMigrations = $sourcePaths(
+    'application/database/migrations/*.php',
+    'application/database/migrations/'
+);
+
+if ($packageMigrations !== $sourceMigrations) {
     throw new RuntimeException(
-        'Customer package canonical migration sequence mismatch: '
-        . implode(', ', $migrationEntries)
+        'Customer package migration inventory does not match canonical source.'
     );
 }
 
 $migrationPrefixes = array_map(
     static fn (string $entry): string => substr(basename($entry), 0, 4),
-    $migrationEntries
+    $packageMigrations
 );
 
 if (count($migrationPrefixes) !== count(array_unique($migrationPrefixes))) {
