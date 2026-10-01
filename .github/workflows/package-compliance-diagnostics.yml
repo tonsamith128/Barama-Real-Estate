@@ -1,0 +1,50 @@
+name: Package Compliance Diagnostics
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    name: Package Compliance Diagnostics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip
+          coverage: none
+
+      - name: Build exact customer package
+        run: php tools/build-package.php
+
+      - name: Diagnostic — asset parity
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip assets
+
+      - name: Diagnostic — migration parity
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip migrations
+
+      - name: Diagnostic — internal markers
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip markers
+
+      - name: Diagnostic — migration safety
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip migration-safety
+
+      - name: Diagnostic — external hosts
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip hosts
+
+      - name: Diagnostic — package contracts
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip contracts
