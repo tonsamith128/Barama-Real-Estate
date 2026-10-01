@@ -107,6 +107,7 @@ final class AdminManagementController
             ];
         });
     }
+
     public function updatePlanStatus(Request $request, string $id): Response
     {
         return $this->execute(function () use ($request, $id): array {
@@ -484,10 +485,11 @@ final class AdminManagementController
 
             return Response::json([
                 'ok' => false,
-                'message' => 'Marketplace page configuration could not be saved.',
+                'message' => 'Marketplace page configuration could not be saved. Please retry or review the server error log.',
             ], 500);
         }
     }
+
     public function updateHomepageFeature(Request $request, string $feature): Response
     {
         return $this->execute(function () use ($request, $feature): array {
