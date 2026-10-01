@@ -176,6 +176,7 @@ foreach ([
     'application/app/Support/MigrationCatalog.php',
     'application/database/migrations/0010_release_security_hardening.php',
     'application/database/migrations/0011_create_workspace_preferences.php',
+    'application/database/migrations/0022_create_contact_messages.php',
 ] as $required) {
     if (!in_array($required, $entries, true)) {
         throw new RuntimeException('Customer package compliance file is missing: ' . $required);
@@ -248,16 +249,50 @@ $firstPartyJs = array_values(array_filter(
     static fn (string $entry): bool =>
         preg_match('#^assets/js/[^/]+\.js$#i', $entry) === 1
 ));
+sort($firstPartyCss, SORT_STRING);
+sort($firstPartyJs, SORT_STRING);
 
-if ($firstPartyCss !== ['assets/css/app.css']) {
+$expectedFirstPartyCss = [
+    'assets/css/app.css',
+    'assets/css/cms-rich-content-v116.css',
+    'assets/css/error-page-v114.css',
+    'assets/css/marketplace-config-v109.css',
+    'assets/css/marketplace-hero-heading-v112.css',
+    'assets/css/page-builder-v116.css',
+    'assets/css/property-detail-flow-v113.css',
+    'assets/css/workspace-sidebar-scroll-v115.css',
+];
+
+if (in_array('assets/css/finance-plans-v139.css', $entries, true)) {
+    $expectedFirstPartyCss[] = 'assets/css/finance-plans-v139.css';
+    sort($expectedFirstPartyCss, SORT_STRING);
+}
+
+$expectedFirstPartyJs = [
+    'assets/js/app.js',
+    'assets/js/marketplace-config-v109.js',
+    'assets/js/page-builder-v116.js',
+    'assets/js/page-builder-v117.js',
+    'assets/js/page-builder-v119.js',
+    'assets/js/workspace-sidebar-scroll-v115.js',
+];
+
+if (in_array('assets/js/finance-plans-v139.js', $entries, true)) {
+    $expectedFirstPartyJs[] = 'assets/js/finance-plans-v139.js';
+    sort($expectedFirstPartyJs, SORT_STRING);
+}
+
+if ($firstPartyCss !== $expectedFirstPartyCss) {
     throw new RuntimeException(
-        'Customer package first-party stylesheet policy is not canonical.'
+        'Customer package first-party stylesheet allowlist mismatch: '
+        . implode(', ', $firstPartyCss)
     );
 }
 
-if ($firstPartyJs !== ['assets/js/app.js']) {
+if ($firstPartyJs !== $expectedFirstPartyJs) {
     throw new RuntimeException(
-        'Customer package first-party JavaScript policy is not canonical.'
+        'Customer package first-party JavaScript allowlist mismatch: '
+        . implode(', ', $firstPartyJs)
     );
 }
 
@@ -273,6 +308,16 @@ $expectedMigrationEntries = [
     'application/database/migrations/0009_create_account_onboarding.php',
     'application/database/migrations/0010_release_security_hardening.php',
     'application/database/migrations/0011_create_workspace_preferences.php',
+    'application/database/migrations/0012_create_cms_pages.php',
+    'application/database/migrations/0013_create_billing_foundation.php',
+    'application/database/migrations/0014_create_invoice_transaction_foundation.php',
+    'application/database/migrations/0015_create_coupon_discount_foundation.php',
+    'application/database/migrations/0016_create_tax_rule_foundation.php',
+    'application/database/migrations/0017_create_payment_webhook_foundation.php',
+    'application/database/migrations/0018_create_communication_permission.php',
+    'application/database/migrations/0019_create_email_template_foundation.php',
+    'application/database/migrations/0021_create_newsletter_subscribers.php',
+    'application/database/migrations/0022_create_contact_messages.php',
 ];
 
 $migrationEntries = array_values(array_filter(
@@ -484,8 +529,8 @@ ksort($foundHosts);
 fwrite(
     STDOUT,
     '[PASS] Exact customer ZIP compliance verified: notices, clean production '
-    . 'defaults, no demo inventory/test credentials/dev dependencies, canonical '
-    . 'assets and declared external hosts ['
+    . 'defaults, no demo inventory/test credentials/dev dependencies, approved '
+    . 'modular assets, canonical migrations and declared external hosts ['
     . implode(', ', array_keys($foundHosts))
     . '].'
     . PHP_EOL
