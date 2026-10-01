@@ -208,7 +208,7 @@ jobs:
     name: Exact Package Browser & Accessibility QA
     needs: foundation-qa
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     services:
       mysql:
