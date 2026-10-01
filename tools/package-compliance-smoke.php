@@ -324,6 +324,7 @@ if (in_array(
 
 $allowedHosts = [
     'cdn.jsdelivr.net',
+    'codecanyon.net',
     'getbootstrap.com',
     'github.com',
     'tonsamith.com',
