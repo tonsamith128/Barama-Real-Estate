@@ -368,6 +368,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/plans/{id}',
+    [AdminManagementController::class, 'updatePlan'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/dashboard/plans/{id}/status',
     [AdminManagementController::class, 'updatePlanStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
@@ -604,10 +609,81 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 
+$router->get(
+    '/dashboard/audit/export',
+    [DashboardController::class, 'securityExport'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);$router->post(
+    '/dashboard/audit/policy',
+    [DashboardController::class, 'securityPolicy'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/audit/evaluate',
+    [DashboardController::class, 'evaluateSecurityAlerts'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);$router->post(
+    '/dashboard/audit/incident/{id}',
+    [DashboardController::class, 'securityIncident'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);$router->get(
+    '/dashboard/audit/incidents/export',
+    [DashboardController::class, 'securityIncidentExport'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->post(
+    '/dashboard/audit/incidents/acknowledge',
+    [DashboardController::class, 'securityIncidentsAcknowledge'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);$router->post(
+    '/dashboard/audit/incidents/phase6-policy',
+    [DashboardController::class, 'securityPhase6Policy'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/audit/incidents/escalate',
+    [DashboardController::class, 'securityEscalationsRun'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/audit/incidents/review',
+    [DashboardController::class, 'securityReviewRun'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/audit',
+    [DashboardController::class, 'securityCenter'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
 $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 
+$router->get(
+    '/dashboard/media/preview/{uuid}',
+    [DashboardController::class, 'mediaPreview'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage')]
+);
+$router->get(
+    '/dashboard/media/upload',
+    [DashboardController::class, 'mediaUpload'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage')]
+);
+$router->post(
+    '/dashboard/media/upload',
+    [DashboardController::class, 'storeMediaUpload'],
+    [new AuthMiddleware(), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/seo/export',
+    [DashboardController::class, 'seoExport'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->get(
+    '/dashboard/seo',
+    [DashboardController::class, 'seoCenter'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
 $router->get(
     '/dashboard/{section}',
     [DashboardController::class, 'section'],
@@ -636,12 +712,18 @@ $router->post(
 $router->get(
     '/dashboard/pages/new',
     [DashboardController::class, 'createPageBuilder'],
-    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+    [
+        new AuthMiddleware(),
+        new PermissionMiddleware('page.manage')
+    ]
 );
 $router->get(
     '/dashboard/pages/{id}/edit',
     [DashboardController::class, 'editPageBuilder'],
-    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+    [
+        new AuthMiddleware(),
+        new PermissionMiddleware('page.manage')
+    ]
 );
 $router->post(
     '/dashboard/pages',

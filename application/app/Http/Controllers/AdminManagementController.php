@@ -85,6 +85,28 @@ final class AdminManagementController
         ], 201);
     }
 
+    public function updatePlan(
+        Request $request,
+        string $id
+    ): Response {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException(
+                    'A valid plan ID is required.'
+                );
+            }
+
+            (new FinanceManagementService())->updatePlan(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'plan_id' => (int) $id,
+                'message' => 'Subscription plan updated.',
+            ];
+        });
+    }
     public function updatePlanStatus(Request $request, string $id): Response
     {
         return $this->execute(function () use ($request, $id): array {
@@ -462,11 +484,10 @@ final class AdminManagementController
 
             return Response::json([
                 'ok' => false,
-                'message' => 'Marketplace page configuration could not be saved. Please retry or review the server error log.',
+                'message' => 'Marketplace page configuration could not be saved.',
             ], 500);
         }
     }
-
     public function updateHomepageFeature(Request $request, string $feature): Response
     {
         return $this->execute(function () use ($request, $feature): array {
