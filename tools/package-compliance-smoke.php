@@ -327,6 +327,7 @@ $allowedHosts = [
     'getbootstrap.com',
     'github.com',
     'tonsamith.com',
+    'youtube-nocookie.com',
 ];
 
 $foundHosts = [];
