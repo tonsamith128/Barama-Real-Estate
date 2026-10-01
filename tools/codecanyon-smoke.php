@@ -67,6 +67,31 @@ $runtimePrefixes = [
     'documentation/',
 ];
 
+$hasUnsafePhpShortTag = static function (string $content): bool {
+    foreach (token_get_all($content) as $token) {
+        if (!is_array($token)) {
+            continue;
+        }
+
+        if ($token[0] === T_OPEN_TAG) {
+            $tag = strtolower(ltrim((string) $token[1]));
+
+            if (!str_starts_with($tag, '<?php')) {
+                return true;
+            }
+        }
+
+        if (
+            $token[0] === T_INLINE_HTML
+            && preg_match('/<\?(?!xml\b)/i', (string) $token[1]) === 1
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
 foreach ($entries as $entry) {
     if (str_ends_with($entry, '/')) {
         continue;
@@ -127,10 +152,7 @@ foreach ($entries as $entry) {
         );
     }
 
-    if (
-        $extension === 'php'
-        && preg_match('/<\?(?!php|=)/i', $content) === 1
-    ) {
+    if ($extension === 'php' && $hasUnsafePhpShortTag($content)) {
         throw new RuntimeException(
             'Unsafe PHP short tag detected: ' . $entry
         );

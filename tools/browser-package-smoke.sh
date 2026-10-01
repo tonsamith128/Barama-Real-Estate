@@ -45,15 +45,24 @@ PHP
 
 cp "$FRESH/.browser-router.php" "$INSTALLED/.browser-router.php"
 
-php "$ROOT/tools/browser-package-prepare.php"     "$INSTALLED"     "$DB_NAME"     "http://127.0.0.1:$INSTALLED_PORT"
+php "$ROOT/tools/browser-package-prepare.php" \
+    "$INSTALLED" \
+    "$DB_NAME" \
+    "http://127.0.0.1:$INSTALLED_PORT"
 
-php -S "127.0.0.1:$FRESH_PORT"     -t "$FRESH" "$FRESH/.browser-router.php"     >"$TMP/fresh-server.log" 2>&1 &
+php -S "127.0.0.1:$FRESH_PORT" \
+    -t "$FRESH" "$FRESH/.browser-router.php" \
+    >"$TMP/fresh-server.log" 2>&1 &
 FRESH_PID=$!
 
-php -S "127.0.0.1:$INSTALLED_PORT"     -t "$INSTALLED" "$INSTALLED/.browser-router.php"     >"$TMP/installed-server.log" 2>&1 &
+php -S "127.0.0.1:$INSTALLED_PORT" \
+    -t "$INSTALLED" "$INSTALLED/.browser-router.php" \
+    >"$TMP/installed-server.log" 2>&1 &
 INSTALLED_PID=$!
 
-for URL in     "http://127.0.0.1:$FRESH_PORT/"     "http://127.0.0.1:$INSTALLED_PORT/login"
+for URL in \
+    "http://127.0.0.1:$FRESH_PORT/" \
+    "http://127.0.0.1:$INSTALLED_PORT/login"
 do
     READY=0
     for _ in $(seq 1 40); do
@@ -278,15 +287,28 @@ try {
         await noOverflow(page, 'installer ' + viewport.name);
 
         if (viewport.name === 'desktop') {
-            const opener = page.locator('[data-open-terms]');
-            await opener.click();
+            const agreement = page.locator('[data-terms-agreement]');
             const modal = page.locator('[data-installer-terms-modal]');
-            assert(await modal.isVisible(), 'Installer terms modal did not open.');
+            const acceptTerms = page.locator('[data-accept-terms]');
+            const installer = page.locator('[data-installer]');
+
+            await agreement.click();
+            assert(await modal.isVisible(), 'Installer terms modal did not open from the agreement.');
             await page.keyboard.press('Escape');
             assert(await modal.isHidden(), 'Installer terms modal did not close with Escape.');
             assert(
-                await opener.evaluate((node) => node === document.activeElement),
-                'Installer terms focus was not restored to opener.'
+                await agreement.evaluate((node) => node === document.activeElement),
+                'Installer terms focus was not restored to the agreement checkbox.'
+            );
+
+            await agreement.click();
+            assert(await modal.isVisible(), 'Installer terms modal did not reopen from the agreement.');
+            await acceptTerms.click();
+            await modal.waitFor({ state: 'hidden' });
+            assert(await agreement.isChecked(), 'Accepting terms did not check the agreement.');
+            assert(
+                await installer.getAttribute('data-terms-reviewed') === '1',
+                'Accepting terms did not persist the reviewed state.'
             );
 
             await page.evaluate(() => localStorage.removeItem('barama-theme'));
@@ -350,10 +372,9 @@ try {
     await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
 
     const localeSelect = page.locator('[data-locale-select]');
-    await localeSelect.selectOption('km');
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle' }),
-        page.locator('[data-locale-submit]').click(),
+        localeSelect.selectOption('km'),
     ]);
     assert(
         await page.locator('html').getAttribute('lang') === 'km',
@@ -364,10 +385,9 @@ try {
         'Khmer locale did not render the translated Home label.'
     );
 
-    await page.locator('[data-locale-select]').selectOption('zh');
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle' }),
-        page.locator('[data-locale-submit]').click(),
+        page.locator('[data-locale-select]').selectOption('zh'),
     ]);
     assert(
         await page.locator('html').getAttribute('lang') === 'zh',
@@ -378,10 +398,9 @@ try {
         'Chinese locale did not render the translated Home label.'
     );
 
-    await page.locator('[data-locale-select]').selectOption('en');
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle' }),
-        page.locator('[data-locale-submit]').click(),
+        page.locator('[data-locale-select]').selectOption('en'),
     ]);
     assert(
         await page.locator('html').getAttribute('lang') === 'en',

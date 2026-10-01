@@ -132,7 +132,7 @@ $hasHeroBackground = $heroEnabled && (
     <?php endif; ?>
 
     <?php if ($hasHeroBackground && $backgroundType !== 'color'): ?>
-        <div class="market-home__background-overlay" style="--hero-overlay: <?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>" aria-hidden="true"></div>
+        <svg class="market-home__background" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="1" height="1" fill="#030912" fill-opacity="<?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>"></rect></svg>
     <?php endif; ?>
 
     <div class="container app-container market-home__content">
