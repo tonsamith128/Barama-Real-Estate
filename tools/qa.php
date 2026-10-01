@@ -295,7 +295,7 @@ foreach ($iterator as $item) {
     $allFiles[] = $relative;
 }
 
-$forbiddenNamePattern = '/(?:^|[\\/._-])(old|backup|bak|copy|legacy)(?:[\\/._-]|$)/i';
+$forbiddenNamePattern = '/(?:^|[\/._-])(old|backup|bak|copy|legacy)(?:[\/._-]|$)/i';
 $forbidden = array_values(array_filter(
     $allFiles,
     static fn (string $file): bool => preg_match($forbiddenNamePattern, $file) === 1
