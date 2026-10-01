@@ -82,6 +82,7 @@ foreach ([
     'application/resources/views/updater/index.php',
     'application/database/migrations/0010_release_security_hardening.php',
     'application/database/migrations/0011_create_workspace_preferences.php',
+    'application/database/migrations/0022_create_contact_messages.php',
     'application/app/Services/InstallerService.php',
     'application/app/Services/MailService.php',
     'application/app/Services/LicenseManagerClient.php',
@@ -151,6 +152,10 @@ $zip->close();
 
 $css = glob($temporaryRoot . '/assets/css/*.css') ?: [];
 $js = glob($temporaryRoot . '/assets/js/*.js') ?: [];
+$cssNames = array_map('basename', $css);
+$jsNames = array_map('basename', $js);
+sort($cssNames, SORT_STRING);
+sort($jsNames, SORT_STRING);
 
 if (in_array('tools/localization-smoke.php', $entries, true)) {
     throw new RuntimeException('Internal localization QA script leaked into customer package.');
@@ -168,6 +173,16 @@ $expectedPackageMigrations = [
     'application/database/migrations/0009_create_account_onboarding.php',
     'application/database/migrations/0010_release_security_hardening.php',
     'application/database/migrations/0011_create_workspace_preferences.php',
+    'application/database/migrations/0012_create_cms_pages.php',
+    'application/database/migrations/0013_create_billing_foundation.php',
+    'application/database/migrations/0014_create_invoice_transaction_foundation.php',
+    'application/database/migrations/0015_create_coupon_discount_foundation.php',
+    'application/database/migrations/0016_create_tax_rule_foundation.php',
+    'application/database/migrations/0017_create_payment_webhook_foundation.php',
+    'application/database/migrations/0018_create_communication_permission.php',
+    'application/database/migrations/0019_create_email_template_foundation.php',
+    'application/database/migrations/0021_create_newsletter_subscribers.php',
+    'application/database/migrations/0022_create_contact_messages.php',
 ];
 
 $packageMigrations = array_values(array_filter(
@@ -215,13 +230,36 @@ if (
     );
 }
 
-if (
-    count($css) !== 1
-    || basename((string) $css[0]) !== 'app.css'
-    || count($js) !== 1
-    || basename((string) $js[0]) !== 'app.js'
-) {
-    throw new RuntimeException('Canonical customer assets are not clean.');
+$expectedCssNames = [
+    'app.css',
+    'cms-rich-content-v116.css',
+    'error-page-v114.css',
+    'marketplace-config-v109.css',
+    'marketplace-hero-heading-v112.css',
+    'page-builder-v116.css',
+    'property-detail-flow-v113.css',
+    'workspace-sidebar-scroll-v115.css',
+];
+if (in_array('finance-plans-v139.css', $cssNames, true)) {
+    $expectedCssNames[] = 'finance-plans-v139.css';
+    sort($expectedCssNames, SORT_STRING);
+}
+
+$expectedJsNames = [
+    'app.js',
+    'marketplace-config-v109.js',
+    'page-builder-v116.js',
+    'page-builder-v117.js',
+    'page-builder-v119.js',
+    'workspace-sidebar-scroll-v115.js',
+];
+if (in_array('finance-plans-v139.js', $jsNames, true)) {
+    $expectedJsNames[] = 'finance-plans-v139.js';
+    sort($expectedJsNames, SORT_STRING);
+}
+
+if ($cssNames !== $expectedCssNames || $jsNames !== $expectedJsNames) {
+    throw new RuntimeException('Approved modular customer assets are not clean.');
 }
 
 $viewSource = (string) file_get_contents(
