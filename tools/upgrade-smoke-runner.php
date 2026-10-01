@@ -104,6 +104,21 @@ function run_barama_upgrade_smoke(
         );
     }
 
+    $expectedPendingMigrations = [
+        '0010_release_security_hardening.php',
+        '0011_create_workspace_preferences.php',
+        '0012_create_cms_pages.php',
+        '0013_create_billing_foundation.php',
+        '0014_create_invoice_transaction_foundation.php',
+        '0015_create_coupon_discount_foundation.php',
+        '0016_create_tax_rule_foundation.php',
+        '0017_create_payment_webhook_foundation.php',
+        '0018_create_communication_permission.php',
+        '0019_create_email_template_foundation.php',
+        '0021_create_newsletter_subscribers.php',
+        '0022_create_contact_messages.php',
+    ];
+
     $adminPassword = 'Barama-Upgrade-QA-123!';
     $hash = password_hash($adminPassword, PASSWORD_DEFAULT);
 
@@ -214,11 +229,11 @@ function run_barama_upgrade_smoke(
         ($status['current_version'] ?? '') !== '0.9.3-dev'
         || ($status['target_version'] ?? '') !== APP_VERSION
         || (array) ($status['pending_migrations'] ?? [])
-            !== ['0010_release_security_hardening.php']
+            !== $expectedPendingMigrations
         || empty($status['ready'])
     ) {
         throw new \RuntimeException(
-            'Pre-upgrade status did not identify the expected migration.'
+            'Pre-upgrade status did not identify the expected migrations.'
         );
     }
 
@@ -318,10 +333,10 @@ function run_barama_upgrade_smoke(
         || ($result['previous_version'] ?? '') !== '0.9.3-dev'
         || ($result['version'] ?? '') !== APP_VERSION
         || (array) ($result['migrations'] ?? [])
-            !== ['0010_release_security_hardening.php']
+            !== $expectedPendingMigrations
     ) {
         throw new \RuntimeException(
-            'Upgrade did not apply the expected migration and version.'
+            'Upgrade did not apply the expected migrations and version.'
         );
     }
 
@@ -381,7 +396,7 @@ function run_barama_upgrade_smoke(
     return [
         'previous_version' => '0.9.3-dev',
         'version' => APP_VERSION,
-        'migration' => '0010_release_security_hardening.php',
+        'migrations' => $expectedPendingMigrations,
         'database' => $databaseName,
     ];
 }
