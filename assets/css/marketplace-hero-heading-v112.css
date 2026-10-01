@@ -5,6 +5,8 @@
  * Long headings wrap automatically at the available responsive width.
  * Overlay strength classes preserve the 0–85% configured hero opacity
  * without shipping inline style attributes.
+ * Grid column modifier classes preserve the bounded 2–4 column setting
+ * while the canonical app stylesheet keeps responsive breakpoints intact.
  */
 @media (min-width: 768px) {
     .marketplace-config-hero .marketplace-hero__grid > div:first-child {
@@ -28,6 +30,10 @@
         text-wrap: wrap;
     }
 }
+
+.marketplace-config-grid--2{--marketplace-grid-columns:2}
+.marketplace-config-grid--3{--marketplace-grid-columns:3}
+.marketplace-config-grid--4{--marketplace-grid-columns:4}
 
 .marketplace-config-hero__overlay--0{--marketplace-hero-overlay:0.00}
 .marketplace-config-hero__overlay--1{--marketplace-hero-overlay:0.01}
