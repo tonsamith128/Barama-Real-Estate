@@ -330,6 +330,11 @@ $allowedHosts = [
     'youtube.com',
     'youtube-nocookie.com',
 ];
+$reservedExampleHosts = [
+    'example.com',
+    'example.net',
+    'example.org',
+];
 
 $foundHosts = [];
 $testMarkers = [
@@ -418,8 +423,15 @@ foreach ($entries as $entry) {
 
     foreach ($matches[1] ?? [] as $host) {
         $host = strtolower((string) $host);
-        $foundHosts[$host] = true;
 
+        if (
+            in_array($host, $reservedExampleHosts, true)
+            || str_ends_with($host, '.test')
+        ) {
+            continue;
+        }
+
+        $foundHosts[$host] = true;
         $allowed = false;
 
         foreach ($allowedHosts as $allowedHost) {
