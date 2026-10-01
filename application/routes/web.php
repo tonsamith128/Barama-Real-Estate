@@ -368,6 +368,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/plans/{id}',
+    [AdminManagementController::class, 'updatePlan'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/dashboard/plans/{id}/status',
     [AdminManagementController::class, 'updatePlanStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
