@@ -237,7 +237,14 @@ $jsFiles = $collectFiles($root . '/assets', 'js');
 
 $approvedCssFiles = [
     'assets/css/app.css',
+    'assets/css/cms-rich-content-v116.css',
+    'assets/css/error-page-v114.css',
     'assets/css/finance-plans-v139.css',
+    'assets/css/marketplace-config-v109.css',
+    'assets/css/marketplace-hero-heading-v112.css',
+    'assets/css/page-builder-v116.css',
+    'assets/css/property-detail-flow-v113.css',
+    'assets/css/workspace-sidebar-scroll-v115.css',
 ];
 $unapprovedCssFiles = array_values(array_diff($cssFiles, $approvedCssFiles));
 
@@ -251,6 +258,11 @@ $unapprovedCssFiles === []
 $approvedJsFiles = [
     'assets/js/app.js',
     'assets/js/finance-plans-v139.js',
+    'assets/js/marketplace-config-v109.js',
+    'assets/js/page-builder-v116.js',
+    'assets/js/page-builder-v117.js',
+    'assets/js/page-builder-v119.js',
+    'assets/js/workspace-sidebar-scroll-v115.js',
 ];
 $unapprovedJsFiles = array_values(array_diff($jsFiles, $approvedJsFiles));
 
