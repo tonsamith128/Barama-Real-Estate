@@ -163,7 +163,7 @@ $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
     <?php endif; ?>
 
     <?php if ($hasHeroBackground && $backgroundType !== 'color'): ?>
-        <div class="marketplace-config-hero__overlay" style="--marketplace-hero-overlay: <?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>" aria-hidden="true"></div>
+        <div class="marketplace-config-hero__overlay marketplace-config-hero__overlay--<?= e((string) $overlayStrength) ?>" aria-hidden="true"></div>
     <?php endif; ?>
 
     <div class="container app-container marketplace-config-hero__content">
