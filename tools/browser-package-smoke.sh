@@ -372,10 +372,9 @@ try {
     await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
 
     const localeSelect = page.locator('[data-locale-select]');
-    await localeSelect.selectOption('km');
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle' }),
-        page.locator('[data-locale-submit]').click(),
+        localeSelect.selectOption('km'),
     ]);
     assert(
         await page.locator('html').getAttribute('lang') === 'km',
@@ -386,10 +385,9 @@ try {
         'Khmer locale did not render the translated Home label.'
     );
 
-    await page.locator('[data-locale-select]').selectOption('zh');
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle' }),
-        page.locator('[data-locale-submit]').click(),
+        page.locator('[data-locale-select]').selectOption('zh'),
     ]);
     assert(
         await page.locator('html').getAttribute('lang') === 'zh',
@@ -400,10 +398,9 @@ try {
         'Chinese locale did not render the translated Home label.'
     );
 
-    await page.locator('[data-locale-select]').selectOption('en');
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle' }),
-        page.locator('[data-locale-submit]').click(),
+        page.locator('[data-locale-select]').selectOption('en'),
     ]);
     assert(
         await page.locator('html').getAttribute('lang') === 'en',
