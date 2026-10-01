@@ -15334,3 +15334,395 @@ body:not(.auth-standalone-body) textarea {
         font-size: 0.75rem !important;
     }
 }
+
+
+/* BARAMA_MARKETPLACE_PAGE_CONFIGURATION_V100 */
+.workspace-marketplace-configure {
+    flex: 0 0 auto;
+}
+
+.marketplace-page-config-dialog .config-dialog__panel {
+    width: min(980px, calc(100vw - 2rem));
+}
+
+.marketplace-page-config-body {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.marketplace-config-section {
+    display: grid;
+    gap: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--barama-border) 82%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--barama-surface) 96%, transparent);
+    padding: 0.9rem;
+}
+
+.marketplace-config-section__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+
+.marketplace-config-section__head > span {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--barama-primary) 15%, var(--barama-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--barama-primary) 6%, var(--barama-surface));
+    color: var(--barama-primary);
+}
+
+.marketplace-config-section__head svg {
+    width: 15px;
+    height: 15px;
+}
+
+.marketplace-config-section__head strong,
+.marketplace-config-section__head small {
+    display: block;
+}
+
+.marketplace-config-section__head strong {
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.marketplace-config-section__head small {
+    margin-top: 0.12rem;
+    color: var(--barama-muted);
+    font-size: 0.62rem;
+    line-height: 1.45;
+}
+
+.config-check-field {
+    display: flex !important;
+    min-height: 42px;
+    align-items: center;
+    gap: 0.5rem !important;
+}
+
+.config-check-field input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    accent-color: var(--barama-primary);
+}
+
+.marketplace-config-hero {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.marketplace-config-hero__background,
+.marketplace-config-hero__overlay {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+}
+
+.marketplace-config-hero__background--media img,
+.marketplace-config-hero__background--slider img,
+.marketplace-config-hero__background--video video,
+.marketplace-config-hero__background--video iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: cover;
+}
+
+.marketplace-config-hero__background--video iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 177.78vh);
+    height: max(100%, 56.25vw);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.marketplace-config-hero__overlay {
+    z-index: -1;
+    background: rgba(4, 12, 24, var(--marketplace-hero-overlay, 0.38));
+}
+
+.marketplace-config-hero__content {
+    position: relative;
+    z-index: 1;
+}
+
+.marketplace-config-hero--rich-background {
+    min-height: clamp(410px, 55vh, 620px);
+    display: flex;
+    align-items: center;
+}
+
+.marketplace-config-hero--rich-background,
+.marketplace-config-hero--rich-background h1,
+.marketplace-config-hero--rich-background .eyebrow,
+.marketplace-config-hero--rich-background .marketplace-hero__count strong,
+.marketplace-config-hero--rich-background .marketplace-hero__count span {
+    color: #fff;
+}
+
+.marketplace-config-hero--rich-background .marketplace-hero__grid p {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.marketplace-config-hero--rich-background .discovery-filter {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: color-mix(in srgb, var(--barama-surface) 91%, transparent);
+}
+
+.marketplace-config-hero--background-color {
+    min-height: clamp(390px, 52vh, 590px);
+    display: flex;
+    align-items: center;
+}
+
+.marketplace-config-hero--background-color .marketplace-config-hero__background--color {
+    z-index: -2;
+}
+
+.discovery-filter__primary--dynamic {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.discovery-filter__primary--dynamic .discovery-filter__search {
+    min-width: min(100%, 240px);
+}
+
+.marketplace-hero-intents {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+}
+
+.marketplace-hero-intents > span,
+.marketplace-hero-intents a {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid color-mix(in srgb, var(--barama-border) 76%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--barama-surface) 92%, transparent);
+    padding: 0.35rem 0.65rem;
+    color: var(--barama-text);
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-decoration: none;
+    backdrop-filter: blur(12px);
+}
+
+.marketplace-hero-intents > span {
+    color: var(--barama-muted);
+}
+
+.marketplace-hero-intents svg {
+    width: 13px;
+    height: 13px;
+}
+
+.marketplace-config-hero--rich-background .marketplace-hero-intents > span,
+.marketplace-config-hero--rich-background .marketplace-hero-intents a {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.9);
+    color: #182437;
+}
+
+.marketplace-config-grid {
+    grid-template-columns: repeat(var(--marketplace-grid-columns, 3), minmax(0, 1fr));
+}
+
+@media (max-width: 1024px) {
+    .marketplace-config-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .marketplace-config-hero--rich-background,
+    .marketplace-config-hero--background-color {
+        min-height: auto;
+    }
+
+    .discovery-filter__primary--dynamic {
+        grid-template-columns: 1fr;
+    }
+
+    .marketplace-config-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .marketplace-page-config-dialog .config-dialog__panel {
+        width: calc(100vw - 1rem);
+    }
+}
+
+
+/* BARAMA_MARKETPLACE_ADMIN_LAYOUT_REPAIR_V103
+   Scoped containment for admin Properties / Projects / Companies only.
+   Prevents status-card links and inline SVGs from escaping their card geometry
+   when legacy/live CSS contains stronger marketplace workspace overrides.
+*/
+.workspace-page--marketplace-config {
+    position: relative !important;
+    width: min(100%, 1500px) !important;
+    max-width: 1500px !important;
+    margin: 0 auto !important;
+}
+
+.workspace-page--marketplace-config > .workspace-page__header {
+    position: relative !important;
+    z-index: 1 !important;
+    display: flex !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    overflow: visible !important;
+}
+
+.workspace-page--marketplace-config .workspace-marketplace-configure {
+    position: relative !important;
+    inset: auto !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 36px !important;
+    flex: 0 0 auto !important;
+}
+
+.workspace-page--marketplace-config .workspace-marketplace-configure > svg {
+    display: block !important;
+    position: static !important;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    max-width: 14px !important;
+    min-height: 14px !important;
+    max-height: 14px !important;
+    flex: 0 0 14px !important;
+    margin: 0 !important;
+    transform: none !important;
+}
+
+.workspace-page--marketplace-config > .marketplace-page-config-dialog:not([open]) {
+    display: none !important;
+}
+
+.workspace-page--marketplace-config > .workspace-stats {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 1 !important;
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+    overflow: visible !important;
+}
+
+.workspace-page--marketplace-config > .workspace-stats > .workspace-stat,
+.workspace-page--marketplace-config > .workspace-stats > .workspace-stat--link {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-items: center !important;
+    gap: 0.8rem !important;
+    overflow: hidden !important;
+    transform: none;
+}
+
+.workspace-page--marketplace-config .workspace-stat__icon {
+    position: relative !important;
+    inset: auto !important;
+    display: inline-flex !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    flex: 0 0 38px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 0 !important;
+    transform: none !important;
+}
+
+.workspace-page--marketplace-config .workspace-stat__icon > svg {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 19px !important;
+    min-width: 19px !important;
+    max-width: 19px !important;
+    height: 19px !important;
+    min-height: 19px !important;
+    max-height: 19px !important;
+    flex: 0 0 19px !important;
+    margin: 0 !important;
+    transform: none !important;
+}
+
+.workspace-page--marketplace-config .workspace-stat > div {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+
+@media (max-width: 1199.98px) {
+    .workspace-page--marketplace-config > .workspace-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .workspace-page--marketplace-config > .workspace-page__header {
+        flex-direction: column !important;
+        gap: 0.8rem !important;
+    }
+
+    .workspace-page--marketplace-config > .workspace-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .workspace-page--marketplace-config > .workspace-stats {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+/* BARAMA_MARKETPLACE_HERO_CLARITY_V111 */
+.marketplace-config-hero__background--media img,
+.marketplace-config-hero__background--slider img {
+    filter: none !important;
+    image-rendering: auto;
+    -webkit-font-smoothing: auto;
+}
+
+.marketplace-config-hero__background--media,
+.marketplace-config-hero__background--slider {
+    backdrop-filter: none !important;
+}

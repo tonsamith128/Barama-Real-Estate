@@ -23,6 +23,7 @@ cleanup() {
     docker stop "$NGINX_NAME" >/dev/null 2>&1 || true
     docker stop "$FPM_NAME" >/dev/null 2>&1 || true
     docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
+    rm -rf "$WORK" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -97,7 +98,12 @@ assert_header_contains() {
 
 echo "[INFO] Testing exact customer ZIP with Apache 2.4 + mod_rewrite..."
 
-docker run --rm -d     --name "$APACHE_NAME"     -p 18080:80     -v "$PACKAGE:/var/www/html"     php:8.2-apache     sh -lc '
+docker run --rm -d \
+    --name "$APACHE_NAME" \
+    -p 18080:80 \
+    -v "$PACKAGE:/var/www/html" \
+    php:8.2-apache \
+    sh -lc '
         a2enmod rewrite >/dev/null
         cat > /etc/apache2/conf-available/barama.conf <<EOF
 <Directory /var/www/html>
@@ -135,9 +141,14 @@ echo "[INFO] Testing exact customer ZIP in an Apache subdirectory..."
 
 APACHE_SUBROOT="$WORK/apache-subroot"
 mkdir -p "$APACHE_SUBROOT/barama"
-cp -a "$PACKAGE/." "$APACHE_SUBROOT/barama/"
+unzip -q "$ZIP" -d "$APACHE_SUBROOT/barama"
 
-docker run --rm -d     --name "$APACHE_NAME"     -p 18081:80     -v "$APACHE_SUBROOT:/var/www/html"     php:8.2-apache     sh -lc '
+docker run --rm -d \
+    --name "$APACHE_NAME" \
+    -p 18081:80 \
+    -v "$APACHE_SUBROOT:/var/www/html" \
+    php:8.2-apache \
+    sh -lc '
         a2enmod rewrite >/dev/null
         cat > /etc/apache2/conf-available/barama.conf <<EOF
 <Directory /var/www/html>
@@ -163,6 +174,10 @@ docker stop "$APACHE_NAME" >/dev/null
 echo "[PASS] Apache subdirectory rewrite and canonical installer redirect verified."
 
 echo "[INFO] Testing exact customer ZIP with Nginx + PHP-FPM front-controller routing..."
+
+NGINX_PACKAGE="$WORK/nginx-package"
+mkdir -p "$NGINX_PACKAGE"
+unzip -q "$ZIP" -d "$NGINX_PACKAGE"
 
 cat > "$WORK/nginx.conf" <<'EOF'
 events {}
@@ -195,9 +210,20 @@ EOF
 
 docker network create "$NETWORK_NAME" >/dev/null
 
-docker run --rm -d     --name "$FPM_NAME"     --network "$NETWORK_NAME"     --network-alias barama-fpm     -v "$PACKAGE:/var/www/html"     php:8.2-fpm-alpine >/dev/null
+docker run --rm -d \
+    --name "$FPM_NAME" \
+    --network "$NETWORK_NAME" \
+    --network-alias barama-fpm \
+    -v "$NGINX_PACKAGE:/var/www/html" \
+    php:8.2-fpm-alpine >/dev/null
 
-docker run --rm -d     --name "$NGINX_NAME"     --network "$NETWORK_NAME"     -p 18082:80     -v "$PACKAGE:/var/www/html:ro"     -v "$WORK/nginx.conf:/etc/nginx/nginx.conf:ro"     nginx:1.27-alpine >/dev/null
+docker run --rm -d \
+    --name "$NGINX_NAME" \
+    --network "$NETWORK_NAME" \
+    -p 18082:80 \
+    -v "$NGINX_PACKAGE:/var/www/html:ro" \
+    -v "$WORK/nginx.conf:/etc/nginx/nginx.conf:ro" \
+    nginx:1.27-alpine >/dev/null
 
 wait_http "http://127.0.0.1:18082/"
 assert_status "302" "http://127.0.0.1:18082/"
@@ -226,7 +252,7 @@ echo "[INFO] Testing exact customer ZIP in an Nginx subdirectory..."
 
 NGINX_SUBROOT="$WORK/nginx-subroot"
 mkdir -p "$NGINX_SUBROOT/barama"
-cp -a "$PACKAGE/." "$NGINX_SUBROOT/barama/"
+unzip -q "$ZIP" -d "$NGINX_SUBROOT/barama"
 
 cat > "$WORK/nginx-subdir.conf" <<'EOF'
 events {}
@@ -257,9 +283,20 @@ http {
 }
 EOF
 
-docker run --rm -d     --name "$FPM_NAME"     --network "$NETWORK_NAME"     --network-alias barama-fpm     -v "$NGINX_SUBROOT:/var/www/html"     php:8.2-fpm-alpine >/dev/null
+docker run --rm -d \
+    --name "$FPM_NAME" \
+    --network "$NETWORK_NAME" \
+    --network-alias barama-fpm \
+    -v "$NGINX_SUBROOT:/var/www/html" \
+    php:8.2-fpm-alpine >/dev/null
 
-docker run --rm -d     --name "$NGINX_NAME"     --network "$NETWORK_NAME"     -p 18083:80     -v "$NGINX_SUBROOT:/var/www/html:ro"     -v "$WORK/nginx-subdir.conf:/etc/nginx/nginx.conf:ro"     nginx:1.27-alpine >/dev/null
+docker run --rm -d \
+    --name "$NGINX_NAME" \
+    --network "$NETWORK_NAME" \
+    -p 18083:80 \
+    -v "$NGINX_SUBROOT:/var/www/html:ro" \
+    -v "$WORK/nginx-subdir.conf:/etc/nginx/nginx.conf:ro" \
+    nginx:1.27-alpine >/dev/null
 
 wait_http "http://127.0.0.1:18083/barama/"
 assert_status "302" "http://127.0.0.1:18083/barama/"

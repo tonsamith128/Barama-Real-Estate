@@ -10,6 +10,7 @@ use Barama\Core\View;
 use Barama\Domain\RealEstate\DomainRules;
 use Barama\Repositories\CustomerEngagementRepository;
 use Barama\Repositories\MarketplaceRepository;
+use Barama\Repositories\SiteContentRepository;
 use Barama\Services\CustomerEngagementService;
 
 final class MarketplaceController
@@ -17,6 +18,11 @@ final class MarketplaceController
     public function properties(Request $request): Response
     {
         $repository = new MarketplaceRepository();
+        $siteContent = (new SiteContentRepository())->get();
+        $pageConfig = is_array($siteContent['marketplace_pages']['properties'] ?? null)
+            ? $siteContent['marketplace_pages']['properties']
+            : SiteContentRepository::defaults()['marketplace_pages']['properties'];
+        $pageSize = max(6, min(48, (int) ($pageConfig['grid']['page_size'] ?? 18)));
         $filters = $this->listingFilters($request);
         $page = $this->page($request);
         $isFiltered = $page > 1
@@ -36,7 +42,9 @@ final class MarketplaceController
             'canonicalUrl' => url('/properties'),
             'metaRobots' => $isFiltered ? 'noindex,follow' : 'index,follow,max-image-preview:large',
             'activeArea' => 'properties',
-            'inventory' => $repository->listings($filters, $page),
+            'inventory' => $repository->listings($filters, $page, $pageSize),
+            'pageConfig' => $pageConfig,
+            'defaultHeroMediaUuids' => $repository->heroImageUuids('properties', 3),
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
             'propertyTypes' => DomainRules::PROPERTY_TYPES,
@@ -122,6 +130,11 @@ final class MarketplaceController
     public function projects(Request $request): Response
     {
         $repository = new MarketplaceRepository();
+        $siteContent = (new SiteContentRepository())->get();
+        $pageConfig = is_array($siteContent['marketplace_pages']['projects'] ?? null)
+            ? $siteContent['marketplace_pages']['projects']
+            : SiteContentRepository::defaults()['marketplace_pages']['projects'];
+        $pageSize = max(6, min(48, (int) ($pageConfig['grid']['page_size'] ?? 16)));
         $filters = [
             'q' => mb_substr(trim((string) $request->input('q', '')), 0, 100),
             'type' => trim((string) $request->input('type', '')),
@@ -142,7 +155,9 @@ final class MarketplaceController
             'canonicalUrl' => url('/projects'),
             'metaRobots' => $isFiltered ? 'noindex,follow' : 'index,follow,max-image-preview:large',
             'activeArea' => 'projects',
-            'inventory' => $repository->projects($filters, $page),
+            'inventory' => $repository->projects($filters, $page, $pageSize),
+            'pageConfig' => $pageConfig,
+            'defaultHeroMediaUuids' => $repository->heroImageUuids('projects', 3),
             'filters' => $filters,
             'locations' => $repository->activeLocations(),
             'projectTypes' => DomainRules::PROJECT_TYPES,

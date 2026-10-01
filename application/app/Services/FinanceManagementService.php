@@ -86,6 +86,155 @@ final class FinanceManagementService
         return $id;
     }
 
+    /** @param array<string,mixed> $input */
+    public function updatePlan(int $id, array $input): void
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+        $plan = $repository->plan($id);
+
+        if ($plan === null) {
+            throw new InvalidArgumentException(
+                'Subscription plan was not found.'
+            );
+        }
+
+        if ((string) ($plan['status'] ?? '') === 'archived') {
+            throw new DomainException(
+                'Archived plans are read-only.'
+            );
+        }
+
+        $name = trim((string) ($input['name'] ?? ''));
+        $slug = strtolower(trim((string) ($input['slug'] ?? '')));
+        $description = trim((string) ($input['description'] ?? ''));
+        $interval = strtolower(
+            trim((string) ($input['billing_interval'] ?? 'monthly'))
+        );
+        $currency = strtoupper(
+            trim((string) ($input['currency'] ?? 'USD'))
+        );
+        $price = $this->decimal(
+            $input['price'] ?? '0',
+            'Plan price'
+        );
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 160) {
+            throw new InvalidArgumentException(
+                'Plan name must contain between 2 and 160 characters.'
+            );
+        }
+
+        if ($slug === '') {
+            $slug = preg_replace(
+                '/[^a-z0-9]+/',
+                '-',
+                strtolower($name)
+            ) ?? '';
+            $slug = trim($slug, '-');
+        }
+
+        if (
+            $slug === ''
+            || mb_strlen($slug) > 160
+            || preg_match(
+                '/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                $slug
+            ) !== 1
+        ) {
+            throw new InvalidArgumentException(
+                'Plan slug is invalid.'
+            );
+        }
+
+        if (
+            $slug !== (string) ($plan['slug'] ?? '')
+            && $repository->planSlugExists($slug)
+        ) {
+            throw new InvalidArgumentException(
+                'This plan slug is already in use.'
+            );
+        }
+
+        if (mb_strlen($description) > 5000) {
+            throw new InvalidArgumentException(
+                'Plan description cannot exceed 5,000 characters.'
+            );
+        }
+
+        if (
+            !in_array(
+                $interval,
+                [
+                    'monthly',
+                    'quarterly',
+                    'yearly',
+                    'lifetime',
+                    'manual',
+                ],
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Choose a supported billing interval.'
+            );
+        }
+
+        if (preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
+            throw new InvalidArgumentException(
+                'Currency must use a three-letter ISO code.'
+            );
+        }
+
+        $repository->updatePlan($id, [
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $description !== ''
+                ? $description
+                : null,
+            'billing_interval' => $interval,
+            'price' => $price,
+            'currency' => $currency,
+            'listing_limit' => $this->nullableLimit(
+                $input['listing_limit'] ?? null,
+                'Listing limit'
+            ),
+            'property_limit' => $this->nullableLimit(
+                $input['property_limit'] ?? null,
+                'Property limit'
+            ),
+            'project_limit' => $this->nullableLimit(
+                $input['project_limit'] ?? null,
+                'Project limit'
+            ),
+            'team_member_limit' => $this->nullableLimit(
+                $input['team_member_limit'] ?? null,
+                'Team member limit'
+            ),
+            'featured_listing_limit' => $this->nullableLimit(
+                $input['featured_listing_limit'] ?? null,
+                'Featured listing limit'
+            ),
+            'sort_order' => $this->integer(
+                $input['sort_order'] ?? 0,
+                'Sort order',
+                -10000,
+                10000
+            ),
+        ]);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_plan_updated',
+            (int) $actor['id'],
+            null,
+            [
+                'plan_id' => $id,
+                'from_slug' => (string) ($plan['slug'] ?? ''),
+                'to_slug' => $slug,
+                'status' => (string) ($plan['status'] ?? ''),
+            ]
+        );
+    }
     public function setPlanStatus(int $id, string $status): void
     {
         $actor = $this->administrator();

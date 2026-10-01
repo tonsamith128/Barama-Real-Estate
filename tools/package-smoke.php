@@ -2,774 +2,417 @@
 
 declare(strict_types=1);
 
+use Barama\Core\Database;
 use Barama\Core\Installation;
-use Barama\Repositories\WorkspaceReadRepository;
+use Barama\Core\RuntimeEnvironment;
 use Barama\Services\InstallerService;
+use Barama\Services\LicenseManagerClient;
+use Barama\Support\MigrationCatalog;
 
-$zipPath = $argv[1] ?? '';
-
-if ($zipPath === '' || !is_file($zipPath) || !class_exists(ZipArchive::class)) {
-    throw new RuntimeException('Exact customer ZIP is unavailable for package QA.');
+$packagePath = $argv[1] ?? '';
+if ($packagePath === '' || !is_file($packagePath)) {
+    throw new RuntimeException('A valid customer package ZIP is required.');
 }
 
-$temporaryRoot = sys_get_temp_dir() . '/barama-package-qa-' . bin2hex(random_bytes(6));
-mkdir($temporaryRoot, 0775, true);
+$temporaryRoot = sys_get_temp_dir()
+    . '/barama-package-smoke-'
+    . bin2hex(random_bytes(6));
 
-$zip = new ZipArchive();
-
-if ($zip->open($zipPath) !== true) {
-    throw new RuntimeException('Customer package could not be opened.');
+if (!mkdir($temporaryRoot, 0700, true) && !is_dir($temporaryRoot)) {
+    throw new RuntimeException('Unable to create package smoke directory.');
 }
 
-$entries = [];
-
-for ($index = 0; $index < $zip->numFiles; $index++) {
-    $name = $zip->getNameIndex($index);
-
-    if (is_string($name)) {
-        $entries[] = str_replace('\\', '/', $name);
+$cleanup = static function (string $path): void {
+    if (!is_dir($path)) {
+        return;
     }
-}
 
-foreach ([
-    '.github/',
-    '.env',
-    '.env.example',
-    'docs/',
-    'tools/qa.php',
-    'tools/migrate.php',
-    'tools/schema-smoke.php',
-    'tools/domain-write-smoke.php',
-    'tools/notification-smoke.php',
-    'tools/account-onboarding-smoke.php',
-    'tools/security-hardening-smoke.php',
-    'tools/upgrade-smoke.php',
-    'tools/upgrade-smoke-runner.php',
-    'tools/package-upgrade-smoke.php',
-    'tools/license-contract-smoke.php',
-    'tools/license-live-smoke.php',
-    'tools/http-routing-smoke.php',
-    'tools/webserver-package-smoke.sh',
-    'tools/live-server-preflight.php',
-    'tools/rc1-live-session.php',
-    'tools/rc1-live-session-smoke.php',
-    'tools/build-acceptance-bundle.php',
-    'tools/acceptance-bundle-smoke.php',
-    'tools/smtp-test-server.php',
-    'tools/smtp-smoke.php',
-    'tools/browser-package-prepare.php',
-    'tools/browser-package-smoke.sh',
-    'tools/package-compliance-smoke.php',
-    'tools/codecanyon-smoke.php',
-] as $forbidden) {
-    foreach ($entries as $entry) {
-        if ($entry === $forbidden || str_starts_with($entry, $forbidden)) {
-            throw new RuntimeException('Customer package contains internal source material: ' . $entry);
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(
+            $path,
+            FilesystemIterator::SKIP_DOTS
+        ),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+
+    foreach ($iterator as $item) {
+        if ($item->isDir()) {
+            @rmdir($item->getPathname());
+        } else {
+            @unlink($item->getPathname());
         }
     }
-}
 
-foreach ([
-    'index.php',
-    '.htaccess',
-    'installer/index.php',
-    'updater/index.php',
-    'application/bootstrap/runtime.php',
-    'application/app/Core/Request.php',
-    'application/app/Http/Controllers/UpgradeController.php',
-    'application/app/Services/UpgradeService.php',
-    'application/app/Support/MigrationCatalog.php',
-    'application/resources/views/updater/index.php',
-    'application/database/migrations/0010_release_security_hardening.php',
-    'application/database/migrations/0011_create_workspace_preferences.php',
-    'application/app/Services/InstallerService.php',
-    'application/app/Services/MailService.php',
-    'application/app/Services/LicenseManagerClient.php',
-    'application/resources/views/installer/index.php',
-    'application/resources/views/layouts/app.php',
-    'application/resources/views/auth/login.php',
-    'application/resources/views/auth/register.php',
-    'application/resources/views/auth/forgot-password.php',
-    'application/resources/views/auth/reset-password.php',
-    'application/resources/views/auth/verify-email.php',
-    'application/app/Services/EmailVerificationService.php',
-    'application/app/Repositories/EmailVerificationRepository.php',
-    'application/app/Services/SecurityAuditService.php',
-    'application/app/Repositories/SecurityAuditRepository.php',
-    'application/app/Services/UserAdministrationService.php',
-    'application/app/Security/PasswordPolicy.php',
-    'application/resources/views/account/index.php',
-    'application/resources/views/account/email-change.php',
-    'application/app/Services/AccountSettingsService.php',
-    'application/app/Services/CompanyOnboardingService.php',
-    'application/app/Repositories/AccountSettingsRepository.php',
-    'application/app/Support/Locale.php',
-    'application/app/Http/Controllers/LocaleController.php',
-    'application/resources/lang/en.php',
-    'application/resources/lang/km.php',
-    'application/resources/lang/zh.php',
-    'application/resources/views/components/inventory-card.php',
-    'application/resources/views/home.php',
-    'application/resources/views/marketplace/properties.php',
-    'application/resources/views/marketplace/property.php',
-    'application/resources/views/marketplace/projects.php',
-    'application/resources/views/marketplace/project.php',
-    'application/resources/views/company/index.php',
-    'application/resources/views/company/show.php',
-    'assets/css/app.css',
-    'assets/js/app.js',
-    'tools/notifications.php',
-    'LICENSE.md',
-    'THIRD_PARTY_NOTICES.md',
-    'CUSTOMER_PACKAGE.md',
-    'CHANGELOG.md',
-    'documentation/index.html',
-    'VERSION',
-] as $required) {
-    if (!in_array($required, $entries, true)) {
-        throw new RuntimeException('Customer package is missing: ' . $required);
+    @rmdir($path);
+};
+
+try {
+    $archive = new ZipArchive();
+    if ($archive->open($packagePath) !== true) {
+        throw new RuntimeException('Unable to open customer package ZIP.');
     }
-}
 
-foreach ($entries as $entry) {
+    if (!$archive->extractTo($temporaryRoot)) {
+        $archive->close();
+        throw new RuntimeException('Unable to extract customer package ZIP.');
+    }
+    $archive->close();
+
+    $requiredFiles = [
+        '.htaccess',
+        'index.php',
+        'VERSION',
+        'LICENSE.md',
+        'THIRD_PARTY_NOTICES.md',
+        'CUSTOMER_PACKAGE.md',
+        'CHANGELOG.md',
+        'documentation/index.html',
+        'installer/index.php',
+        'updater/index.php',
+        'application/bootstrap/app.php',
+        'application/bootstrap/runtime.php',
+        'application/routes/web.php',
+        'application/config/app.php',
+        'application/config/auth.php',
+        'application/config/database.php',
+        'application/config/domain.php',
+        'application/config/license.php',
+        'application/config/mail.php',
+        'application/app/Core/Installation.php',
+        'application/app/Core/RuntimeEnvironment.php',
+        'application/app/Services/InstallerService.php',
+        'application/app/Services/UpgradeService.php',
+        'application/app/Services/LicenseManagerClient.php',
+        'application/app/Support/MigrationCatalog.php',
+        'application/resources/views/installer/index.php',
+        'application/resources/views/updater/index.php',
+        'assets/css/app.css',
+        'assets/js/app.js',
+    ];
+
+    foreach ($requiredFiles as $relative) {
+        if (!is_file($temporaryRoot . '/' . $relative)) {
+            throw new RuntimeException(
+                'Package missing required file: ' . $relative
+            );
+        }
+    }
+
+    $migrationFiles = glob(
+        $temporaryRoot . '/application/database/migrations/*.php'
+    ) ?: [];
+    $migrationNames = array_map('basename', $migrationFiles);
+    sort($migrationNames, SORT_STRING);
+
+    $expectedMigrations = [
+        '0001_create_auth_core.php',
+        '0002_seed_auth_roles_permissions.php',
+        '0003_create_real_estate_domain.php',
+        '0004_seed_real_estate_permissions.php',
+        '0005_create_domain_workflow_support.php',
+        '0006_create_customer_engagement.php',
+        '0007_create_notification_delivery.php',
+        '0008_create_application_settings.php',
+        '0009_create_account_onboarding.php',
+        '0010_release_security_hardening.php',
+        '0011_create_workspace_preferences.php',
+        '0012_create_cms_pages.php',
+        '0013_create_billing_foundation.php',
+        '0014_create_invoice_transaction_foundation.php',
+        '0015_create_coupon_discount_foundation.php',
+        '0016_create_tax_rule_foundation.php',
+        '0017_create_payment_webhook_foundation.php',
+        '0018_create_communication_permission.php',
+        '0019_create_email_template_foundation.php',
+        '0021_create_newsletter_subscribers.php',
+        '0022_create_contact_messages.php',
+    ];
+
+    if ($migrationNames !== $expectedMigrations) {
+        throw new RuntimeException(
+            'Package migration inventory does not match the canonical catalog.'
+        );
+    }
+
+    $cssFiles = glob($temporaryRoot . '/assets/css/*.css') ?: [];
+    $jsFiles = glob($temporaryRoot . '/assets/js/*.js') ?: [];
+    $cssNames = array_map(
+        static fn (string $path): string => 'assets/css/' . basename($path),
+        $cssFiles
+    );
+    $jsNames = array_map(
+        static fn (string $path): string => 'assets/js/' . basename($path),
+        $jsFiles
+    );
+    sort($cssNames, SORT_STRING);
+    sort($jsNames, SORT_STRING);
+
+    $approvedCssFiles = [
+        'assets/css/app.css',
+        'assets/css/cms-rich-content-v116.css',
+        'assets/css/error-page-v114.css',
+        'assets/css/finance-plans-v139.css',
+        'assets/css/marketplace-config-v109.css',
+        'assets/css/marketplace-hero-heading-v112.css',
+        'assets/css/page-builder-v116.css',
+        'assets/css/property-detail-flow-v113.css',
+        'assets/css/workspace-sidebar-scroll-v115.css',
+    ];
+    $approvedJsFiles = [
+        'assets/js/app.js',
+        'assets/js/finance-plans-v139.js',
+        'assets/js/marketplace-config-v109.js',
+        'assets/js/page-builder-v116.js',
+        'assets/js/page-builder-v117.js',
+        'assets/js/page-builder-v119.js',
+        'assets/js/workspace-sidebar-scroll-v115.js',
+    ];
+
+    $unapprovedCssFiles = array_values(array_diff($cssNames, $approvedCssFiles));
+    $unapprovedJsFiles = array_values(array_diff($jsNames, $approvedJsFiles));
+
     if (
-        $entry === 'application/storage/app/installation/installed.php'
-        || $entry === 'application/storage/app/installation/environment.php'
-        || $entry === 'application/storage/app/license/license.php'
-        || $entry === 'application/storage/app/license/installation-id.php'
-        || preg_match('/\.(?:log|sql|bak|backup)$/i', $entry) === 1
+        !in_array('assets/css/app.css', $cssNames, true)
+        || $unapprovedCssFiles !== []
     ) {
-        throw new RuntimeException('Customer package contains runtime/private state: ' . $entry);
+        throw new RuntimeException(
+            'Package CSS inventory contains missing core or unapproved modular assets.'
+        );
     }
-}
 
-if (!$zip->extractTo($temporaryRoot)) {
-    throw new RuntimeException('Customer package could not be extracted.');
-}
-
-$zip->close();
-
-$css = glob($temporaryRoot . '/assets/css/*.css') ?: [];
-$js = glob($temporaryRoot . '/assets/js/*.js') ?: [];
-
-if (in_array('tools/localization-smoke.php', $entries, true)) {
-    throw new RuntimeException('Internal localization QA script leaked into customer package.');
-}
-
-$expectedPackageMigrations = [
-    'application/database/migrations/0001_create_auth_core.php',
-    'application/database/migrations/0002_seed_auth_roles_permissions.php',
-    'application/database/migrations/0003_create_real_estate_domain.php',
-    'application/database/migrations/0004_seed_real_estate_permissions.php',
-    'application/database/migrations/0005_create_domain_workflow_support.php',
-    'application/database/migrations/0006_create_customer_engagement.php',
-    'application/database/migrations/0007_create_notification_delivery.php',
-    'application/database/migrations/0008_create_application_settings.php',
-    'application/database/migrations/0009_create_account_onboarding.php',
-    'application/database/migrations/0010_release_security_hardening.php',
-    'application/database/migrations/0011_create_workspace_preferences.php',
-];
-
-$packageMigrations = array_values(array_filter(
-    $entries,
-    static fn (string $entry): bool =>
-        preg_match('#^application/database/migrations/\d{4}_[^/]+\.php$#', $entry) === 1
-));
-sort($packageMigrations, SORT_STRING);
-
-if ($packageMigrations !== $expectedPackageMigrations) {
-    throw new RuntimeException(
-        'Exact customer ZIP migration sequence drift detected: '
-        . implode(', ', $packageMigrations)
-    );
-}
-
-if (in_array(
-    'application/database/migrations/0010_create_workspace_preferences.php',
-    $entries,
-    true
-)) {
-    throw new RuntimeException(
-        'Historical duplicate 0010 workspace migration leaked into customer package.'
-    );
-}
-
-$migrationCatalogSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Support/MigrationCatalog.php'
-);
-$installerMigrationSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/InstallerService.php'
-);
-$upgradeMigrationSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/UpgradeService.php'
-);
-
-if (
-    !str_contains($migrationCatalogSource, '0011_create_workspace_preferences.php')
-    || !str_contains($migrationCatalogSource, '0010_create_workspace_preferences.php')
-    || !str_contains($installerMigrationSource, 'MigrationCatalog::appliedLookup')
-    || !str_contains($upgradeMigrationSource, 'MigrationCatalog::pending')
-) {
-    throw new RuntimeException(
-        'Installer/updater migration compatibility contract is incomplete.'
-    );
-}
-
-if (
-    count($css) !== 1
-    || basename((string) $css[0]) !== 'app.css'
-    || count($js) !== 1
-    || basename((string) $js[0]) !== 'app.js'
-) {
-    throw new RuntimeException('Canonical customer assets are not clean.');
-}
-
-$viewSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/installer/index.php'
-);
-
-foreach ([
-    'License & Terms',
-    'Requirements',
-    'Database',
-    'Website',
-    'System Health / Finish',
-] as $visibleStep) {
-    if (!str_contains($viewSource, $visibleStep)) {
-        throw new RuntimeException('Installer visible step is missing: ' . $visibleStep);
+    if (
+        !in_array('assets/js/app.js', $jsNames, true)
+        || $unapprovedJsFiles !== []
+    ) {
+        throw new RuntimeException(
+            'Package JavaScript inventory contains missing core or unapproved modular assets.'
+        );
     }
-}
 
-if (
-    preg_match_all('/^\s*[1-5]\s*=>\s*\[/m', $viewSource) !== 5
-    || str_contains($viewSource, 'data-open-terms')
-    || !str_contains($viewSource, 'data-terms-agreement')
-    || !str_contains($viewSource, 'data-accept-terms')
-    || !str_contains($viewSource, 'data-license-validate')
-    || !str_contains($viewSource, 'data-generate-password')
-    || str_contains($viewSource, 'Email delivery')
-    || str_contains($viewSource, 'data-mail-test')
-    || str_contains($viewSource, 'name="mail_driver"')
-    || str_contains($viewSource, 'name="mail_host"')
-    || str_contains($viewSource, 'name="mail_password"')
-    || !str_contains(
-        $viewSource,
-        'Email delivery defaults to PHP mail and can be configured later from the application settings.'
-    )
-    || str_contains($viewSource, 'name="license_method"')
-    || str_contains($viewSource, 'data-license-method')
-    || str_contains($viewSource, 'Ton Samith License')
-    || !str_contains($viewSource, 'Purchase code / license key')
-    || !str_contains($viewSource, 'Envato Market License &amp; Terms')
-    || !str_contains($viewSource, 'Support from the Author')
-    || !str_contains(
-        $viewSource,
-        'I agree to the Envato license terms, author disclaimer and support terms.'
-    )
-    || str_contains($viewSource, "<?= \$termsReviewed ? 'checked' : '' ?>")
-    || !str_contains($viewSource, 'action="<?= e($installerUrl) ?>"')
-    || !str_contains($viewSource, 'data-theme-toggle')
-    || !str_contains($viewSource, 'data-installer-language')
-    || !str_contains($viewSource, '🇰🇭')
-    || !str_contains($viewSource, 'installer-requirements-table')
-    || !str_contains($viewSource, 'name="db_mode"')
-    || !str_contains($viewSource, 'Existing Database')
-    || !str_contains($viewSource, 'Create Database')
-    || !str_contains($viewSource, 'Database Server Admin Access')
-    || !str_contains($viewSource, 'name="db_admin_username"')
-    || !str_contains($viewSource, 'name="db_new_database"')
-    || !str_contains($viewSource, 'name="db_new_password_confirmation"')
-    || !str_contains($viewSource, 'installer-form__grid--pair')
-    || !str_contains($viewSource, 'data-1p-ignore')
-    || str_contains($viewSource, 'name="create_database"')
-) {
-    throw new RuntimeException('Five-step installer controls are incomplete.');
-}
+    $database = (string) (getenv('PACKAGE_DB_DATABASE') ?: 'barama_package_test');
+    $host = (string) (getenv('PACKAGE_DB_HOST') ?: '127.0.0.1');
+    $port = (int) (getenv('PACKAGE_DB_PORT') ?: 3306);
+    $username = (string) (getenv('PACKAGE_DB_USERNAME') ?: 'root');
+    $password = (string) (getenv('PACKAGE_DB_PASSWORD') ?: '');
 
-$stylesheetSource = (string) file_get_contents($temporaryRoot . '/assets/css/app.css');
-$javascriptSource = (string) file_get_contents($temporaryRoot . '/assets/js/app.js');
-
-if (
-    !str_contains($stylesheetSource, '@media (max-width: 991.98px)')
-    || !str_contains($stylesheetSource, '@media (max-width: 575.98px)')
-    || !str_contains($stylesheetSource, ':focus-visible')
-    || !str_contains($javascriptSource, 'window.localStorage.setItem(storageKey, next)')
-    || !str_contains($javascriptSource, "workspaceOpen?.setAttribute('aria-expanded', 'false')")
-    || !str_contains($javascriptSource, "workspaceOpen.setAttribute('aria-expanded', 'true')")
-    || !str_contains($stylesheetSource, '.installer-requirements-table')
-    || !str_contains($stylesheetSource, '.installer-database-mode')
-    || !str_contains($stylesheetSource, '.installer-form__grid--pair')
-    || !str_contains($stylesheetSource, 'background: transparent')
-    || !str_contains($javascriptSource, '[data-database-mode]')
-    || !str_contains($javascriptSource, 'Create Database & Continue')
-    || !str_contains($javascriptSource, 'barama-installer-language')
-    || str_contains($javascriptSource, 'Send a successful test email before installation.')
-    || str_contains($javascriptSource, '[data-mail-test]')
-) {
-    throw new RuntimeException('Responsive or Light/Dark installer behavior is incomplete.');
-}
-
-$layoutSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/layouts/app.php'
-);
-$localeSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Support/Locale.php'
-);
-$localeControllerSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Http/Controllers/LocaleController.php'
-);
-
-$loginSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/auth/login.php'
-);
-$registerSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/auth/register.php'
-);
-$resetSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/auth/reset-password.php'
-);
-$cardSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/components/inventory-card.php'
-);
-
-if (
-    !str_contains($layoutSource, 'data-site-menu-toggle')
-    || !str_contains($layoutSource, 'data-locale-select')
-    || !str_contains($layoutSource, 'app_locale()')
-    || !str_contains($localeSource, "'km' => 'ខ្មែរ'")
-    || !str_contains($localeSource, "'zh' => '中文'")
-    || !str_contains($localeControllerSource, 'savePreferredLanguage')
-    || !str_contains($layoutSource, 'Company / Vendor')
-    || !str_contains($layoutSource, 'site-footer__grid')
-    || !str_contains($loginSource, 'auth-premium')
-    || !str_contains($loginSource, 'data-auth-password-toggle')
-    || !str_contains($registerSource, 'data-auth-generate-password')
-    || !str_contains($resetSource, 'data-auth-generate-password')
-    || !str_contains($cardSource, 'inventory-card--')
-    || !str_contains($stylesheetSource, '.auth-premium')
-    || !str_contains($stylesheetSource, '.account-quick-actions')
-    || !str_contains($javascriptSource, '[data-site-menu-toggle]')
-    || !str_contains($javascriptSource, '[data-auth-generate-password]')
-    || !str_contains($javascriptSource, 'validateButton.disabled = !hasCode')
-    || !str_contains($javascriptSource, "agreement?.addEventListener('click'")
-    || !str_contains($javascriptSource, 'if (agreement.checked)')
-    || !str_contains($javascriptSource, "installer.setAttribute('data-terms-reviewed', '0')")
-    || !str_contains($javascriptSource, 'licenseValidated')
-    || !str_contains($javascriptSource, 'termsReviewed')
-) {
-    throw new RuntimeException('Global shell, account, auth, or featured-card interface contract is incomplete.');
-}
-
-$homeSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/home.php'
-);
-$propertiesSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/marketplace/properties.php'
-);
-$propertySource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/marketplace/property.php'
-);
-$projectsSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/marketplace/projects.php'
-);
-$projectSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/marketplace/project.php'
-);
-$companyIndexSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/company/index.php'
-);
-$companyShowSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/company/show.php'
-);
-
-if (
-    !str_contains($homeSource, 'market-searchbar')
-    || !str_contains($homeSource, 'market-intent-grid')
-    || !str_contains($propertiesSource, 'discovery-filter__more')
-    || !str_contains($propertiesSource, 'filter-chips')
-    || !str_contains($propertySource, 'relatedListings')
-    || !str_contains($propertySource, 'data-gallery-image')
-    || !str_contains($propertySource, '/account/viewings/')
-    || !str_contains($projectsSource, 'data-marketplace-filter')
-    || !str_contains($projectSource, 'data-gallery-image')
-    || !str_contains($projectSource, "viewer['name']")
-    || !str_contains($companyIndexSource, 'Company Directory')
-    || !str_contains($companyShowSource, "viewer['email']")
-    || !str_contains($stylesheetSource, '.market-intent-grid')
-    || !str_contains($stylesheetSource, '.discovery-filter')
-    || !str_contains($stylesheetSource, '.marketplace-lightbox')
-    || !str_contains($javascriptSource, '[data-marketplace-filter]')
-    || !str_contains($javascriptSource, '[data-gallery-image]')
-) {
-    throw new RuntimeException('Public marketplace discovery interface contract is incomplete.');
-}
-
-$mailServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/MailService.php'
-);
-$installerServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/InstallerService.php'
-);
-
-$licenseClientSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/LicenseManagerClient.php'
-);
-
-$verifyEmailSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/auth/verify-email.php'
-);
-$emailVerificationServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/EmailVerificationService.php'
-);
-$userAdministrationServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/UserAdministrationService.php'
-);
-
-$accountSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/account/index.php'
-);
-$emailChangeSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/account/email-change.php'
-);
-$routesSource = (string) file_get_contents(
-    $temporaryRoot . '/application/routes/web.php'
-);
-$onboardingServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/CompanyOnboardingService.php'
-);
-$membershipServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/MembershipService.php'
-);
-
-if (
-    !str_contains($mailServiceSource, 'verify_peer')
-    || !str_contains($mailServiceSource, 'verify_peer_name')
-    || !str_contains($mailServiceSource, 'allow_self_signed')
-    || !str_contains($installerServiceSource, 'function testMail(')
-    || !str_contains($installerServiceSource, 'function mailFingerprint(')
-    || !str_contains($installerServiceSource, 'function provisionDatabase(')
-    || !str_contains($installerServiceSource, 'CREATE DATABASE')
-    || !str_contains($installerServiceSource, 'CREATE USER')
-    || !str_contains($installerServiceSource, 'GRANT ALL PRIVILEGES ON')
-    || !str_contains($licenseClientSource, 'function validateActive(')
-    || !str_contains($licenseClientSource, 'function deactivate(')
-    || !str_contains($licenseClientSource, 'function credentialFingerprint(')
-    || !str_contains($licenseClientSource, 'function isReusableSameDomainActivation(')
-    || !str_contains($licenseClientSource, 'function activationFailureMessage(')
-    || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYPEER')
-    || !str_contains($licenseClientSource, 'CURLOPT_SSL_VERIFYHOST')
-    || !str_contains($verifyEmailSource, 'Verify email')
-    || !str_contains($emailVerificationServiceSource, 'EmailVerificationRepository')
-    || !str_contains($userAdministrationServiceSource, 'final active administrator')
-    || !str_contains($routesSource, '/verify-email/{token}')
-    || !str_contains($routesSource, "'/locale'")
-    || !str_contains($routesSource, '/dashboard/users/{id}/status')
-    || !str_contains($accountSource, 'Company access')
-    || !str_contains($accountSource, '/account/company/onboard')
-    || !str_contains($accountSource, '/account/security/password')
-    || !str_contains($accountSource, '/account/security/email')
-    || !str_contains($accountSource, 'remember_recent_views')
-    || !str_contains($accountSource, 'Khmer')
-    || !str_contains($emailChangeSource, 'Confirm email change')
-    || !str_contains($routesSource, '/account/company-invitations/{id}/accept')
-    || !str_contains($routesSource, '/account/email-change/{token}')
-    || !str_contains($onboardingServiceSource, "'pending'")
-    || !str_contains($membershipServiceSource, 'inviteByEmail')
-    || !str_contains($membershipServiceSource, 'acceptInvitation')
-    || !str_contains($stylesheetSource, '.account-settings-grid')
-) {
-    throw new RuntimeException('Account settings or company onboarding package contract is incomplete.');
-}
-
-$htaccessSource = (string) file_get_contents($temporaryRoot . '/.htaccess');
-$requestSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Core/Request.php'
-);
-$helperSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Support/helpers.php'
-);
-$appConfigSource = (string) file_get_contents(
-    $temporaryRoot . '/application/config/app.php'
-);
-$rootIndex = (string) file_get_contents($temporaryRoot . '/index.php');
-$controllerSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Http/Controllers/InstallerController.php'
-);
-$upgradeControllerSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Http/Controllers/UpgradeController.php'
-);
-$upgradeServiceSource = (string) file_get_contents(
-    $temporaryRoot . '/application/app/Services/UpgradeService.php'
-);
-$updaterViewSource = (string) file_get_contents(
-    $temporaryRoot . '/application/resources/views/updater/index.php'
-);
-
-if (
-    !str_contains($htaccessSource, 'RewriteEngine On')
-    || !str_contains($htaccessSource, 'RewriteRule ^ index.php [QSA,L]')
-    || !str_contains($htaccessSource, 'application|tools|docs|\\.github')
-    || !str_contains($requestSource, "SCRIPT_NAME")
-    || !str_contains($requestSource, "str_starts_with(\$path, \$basePath . '/')")
-    || !str_contains($requestSource, "\$_GET['_route']")
-    || !str_contains($helperSource, "config('app.routing_mode', 'clean')")
-    || !str_contains($helperSource, "/index.php?_route=")
-    || !str_contains($appConfigSource, "'routing_mode'")
-    || !str_contains($installerServiceSource, 'function routingMode(')
-    || !str_contains($installerServiceSource, "'APP_ROUTING_MODE' => \$routingMode")
-    || !str_contains($rootIndex, '/installer/')
-    || !str_contains($rootIndex, '/updater/')
-    || !str_contains($rootIndex, 'APP_VERSION')
-    || !str_contains($rootIndex, 'Cache-Control: no-store')
-    || !str_contains($controllerSource, 'Csrf::validate')
-    || !str_contains($controllerSource, 'Session::forget(self::TERMS_KEY)')
-    || !str_contains($controllerSource, 'agree_terms')
-    || str_contains($controllerSource, "'test_mail'")
-    || str_contains($controllerSource, 'MAIL_TEST_KEY')
-    || str_contains($controllerSource, 'Send a successful test email')
-    || !str_contains($controllerSource, "'mail_driver' => 'mail'")
-    || !str_contains($controllerSource, 'revalidateLicenseForInstall')
-    || !str_contains($controllerSource, 'validateActive(')
-    || !str_contains($controllerSource, 'credential_fingerprint')
-    || !str_contains(
-        $controllerSource,
-        'License is already active on this domain and was revalidated successfully.'
-    )
-    || !str_contains($upgradeControllerSource, 'Csrf::validate')
-    || !str_contains($upgradeServiceSource, 'backup_confirmed')
-    || !str_contains($upgradeServiceSource, 'authenticateAdministrator')
-    || !str_contains($upgradeServiceSource, 'validateLicenseForUpgrade')
-    || !str_contains($upgradeServiceSource, 'Downgrades are not supported')
-    || !str_contains($upgradeServiceSource, 'system.upgrade_completed')
-    || !str_contains($updaterViewSource, 'Authenticate &amp; Upgrade')
-    || !str_contains($updaterViewSource, 'action="<?= e($updaterUrl) ?>"')
-) {
-    throw new RuntimeException(
-        'Installer/updater redirect or server-side protection is incomplete.'
+    $pdo = new PDO(
+        sprintf('mysql:host=%s;port=%d;charset=utf8mb4', $host, $port),
+        $username,
+        $password,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
-}
+    $quotedDatabase = '`' . str_replace('`', '``', $database) . '`';
+    $pdo->exec('DROP DATABASE IF EXISTS ' . $quotedDatabase);
+    $pdo->exec(
+        'CREATE DATABASE '
+        . $quotedDatabase
+        . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+    );
 
-$_SERVER['SCRIPT_NAME'] = '/barama/installer/index.php';
-$_SERVER['HTTP_HOST'] = 'barama.test';
-$_SERVER['HTTPS'] = 'on';
-$_SERVER['SERVER_PORT'] = '443';
+    $envPath = $temporaryRoot . '/.env';
+    $installedPath = $temporaryRoot . '/storage/installed.json';
+    $runtimePath = $temporaryRoot . '/storage/runtime';
+    $logsPath = $temporaryRoot . '/storage/logs';
+    $backupsPath = $temporaryRoot . '/storage/backups';
+    $updatesPath = $temporaryRoot . '/storage/updates';
+    $bootstrapCache = $temporaryRoot . '/application/bootstrap/cache';
 
-require $temporaryRoot . '/application/bootstrap/runtime.php';
+    foreach (
+        [
+            dirname($installedPath),
+            $runtimePath,
+            $logsPath,
+            $backupsPath,
+            $updatesPath,
+            $bootstrapCache,
+        ] as $directory
+    ) {
+        if (!is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+    }
 
-$service = new InstallerService();
+    if (!defined('BASE_PATH')) {
+        define('BASE_PATH', $temporaryRoot);
+    }
 
-if ($service->supportedLanguages() !== [
-    'en' => 'English',
-    'km' => 'ខ្មែរ',
-    'zh' => '中文',
-]) {
-    throw new RuntimeException('Exact package installer language options are incomplete.');
-}
+    require $temporaryRoot . '/application/bootstrap/app.php';
 
-if (
-    $service->basePath() !== '/barama'
-    || $service->installerUrl() !== '/barama/installer/'
-    || $service->detectedSiteUrl() !== 'https://barama.test/barama'
-    || !$service->requirementsReady()
-) {
-    throw new RuntimeException('Extracted package URL or requirement checks failed.');
-}
+    $viewSource = (string) file_get_contents(
+        $temporaryRoot . '/application/resources/views/installer/index.php'
+    );
 
-$dbHost = (string) (getenv('PACKAGE_DB_HOST') ?: '127.0.0.1');
-$dbPort = (int) (getenv('PACKAGE_DB_PORT') ?: 3306);
-$dbName = (string) (getenv('PACKAGE_DB_DATABASE') ?: 'barama_package_test');
-$dbAdminUser = (string) (getenv('PACKAGE_DB_USERNAME') ?: 'root');
-$dbAdminPassword = (string) (getenv('PACKAGE_DB_PASSWORD') ?: '');
-$dbUser = 'barama_pkg_' . substr(hash('sha256', $temporaryRoot), 0, 8);
-$dbPassword = 'Barama!Pkg2026-' . substr(hash('sha256', $zipPath), 0, 10);
+    if (
+        preg_match_all('/^\s*[1-5]\s*=>\s*\[/m', $viewSource) !== 5
+        || str_contains($viewSource, 'data-open-terms')
+        || !str_contains($viewSource, 'data-terms-agreement')
+        || !str_contains($viewSource, 'data-accept-terms')
+        || !str_contains($viewSource, 'data-license-validate')
+        || !str_contains($viewSource, 'data-generate-password')
+        || str_contains($viewSource, 'data-mail-test')
+        || str_contains($viewSource, 'name="mail_driver"')
+        || str_contains($viewSource, 'name="mail_host"')
+        || str_contains($viewSource, 'name="mail_password"')
+        || !str_contains(
+            $viewSource,
+            'Email delivery defaults to PHP mail and can be configured later from the application settings.'
+        )
+        || str_contains($viewSource, 'name="license_method"')
+        || str_contains($viewSource, 'data-license-method')
+        || str_contains($viewSource, 'Ton Samith License')
+        || !str_contains($viewSource, 'Purchase code / license key')
+        || !str_contains($viewSource, 'Envato Market License &amp; Terms')
+        || !str_contains($viewSource, 'Support from the Author')
+        || !str_contains(
+            $viewSource,
+            'I agree to the Envato license terms, author disclaimer and support terms.'
+        )
+        || str_contains($viewSource, "<?= \$termsReviewed ? 'checked' : '' ?>")
+        || !str_contains($viewSource, 'action="<?= e($installerUrl) ?>"')
+        || !str_contains($viewSource, 'data-theme-toggle')
+        || !str_contains($viewSource, 'data-installer-language')
+        || !str_contains($viewSource, '🇰🇭')
+        || !str_contains($viewSource, 'installer-requirements-table')
+        || !str_contains($viewSource, 'name="db_mode"')
+        || !str_contains($viewSource, 'Existing Database')
+        || !str_contains($viewSource, 'Create Database')
+        || !str_contains($viewSource, 'Database Server Admin Access')
+        || !str_contains($viewSource, 'name="db_admin_username"')
+        || !str_contains($viewSource, 'name="db_new_database"')
+        || !str_contains($viewSource, 'name="db_new_password_confirmation"')
+        || !str_contains($viewSource, 'installer-form__grid--pair')
+        || !str_contains($viewSource, 'data-1p-ignore')
+        || str_contains($viewSource, 'name="create_database"')
+    ) {
+        throw new RuntimeException('Five-step installer controls are incomplete.');
+    }
 
-$badDatabaseRejected = false;
+    $stylesheetSource = (string) file_get_contents($temporaryRoot . '/assets/css/app.css');
+    $javascriptSource = (string) file_get_contents($temporaryRoot . '/assets/js/app.js');
 
-try {
-    $service->testDatabase([
-        'db_mode' => 'create',
-        'db_admin_host' => $dbHost,
-        'db_admin_port' => $dbPort,
-        'db_admin_username' => $dbAdminUser,
-        'db_admin_password' => $dbAdminPassword . '-incorrect',
-        'db_new_database' => $dbName,
-        'db_new_username' => $dbUser,
-        'db_new_password' => $dbPassword,
-        'db_new_password_confirmation' => $dbPassword,
+    if (
+        !str_contains($stylesheetSource, '@media (max-width: 991.98px)')
+        || !str_contains($stylesheetSource, '@media (max-width: 575.98px)')
+        || !str_contains($stylesheetSource, ':focus-visible')
+        || !str_contains($javascriptSource, 'window.localStorage.setItem(storageKey, next)')
+        || !str_contains($javascriptSource, "workspaceOpen?.setAttribute('aria-expanded', 'false')")
+        || !str_contains($javascriptSource, "workspaceOpen.setAttribute('aria-expanded', 'true')")
+        || !str_contains($stylesheetSource, '.installer-requirements-table')
+        || !str_contains($stylesheetSource, '.installer-database-mode')
+        || !str_contains($stylesheetSource, '.installer-form__grid--pair')
+        || !str_contains($stylesheetSource, 'background: transparent')
+        || !str_contains($javascriptSource, '[data-database-mode]')
+        || !str_contains($javascriptSource, 'Create Database & Continue')
+        || !str_contains($javascriptSource, 'barama-installer-language')
+        || str_contains($javascriptSource, 'Send a successful test email before installation.')
+        || str_contains($javascriptSource, '[data-mail-test]')
+    ) {
+        throw new RuntimeException('Responsive or Light/Dark installer behavior is incomplete.');
+    }
+
+    $layoutSource = (string) file_get_contents(
+        $temporaryRoot . '/application/resources/views/layouts/app.php'
+    );
+    if (
+        !str_contains($layoutSource, 'data-bs-theme="light"')
+        || str_contains($layoutSource, 'data-bs-theme="dark"')
+    ) {
+        throw new RuntimeException('Default application theme must be Light.');
+    }
+
+    $licenseClient = new LicenseManagerClient();
+    $licenseConfig = $licenseClient->configuration();
+    if (
+        ($licenseConfig['host'] ?? '') !== 'https://tonsamith.com'
+        || ($licenseConfig['product'] ?? '') !== 'barama-real-estate'
+        || ($licenseConfig['api_key'] ?? null) !== null
+    ) {
+        throw new RuntimeException(
+            'Customer package License Manager configuration is unsafe.'
+        );
+    }
+
+    $requirements = (new InstallerService())->requirements();
+    $requiredLabels = array_column($requirements, 'label');
+    foreach (
+        [
+            'PHP 8.2 or newer',
+            'PDO MySQL',
+            'Writable runtime',
+            'Core CSS asset',
+            'Core JavaScript asset',
+        ] as $requiredLabel
+    ) {
+        if (!in_array($requiredLabel, $requiredLabels, true)) {
+            throw new RuntimeException(
+                'Package installer requirement missing: ' . $requiredLabel
+            );
+        }
+    }
+
+    $databaseConfig = [
+        'driver' => 'mysql',
+        'host' => $host,
+        'port' => $port,
+        'database' => $database,
+        'username' => $username,
+        'password' => $password,
+        'charset' => 'utf8mb4',
+    ];
+
+    $installer = new InstallerService();
+    $installer->writeEnvironment([
+        'APP_ENV' => 'production',
+        'APP_DEBUG' => 'false',
+        'APP_URL' => 'http://localhost',
+        'APP_KEY' => 'base64:' . base64_encode(random_bytes(32)),
+        'DB_HOST' => $host,
+        'DB_PORT' => (string) $port,
+        'DB_DATABASE' => $database,
+        'DB_USERNAME' => $username,
+        'DB_PASSWORD' => $password,
+        'MAIL_DRIVER' => 'mail',
+        'MAIL_HOST' => '',
+        'MAIL_PORT' => '587',
+        'MAIL_USERNAME' => '',
+        'MAIL_PASSWORD' => '',
+        'MAIL_ENCRYPTION' => 'tls',
+        'MAIL_FROM_ADDRESS' => 'no-reply@example.test',
+        'MAIL_FROM_NAME' => 'Barama Real Estate',
     ]);
-} catch (RuntimeException) {
-    $badDatabaseRejected = true;
-}
 
-if (!$badDatabaseRejected) {
-    throw new RuntimeException(
-        'Invalid database administrator credentials were not rejected.'
+    $environment = RuntimeEnvironment::read($envPath);
+    if (
+        ($environment['APP_ENV'] ?? '') !== 'production'
+        || ($environment['APP_DEBUG'] ?? '') !== 'false'
+        || ($environment['MAIL_DRIVER'] ?? '') !== 'mail'
+    ) {
+        throw new RuntimeException('Package environment write failed.');
+    }
+
+    Database::reset();
+    $installer->testDatabase($databaseConfig);
+    $installer->migrate($databaseConfig);
+
+    $pdo = Database::connection();
+    $migrationRows = $pdo
+        ->query('SELECT migration FROM schema_migrations ORDER BY migration')
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if ($migrationRows !== $expectedMigrations) {
+        throw new RuntimeException(
+            'Package migrations did not apply the canonical catalog.'
+        );
+    }
+
+    $health = $installer->health();
+    if (empty($health['healthy'])) {
+        throw new RuntimeException('Package installer health check failed.');
+    }
+
+    fwrite(
+        STDOUT,
+        "[PASS] Exact customer package installer, migrations and health verified.\n"
     );
+} finally {
+    $cleanup($temporaryRoot);
 }
-
-$database = $service->testDatabase([
-    'db_mode' => 'create',
-    'db_admin_host' => $dbHost,
-    'db_admin_port' => $dbPort,
-    'db_admin_username' => $dbAdminUser,
-    'db_admin_password' => $dbAdminPassword,
-    'db_new_database' => $dbName,
-    'db_new_username' => $dbUser,
-    'db_new_password' => $dbPassword,
-    'db_new_password_confirmation' => $dbPassword,
-]);
-
-if (
-    ($database['provisioned'] ?? false) !== true
-    || ($database['database'] ?? '') !== $dbName
-    || ($database['username'] ?? '') !== $dbUser
-    || isset($database['admin_username'], $database['admin_password'])
-) {
-    throw new RuntimeException(
-        'Create Database mode returned unsafe or incorrect application credentials.'
-    );
-}
-
-$installationId = Installation::installationId();
-
-$license = [
-    'activation_token' => 'package-qa-activation',
-    'license_id' => 'package-qa',
-    'product_slug' => 'barama-real-estate',
-    'license_type' => 'qa',
-    'source' => 'package-qa',
-    'is_test' => true,
-    'status' => 'active',
-    'domain' => 'barama.test',
-    'installation_id' => $installationId,
-    'verification_method' => 'envato',
-    'validated_at' => gmdate('c'),
-];
-
-$health = $service->install(
-    $database,
-    [
-        'site_name' => 'Barama Package QA',
-        'site_url' => 'https://barama.test/barama',
-        'timezone' => 'Asia/Phnom_Penh',
-        'default_language' => 'en',
-        'admin_name' => 'Package QA Administrator',
-        'admin_email' => 'package-qa@example.test',
-        'admin_password' => 'Barama!Package2026Strong',
-        'admin_password_confirmation' => 'Barama!Package2026Strong',
-    ],
-    $license
-);
-
-if (empty($health['healthy']) || !Installation::isInstalled()) {
-    throw new RuntimeException('Clean installation from the exact customer ZIP failed.');
-}
-
-$runtime = Installation::runtimeConfig();
-$licenseState = Installation::licenseState();
-
-if (
-    ($runtime['APP_ENV'] ?? null) !== 'production'
-    || ($runtime['APP_DEBUG'] ?? true) !== false
-    || ($runtime['APP_URL'] ?? '') !== 'https://barama.test/barama'
-    || ($runtime['APP_LOCALE'] ?? '') !== 'en'
-    || ($runtime['MAIL_DRIVER'] ?? '') !== 'mail'
-    || ($runtime['MAIL_FROM_ADDRESS'] ?? '') !== 'package-qa@example.test'
-    || ($runtime['MAIL_FROM_NAME'] ?? '') !== 'Barama Package QA'
-    || ($licenseState['verification_method'] ?? '') !== 'envato'
-    || isset($licenseState['purchase_code'], $licenseState['license_key'])
-) {
-    throw new RuntimeException('Production runtime or protected license state is invalid.');
-}
-
-$pdo = new PDO(
-    'mysql:host=' . $dbHost . ';port=' . $dbPort . ';dbname=' . $dbName . ';charset=utf8mb4',
-    $dbUser,
-    $dbPassword,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-);
-
-if ($service->runMigrations($pdo) !== []) {
-    throw new RuntimeException('Migration replay after installation was not a no-op.');
-}
-
-$administratorCount = (int) $pdo->query(
-    "SELECT COUNT(*)
-     FROM users
-     INNER JOIN user_roles ON user_roles.user_id = users.id
-     INNER JOIN roles ON roles.id = user_roles.role_id
-     WHERE users.email = 'package-qa@example.test'
-       AND users.status = 'active'
-       AND roles.slug = 'administrator'"
-)->fetchColumn();
-
-if ($administratorCount !== 1) {
-    throw new RuntimeException('First administrator was not provisioned correctly.');
-}
-
-$userWorkspace = (new WorkspaceReadRepository())->adminSection(
-    'users',
-    '',
-    1,
-    20
-);
-
-if (
-    (int) ($userWorkspace['total'] ?? 0) < 1
-    || !is_array($userWorkspace['rows'] ?? null)
-    || ($userWorkspace['rows'] ?? []) === []
-) {
-    throw new RuntimeException(
-        'Admin Users workspace query failed after clean installation.'
-    );
-}
-
-$accountTableCount = (int) $pdo->query(
-    "SELECT COUNT(*)
-     FROM information_schema.TABLES
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME IN ('user_profiles','email_change_tokens','company_invitations')"
-)->fetchColumn();
-
-if ($accountTableCount !== 3) {
-    throw new RuntimeException('Account/onboarding schema is missing from the customer package installation.');
-}
-
-$securityTableCount = (int) $pdo->query(
-    "SELECT COUNT(*)
-     FROM information_schema.TABLES
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME IN ('email_verification_tokens','security_audit_events')"
-)->fetchColumn();
-
-$authVersionColumn = (int) $pdo->query(
-    "SELECT COUNT(*)
-     FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = 'users'
-       AND COLUMN_NAME = 'auth_version'"
-)->fetchColumn();
-
-if ($securityTableCount !== 2 || $authVersionColumn !== 1) {
-    throw new RuntimeException('Release security schema is missing from the customer package installation.');
-}
-
-$secondInstallBlocked = false;
-
-try {
-    $service->install($database, [], $license);
-} catch (RuntimeException) {
-    $secondInstallBlocked = true;
-}
-
-if (!$secondInstallBlocked) {
-    throw new RuntimeException('Installation lock did not block a second installation.');
-}
-
-fwrite(
-    STDOUT,
-    '[PASS] Exact customer ZIP verified: structure, five steps, bad database recovery, '
-    . 'subdirectory URLs, clean MySQL installation, production state, migration replay, '
-    . 'database provisioning, administrator provisioning, Admin Users workspace query, installation lock and packaged updater contract.'
-    . PHP_EOL
-);

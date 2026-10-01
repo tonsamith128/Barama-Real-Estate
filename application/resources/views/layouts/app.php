@@ -166,6 +166,9 @@ $appJsVersion = is_file($appJsFile)
         rel="stylesheet"
     >
     <link href="<?= e(asset('css/app.css') . '?v=' . rawurlencode($appCssVersion)) ?>" rel="stylesheet">
+    <?php if ($isWorkspacePage): ?>
+        <link href="<?= e(asset('css/workspace-sidebar-scroll-v115.css') . '?v=115') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (!$isWorkspacePage): ?>
         <link href="<?= e(url('/appearance.css?v=' . rawurlencode($frontendAppearanceVersion))) ?>" rel="stylesheet">
     <?php endif; ?>
@@ -559,5 +562,8 @@ $appJsVersion = is_file($appJsFile)
     <?php endif; ?>
 
     <script src="<?= e(asset('js/app.js') . '?v=' . rawurlencode($appJsVersion)) ?>" defer></script>
+    <?php if ($isWorkspacePage): ?>
+        <script src="<?= e(asset('js/workspace-sidebar-scroll-v115.js') . '?v=115') ?>" defer></script>
+    <?php endif; ?>
 </body>
 </html>

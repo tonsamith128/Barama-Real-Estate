@@ -10,6 +10,38 @@ $perPage = (int) ($records['per_page'] ?? 0);
 $perPage = $perPage > 0 ? $perPage : max(1, count($rows));
 $showAdminMarketplaceNumbers = $workspaceType === 'admin'
     && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+$showAdminPageNumbers = $workspaceType === 'admin' && $activeSection === 'pages';
+$showAdminRowNumbers = $showAdminMarketplaceNumbers || $showAdminPageNumbers;
+$hasMarketplacePageConfiguration = $workspaceType === 'admin'
+    && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+$marketplacePageDefaults = $hasMarketplacePageConfiguration
+    ? (\Barama\Repositories\SiteContentRepository::defaults()['marketplace_pages'][$activeSection] ?? [])
+    : [];
+$marketplacePageConfig = $hasMarketplacePageConfiguration
+    ? array_replace_recursive(
+        is_array($marketplacePageDefaults) ? $marketplacePageDefaults : [],
+        is_array($marketplacePageConfig ?? null) ? $marketplacePageConfig : []
+    )
+    : [];
+$marketplaceHero = is_array($marketplacePageConfig['hero'] ?? null) ? $marketplacePageConfig['hero'] : [];
+$marketplaceHeroBackground = is_array($marketplaceHero['background'] ?? null) ? $marketplaceHero['background'] : [];
+$marketplaceSearchConfig = is_array($marketplacePageConfig['search'] ?? null) ? $marketplacePageConfig['search'] : [];
+$marketplaceSaleRentConfig = is_array($marketplacePageConfig['sale_rent'] ?? null) ? $marketplacePageConfig['sale_rent'] : [];
+$marketplaceLocationsConfig = is_array($marketplacePageConfig['locations'] ?? null) ? $marketplacePageConfig['locations'] : [];
+$marketplaceGridConfig = is_array($marketplacePageConfig['grid'] ?? null) ? $marketplacePageConfig['grid'] : [];
+$marketplaceSliderImages = is_array($marketplaceHeroBackground['slider_images'] ?? null)
+    ? array_values($marketplaceHeroBackground['slider_images'])
+    : [];
+$marketplaceImageSource = strtolower(trim((string) ($marketplaceHeroBackground['image_source'] ?? 'url')));
+if (
+    trim((string) ($marketplaceHeroBackground['image_url'] ?? '')) === ''
+    && trim((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) === ''
+) {
+    $marketplaceImageSource = 'auto';
+}
+if (!in_array($marketplaceImageSource, ['auto', 'url', 'media'], true)) {
+    $marketplaceImageSource = 'auto';
+}
 $adminEditorResource = $workspaceType === 'admin'
     ? match ($activeSection) {
         'companies' => 'company',
@@ -345,6 +377,57 @@ $renderActions = static function (array $row) use (
         return $renderRowMenu($buttons, 'admin-property-' . $id);
     }
 
+    if ($workspaceType === 'admin' && $activeSection === 'pages') {
+        $slug = trim((string) ($row['slug'] ?? ''));
+        $editUrl = url('/dashboard/pages/' . $id . '/edit');
+        $publicUrl = $slug !== '' ? url('/' . rawurlencode($slug)) : '';
+
+        $buttons[] = '<a class="table-action table-action--primary" href="' . e($editUrl) . '">Edit</a>';
+
+        if ($publicUrl !== '') {
+            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
+                . 'data-copy-value="' . e($publicUrl) . '">Copy URL</button>';
+        }
+
+        if ($status === 'published' && $publicUrl !== '') {
+            $buttons[] = '<a class="table-action" href="' . e($publicUrl)
+                . '" target="_blank" rel="noopener">View</a>';
+        } else {
+            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
+                . 'title="Publish this page before opening the public URL.">View</button>';
+        }
+
+        if ($status === 'draft') {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="published">'
+                . '<button class="table-action" type="submit">Publish</button></form>';
+        } elseif ($status === 'published') {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="draft">'
+                . '<button class="table-action" type="submit">Move to draft</button></form>';
+        }
+
+        if (in_array($status, ['draft', 'published'], true)) {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="archived">'
+                . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
+        } elseif ($status === 'archived') {
+            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+                . '" method="post" data-workspace-form>'
+                . csrf_field()
+                . '<input type="hidden" name="status" value="draft">'
+                . '<button class="table-action" type="submit">Restore draft</button></form>';
+        }
+
+        return $renderRowMenu($buttons, 'admin-page-' . $id);
+    }
+
     $viewResource = $workspaceType === 'developer'
         ? match ($activeSection) {
             'overview', 'inquiries' => 'inquiry',
@@ -366,7 +449,6 @@ $renderActions = static function (array $row) use (
             'leads' => 'lead',
             'viewings' => 'viewing',
             'media' => 'media',
-            'pages' => 'page',
             'seo' => (string) ($row['entity_type'] ?? ''),
             'users' => 'user',
             'verification' => 'user',
@@ -623,7 +705,7 @@ $renderActions = static function (array $row) use (
                     . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
             } elseif ($status === 'published') {
                 $buttons[] = '<a class="table-action" href="' . e(url(
-                    '/pages/' . rawurlencode((string) ($row['slug'] ?? ''))
+                    '/' . rawurlencode((string) ($row['slug'] ?? ''))
                 )) . '" target="_blank" rel="noopener noreferrer">View page</a>';
                 $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
                     . '" method="post" data-workspace-form>'
@@ -726,7 +808,10 @@ $renderActions = static function (array $row) use (
 };
 ?>
 
-<section class="workspace-page">
+<?php if ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>">
+<?php endif; ?>
+<section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?><?= $workspaceType === 'admin' && $activeSection === 'pages' ? ' workspace-page--pages' : '' ?>">
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel) ?></span>
@@ -750,10 +835,10 @@ $renderActions = static function (array $row) use (
                 Canonical real-estate platform data
             </span>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
-            <span class="workspace-context-note">
-                <?= app_icon('globe') ?>
-                Public content · controlled publishing
-            </span>
+            <a class="workspace-context-note workspace-context-note--create" href="<?= e(url('/dashboard/pages/new')) ?>">
+                <?= app_icon('plus') ?>
+                <span>Create New Page</span>
+            </a>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'seo'): ?>
             <span class="workspace-context-note">
                 <?= app_icon('search') ?>
@@ -774,6 +859,15 @@ $renderActions = static function (array $row) use (
                 <?= app_icon('lock') ?>
                 Immutable security events
             </span>
+        <?php elseif ($hasMarketplacePageConfiguration): ?>
+            <button
+                class="content-config-button workspace-marketplace-configure"
+                type="button"
+                data-configure-open="marketplace-page-configuration-control"
+            >
+                <?= app_icon('settings') ?>
+                <span>Configure</span>
+            </button>
         <?php elseif ($workspaceType === 'admin'): ?>
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
@@ -781,6 +875,141 @@ $renderActions = static function (array $row) use (
             </span>
         <?php endif; ?>
     </div>
+
+    <?php if ($hasMarketplacePageConfiguration): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/marketplace-config-v109.css')) ?>">
+        <dialog class="config-dialog config-dialog--wide marketplace-page-config-dialog" id="marketplace-page-configuration-control" data-config-dialog>
+            <form
+                class="config-dialog__panel"
+                action="<?= e(url('/dashboard/marketplace-pages/' . $activeSection . '/configuration')) ?>"
+                method="post"
+                enctype="multipart/form-data"
+                novalidate
+                data-marketplace-config-form-v109
+            >
+                <?= csrf_field() ?>
+                <header class="config-dialog__head">
+                    <div>
+                        <span class="eyebrow"><?= e(ucfirst($activeSection)) ?> Public Page</span>
+                        <h2>CONFIGURATION CONTROL</h2>
+                        <p>Configure the public hero, discovery controls, locations and responsive inventory grid from one place.</p>
+                    </div>
+                    <button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button>
+                </header>
+
+                <div class="config-dialog__body marketplace-page-config-body">
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head">
+                            <span><?= app_icon('home') ?></span>
+                            <div><strong>Hero section</strong><small>Visibility, content and background presentation.</small></div>
+                        </div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="hero_enabled" value="1" <?= !empty($marketplaceHero['enabled']) ? 'checked' : '' ?>><span>Enable Hero section</span></label>
+                            <label><span>Eyebrow</span><input class="form-control" name="hero_eyebrow" maxlength="80" value="<?= e((string) ($marketplaceHero['eyebrow'] ?? '')) ?>"></label>
+                            <label class="config-field-grid__wide"><span>Headline</span><input class="form-control" name="hero_title" maxlength="140" required value="<?= e((string) ($marketplaceHero['title'] ?? '')) ?>"></label>
+                            <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="hero_description" rows="3" maxlength="500" required><?= e((string) ($marketplaceHero['description'] ?? '')) ?></textarea></label>
+                            <label><span>Background type</span><select class="form-select" name="background_type" data-hero-background-type><?php foreach (['plain' => 'Plain Hero','color' => 'Color Background','image' => 'Image Background','slider' => 'Image Slider Background','video' => 'Video Background'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['type'] ?? 'plain') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                            <label><span>Dark overlay</span><input class="form-control" type="number" name="overlay_strength" min="0" max="85" value="<?= e((string) ($marketplaceHeroBackground['overlay_strength'] ?? 38)) ?>"><small>0–85%. Used for media backgrounds.</small></label>
+                        </div>
+
+                        <div class="config-source-panel" data-hero-background-panel="plain">
+                            <h3>Plain Hero</h3><p>Keep the clean Barama discovery surface with no media background.</p>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="color">
+                            <h3>Color Background</h3>
+                            <label><span>Color preset</span><select class="form-select" name="color_preset"><?php foreach (['ocean' => 'Ocean Blue','aurora' => 'Aurora','sunset' => 'Sunset','violet' => 'Violet','emerald' => 'Emerald'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['color_preset'] ?? 'ocean') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="image">
+                            <h3>Image Background</h3>
+                            <div class="config-field-grid">
+                                <label><span>Source</span><select class="form-select" name="image_source" data-marketplace-image-source><option value="auto" <?= $marketplaceImageSource === 'auto' ? 'selected' : '' ?>>Automatic Barama default</option><option value="url" <?= $marketplaceImageSource === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= $marketplaceImageSource === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select><small>Automatic uses the bundled Barama Hero image for this page.</small></label>
+                                <label><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['image_url'] ?? '')) ?>" placeholder="https://example.com/hero.jpg"></label>
+                                <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library. If no custom image is supplied, Barama uses the bundled default Hero image.</small></label>
+                                <input type="hidden" name="image_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) ?>">
+                            </div>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="slider">
+                            <h3>Image Slider Background</h3>
+                            <?php if ($marketplaceSliderImages !== []): ?>
+                                <div class="marketplace-slider-existing">
+                                    <?php foreach ($marketplaceSliderImages as $index => $item): ?>
+                                        <?php if (is_array($item) && !empty($item['type']) && !empty($item['value'])): ?>
+                                            <label>
+                                                <input type="hidden" name="slider_existing[]" value="<?= e((string) $item['type'] . ':' . (string) $item['value']) ?>">
+                                                <input type="checkbox" name="slider_remove[]" value="<?= e((string) $index) ?>">
+                                                <span>Remove slide <?= e((string) ($index + 1)) ?></span>
+                                                <small><?= e((string) $item['type']) ?> · <?= e(mb_substr((string) $item['value'], 0, 72)) ?></small>
+                                            </label>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="config-field-grid">
+                                <label><span>Slider style</span><select class="form-select" name="slider_style"><?php foreach (['fade' => 'Fade','slide' => 'Slide','kenburns' => 'Ken Burns'] as $value => $label): ?><option value="<?= e($value) ?>" <?= ($marketplaceHeroBackground['slider_style'] ?? 'fade') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                                <label><span>Interval (ms)</span><input class="form-control" type="number" name="slider_interval" min="2500" max="20000" step="500" value="<?= e((string) ($marketplaceHeroBackground['slider_interval'] ?? 6000)) ?>"></label>
+                                <label class="config-check-field"><input type="hidden" name="slider_autoplay" value="0"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($marketplaceHeroBackground['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
+                                <label class="config-field-grid__wide"><span>Add image URLs</span><textarea class="form-control" name="slider_urls" rows="3" placeholder="One HTTPS image URL per line"></textarea></label>
+                                <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"><small>If no slider URLs or uploads are provided, Barama uses the bundled three-image default slider.</small></label>
+                            </div>
+                        </div>
+                        <div class="config-source-panel" data-hero-background-panel="video">
+                            <h3>Video Background</h3>
+                            <div class="config-field-grid">
+                                <label><span>Source</span><select class="form-select" name="video_source"><option value="url" <?= ($marketplaceHeroBackground['video_source'] ?? 'url') === 'url' ? 'selected' : '' ?>>Video URL</option><option value="media" <?= ($marketplaceHeroBackground['video_source'] ?? '') === 'media' ? 'selected' : '' ?>>Upload / Media Library</option><option value="youtube" <?= ($marketplaceHeroBackground['video_source'] ?? '') === 'youtube' ? 'selected' : '' ?>>YouTube</option></select></label>
+                                <label><span>Video URL</span><input class="form-control" type="url" name="video_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['video_url'] ?? '')) ?>"></label>
+                                <label><span>YouTube URL</span><input class="form-control" type="url" name="youtube_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['youtube_url'] ?? '')) ?>"></label>
+                                <label><span>Upload video</span><input class="form-control" type="file" name="hero_video_file" accept="video/mp4,video/webm"></label>
+                                <input type="hidden" name="video_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['video_media_uuid'] ?? '')) ?>">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('search') ?></span><div><strong>Hero Search function</strong><small>Control the public discovery bar without changing safe query routes.</small></div></div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="search_enabled" value="1" <?= !empty($marketplaceSearchConfig['enabled']) ? 'checked' : '' ?>><span>Enable Hero Search</span></label>
+                            <label><span>Button label</span><input class="form-control" name="search_button_label" maxlength="40" value="<?= e((string) ($marketplaceSearchConfig['button_label'] ?? 'Search')) ?>"></label>
+                            <label class="config-field-grid__wide"><span>Search placeholder</span><input class="form-control" name="search_placeholder" maxlength="120" value="<?= e((string) ($marketplaceSearchConfig['placeholder'] ?? '')) ?>"></label>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('tag') ?></span><div><strong>Sale &amp; Rent function</strong><small><?= $activeSection === 'properties' ? 'Controls the offer filter in the Hero Search.' : 'Adds direct Sale and Rent discovery shortcuts to the Properties marketplace.' ?></small></div></div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="sale_rent_enabled" value="1" <?= !empty($marketplaceSaleRentConfig['enabled']) ? 'checked' : '' ?>><span>Enable Sale &amp; Rent</span></label>
+                            <label><span>All label</span><input class="form-control" name="sale_rent_all_label" maxlength="60" value="<?= e((string) ($marketplaceSaleRentConfig['all_label'] ?? 'Sale & rent')) ?>"></label>
+                            <label><span>Sale label</span><input class="form-control" name="sale_label" maxlength="60" value="<?= e((string) ($marketplaceSaleRentConfig['sale_label'] ?? 'For sale')) ?>"></label>
+                            <label><span>Rent label</span><input class="form-control" name="rent_label" maxlength="60" value="<?= e((string) ($marketplaceSaleRentConfig['rent_label'] ?? 'For rent')) ?>"></label>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('map') ?></span><div><strong>All Locations</strong><small>Use the active canonical locations catalog in the public discovery filter.</small></div></div>
+                        <div class="config-field-grid">
+                            <label class="config-check-field"><input type="checkbox" name="locations_enabled" value="1" <?= !empty($marketplaceLocationsConfig['enabled']) ? 'checked' : '' ?>><span>Enable location selector</span></label>
+                            <label><span>All locations label</span><input class="form-control" name="locations_all_label" maxlength="60" value="<?= e((string) ($marketplaceLocationsConfig['all_label'] ?? 'All locations')) ?>"></label>
+                        </div>
+                    </section>
+
+                    <section class="marketplace-config-section">
+                        <div class="marketplace-config-section__head"><span><?= app_icon('grid') ?></span><div><strong>Grid Layout</strong><small>Control desktop columns, pagination size and result-count visibility. Tablet/mobile remain responsive.</small></div></div>
+                        <div class="config-field-grid">
+                            <label><span>Desktop columns</span><select class="form-select" name="grid_columns"><?php foreach ([2,3,4] as $gridColumnOption): ?><option value="<?= $gridColumnOption ?>" <?= (int) ($marketplaceGridConfig['columns'] ?? 3) === $gridColumnOption ? 'selected' : '' ?>><?= $gridColumnOption ?> columns</option><?php endforeach; ?></select></label>
+                            <label><span>Items per page</span><select class="form-select" name="grid_page_size"><?php foreach ([6,9,12,16,18,24,30,36,48] as $size): ?><option value="<?= $size ?>" <?= (int) ($marketplaceGridConfig['page_size'] ?? 18) === $size ? 'selected' : '' ?>><?= $size ?> items</option><?php endforeach; ?></select></label>
+                            <label class="config-check-field"><input type="checkbox" name="grid_show_result_count" value="1" <?= !empty($marketplaceGridConfig['show_result_count']) ? 'checked' : '' ?>><span>Show result count in Hero</span></label>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="config-dialog__notice" data-marketplace-config-notice hidden aria-live="polite"></div>
+                <footer class="config-dialog__footer">
+                    <button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button>
+                    <button class="btn btn-primary" type="submit" data-marketplace-config-submit>Save configuration</button>
+                </footer>
+            </form>
+        </dialog>
+        <script src="<?= e(asset('js/marketplace-config-v109.js')) ?>"></script>
+    <?php endif; ?>
 
     <div class="workspace-stats" aria-label="Workspace summary">
         <?php foreach ($stats as $stat): ?>
@@ -1237,17 +1466,6 @@ $renderActions = static function (array $row) use (
             </div>
         <?php endif; ?>
 
-        <?php if ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
-            <div class="workspace-bulk-bar">
-                <form action="<?= e(url('/dashboard/pages')) ?>" method="post" data-workspace-form>
-                    <?= csrf_field() ?>
-                    <input name="title" maxlength="191" placeholder="New page title" aria-label="New page title" required>
-                    <input name="slug" maxlength="160" placeholder="url-slug (optional)" aria-label="Page URL slug">
-                    <button type="submit">Create draft page</button>
-                </form>
-            </div>
-        <?php endif; ?>
-
         <div class="workspace-table-wrap">
             <table class="workspace-table">
                 <thead>
@@ -1257,7 +1475,7 @@ $renderActions = static function (array $row) use (
                                 <input type="checkbox" data-bulk-toggle aria-label="Select all records on this page">
                             </th>
                         <?php endif; ?>
-                        <?php if ($showAdminMarketplaceNumbers): ?>
+                        <?php if ($showAdminRowNumbers): ?>
                             <th scope="col" class="workspace-table__number">No</th>
                         <?php endif; ?>
                         <?php foreach ($columns as $label): ?>
@@ -1269,7 +1487,7 @@ $renderActions = static function (array $row) use (
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showAdminMarketplaceNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
+                            <td colspan="<?= e((string) (count($columns) + 1 + ($bulkMode ? 1 : 0) + ($showAdminRowNumbers ? 1 : 0))) ?>" class="workspace-empty workspace-empty--contextual">
                                 <span class="workspace-empty__icon"><?= app_icon((string) ($emptyState['icon'] ?? 'search')) ?></span>
                                 <strong><?= e((string) ($emptyState['title'] ?? 'No records found')) ?></strong>
                                 <span><?= e((string) ($emptyState['detail'] ?? 'Records matching this section and search will appear here.')) ?></span>
@@ -1290,12 +1508,17 @@ $renderActions = static function (array $row) use (
                                         >
                                     </td>
                                 <?php endif; ?>
-                                <?php if ($showAdminMarketplaceNumbers): ?>
+                                <?php if ($showAdminRowNumbers): ?>
                                     <td class="workspace-table__number"><?= e((string) (((max(1, $page) - 1) * $perPage) + $rowIndex + 1)) ?></td>
                                 <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
                                     <td>
-                                        <?php if (
+                                        <?php if ($showAdminPageNumbers && $key === 'title'): ?>
+                                            <a
+                                                class="workspace-table__title-link"
+                                                href="<?= e(url('/dashboard/pages/' . (int) ($row['id'] ?? 0) . '/edit')) ?>"
+                                            ><?= e((string) ($row[$key] ?? '—')) ?></a>
+                                        <?php elseif (
                                             $adminEditorResource !== null
                                             && $adminEditorTitleKey !== null
                                             && $key === $adminEditorTitleKey

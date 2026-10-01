@@ -85,6 +85,29 @@ final class AdminManagementController
         ], 201);
     }
 
+    public function updatePlan(
+        Request $request,
+        string $id
+    ): Response {
+        return $this->execute(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException(
+                    'A valid plan ID is required.'
+                );
+            }
+
+            (new FinanceManagementService())->updatePlan(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'plan_id' => (int) $id,
+                'message' => 'Subscription plan updated.',
+            ];
+        });
+    }
+
     public function updatePlanStatus(Request $request, string $id): Response
     {
         return $this->execute(function () use ($request, $id): array {
@@ -409,6 +432,62 @@ final class AdminManagementController
                 'message' => 'Frontend appearance reset to Barama defaults.',
             ];
         });
+    }
+
+    public function updateMarketplacePageConfiguration(Request $request, string $page): Response
+    {
+        try {
+            return $this->execute(function () use ($request, $page): array {
+                $input = $request->all();
+                $files = $request->files();
+                $storage = new SiteMediaStorageService();
+                $page = strtolower(trim($page));
+
+                if (!in_array($page, ['properties', 'projects', 'companies'], true)) {
+                    throw new InvalidArgumentException('Unknown marketplace page.');
+                }
+
+                $image = $files['hero_image_file'] ?? null;
+                if (is_array($image) && (int) ($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $stored = $storage->store($image, 'marketplace_' . $page . '_hero_image');
+                    $input['uploaded_image_uuid'] = $stored['uuid'];
+                }
+
+                $slider = $files['hero_slider_files'] ?? null;
+                if (is_array($slider)) {
+                    $stored = $storage->storeMany($slider, 'marketplace_' . $page . '_hero_slider');
+                    $input['uploaded_slider_uuids'] = array_map(
+                        static fn (array $item): string => (string) $item['uuid'],
+                        $stored
+                    );
+                }
+
+                $video = $files['hero_video_file'] ?? null;
+                if (is_array($video) && (int) ($video['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $stored = $storage->store($video, 'marketplace_' . $page . '_hero_video');
+                    $input['uploaded_video_uuid'] = $stored['uuid'];
+                }
+
+                (new SiteContentManagementService())->updateMarketplacePage($page, $input);
+
+                return [
+                    'page' => $page,
+                    'message' => ucfirst($page) . ' page configuration updated.',
+                ];
+            });
+        } catch (\Throwable $exception) {
+            error_log(
+                '[Barama Marketplace Configuration] '
+                . $exception::class
+                . ': '
+                . $exception->getMessage()
+            );
+
+            return Response::json([
+                'ok' => false,
+                'message' => 'Marketplace page configuration could not be saved. Please retry or review the server error log.',
+            ], 500);
+        }
     }
 
     public function updateHomepageFeature(Request $request, string $feature): Response

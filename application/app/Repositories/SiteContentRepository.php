@@ -67,6 +67,14 @@ final class SiteContentRepository
             $homepage['section_order'] = $defaults['homepage']['section_order'];
         }
 
+        $marketplacePages = [];
+        foreach ($defaults['marketplace_pages'] as $pageKey => $pageDefaults) {
+            $rawPage = is_array($decoded['marketplace_pages'][$pageKey] ?? null)
+                ? $decoded['marketplace_pages'][$pageKey]
+                : [];
+            $marketplacePages[$pageKey] = array_replace_recursive($pageDefaults, $rawPage);
+        }
+
         $rawAbout = is_array($decoded['about'] ?? null)
             ? $decoded['about']
             : [];
@@ -130,6 +138,7 @@ final class SiteContentRepository
 
         self::$cache = [
             'homepage' => $homepage,
+            'marketplace_pages' => $marketplacePages,
             'about' => $about,
             'contact' => $contact,
             'navigation' => $navigation,
@@ -376,6 +385,140 @@ final class SiteContentRepository
                         'button_label' => 'Subscribe',
                         'success_message' => 'Thank you. You are subscribed to Barama updates.',
                         'consent_text' => 'You can unsubscribe from future updates at any time.',
+                    ],
+                ],
+            ],
+            'marketplace_pages' => [
+                'properties' => [
+                    'hero' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Property Marketplace',
+                        'title' => 'Find Your Property',
+                        'description' => 'Search approved sale and rental listings by location, property type, bedrooms, and budget.',
+                        'background' => [
+                            'type' => 'color',
+                            'color_preset' => 'ocean',
+                            'overlay_strength' => 38,
+                            'image_source' => 'auto',
+                            'image_url' => '',
+                            'image_media_uuid' => '',
+                            'slider_images' => [],
+                            'slider_style' => 'fade',
+                            'slider_interval' => 6000,
+                            'slider_autoplay' => true,
+                            'video_source' => 'url',
+                            'video_url' => '',
+                            'video_media_uuid' => '',
+                            'youtube_url' => '',
+                        ],
+                    ],
+                    'search' => [
+                        'enabled' => true,
+                        'placeholder' => 'Property, company, reference, location',
+                        'button_label' => 'Search',
+                    ],
+                    'sale_rent' => [
+                        'enabled' => true,
+                        'all_label' => 'Sale & rent',
+                        'sale_label' => 'For sale',
+                        'rent_label' => 'For rent',
+                    ],
+                    'locations' => [
+                        'enabled' => true,
+                        'all_label' => 'All locations',
+                    ],
+                    'grid' => [
+                        'columns' => 3,
+                        'page_size' => 18,
+                        'show_result_count' => true,
+                    ],
+                ],
+                'projects' => [
+                    'hero' => [
+                        'enabled' => true,
+                        'eyebrow' => 'New Developments',
+                        'title' => 'Explore Approved Projects',
+                        'description' => 'Discover published developments by location, project type, and construction stage.',
+                        'background' => [
+                            'type' => 'color',
+                            'color_preset' => 'violet',
+                            'overlay_strength' => 38,
+                            'image_source' => 'auto',
+                            'image_url' => '',
+                            'image_media_uuid' => '',
+                            'slider_images' => [],
+                            'slider_style' => 'fade',
+                            'slider_interval' => 6000,
+                            'slider_autoplay' => true,
+                            'video_source' => 'url',
+                            'video_url' => '',
+                            'video_media_uuid' => '',
+                            'youtube_url' => '',
+                        ],
+                    ],
+                    'search' => [
+                        'enabled' => true,
+                        'placeholder' => 'Project, company, location',
+                        'button_label' => 'Search',
+                    ],
+                    'sale_rent' => [
+                        'enabled' => true,
+                        'all_label' => 'Sale & rent',
+                        'sale_label' => 'For sale',
+                        'rent_label' => 'For rent',
+                    ],
+                    'locations' => [
+                        'enabled' => true,
+                        'all_label' => 'All locations',
+                    ],
+                    'grid' => [
+                        'columns' => 3,
+                        'page_size' => 16,
+                        'show_result_count' => true,
+                    ],
+                ],
+                'companies' => [
+                    'hero' => [
+                        'enabled' => true,
+                        'eyebrow' => 'Company Directory',
+                        'title' => 'Discover Approved Companies',
+                        'description' => 'Explore public profiles with published projects and active marketplace inventory.',
+                        'background' => [
+                            'type' => 'color',
+                            'color_preset' => 'emerald',
+                            'overlay_strength' => 38,
+                            'image_source' => 'auto',
+                            'image_url' => '',
+                            'image_media_uuid' => '',
+                            'slider_images' => [],
+                            'slider_style' => 'fade',
+                            'slider_interval' => 6000,
+                            'slider_autoplay' => true,
+                            'video_source' => 'url',
+                            'video_url' => '',
+                            'video_media_uuid' => '',
+                            'youtube_url' => '',
+                        ],
+                    ],
+                    'search' => [
+                        'enabled' => true,
+                        'placeholder' => 'Company or location',
+                        'button_label' => 'Search',
+                    ],
+                    'sale_rent' => [
+                        'enabled' => true,
+                        'all_label' => 'Sale & rent',
+                        'sale_label' => 'For sale',
+                        'rent_label' => 'For rent',
+                    ],
+                    'locations' => [
+                        'enabled' => true,
+                        'all_label' => 'All locations',
+                    ],
+                    'grid' => [
+                        'columns' => 3,
+                        'page_size' => 16,
+                        'show_result_count' => true,
                     ],
                 ],
             ],

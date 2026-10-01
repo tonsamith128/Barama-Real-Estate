@@ -5,6 +5,9 @@ $rows = is_array($inventory['rows'] ?? null) ? $inventory['rows'] : [];
 $page = (int) ($inventory['page'] ?? 1);
 $pages = (int) ($inventory['pages'] ?? 1);
 $total = (int) ($inventory['total'] ?? 0);
+$gridConfig = is_array($pageConfig['grid'] ?? null) ? $pageConfig['grid'] : [];
+$gridColumns = max(2, min(4, (int) ($gridConfig['columns'] ?? 3)));
+$showResultCount = !array_key_exists('show_result_count', $gridConfig) || !empty($gridConfig['show_result_count']);
 
 $locationLabels = [];
 foreach ($locations as $location) {
@@ -22,25 +25,14 @@ $activeFilters = array_filter([
         : '',
 ]);
 ?>
-<section class="marketplace-hero marketplace-hero--discovery marketplace-hero--projects">
-    <div class="container app-container">
-        <div class="marketplace-hero__grid">
-            <div><span class="eyebrow">New Developments</span><h1>Explore Approved Projects</h1><p>Discover published developments by location, project type, and construction stage.</p></div>
-            <div class="marketplace-hero__count"><strong><?= e(number_format($total)) ?></strong><span>Published project<?= $total === 1 ? '' : 's' ?></span></div>
-        </div>
-
-        <form class="discovery-filter discovery-filter--compact" method="get" data-marketplace-filter>
-            <div class="discovery-filter__primary">
-                <label class="discovery-filter__search"><span><?= app_icon('search') ?></span><input name="q" value="<?= e((string) ($filters['q'] ?? '')) ?>" placeholder="Project, company, location" aria-label="Search projects"></label>
-                <label><span class="visually-hidden">Type</span><select name="type"><option value="">All project types</option><?php foreach ($projectTypes as $type): ?><option value="<?= e($type) ?>" <?= ($filters['type'] ?? '') === $type ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $type))) ?></option><?php endforeach; ?></select></label>
-                <label><span class="visually-hidden">Location</span><select name="location"><option value="">All locations</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (string) ($filters['location'] ?? '') === (string) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
-                <label><span class="visually-hidden">Stage</span><select name="completion"><option value="">All stages</option><?php foreach ($completionStatuses as $status): ?><option value="<?= e($status) ?>" <?= ($filters['completion'] ?? '') === $status ? 'selected' : '' ?>><?= e(ucwords(str_replace('_', ' ', $status))) ?></option><?php endforeach; ?></select></label>
-                <button class="btn btn-primary" type="submit"><?= app_icon('search') ?><span>Search</span></button>
-            </div>
-            <div class="discovery-filter__links"><a href="<?= e(url('/projects')) ?>">Clear filters</a><a href="<?= e(url('/company')) ?>">Browse companies</a></div>
-        </form>
-    </div>
-</section>
+<?= \Barama\Core\View::partial('components/marketplace-page-hero', [
+    'pageKind' => 'projects',
+    'pageConfig' => $pageConfig ?? [],
+    'total' => $total,
+    'filters' => $filters,
+    'locations' => $locations,
+    'projectTypes' => $projectTypes, 'completionStatuses' => $completionStatuses
+]) ?>
 
 <section class="marketplace-section marketplace-results">
     <div class="container app-container">
@@ -51,7 +43,7 @@ $activeFilters = array_filter([
         <?php if ($rows === []): ?>
             <div class="marketplace-empty marketplace-empty--premium"><?= app_icon('layers') ?><strong>No projects match these filters.</strong><span>Try another location, stage, or project type.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/projects')) ?>">View all projects</a></div>
         <?php else: ?>
-            <div class="inventory-grid inventory-grid--projects"><?php foreach ($rows as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
+            <div class="inventory-grid inventory-grid--projects marketplace-config-grid marketplace-config-grid--<?= e((string) $gridColumns) ?>"><?php foreach ($rows as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
         <?php endif; ?>
 
         <?php if ($pages > 1): ?><nav class="marketplace-pagination" aria-label="Project result pages"><span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span><div>

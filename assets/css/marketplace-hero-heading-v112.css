@@ -1,0 +1,123 @@
+/* BARAMA_MARKETPLACE_HERO_HEADING_FLOW_V112 */
+/*
+ * Preserve the existing Hero layout.
+ * Short headings take their natural single-line width when room exists.
+ * Long headings wrap automatically at the available responsive width.
+ * Overlay strength classes preserve the 0–85% configured hero opacity
+ * without shipping inline style attributes.
+ * Grid column modifier classes preserve the bounded 2–4 column setting
+ * while the canonical app stylesheet keeps responsive breakpoints intact.
+ */
+@media (min-width: 768px) {
+    .marketplace-config-hero .marketplace-hero__grid > div:first-child {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .marketplace-config-hero .marketplace-hero__grid h1 {
+        width: max-content;
+        max-width: min(100%, 780px);
+        white-space: normal;
+        text-wrap: wrap;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .marketplace-config-hero .marketplace-hero__grid h1 {
+        width: auto;
+        max-width: 100%;
+        white-space: normal;
+        text-wrap: wrap;
+    }
+}
+
+.marketplace-config-grid--2{--marketplace-grid-columns:2}
+.marketplace-config-grid--3{--marketplace-grid-columns:3}
+.marketplace-config-grid--4{--marketplace-grid-columns:4}
+
+.marketplace-config-hero__overlay--0{--marketplace-hero-overlay:0.00}
+.marketplace-config-hero__overlay--1{--marketplace-hero-overlay:0.01}
+.marketplace-config-hero__overlay--2{--marketplace-hero-overlay:0.02}
+.marketplace-config-hero__overlay--3{--marketplace-hero-overlay:0.03}
+.marketplace-config-hero__overlay--4{--marketplace-hero-overlay:0.04}
+.marketplace-config-hero__overlay--5{--marketplace-hero-overlay:0.05}
+.marketplace-config-hero__overlay--6{--marketplace-hero-overlay:0.06}
+.marketplace-config-hero__overlay--7{--marketplace-hero-overlay:0.07}
+.marketplace-config-hero__overlay--8{--marketplace-hero-overlay:0.08}
+.marketplace-config-hero__overlay--9{--marketplace-hero-overlay:0.09}
+.marketplace-config-hero__overlay--10{--marketplace-hero-overlay:0.10}
+.marketplace-config-hero__overlay--11{--marketplace-hero-overlay:0.11}
+.marketplace-config-hero__overlay--12{--marketplace-hero-overlay:0.12}
+.marketplace-config-hero__overlay--13{--marketplace-hero-overlay:0.13}
+.marketplace-config-hero__overlay--14{--marketplace-hero-overlay:0.14}
+.marketplace-config-hero__overlay--15{--marketplace-hero-overlay:0.15}
+.marketplace-config-hero__overlay--16{--marketplace-hero-overlay:0.16}
+.marketplace-config-hero__overlay--17{--marketplace-hero-overlay:0.17}
+.marketplace-config-hero__overlay--18{--marketplace-hero-overlay:0.18}
+.marketplace-config-hero__overlay--19{--marketplace-hero-overlay:0.19}
+.marketplace-config-hero__overlay--20{--marketplace-hero-overlay:0.20}
+.marketplace-config-hero__overlay--21{--marketplace-hero-overlay:0.21}
+.marketplace-config-hero__overlay--22{--marketplace-hero-overlay:0.22}
+.marketplace-config-hero__overlay--23{--marketplace-hero-overlay:0.23}
+.marketplace-config-hero__overlay--24{--marketplace-hero-overlay:0.24}
+.marketplace-config-hero__overlay--25{--marketplace-hero-overlay:0.25}
+.marketplace-config-hero__overlay--26{--marketplace-hero-overlay:0.26}
+.marketplace-config-hero__overlay--27{--marketplace-hero-overlay:0.27}
+.marketplace-config-hero__overlay--28{--marketplace-hero-overlay:0.28}
+.marketplace-config-hero__overlay--29{--marketplace-hero-overlay:0.29}
+.marketplace-config-hero__overlay--30{--marketplace-hero-overlay:0.30}
+.marketplace-config-hero__overlay--31{--marketplace-hero-overlay:0.31}
+.marketplace-config-hero__overlay--32{--marketplace-hero-overlay:0.32}
+.marketplace-config-hero__overlay--33{--marketplace-hero-overlay:0.33}
+.marketplace-config-hero__overlay--34{--marketplace-hero-overlay:0.34}
+.marketplace-config-hero__overlay--35{--marketplace-hero-overlay:0.35}
+.marketplace-config-hero__overlay--36{--marketplace-hero-overlay:0.36}
+.marketplace-config-hero__overlay--37{--marketplace-hero-overlay:0.37}
+.marketplace-config-hero__overlay--38{--marketplace-hero-overlay:0.38}
+.marketplace-config-hero__overlay--39{--marketplace-hero-overlay:0.39}
+.marketplace-config-hero__overlay--40{--marketplace-hero-overlay:0.40}
+.marketplace-config-hero__overlay--41{--marketplace-hero-overlay:0.41}
+.marketplace-config-hero__overlay--42{--marketplace-hero-overlay:0.42}
+.marketplace-config-hero__overlay--43{--marketplace-hero-overlay:0.43}
+.marketplace-config-hero__overlay--44{--marketplace-hero-overlay:0.44}
+.marketplace-config-hero__overlay--45{--marketplace-hero-overlay:0.45}
+.marketplace-config-hero__overlay--46{--marketplace-hero-overlay:0.46}
+.marketplace-config-hero__overlay--47{--marketplace-hero-overlay:0.47}
+.marketplace-config-hero__overlay--48{--marketplace-hero-overlay:0.48}
+.marketplace-config-hero__overlay--49{--marketplace-hero-overlay:0.49}
+.marketplace-config-hero__overlay--50{--marketplace-hero-overlay:0.50}
+.marketplace-config-hero__overlay--51{--marketplace-hero-overlay:0.51}
+.marketplace-config-hero__overlay--52{--marketplace-hero-overlay:0.52}
+.marketplace-config-hero__overlay--53{--marketplace-hero-overlay:0.53}
+.marketplace-config-hero__overlay--54{--marketplace-hero-overlay:0.54}
+.marketplace-config-hero__overlay--55{--marketplace-hero-overlay:0.55}
+.marketplace-config-hero__overlay--56{--marketplace-hero-overlay:0.56}
+.marketplace-config-hero__overlay--57{--marketplace-hero-overlay:0.57}
+.marketplace-config-hero__overlay--58{--marketplace-hero-overlay:0.58}
+.marketplace-config-hero__overlay--59{--marketplace-hero-overlay:0.59}
+.marketplace-config-hero__overlay--60{--marketplace-hero-overlay:0.60}
+.marketplace-config-hero__overlay--61{--marketplace-hero-overlay:0.61}
+.marketplace-config-hero__overlay--62{--marketplace-hero-overlay:0.62}
+.marketplace-config-hero__overlay--63{--marketplace-hero-overlay:0.63}
+.marketplace-config-hero__overlay--64{--marketplace-hero-overlay:0.64}
+.marketplace-config-hero__overlay--65{--marketplace-hero-overlay:0.65}
+.marketplace-config-hero__overlay--66{--marketplace-hero-overlay:0.66}
+.marketplace-config-hero__overlay--67{--marketplace-hero-overlay:0.67}
+.marketplace-config-hero__overlay--68{--marketplace-hero-overlay:0.68}
+.marketplace-config-hero__overlay--69{--marketplace-hero-overlay:0.69}
+.marketplace-config-hero__overlay--70{--marketplace-hero-overlay:0.70}
+.marketplace-config-hero__overlay--71{--marketplace-hero-overlay:0.71}
+.marketplace-config-hero__overlay--72{--marketplace-hero-overlay:0.72}
+.marketplace-config-hero__overlay--73{--marketplace-hero-overlay:0.73}
+.marketplace-config-hero__overlay--74{--marketplace-hero-overlay:0.74}
+.marketplace-config-hero__overlay--75{--marketplace-hero-overlay:0.75}
+.marketplace-config-hero__overlay--76{--marketplace-hero-overlay:0.76}
+.marketplace-config-hero__overlay--77{--marketplace-hero-overlay:0.77}
+.marketplace-config-hero__overlay--78{--marketplace-hero-overlay:0.78}
+.marketplace-config-hero__overlay--79{--marketplace-hero-overlay:0.79}
+.marketplace-config-hero__overlay--80{--marketplace-hero-overlay:0.80}
+.marketplace-config-hero__overlay--81{--marketplace-hero-overlay:0.81}
+.marketplace-config-hero__overlay--82{--marketplace-hero-overlay:0.82}
+.marketplace-config-hero__overlay--83{--marketplace-hero-overlay:0.83}
+.marketplace-config-hero__overlay--84{--marketplace-hero-overlay:0.84}
+.marketplace-config-hero__overlay--85{--marketplace-hero-overlay:0.85}

@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use Barama\Services\PageContentSanitizer;
+
 $title = trim((string) ($page['title'] ?? ''));
 $excerpt = trim((string) ($page['excerpt'] ?? ''));
 $contentText = trim((string) ($page['content_text'] ?? ''));
+$contentHtml = PageContentSanitizer::toHtml($contentText);
 $slug = trim((string) ($page['slug'] ?? ''));
-$paragraphs = preg_split('/\R{2,}/u', $contentText) ?: [];
 
 $legalSlugs = [
     'privacy',
@@ -36,6 +38,7 @@ if ($displayDate !== '') {
 $wordCount = str_word_count(strip_tags($contentText));
 $readingMinutes = max(1, (int) ceil($wordCount / 220));
 ?>
+<link rel="stylesheet" href="<?= e(asset('css/cms-rich-content-v116.css') . '?v=116') ?>">
 <main class="cms-page">
     <div class="container app-container">
         <nav class="detail-breadcrumb cms-page__breadcrumb" aria-label="Breadcrumb">
@@ -67,16 +70,11 @@ $readingMinutes = max(1, (int) ceil($wordCount / 220));
             </header>
 
             <div class="content-page__layout">
-                <div class="content-page__body">
-                    <?php if ($paragraphs === [] || $contentText === ''): ?>
+                <div class="content-page__body cms-rich-content">
+                    <?php if ($contentHtml === ''): ?>
                         <p class="content-page__empty">This page does not contain published content yet.</p>
                     <?php else: ?>
-                        <?php foreach ($paragraphs as $paragraph): ?>
-                            <?php $paragraph = trim((string) $paragraph); ?>
-                            <?php if ($paragraph !== ''): ?>
-                                <p><?= nl2br(e($paragraph)) ?></p>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
+                        <?= $contentHtml ?>
                     <?php endif; ?>
                 </div>
 

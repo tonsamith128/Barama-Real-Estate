@@ -53,7 +53,7 @@ $router->get('/company/{slug}', [CompanyController::class, 'show']);
 $router->get('/about', [BuiltInPageController::class, 'about']);
 $router->get('/contact', [BuiltInPageController::class, 'contact']);
 $router->post('/contact/messages', [ContactMessageController::class, 'store'], $csrf);
-$router->get('/pages/{slug}', [CmsController::class, 'show']);
+$router->get('/pages/{slug}', [CmsController::class, 'legacy']);
 
 $router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
 $router->post('/subscribe', [NewsletterController::class, 'store'], $csrf);
@@ -368,6 +368,11 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
 $router->post(
+    '/dashboard/plans/{id}',
+    [AdminManagementController::class, 'updatePlan'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
     '/dashboard/plans/{id}/status',
     [AdminManagementController::class, 'updatePlanStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
@@ -532,6 +537,12 @@ $router->post(
     [AdminManagementController::class, 'toggleAppearanceFeature'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
+$router->post(
+    '/dashboard/marketplace-pages/{page}/configuration',
+    [AdminManagementController::class, 'updateMarketplacePageConfiguration'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+
 $router->get(
     '/dashboard/homepage',
     [DashboardController::class, 'homepage'],
@@ -626,6 +637,16 @@ $router->post(
     '/dashboard/amenities/{id}/status',
     [AdminManagementController::class, 'updateAmenityStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/pages/new',
+    [DashboardController::class, 'createPageBuilder'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->get(
+    '/dashboard/pages/{id}/edit',
+    [DashboardController::class, 'editPageBuilder'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
 );
 $router->post(
     '/dashboard/pages',
@@ -725,3 +746,10 @@ $router->get('/health', static function (Request $request): Response {
         'version' => APP_VERSION,
     ]);
 });
+
+/*
+ * Keep this final one-segment route last.
+ * All canonical Barama routes above take precedence; remaining root slugs
+ * are resolved as managed CMS pages.
+ */
+$router->get('/{slug}', [CmsController::class, 'show']);

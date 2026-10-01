@@ -329,6 +329,43 @@ final class FinanceRepository
         return (int) Database::connection()->lastInsertId();
     }
 
+    /** @param array<string,mixed> $data */
+    public function updatePlan(int $id, array $data): void
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE subscription_plans
+             SET name = :name,
+                 slug = :slug,
+                 description = :description,
+                 billing_interval = :billing_interval,
+                 price = :price,
+                 currency = :currency,
+                 listing_limit = :listing_limit,
+                 property_limit = :property_limit,
+                 project_limit = :project_limit,
+                 team_member_limit = :team_member_limit,
+                 featured_listing_limit = :featured_listing_limit,
+                 sort_order = :sort_order,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+
+        $statement->execute([
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'description' => $data['description'],
+            'billing_interval' => $data['billing_interval'],
+            'price' => $data['price'],
+            'currency' => $data['currency'],
+            'listing_limit' => $data['listing_limit'],
+            'property_limit' => $data['property_limit'],
+            'project_limit' => $data['project_limit'],
+            'team_member_limit' => $data['team_member_limit'],
+            'featured_listing_limit' => $data['featured_listing_limit'],
+            'sort_order' => $data['sort_order'],
+            'id' => $id,
+        ]);
+    }
     public function setPlanStatus(int $id, string $status): void
     {
         $statement = Database::connection()->prepare(

@@ -89,6 +89,128 @@ final class SiteContentManagementService
     }
 
     /** @param array<string,mixed> $input */
+    public function updateMarketplacePage(string $page, array $input): void
+    {
+        $actor = $this->administrator();
+        $page = strtolower(trim($page));
+
+        if (!in_array($page, ['properties', 'projects', 'companies'], true)) {
+            throw new InvalidArgumentException('Unknown marketplace page.');
+        }
+
+        $repository = new SiteContentRepository();
+        $config = $repository->get();
+        $defaults = SiteContentRepository::defaults()['marketplace_pages'][$page];
+        $current = is_array($config['marketplace_pages'][$page] ?? null)
+            ? array_replace_recursive($defaults, $config['marketplace_pages'][$page])
+            : $defaults;
+
+        $hero = $this->validatedHero(
+            $input,
+            is_array($current['hero'] ?? null) ? $current['hero'] : [],
+            true
+        );
+        $hero['enabled'] = $this->boolean(
+            $input['hero_enabled'] ?? '0'
+        );
+
+        $search = [
+            'enabled' => $this->boolean(
+                $input['search_enabled'] ?? '0'
+            ),
+            'placeholder' => $this->text(
+                $input['search_placeholder'] ?? $current['search']['placeholder'] ?? '',
+                120,
+                'Marketplace search placeholder'
+            ),
+            'button_label' => $this->text(
+                $input['search_button_label'] ?? $current['search']['button_label'] ?? 'Search',
+                40,
+                'Marketplace search button label'
+            ),
+        ];
+
+        $saleRent = [
+            'enabled' => $this->boolean(
+                $input['sale_rent_enabled'] ?? '0'
+            ),
+            'all_label' => $this->text(
+                $input['sale_rent_all_label'] ?? $current['sale_rent']['all_label'] ?? 'Sale & rent',
+                60,
+                'Sale and rent label'
+            ),
+            'sale_label' => $this->text(
+                $input['sale_label'] ?? $current['sale_rent']['sale_label'] ?? 'For sale',
+                60,
+                'Sale label'
+            ),
+            'rent_label' => $this->text(
+                $input['rent_label'] ?? $current['sale_rent']['rent_label'] ?? 'For rent',
+                60,
+                'Rent label'
+            ),
+        ];
+
+        $locations = [
+            'enabled' => $this->boolean(
+                $input['locations_enabled'] ?? '0'
+            ),
+            'all_label' => $this->text(
+                $input['locations_all_label'] ?? $current['locations']['all_label'] ?? 'All locations',
+                60,
+                'All locations label'
+            ),
+        ];
+
+        $columns = filter_var(
+            $input['grid_columns'] ?? $current['grid']['columns'] ?? 3,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 2, 'max_range' => 4]]
+        );
+        $columns = $columns === false ? 3 : (int) $columns;
+
+        $pageSize = filter_var(
+            $input['grid_page_size'] ?? $current['grid']['page_size'] ?? 18,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 6, 'max_range' => 48]]
+        );
+        $pageSize = $pageSize === false ? (int) ($defaults['grid']['page_size'] ?? 18) : (int) $pageSize;
+
+        $grid = [
+            'columns' => $columns,
+            'page_size' => $pageSize,
+            'show_result_count' => $this->boolean(
+                $input['grid_show_result_count'] ?? '0'
+            ),
+        ];
+
+        $config['marketplace_pages'][$page] = [
+            'hero' => $hero,
+            'search' => $search,
+            'sale_rent' => $saleRent,
+            'locations' => $locations,
+            'grid' => $grid,
+        ];
+
+        $repository->save($config);
+
+        try {
+            $this->audit(
+                'admin.marketplace_page_configuration_updated',
+                (int) $actor['id'],
+                ['page' => $page]
+            );
+        } catch (\Throwable $exception) {
+            error_log(
+                '[Barama Marketplace Configuration Audit] '
+                . $exception::class
+                . ': '
+                . $exception->getMessage()
+            );
+        }
+    }
+
+    /** @param array<string,mixed> $input */
     public function createNavigation(array $input): string
     {
         $actor = $this->administrator();
@@ -214,8 +336,11 @@ final class SiteContentManagementService
     }
 
     /** @param array<string,mixed> $input @param array<string,mixed> $current @return array<string,mixed> */
-    private function validatedHero(array $input, array $current): array
-    {
+    private function validatedHero(
+        array $input,
+        array $current,
+        bool $allowAutomaticImageDefaults = false
+    ): array {
         $defaults = SiteContentRepository::defaults()['homepage']['hero'];
         $current = array_replace_recursive($defaults, $current);
         $background = is_array($current['background'] ?? null)
@@ -254,22 +379,32 @@ final class SiteContentManagementService
         $overlay = $overlay === false ? 44 : (int) $overlay;
 
         $imageSource = strtolower(trim((string) ($input['image_source'] ?? $background['image_source'] ?? 'url')));
-        $imageSource = in_array($imageSource, ['url', 'media'], true) ? $imageSource : 'url';
-        $imageUrl = $this->optionalExternalUrl(
-            $input['image_url'] ?? $background['image_url'] ?? '',
-            'Hero image URL'
-        );
-        $imageMediaUuid = $this->uuid(
-            $input['uploaded_image_uuid']
-                ?? $input['image_media_uuid']
-                ?? $background['image_media_uuid']
-                ?? '',
-            'Hero image media'
-        );
+        $allowedImageSources = $allowAutomaticImageDefaults
+            ? ['auto', 'url', 'media']
+            : ['url', 'media'];
+        $imageSource = in_array($imageSource, $allowedImageSources, true)
+            ? $imageSource
+            : ($allowAutomaticImageDefaults ? 'auto' : 'url');
 
         if (!empty($input['uploaded_image_uuid'])) {
             $imageSource = 'media';
         }
+
+        $imageUrl = $imageSource === 'url'
+            ? $this->optionalExternalUrl(
+                $input['image_url'] ?? $background['image_url'] ?? '',
+                'Hero image URL'
+            )
+            : '';
+        $imageMediaUuid = $imageSource === 'media'
+            ? $this->uuid(
+                $input['uploaded_image_uuid']
+                    ?? $input['image_media_uuid']
+                    ?? $background['image_media_uuid']
+                    ?? '',
+                'Hero image media'
+            )
+            : '';
 
         $sliderStyle = strtolower(trim((string) ($input['slider_style'] ?? $background['slider_style'] ?? 'fade')));
 
@@ -354,7 +489,7 @@ final class SiteContentManagementService
             $videoSource = 'media';
         }
 
-        if ($type === 'image') {
+        if ($type === 'image' && !$allowAutomaticImageDefaults) {
             if ($imageSource === 'media' && $imageMediaUuid === '') {
                 throw new InvalidArgumentException('Upload or select a hero image before enabling Image Background.');
             }
@@ -363,7 +498,7 @@ final class SiteContentManagementService
             }
         }
 
-        if ($type === 'slider' && $sliderImages === []) {
+        if ($type === 'slider' && $sliderImages === [] && !$allowAutomaticImageDefaults) {
             throw new InvalidArgumentException('Add at least one image before enabling Image Slider Background.');
         }
 
