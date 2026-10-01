@@ -25,6 +25,18 @@ jobs:
       - name: Build exact customer package
         run: php tools/build-package.php
 
+      - name: Diagnostic — package metadata
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip metadata
+
+      - name: Diagnostic — package structure
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip structure
+
+      - name: Diagnostic — installer mail parity
+        continue-on-error: true
+        run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip mail
+
       - name: Diagnostic — asset parity
         continue-on-error: true
         run: php tools/package-compliance-diagnostics.php build/Barama-Real-Estate-$(cat VERSION).zip assets
