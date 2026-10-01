@@ -84,17 +84,16 @@ final class InstallerService
             );
         }
 
-        $css = glob(BASE_PATH . '/assets/css/*.css') ?: [];
-        $js = glob(BASE_PATH . '/assets/js/*.js') ?: [];
-
         $checks[] = $this->requiredCheck(
             'Canonical stylesheet',
-            count($css) === 1 && basename((string) ($css[0] ?? '')) === 'app.css',
+            is_file(BASE_PATH . '/assets/css/app.css')
+                && is_readable(BASE_PATH . '/assets/css/app.css'),
             'assets/css/app.css'
         );
         $checks[] = $this->requiredCheck(
             'Canonical JavaScript',
-            count($js) === 1 && basename((string) ($js[0] ?? '')) === 'app.js',
+            is_file(BASE_PATH . '/assets/js/app.js')
+                && is_readable(BASE_PATH . '/assets/js/app.js'),
             'assets/js/app.js'
         );
 
@@ -986,19 +985,16 @@ SQL);
             'Required runtime folders are writable.'
         );
 
-        $css = glob(BASE_PATH . '/assets/css/*.css') ?: [];
-        $js = glob(BASE_PATH . '/assets/js/*.js') ?: [];
-
         $checks[] = $this->healthCheck(
             'Canonical stylesheet',
-            count($css) === 1
-                && basename((string) ($css[0] ?? '')) === 'app.css',
+            is_file(BASE_PATH . '/assets/css/app.css')
+                && is_readable(BASE_PATH . '/assets/css/app.css'),
             'assets/css/app.css'
         );
         $checks[] = $this->healthCheck(
             'Canonical JavaScript',
-            count($js) === 1
-                && basename((string) ($js[0] ?? '')) === 'app.js',
+            is_file(BASE_PATH . '/assets/js/app.js')
+                && is_readable(BASE_PATH . '/assets/js/app.js'),
             'assets/js/app.js'
         );
 
