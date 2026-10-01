@@ -407,7 +407,7 @@ foreach ($entries as $entry) {
 
     if (
         preg_match_all(
-            '#https://([A-Za-z0-9.-]+)#i',
+            '#https://((?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)#i',
             $content,
             $matches
         ) === false
