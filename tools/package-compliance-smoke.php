@@ -379,7 +379,7 @@ foreach ($entries as $entry) {
 
     if (
         preg_match_all(
-            '#https://([A-Za-z0-9.-]+)#i',
+            '#https://([A-Za-z0-9][A-Za-z0-9.-]*)#i',
             $content,
             $matches
         ) === false
@@ -388,7 +388,7 @@ foreach ($entries as $entry) {
     }
 
     foreach ($matches[1] ?? [] as $host) {
-        $host = strtolower((string) $host);
+        $host = strtolower(rtrim((string) $host, '.'));
         $foundHosts[$host] = true;
         $allowed = false;
 
