@@ -6,6 +6,7 @@ namespace Barama\Services;
 
 use Barama\Core\Database;
 use Barama\Repositories\MediaRepository;
+use Barama\Repositories\WorkspaceSettingsRepository;
 use Barama\Support\IdGenerator;
 use DomainException;
 use finfo;
@@ -76,6 +77,14 @@ final class SiteMediaStorageService
         $maxBytes = max(
             1,
             (int) config('domain.site_media_max_upload_bytes', 50 * 1024 * 1024)
+        );
+
+        $adminStorageConfig = (new AdminSettingsService())->storageConfig();
+        $adminLimitMb = (int) $adminStorageConfig['site_media_upload_limit_mb'];
+
+        $maxBytes = min(
+            $maxBytes,
+            $adminLimitMb * 1024 * 1024
         );
 
         if ($size < 1 || $size > $maxBytes) {

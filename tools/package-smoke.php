@@ -149,6 +149,7 @@ try {
 
     $approvedCssFiles = [
         'assets/css/app.css',
+        'assets/css/admin-settings-v120.css',
         'assets/css/cms-rich-content-v116.css',
         'assets/css/error-page-v114.css',
         'assets/css/finance-plans-v139.css',
@@ -160,6 +161,7 @@ try {
     ];
     $approvedJsFiles = [
         'assets/js/app.js',
+        'assets/js/admin-settings-v120.js',
         'assets/js/finance-plans-v139.js',
         'assets/js/marketplace-config-v109.js',
         'assets/js/page-builder-v116.js',
