@@ -45,6 +45,7 @@ $settingsTabs = [
 
 if ($workspace === 'dashboard') {
     $settingsTabs[] = ['key' => 'storage', 'label' => 'Storage', 'icon' => 'image'];
+    $settingsTabs[] = ['key' => 'cloud-storage', 'label' => 'Cloud Storage', 'icon' => 'layers'];
 }
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-settings-v120.css') . '?v=120') ?>">
