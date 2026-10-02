@@ -1,123 +1,26 @@
 <?php
-$cloud = is_array($cloudStorage ?? null) ? $cloudStorage : [];
-$providers = is_array($cloud['providers'] ?? null) ? $cloud['providers'] : [];
-$s3 = is_array($providers['s3'] ?? null) ? $providers['s3'] : [];
-$r2 = is_array($providers['r2'] ?? null) ? $providers['r2'] : [];
-$activeDisk = (string) ($cloud['active_disk'] ?? 'private');
-$base = '/dashboard/settings';
-$settingsTabs = [
-    ['key' => 'basic', 'label' => 'Basic', 'icon' => 'settings'],
-    ['key' => 'profile', 'label' => 'Profile', 'icon' => 'user'],
-    ['key' => 'privacy', 'label' => 'Privacy', 'icon' => 'shield'],
-    ['key' => 'security', 'label' => 'Security', 'icon' => 'lock'],
-    ['key' => 'storage', 'label' => 'Storage', 'icon' => 'image'],
-    ['key' => 'cloud-storage', 'label' => 'Cloud Storage', 'icon' => 'layers'],
-];
+$cloud=is_array($cloudStorage??null)?$cloudStorage:[];$providers=is_array($cloud['providers']??null)?$cloud['providers']:[];$active=(string)($cloud['active_disk']??'private');$base='/dashboard/settings';
+$tabs=[['basic','Basic','settings'],['profile','Profile','user'],['privacy','Privacy','shield'],['security','Security','lock'],['storage','Storage','image'],['cloud-storage','Cloud Storage','layers']];
+$status=static fn(array $p)=>!empty($p['tested'])?['Connected','is-good']:(!empty($p['configured'])?['Needs test','is-warn']:['Not configured','is-warn']);
+$meta=[
+'s3'=>['name'=>'Amazon S3','icon'=>'layers','sub'=>'AWS object storage','intro'=>'Use an IAM access key scoped to this bucket and object prefix.','fields'=>[['bucket','Bucket','layers','Example: barama-production-media',63,1,1],['region','AWS region','globe','Example: ap-southeast-1',32,1,1,'ap-southeast-1'],['access_key_id','Access key ID','user','Credential rotation is supported.',128,1,0],['secret_access_key','Secret access key','lock','Required for first configuration.',256,0,0,'',1],['prefix','Object prefix','tag','Separates Barama objects inside a shared bucket.',160,0,1,'barama/']]],
+'r2'=>['name'=>'Cloudflare R2','icon'=>'globe','sub'=>'Cloudflare object storage','intro'=>'Use an R2 API token credential with object read, write, and delete access.','fields'=>[['account_id','Account ID','user','32-character Cloudflare account identifier.',32,1,1],['bucket','Bucket','layers','Your Cloudflare R2 bucket name.',63,1,1],['access_key_id','Access key ID','user','Generated from an R2 API token.',128,1,0],['secret_access_key','Secret access key','lock','Required for first configuration.',256,0,0,'',1],['prefix','Object prefix','tag','Separates Barama objects inside a shared bucket.',160,0,1,'barama/']]]];
+foreach($meta as $k=>&$m){$m['data']=is_array($providers[$k]??null)?$providers[$k]:[];$m['status']=$status($m['data']);}unset($m);
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-v120.css') . '?v=120') ?>">
-
-<section class="workspace-page barama-settings" data-admin-settings>
-    <header class="barama-settings__hero">
-        <div class="barama-settings__hero-copy">
-            <span class="eyebrow">ADMIN SETTINGS</span>
-            <h1>Cloud Storage</h1>
-            <p>Configure Amazon S3 or Cloudflare R2 for managed media while keeping local storage available as a safe fallback.</p>
-        </div>
-        <div class="barama-settings__workspace-badge">
-            <span class="barama-settings__workspace-icon"><?= app_icon('layers') ?></span>
-            <span><strong>Admin Dashboard</strong><small>Cloud Storage configuration</small></span>
-        </div>
-    </header>
-
-    <nav class="barama-settings-tabs" aria-label="Settings sections">
-        <?php foreach ($settingsTabs as $tab): ?>
-            <?php $isActive = $tab['key'] === 'cloud-storage'; ?>
-            <a href="<?= e(url($base . '/' . $tab['key'])) ?>" class="<?= $isActive ? 'is-active' : '' ?>" <?= $isActive ? 'aria-current="page"' : '' ?>>
-                <span><?= app_icon($tab['icon']) ?></span><strong><?= e($tab['label']) ?></strong>
-            </a>
-        <?php endforeach; ?>
-    </nav>
-
-    <?php if (!empty($saved) || !empty($error)): ?>
-        <div class="barama-settings-toast <?= !empty($error) ? 'is-error' : 'is-success' ?>" role="status" aria-live="polite" data-settings-toast>
-            <span class="barama-settings-toast__icon"><?= app_icon(!empty($error) ? 'alert' : 'check') ?></span>
-            <span>
-                <strong><?= !empty($error) ? 'Cloud storage was not changed' : 'Cloud storage updated' ?></strong>
-                <small><?= e(!empty($error) ? (string) $error : ($savedMessage !== '' ? $savedMessage : 'The storage configuration is now active.')) ?></small>
-            </span>
-            <button type="button" aria-label="Dismiss notification" data-settings-toast-close>×</button>
-        </div>
-    <?php endif; ?>
-
-    <div class="barama-settings-storage-overview">
-        <article><span><?= app_icon('layers') ?></span><div><small>Active disk</small><strong><?= e($activeDisk === 'private' ? 'Local storage' : strtoupper($activeDisk)) ?></strong></div></article>
-        <article><span><?= app_icon('check') ?></span><div><small>Amazon S3</small><strong class="<?= !empty($s3['tested']) ? 'is-good' : 'is-warn' ?>"><?= !empty($s3['tested']) ? 'Tested' : (!empty($s3['configured']) ? 'Needs test' : 'Not configured') ?></strong></div></article>
-        <article><span><?= app_icon('check') ?></span><div><small>Cloudflare R2</small><strong class="<?= !empty($r2['tested']) ? 'is-good' : 'is-warn' ?>"><?= !empty($r2['tested']) ? 'Tested' : (!empty($r2['configured']) ? 'Needs test' : 'Not configured') ?></strong></div></article>
-        <article><span><?= app_icon('shield') ?></span><div><small>Credential protection</small><strong class="<?= !empty($cloud['openssl_available']) && !empty($cloud['app_key_available']) ? 'is-good' : 'is-warn' ?>"><?= !empty($cloud['openssl_available']) && !empty($cloud['app_key_available']) ? 'Encrypted' : 'Needs attention' ?></strong></div></article>
-    </div>
-
-    <div class="barama-settings-grid barama-settings-grid--wide">
-        <section class="barama-settings-card">
-            <div class="barama-settings-card__head">
-                <span class="barama-settings-card__icon"><?= app_icon('layers') ?></span>
-                <div><h2>Active storage</h2><p>New uploads use this disk. Existing media keeps its original disk and is not rewritten when you switch providers.</p></div>
-            </div>
-            <form action="<?= e(url($base . '/cloud-storage')) ?>" method="post" class="barama-settings-form" data-settings-form>
-                <?= csrf_field() ?><input type="hidden" name="cloud_action" value="activate">
-                <label class="barama-settings-field">
-                    <span>Storage disk</span><small>S3 or R2 must pass a real write/read/delete connection test before activation.</small>
-                    <div class="barama-settings-control"><i><?= app_icon('layers') ?></i><select name="disk">
-                        <option value="private" <?= $activeDisk === 'private' ? 'selected' : '' ?>>Local private storage</option>
-                        <option value="s3" <?= $activeDisk === 's3' ? 'selected' : '' ?> <?= empty($s3['tested']) ? 'disabled' : '' ?>>Amazon S3<?= empty($s3['tested']) ? ' — test required' : '' ?></option>
-                        <option value="r2" <?= $activeDisk === 'r2' ? 'selected' : '' ?> <?= empty($r2['tested']) ? 'disabled' : '' ?>>Cloudflare R2<?= empty($r2['tested']) ? ' — test required' : '' ?></option>
-                    </select></div>
-                </label>
-                <div class="barama-settings-actions"><button class="btn btn-primary" type="submit"><?= app_icon('check') ?> Save active storage</button></div>
-            </form>
-        </section>
-
-        <aside class="barama-settings-card">
-            <div class="barama-settings-card__head"><span class="barama-settings-card__icon"><?= app_icon('shield') ?></span><div><h2>Safety rules</h2><p>Cloud storage is fail-closed and keeps existing media bound to its original disk.</p></div></div>
-            <div class="barama-settings-summary">
-                <div><span>Secrets at rest</span><strong>AES-256-GCM</strong></div>
-                <div><span>Provider endpoints</span><strong>Derived HTTPS only</strong></div>
-                <div><span>Cloud activation</span><strong>Connection test required</strong></div>
-                <div><span>Existing media</span><strong>Disk preserved</strong></div>
-            </div>
-        </aside>
-    </div>
-
-    <div class="barama-settings-grid barama-settings-grid--equal">
-        <section class="barama-settings-card">
-            <div class="barama-settings-card__head"><span class="barama-settings-card__icon"><?= app_icon('layers') ?></span><div><h2>Amazon S3</h2><p>Use an IAM access key scoped to this bucket and object prefix.</p></div></div>
-            <form action="<?= e(url($base . '/cloud-storage')) ?>" method="post" class="barama-settings-form" data-settings-form autocomplete="off">
-                <?= csrf_field() ?><input type="hidden" name="provider" value="s3">
-                <div class="barama-settings-fields">
-                    <label class="barama-settings-field"><span>Bucket</span><small><?= !empty($s3['location_locked']) ? 'Locked because this provider already stores media.' : 'Example: barama-production-media' ?></small><div class="barama-settings-control <?= !empty($s3['location_locked']) ? 'is-readonly' : '' ?>"><i><?= app_icon('layers') ?></i><input name="bucket" value="<?= e((string)($s3['bucket'] ?? '')) ?>" maxlength="63" required <?= !empty($s3['location_locked']) ? 'readonly' : '' ?>></div></label>
-                    <label class="barama-settings-field"><span>AWS region</span><small><?= !empty($s3['location_locked']) ? 'Locked with the existing S3 media location.' : 'Example: ap-southeast-1' ?></small><div class="barama-settings-control <?= !empty($s3['location_locked']) ? 'is-readonly' : '' ?>"><i><?= app_icon('globe') ?></i><input name="region" value="<?= e((string)($s3['region'] ?? 'ap-southeast-1')) ?>" maxlength="32" required <?= !empty($s3['location_locked']) ? 'readonly' : '' ?>></div></label>
-                    <label class="barama-settings-field"><span>Access key ID</span><small>Credential rotation is allowed without moving existing objects.</small><div class="barama-settings-control"><i><?= app_icon('user') ?></i><input name="access_key_id" value="<?= e((string)($s3['access_key_id'] ?? '')) ?>" maxlength="128" required autocomplete="off"></div></label>
-                    <label class="barama-settings-field"><span>Secret access key</span><small><?= !empty($s3['has_secret']) ? 'A secret is saved securely. Leave blank to keep it.' : 'Required for the first configuration.' ?></small><div class="barama-settings-control"><i><?= app_icon('lock') ?></i><input type="password" name="secret_access_key" value="" maxlength="256" <?= empty($s3['has_secret']) ? 'required' : '' ?> autocomplete="new-password"></div></label>
-                    <label class="barama-settings-field"><span>Object prefix</span><small><?= !empty($s3['location_locked']) ? 'Locked while S3 owns existing media.' : 'Separates Barama objects inside a shared bucket.' ?></small><div class="barama-settings-control <?= !empty($s3['location_locked']) ? 'is-readonly' : '' ?>"><i><?= app_icon('tag') ?></i><input name="prefix" value="<?= e((string)($s3['prefix'] ?? 'barama/')) ?>" maxlength="160" <?= !empty($s3['location_locked']) ? 'readonly' : '' ?>></div></label>
-                </div>
-                <div class="barama-settings-actions"><button class="btn btn-primary" type="submit" name="cloud_action" value="save_provider"><?= app_icon('check') ?> Save S3 configuration</button><?php if (!empty($s3['configured'])): ?><button class="btn btn-outline-secondary" type="submit" name="cloud_action" value="test"><?= app_icon('check') ?> Test S3 connection</button><?php endif; ?></div>
-            </form>
-        </section>
-
-        <section class="barama-settings-card">
-            <div class="barama-settings-card__head"><span class="barama-settings-card__icon"><?= app_icon('globe') ?></span><div><h2>Cloudflare R2</h2><p>Use an R2 API token credential with object read/write/delete access.</p></div></div>
-            <form action="<?= e(url($base . '/cloud-storage')) ?>" method="post" class="barama-settings-form" data-settings-form autocomplete="off">
-                <?= csrf_field() ?><input type="hidden" name="provider" value="r2">
-                <div class="barama-settings-fields">
-                    <label class="barama-settings-field"><span>Account ID</span><small><?= !empty($r2['location_locked']) ? 'Locked because this provider already stores media.' : '32-character Cloudflare account identifier.' ?></small><div class="barama-settings-control <?= !empty($r2['location_locked']) ? 'is-readonly' : '' ?>"><i><?= app_icon('user') ?></i><input name="account_id" value="<?= e((string)($r2['account_id'] ?? '')) ?>" maxlength="32" required autocomplete="off" <?= !empty($r2['location_locked']) ? 'readonly' : '' ?>></div></label>
-                    <label class="barama-settings-field"><span>Bucket</span><small><?= !empty($r2['location_locked']) ? 'Locked with the existing R2 media location.' : 'Your Cloudflare R2 bucket name.' ?></small><div class="barama-settings-control <?= !empty($r2['location_locked']) ? 'is-readonly' : '' ?>"><i><?= app_icon('layers') ?></i><input name="bucket" value="<?= e((string)($r2['bucket'] ?? '')) ?>" maxlength="63" required <?= !empty($r2['location_locked']) ? 'readonly' : '' ?>></div></label>
-                    <label class="barama-settings-field"><span>Access key ID</span><small>Generated from an R2 API token; safe credential rotation is supported.</small><div class="barama-settings-control"><i><?= app_icon('user') ?></i><input name="access_key_id" value="<?= e((string)($r2['access_key_id'] ?? '')) ?>" maxlength="128" required autocomplete="off"></div></label>
-                    <label class="barama-settings-field"><span>Secret access key</span><small><?= !empty($r2['has_secret']) ? 'A secret is saved securely. Leave blank to keep it.' : 'Required for the first configuration.' ?></small><div class="barama-settings-control"><i><?= app_icon('lock') ?></i><input type="password" name="secret_access_key" value="" maxlength="256" <?= empty($r2['has_secret']) ? 'required' : '' ?> autocomplete="new-password"></div></label>
-                    <label class="barama-settings-field"><span>Object prefix</span><small><?= !empty($r2['location_locked']) ? 'Locked while R2 owns existing media.' : 'Separates Barama objects inside a shared bucket.' ?></small><div class="barama-settings-control <?= !empty($r2['location_locked']) ? 'is-readonly' : '' ?>"><i><?= app_icon('tag') ?></i><input name="prefix" value="<?= e((string)($r2['prefix'] ?? 'barama/')) ?>" maxlength="160" <?= !empty($r2['location_locked']) ? 'readonly' : '' ?>></div></label>
-                </div>
-                <div class="barama-settings-actions"><button class="btn btn-primary" type="submit" name="cloud_action" value="save_provider"><?= app_icon('check') ?> Save R2 configuration</button><?php if (!empty($r2['configured'])): ?><button class="btn btn-outline-secondary" type="submit" name="cloud_action" value="test"><?= app_icon('check') ?> Test R2 connection</button><?php endif; ?></div>
-            </form>
-        </section>
-    </div>
+<link rel="stylesheet" href="<?= e(asset('css/admin-settings-v120.css').'?v=120') ?>">
+<style>
+.cloud-storage-ui .cloud-provider-card{overflow:hidden;padding:0}.cloud-storage-ui .cloud-provider-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--settings-border)}.cloud-storage-ui .cloud-provider-head>div{display:flex;gap:12px;align-items:flex-start}.cloud-storage-ui .cloud-provider-head h2{margin:1px 0 4px;font-size:18px}.cloud-storage-ui .cloud-provider-head p{margin:0;color:var(--settings-muted);font-size:12px}.cloud-storage-ui .cloud-default-pill,.cloud-storage-ui .cloud-status,.cloud-storage-ui .cloud-built-in{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}.cloud-storage-ui .cloud-default-pill{color:#fff;background:#6b93ff}.cloud-storage-ui .cloud-status,.cloud-storage-ui .cloud-built-in{background:color-mix(in srgb,currentColor 10%,transparent)}.cloud-storage-ui .cloud-status i{width:6px;height:6px;border-radius:50%;background:currentColor}.cloud-storage-ui .cloud-provider-table{width:100%;border-collapse:collapse}.cloud-storage-ui .cloud-provider-table th,.cloud-storage-ui .cloud-provider-table td{padding:16px 22px;border-bottom:1px solid var(--settings-border);text-align:left;vertical-align:middle}.cloud-storage-ui .cloud-provider-table th{padding-top:11px;padding-bottom:11px;color:var(--settings-muted);background:color-mix(in srgb,var(--settings-panel-strong) 60%,transparent);font-size:10px;text-transform:uppercase;letter-spacing:.07em}.cloud-storage-ui .cloud-provider-table tr:last-child td{border-bottom:0}.cloud-storage-ui .cloud-provider-table tr.is-default{background:color-mix(in srgb,var(--settings-accent) 7%,transparent)}.cloud-storage-ui .cloud-provider{display:flex;align-items:center;gap:12px}.cloud-storage-ui .cloud-provider-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--settings-accent);background:var(--settings-accent-soft)}.cloud-storage-ui .cloud-provider-icon svg{width:19px}.cloud-storage-ui .cloud-provider strong,.cloud-storage-ui .cloud-provider small{display:block}.cloud-storage-ui .cloud-provider small{margin-top:3px;color:var(--settings-muted);font-size:10px}.cloud-storage-ui .cloud-actions{text-align:right}.cloud-storage-ui .cloud-provider-table .btn{min-height:36px;border-radius:10px;font-size:11px;font-weight:800}.cloud-storage-ui .cloud-provider-table .btn:disabled{opacity:.45}.cloud-storage-ui .cloud-safety{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--settings-border)}.cloud-storage-ui .cloud-safety span{padding:12px 14px;border-left:1px solid var(--settings-border);color:var(--settings-muted);font-size:9.5px;text-align:center}.cloud-storage-ui .cloud-safety span:first-child{border-left:0}.cloud-provider-popover{inset:0;margin:auto;width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 40px);padding:0;border:1px solid var(--settings-border);border-radius:22px;color:var(--bs-body-color);background:var(--bs-body-bg,#0b1524);box-shadow:0 30px 90px rgba(0,0,0,.4);overflow:hidden}.cloud-provider-popover::backdrop{background:rgba(2,8,23,.72);backdrop-filter:blur(7px)}.cloud-provider-popover .cloud-pop-head{display:flex;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--settings-border);background:var(--settings-panel)}.cloud-provider-popover .cloud-pop-title{display:flex;gap:12px}.cloud-provider-popover .cloud-pop-title h2{margin:0;font-size:19px}.cloud-provider-popover .cloud-pop-title p{margin:4px 0 0;color:var(--settings-muted);font-size:11px}.cloud-provider-popover .cloud-pop-close{width:36px;height:36px;border:1px solid var(--settings-border);border-radius:10px;color:var(--settings-muted);background:transparent;font-size:22px}.cloud-provider-popover .cloud-pop-form{max-height:calc(100vh - 150px);overflow:auto;padding:22px}.cloud-provider-popover .cloud-pop-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}.cloud-provider-popover .cloud-wide{grid-column:1/-1}@media(max-width:768px){.cloud-storage-ui .cloud-provider-head{align-items:flex-start;flex-direction:column}.cloud-storage-ui .cloud-provider-table thead{display:none}.cloud-storage-ui .cloud-provider-table,.cloud-storage-ui .cloud-provider-table tbody,.cloud-storage-ui .cloud-provider-table tr,.cloud-storage-ui .cloud-provider-table td{display:block;width:100%}.cloud-storage-ui .cloud-provider-table tr{padding:12px 16px;border-bottom:1px solid var(--settings-border)}.cloud-storage-ui .cloud-provider-table td{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0;border:0}.cloud-storage-ui .cloud-provider-table td:before{content:attr(data-label);color:var(--settings-muted);font-size:9px;font-weight:800;text-transform:uppercase}.cloud-storage-ui .cloud-actions{text-align:left}.cloud-storage-ui .cloud-safety{grid-template-columns:1fr 1fr}.cloud-provider-popover .barama-settings-fields{grid-template-columns:1fr}.cloud-provider-popover .cloud-wide{grid-column:auto}}
+</style>
+<section class="workspace-page barama-settings cloud-storage-ui" data-admin-settings>
+<header class="barama-settings__hero"><div class="barama-settings__hero-copy"><span class="eyebrow">ADMIN SETTINGS</span><h1>Cloud Storage</h1><p>Select one default provider for new uploads. Configure S3 or R2 only when needed; existing media stays on its original disk.</p></div><div class="barama-settings__workspace-badge"><span class="barama-settings__workspace-icon"><?= app_icon('layers') ?></span><span><strong>Admin Dashboard</strong><small>Storage provider management</small></span></div></header>
+<nav class="barama-settings-tabs" aria-label="Settings sections"><?php foreach($tabs as [$k,$l,$i]):$on=$k==='cloud-storage';?><a href="<?= e(url($base.'/'.$k)) ?>" class="<?= $on?'is-active':'' ?>" <?= $on?'aria-current="page"':'' ?>><span><?= app_icon($i) ?></span><strong><?= e($l) ?></strong></a><?php endforeach;?></nav>
+<?php if(!empty($saved)||!empty($error)):?><div class="barama-settings-toast <?= !empty($error)?'is-error':'is-success' ?>" role="status" aria-live="polite" data-settings-toast><span class="barama-settings-toast__icon"><?= app_icon(!empty($error)?'alert':'check') ?></span><span><strong><?= !empty($error)?'Cloud storage was not changed':'Cloud storage updated' ?></strong><small><?= e(!empty($error)?(string)$error:($savedMessage!==''?$savedMessage:'Storage configuration saved.')) ?></small></span><button type="button" aria-label="Dismiss notification" data-settings-toast-close>×</button></div><?php endif;?>
+<section class="barama-settings-card cloud-provider-card"><header class="cloud-provider-head"><div><span class="barama-settings-card__icon"><?= app_icon('layers') ?></span><div><h2>Storage providers</h2><p>Choose a default provider and keep credentials inside its Configure popup.</p></div></div><span class="cloud-default-pill"><?= app_icon('check') ?> Default: <?= e($active==='s3'?'Amazon S3':($active==='r2'?'Cloudflare R2':'Local storage')) ?></span></header>
+<table class="cloud-provider-table"><thead><tr><th>Provider</th><th>Status</th><th>Default</th><th class="cloud-actions">Actions</th></tr></thead><tbody>
+<tr class="<?= $active==='private'?'is-default':'' ?>"><td data-label="Provider"><div class="cloud-provider"><span class="cloud-provider-icon"><?= app_icon('image') ?></span><span><strong>Local Storage</strong><small>Server-managed private storage</small></span></div></td><td data-label="Status"><span class="cloud-status is-good"><i></i>Ready</span></td><td data-label="Default"><?php if($active==='private'):?><span class="cloud-default-pill"><?= app_icon('check') ?> Default</span><?php else:?><form action="<?= e(url($base.'/cloud-storage')) ?>" method="post"><?= csrf_field() ?><input type="hidden" name="cloud_action" value="activate"><input type="hidden" name="disk" value="private"><button class="btn btn-sm btn-outline-secondary" type="submit">Set default</button></form><?php endif;?></td><td data-label="Actions" class="cloud-actions"><span class="cloud-built-in"><?= app_icon('check') ?> Built in</span></td></tr>
+<?php foreach($meta as $k=>$m):$p=$m['data'];[$sl,$sc]=$m['status'];?><tr class="<?= $active===$k?'is-default':'' ?>"><td data-label="Provider"><div class="cloud-provider"><span class="cloud-provider-icon"><?= app_icon($m['icon']) ?></span><span><strong><?= e($m['name']) ?></strong><small><?= e($m['sub']) ?></small></span></div></td><td data-label="Status"><span class="cloud-status <?= e($sc) ?>"><i></i><?= e($sl) ?></span></td><td data-label="Default"><?php if($active===$k):?><span class="cloud-default-pill"><?= app_icon('check') ?> Default</span><?php else:?><form action="<?= e(url($base.'/cloud-storage')) ?>" method="post"><?= csrf_field() ?><input type="hidden" name="cloud_action" value="activate"><input type="hidden" name="disk" value="<?= e($k) ?>"><button class="btn btn-sm btn-outline-secondary" type="submit" <?= empty($p['tested'])?'disabled title="Test this provider before making it default."':'' ?>>Set default</button></form><?php endif;?></td><td data-label="Actions" class="cloud-actions"><button class="btn btn-sm btn-primary" type="button" popovertarget="cloud-provider-<?= e($k) ?>"><?= app_icon('settings') ?> Configure</button></td></tr><?php endforeach;?></tbody></table>
+<footer class="cloud-safety"><span>AES-256-GCM credentials</span><span>Derived HTTPS endpoints</span><span>Test before activation</span><span>Existing media preserved</span></footer></section>
+<?php foreach($meta as $k=>$m):$p=$m['data'];?><div class="cloud-provider-popover" id="cloud-provider-<?= e($k) ?>" popover="auto"><header class="cloud-pop-head"><div class="cloud-pop-title"><span class="barama-settings-card__icon"><?= app_icon($m['icon']) ?></span><div><h2>Configure <?= e($m['name']) ?></h2><p><?= e($m['intro']) ?></p></div></div><button type="button" class="cloud-pop-close" popovertarget="cloud-provider-<?= e($k) ?>" popovertargetaction="hide" aria-label="Close">×</button></header><form action="<?= e(url($base.'/cloud-storage')) ?>" method="post" class="barama-settings-form cloud-pop-form" data-settings-form autocomplete="off"><?= csrf_field() ?><input type="hidden" name="provider" value="<?= e($k) ?>"><div class="barama-settings-fields">
+<?php foreach($m['fields'] as $f):[$n,$l,$i,$h,$max,$req,$lockable]=$f;$def=$f[7]??'';$secret=$f[8]??false;$locked=$lockable&&!empty($p['location_locked']);$has=!empty($p['has_secret']);$value=$secret?'':(string)($p[$n]??$def);$help=$secret&&$has?'A secret is saved securely. Leave blank to keep it.':($locked?'Locked because this provider already stores media.':$h);?><label class="barama-settings-field <?= $n==='prefix'?'cloud-wide':'' ?>"><span><?= e($l) ?></span><small><?= e($help) ?></small><div class="barama-settings-control <?= $locked?'is-readonly':'' ?>"><i><?= app_icon($i) ?></i><input type="<?= $secret?'password':'text' ?>" name="<?= e($n) ?>" value="<?= e($value) ?>" maxlength="<?= (int)$max ?>" <?= ($req||($secret&&!$has))?'required':'' ?> <?= $locked?'readonly':'' ?> autocomplete="<?= $secret?'new-password':'off' ?>"></div></label><?php endforeach;?></div><div class="cloud-pop-actions"><button type="button" class="btn btn-outline-secondary" popovertarget="cloud-provider-<?= e($k) ?>" popovertargetaction="hide">Cancel</button><?php if(!empty($p['configured'])):?><button class="btn btn-outline-secondary" type="submit" name="cloud_action" value="test"><?= app_icon('check') ?> Test connection</button><?php endif;?><button class="btn btn-primary" type="submit" name="cloud_action" value="save_provider"><?= app_icon('check') ?> Save configuration</button></div></form></div><?php endforeach;?>
 </section>
-
-<script src="<?= e(asset('js/admin-settings-v120.js') . '?v=120') ?>" defer></script>
+<script src="<?= e(asset('js/admin-settings-v120.js').'?v=120') ?>" defer></script>
