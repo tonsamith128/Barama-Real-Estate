@@ -26,6 +26,7 @@ use Barama\Http\Controllers\NewsletterController;
 use Barama\Http\Controllers\PublicMediaController;
 use Barama\Http\Controllers\PaymentWebhookController;
 use Barama\Http\Controllers\SeoController;
+use Barama\Http\Controllers\SystemHealthController;
 use Barama\Http\Middleware\AuthMiddleware;
 use Barama\Http\Middleware\CsrfMiddleware;
 use Barama\Http\Middleware\GuestMiddleware;
@@ -739,13 +740,9 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 
-$router->get('/health', static function (Request $request): Response {
-    return Response::json([
-        'status' => 'ok',
-        'application' => (string) config('app.name'),
-        'version' => APP_VERSION,
-    ]);
-});
+/* BARAMA_PUBLIC_SYSTEM_STATUS_V1126 */
+$router->get('/health', [SystemHealthController::class, 'index']);
+$router->get('/health.json', [SystemHealthController::class, 'machine']);
 
 /*
  * Keep this final one-segment route last.

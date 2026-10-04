@@ -1,0 +1,603 @@
+/*
+ * Barama Real Estate — Public System Status v1.1.26
+ * Customer-facing status only. No diagnostic/internal data is rendered here.
+ */
+
+.system-status-body {
+    --status-green: #16a777;
+    --status-green-soft: color-mix(in srgb, var(--status-green) 12%, transparent);
+    --status-amber: #d68b18;
+    --status-amber-soft: color-mix(in srgb, var(--status-amber) 13%, transparent);
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 15% 2%, color-mix(in srgb, var(--barama-primary) 8%, transparent), transparent 34rem),
+        var(--barama-bg);
+    color: var(--barama-text);
+}
+
+html[data-bs-theme="dark"] .system-status-body {
+    --status-green: #52d6aa;
+    --status-amber: #f0b45a;
+    background:
+        radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--barama-primary) 13%, transparent), transparent 36rem),
+        #0b1320;
+}
+
+.system-status-container {
+    width: min(1180px, calc(100% - 2rem));
+    margin-inline: auto;
+}
+
+.system-status-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid color-mix(in srgb, var(--barama-border) 74%, transparent);
+    background: color-mix(in srgb, var(--barama-bg) 88%, transparent);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.system-status-header__inner {
+    display: flex;
+    min-height: 76px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.system-status-brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.system-status-brand img {
+    display: block;
+    width: 126px;
+    height: auto;
+}
+
+.system-status-header__actions {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+}
+
+.system-status-home-link,
+.system-status-theme-toggle {
+    border: 1px solid var(--barama-border);
+    background: color-mix(in srgb, var(--barama-surface) 88%, transparent);
+    color: var(--barama-text);
+    box-shadow: 0 7px 22px color-mix(in srgb, var(--barama-text) 6%, transparent);
+}
+
+.system-status-home-link {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    gap: .55rem;
+    border-radius: 12px;
+    padding: .65rem .85rem;
+    font-size: .84rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.system-status-home-link svg,
+.system-status-theme-toggle svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+}
+
+.system-status-theme-toggle {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 12px;
+    padding: 0;
+    cursor: pointer;
+}
+
+.system-status-home-link:hover,
+.system-status-theme-toggle:hover {
+    border-color: color-mix(in srgb, var(--barama-primary) 45%, var(--barama-border));
+    color: var(--barama-primary);
+}
+
+.system-status-main {
+    padding: clamp(3.5rem, 7vw, 6.5rem) 0 5rem;
+}
+
+.system-status-hero__eyebrow,
+.system-status-kicker {
+    color: var(--barama-primary);
+    font-size: .74rem;
+    font-weight: 850;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.system-status-hero__eyebrow {
+    margin: 0 0 1.05rem .15rem;
+}
+
+.system-status-overview {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.45rem;
+    overflow: hidden;
+    border: 1px solid var(--barama-border);
+    border-radius: 28px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--barama-surface) 98%, var(--barama-primary) 2%), var(--barama-surface));
+    padding: clamp(1.5rem, 4vw, 2.4rem);
+    box-shadow: 0 24px 70px color-mix(in srgb, var(--barama-text) 9%, transparent);
+}
+
+.system-status-overview::after {
+    position: absolute;
+    top: -7rem;
+    right: -6rem;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: var(--status-green-soft);
+    content: "";
+    pointer-events: none;
+}
+
+.system-status-overview.is-degraded::after {
+    background: var(--status-amber-soft);
+}
+
+.system-status-overview__signal {
+    position: relative;
+    display: grid;
+    width: 70px;
+    height: 70px;
+    place-items: center;
+    border-radius: 22px;
+    background: var(--status-green-soft);
+    color: var(--status-green);
+}
+
+.system-status-overview.is-degraded .system-status-overview__signal {
+    background: var(--status-amber-soft);
+    color: var(--status-amber);
+}
+
+.system-status-overview__signal::before,
+.system-status-overview__signal::after,
+.system-status-overview__signal span {
+    position: absolute;
+    border-radius: 50%;
+}
+
+.system-status-overview__signal::before {
+    width: 22px;
+    height: 22px;
+    border: 2px solid currentColor;
+    content: "";
+    opacity: .32;
+}
+
+.system-status-overview__signal::after {
+    width: 13px;
+    height: 13px;
+    background: currentColor;
+    content: "";
+    box-shadow: 0 0 0 8px color-mix(in srgb, currentColor 11%, transparent);
+}
+
+.system-status-overview__meta {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    margin-bottom: .55rem;
+    color: var(--barama-muted);
+    font-size: .73rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.system-status-overview__meta > span:first-child {
+    color: var(--status-green);
+}
+
+.system-status-overview.is-degraded .system-status-overview__meta > span:first-child {
+    color: var(--status-amber);
+}
+
+.system-status-overview__checked {
+    padding-left: .85rem;
+    border-left: 1px solid var(--barama-border);
+    letter-spacing: .02em;
+    text-transform: none;
+}
+
+.system-status-overview h1 {
+    max-width: 780px;
+    margin: 0;
+    color: var(--barama-text);
+    font-size: clamp(2rem, 4.4vw, 4.35rem);
+    font-weight: 860;
+    letter-spacing: -.052em;
+    line-height: 1;
+}
+
+.system-status-overview p {
+    max-width: 760px;
+    margin: .9rem 0 0;
+    color: var(--barama-muted);
+    font-size: clamp(.95rem, 1.5vw, 1.08rem);
+    line-height: 1.7;
+}
+
+.system-status-refresh {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    border: 1px solid var(--barama-border);
+    border-radius: 14px;
+    background: var(--barama-surface-soft);
+    color: var(--barama-text);
+    padding: .72rem 1rem;
+    font-size: .82rem;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.system-status-refresh svg {
+    width: 18px;
+    height: 18px;
+}
+
+.system-status-refresh:hover {
+    border-color: color-mix(in srgb, var(--barama-primary) 45%, var(--barama-border));
+    color: var(--barama-primary);
+}
+
+.system-status-section {
+    padding-top: clamp(3rem, 6vw, 5rem);
+}
+
+.system-status-section--compact {
+    padding-top: 1.2rem;
+}
+
+.system-status-section__heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.system-status-section__heading h2,
+.system-status-notice h2,
+.system-status-support h2 {
+    margin: .45rem 0 0;
+    color: var(--barama-text);
+    font-size: clamp(1.35rem, 2.8vw, 2.15rem);
+    font-weight: 840;
+    letter-spacing: -.035em;
+}
+
+.system-status-summary-badge,
+.system-status-service__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .48rem;
+    border-radius: 999px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.system-status-summary-badge {
+    border: 1px solid color-mix(in srgb, var(--status-green) 26%, var(--barama-border));
+    background: var(--status-green-soft);
+    color: var(--status-green);
+    padding: .55rem .78rem;
+    font-size: .75rem;
+}
+
+.system-status-summary-badge.is-degraded {
+    border-color: color-mix(in srgb, var(--status-amber) 30%, var(--barama-border));
+    background: var(--status-amber-soft);
+    color: var(--status-amber);
+}
+
+.system-status-summary-badge > span,
+.system-status-service__badge > span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.system-status-services {
+    overflow: hidden;
+    border: 1px solid var(--barama-border);
+    border-radius: 22px;
+    background: var(--barama-surface);
+    box-shadow: 0 16px 42px color-mix(in srgb, var(--barama-text) 6%, transparent);
+}
+
+.system-status-service {
+    display: flex;
+    min-height: 92px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--barama-border);
+    padding: 1.05rem 1.2rem;
+}
+
+.system-status-service:last-child {
+    border-bottom: 0;
+}
+
+.system-status-service__identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 1rem;
+}
+
+.system-status-service__icon,
+.system-status-notice__icon {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 14px;
+    background: var(--status-green-soft);
+    color: var(--status-green);
+}
+
+.system-status-service__icon {
+    width: 46px;
+    height: 46px;
+}
+
+.system-status-service__icon svg,
+.system-status-notice__icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.system-status-service h3 {
+    margin: 0;
+    color: var(--barama-text);
+    font-size: .98rem;
+    font-weight: 820;
+}
+
+.system-status-service p {
+    margin: .25rem 0 0;
+    color: var(--barama-muted);
+    font-size: .82rem;
+}
+
+.system-status-service__badge {
+    color: var(--status-green);
+    padding: .4rem .68rem;
+    font-size: .74rem;
+}
+
+.system-status-service__badge.is-degraded {
+    color: var(--status-amber);
+}
+
+.system-status-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+    gap: 1rem;
+}
+
+.system-status-notice,
+.system-status-support {
+    border: 1px solid var(--barama-border);
+    border-radius: 22px;
+    background: var(--barama-surface);
+    padding: clamp(1.25rem, 3vw, 1.7rem);
+    box-shadow: 0 16px 42px color-mix(in srgb, var(--barama-text) 5%, transparent);
+}
+
+.system-status-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.system-status-notice__icon {
+    width: 48px;
+    height: 48px;
+}
+
+.system-status-notice__icon.is-degraded {
+    background: var(--status-amber-soft);
+    color: var(--status-amber);
+}
+
+.system-status-notice p,
+.system-status-support p {
+    margin: .65rem 0 0;
+    color: var(--barama-muted);
+    font-size: .86rem;
+    line-height: 1.65;
+}
+
+.system-status-support {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.2rem;
+}
+
+.system-status-support > a {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: .5rem;
+    color: var(--barama-primary);
+    font-size: .84rem;
+    font-weight: 820;
+    text-decoration: none;
+}
+
+.system-status-support > a svg {
+    width: 18px;
+    height: 18px;
+}
+
+.system-status-footer {
+    border-top: 1px solid var(--barama-border);
+    background: color-mix(in srgb, var(--barama-surface) 58%, transparent);
+}
+
+.system-status-footer__inner {
+    display: flex;
+    min-height: 76px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--barama-muted);
+    font-size: .78rem;
+}
+
+.system-status-footer a {
+    color: var(--barama-muted);
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.system-status-footer a:hover {
+    color: var(--barama-primary);
+}
+
+html[data-bs-theme="dark"] .system-status-overview,
+html[data-bs-theme="dark"] .system-status-services,
+html[data-bs-theme="dark"] .system-status-notice,
+html[data-bs-theme="dark"] .system-status-support {
+    border-color: color-mix(in srgb, #557095 42%, transparent);
+    background: linear-gradient(145deg, #121e2f, #0f1928);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .28);
+}
+
+html[data-bs-theme="dark"] .system-status-service {
+    border-color: color-mix(in srgb, #557095 32%, transparent);
+}
+
+html[data-bs-theme="dark"] .system-status-refresh,
+html[data-bs-theme="dark"] .system-status-home-link,
+html[data-bs-theme="dark"] .system-status-theme-toggle {
+    border-color: color-mix(in srgb, #557095 45%, transparent);
+    background: #152236;
+}
+
+@media (max-width: 760px) {
+    .system-status-main {
+        padding-top: 2.6rem;
+    }
+
+    .system-status-overview {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        border-radius: 22px;
+    }
+
+    .system-status-overview__signal {
+        width: 58px;
+        height: 58px;
+        border-radius: 18px;
+    }
+
+    .system-status-refresh {
+        width: 100%;
+    }
+
+    .system-status-section__heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .system-status-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .system-status-container {
+        width: min(100% - 1.25rem, 1180px);
+    }
+
+    .system-status-header__inner {
+        min-height: 68px;
+    }
+
+    .system-status-brand img {
+        width: 112px;
+    }
+
+    .system-status-home-link span {
+        display: none;
+    }
+
+    .system-status-home-link {
+        width: 42px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .system-status-overview__meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: .35rem;
+    }
+
+    .system-status-overview__checked {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .system-status-service {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .system-status-service__badge {
+        padding-left: 3.85rem;
+    }
+
+    .system-status-footer__inner {
+        min-height: 88px;
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        gap: .35rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .system-status-refresh,
+    .system-status-home-link,
+    .system-status-theme-toggle {
+        transition: none !important;
+    }
+}
+
+.system-status-service__icon.is-degraded {
+    background: var(--status-amber-soft);
+    color: var(--status-amber);
+}
