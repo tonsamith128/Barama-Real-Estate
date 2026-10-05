@@ -9,7 +9,7 @@ $pages = (int) ($records['pages'] ?? 1);
 $perPage = (int) ($records['per_page'] ?? 0);
 $perPage = $perPage > 0 ? $perPage : max(1, count($rows));
 $showAdminMarketplaceNumbers = $workspaceType === 'admin'
-    && in_array($activeSection, ['companies', 'projects', 'properties'], true);
+    && in_array($activeSection, ['companies', 'projects', 'properties', 'listings'], true);
 $showAdminPageNumbers = $workspaceType === 'admin' && $activeSection === 'pages';
 $showAdminRowNumbers = $showAdminMarketplaceNumbers || $showAdminPageNumbers;
 $hasMarketplacePageConfiguration = $workspaceType === 'admin'
@@ -1467,7 +1467,9 @@ $renderActions = static function (array $row) use (
         <?php endif; ?>
 
         <div class="workspace-table-wrap">
-            <table class="workspace-table">
+            <table class="workspace-table<?= $workspaceType === 'admin' && $activeSection === 'listings'
+                ? ' workspace-table--admin-listings-v1128'
+                : '' ?>">
                 <thead>
                     <tr>
                         <?php if ($bulkMode): ?>
@@ -1513,7 +1515,28 @@ $renderActions = static function (array $row) use (
                                 <?php endif; ?>
                                 <?php foreach (array_keys($columns) as $key): ?>
                                     <td>
-                                        <?php if ($showAdminPageNumbers && $key === 'title'): ?>
+                                        <?php if (
+                                            $workspaceType === 'admin'
+                                            && $activeSection === 'listings'
+                                            && in_array($key, ['property_title', 'company_name', 'project_name'], true)
+                                        ): ?>
+                                            <?php
+                                            $listingRelation = match ($key) {
+                                                'property_title' => ['resource' => 'property', 'id' => (int) ($row['property_id'] ?? 0)],
+                                                'company_name' => ['resource' => 'company', 'id' => (int) ($row['company_id'] ?? 0)],
+                                                'project_name' => ['resource' => 'project', 'id' => (int) ($row['project_id'] ?? 0)],
+                                            };
+                                            $listingRelationLabel = trim((string) ($row[$key] ?? ''));
+                                            ?>
+                                            <?php if ($listingRelation['id'] > 0 && $listingRelationLabel !== ''): ?>
+                                                <a
+                                                    class="workspace-table__title-link workspace-table__relation-link"
+                                                    href="<?= e(url('/dashboard/manage/' . $listingRelation['resource'] . '/' . $listingRelation['id'])) ?>"
+                                                ><?= e($listingRelationLabel) ?></a>
+                                            <?php else: ?>
+                                                <?= $formatCell($key, $row) ?>
+                                            <?php endif; ?>
+                                        <?php elseif ($showAdminPageNumbers && $key === 'title'): ?>
                                             <a
                                                 class="workspace-table__title-link"
                                                 href="<?= e(url('/dashboard/pages/' . (int) ($row['id'] ?? 0) . '/edit')) ?>"

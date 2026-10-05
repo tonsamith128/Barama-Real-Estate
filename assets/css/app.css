@@ -15726,3 +15726,12 @@ body:not(.auth-standalone-body) textarea {
 .marketplace-config-hero__background--slider {
     backdrop-filter: none !important;
 }
+
+/* BARAMA_ADMIN_LISTINGS_TABLE_V1128 */
+.workspace-table--admin-listings-v1128 .workspace-table__number{width:58px;min-width:58px;text-align:center;font-variant-numeric:tabular-nums}
+.workspace-table--admin-listings-v1128 .workspace-table__relation-link{display:inline-flex;align-items:center;max-width:100%;color:var(--barama-primary,#2563eb);font-weight:700;line-height:1.35;text-decoration:none;text-underline-offset:3px}
+.workspace-table--admin-listings-v1128 .workspace-table__relation-link:hover,.workspace-table--admin-listings-v1128 .workspace-table__relation-link:focus-visible{text-decoration:underline}
+.workspace-table--admin-listings-v1128 .workspace-row-actions__menu form{width:100%;margin:0}
+.workspace-table--admin-listings-v1128 .workspace-row-actions__menu .table-action{display:flex!important;width:100%!important;min-height:40px!important;align-items:center!important;justify-content:flex-start!important;margin:0!important;padding:9px 13px!important;border:0!important;background:transparent!important;font:inherit!important;font-size:.875rem!important;font-weight:700!important;line-height:1.25!important;letter-spacing:0!important;text-align:left!important;white-space:nowrap!important}
+.workspace-table--admin-listings-v1128 .workspace-row-actions__menu .table-action--danger{color:var(--barama-danger,#dc3545)!important}
+.workspace-table--admin-listings-v1128 .workspace-row-actions__menu .table-action:hover,.workspace-table--admin-listings-v1128 .workspace-row-actions__menu .table-action:focus-visible{background:color-mix(in srgb,var(--barama-primary,#2563eb) 8%,transparent)!important}
