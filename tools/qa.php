@@ -245,6 +245,7 @@ $approvedCssFiles = [
     'assets/css/marketplace-hero-heading-v112.css',
     'assets/css/page-builder-v116.css',
     'assets/css/property-detail-flow-v113.css',
+    'assets/css/system-health-v1126.css',
     'assets/css/workspace-sidebar-scroll-v115.css',
 ];
 $unapprovedCssFiles = array_values(array_diff($cssFiles, $approvedCssFiles));
@@ -264,6 +265,7 @@ $approvedJsFiles = [
     'assets/js/page-builder-v116.js',
     'assets/js/page-builder-v117.js',
     'assets/js/page-builder-v119.js',
+    'assets/js/system-health-theme-v1126.js',
     'assets/js/workspace-sidebar-scroll-v115.js',
 ];
 $unapprovedJsFiles = array_values(array_diff($jsFiles, $approvedJsFiles));
