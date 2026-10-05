@@ -13,6 +13,11 @@ final class MediaRepository
     /** @param array<string, mixed> $data */
     public function create(array $data): int
     {
+        $disk = strtolower(trim((string) ($data['disk'] ?? 'private')));
+        if (!in_array($disk, ['private', 's3', 'r2'], true)) {
+            $disk = 'private';
+        }
+
         $statement = Database::connection()->prepare(
             'INSERT INTO media_assets
                 (uuid, created_by_user_id, disk, path, original_name, mime_type,
@@ -24,7 +29,7 @@ final class MediaRepository
         $statement->execute([
             'uuid' => IdGenerator::uuid(),
             'created_by_user_id' => $data['created_by_user_id'],
-            'disk' => 'private',
+            'disk' => $disk,
             'path' => $data['path'],
             'original_name' => $data['original_name'],
             'mime_type' => $data['mime_type'],

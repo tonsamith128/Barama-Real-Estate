@@ -11,6 +11,7 @@ use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\WorkspaceSettingsRepository;
 use Barama\Services\AccountSettingsService;
 use Barama\Services\AdminSettingsService;
+use Barama\Services\CloudStorageService;
 use Barama\Services\SecurityAuditService;
 use DomainException;
 use InvalidArgumentException;
@@ -18,7 +19,7 @@ use RuntimeException;
 
 final class WorkspaceSettingsController
 {
-    private const SECTIONS = ['basic', 'profile', 'privacy', 'security', 'storage'];
+    private const SECTIONS = ['basic', 'profile', 'privacy', 'security', 'storage', 'cloud-storage'];
 
     public function accountIndex(Request $request): Response { return $this->show($request, 'account', 'basic'); }
     public function account(Request $request, string $section): Response { return $this->show($request, 'account', $section); }
@@ -36,7 +37,7 @@ final class WorkspaceSettingsController
         $section = strtolower(trim($section));
         if (
             !in_array($section, self::SECTIONS, true)
-            || ($section === 'storage' && $workspace !== 'dashboard')
+            || (in_array($section, ['storage', 'cloud-storage'], true) && $workspace !== 'dashboard')
         ) {
             return Response::html(View::render('errors/404', ['pageTitle' => 'Page not found']), 404);
         }
@@ -50,8 +51,7 @@ final class WorkspaceSettingsController
         $profile = (new AccountSettingsRepository())->profile($userId);
         $preferences = (new WorkspaceSettingsRepository())->get($userId, $workspace);
         $meta = $this->meta($workspace, $section);
-
-        return Response::html(View::render('workspace/settings', [
+        $data = [
             'pageTitle' => $meta['title'] . ' · ' . $meta['workspace_label'],
             'activeArea' => $workspace === 'dashboard' ? 'dashboard' : $workspace,
             'workspaceType' => $workspace === 'dashboard' ? 'admin' : $workspace,
@@ -72,7 +72,22 @@ final class WorkspaceSettingsController
             'saved' => (string) $request->input('saved', '') === '1',
             'savedMessage' => trim((string) $request->input('message', '')),
             'error' => trim((string) $request->input('error', '')),
-        ]));
+        ];
+
+        if ($section === 'cloud-storage') {
+            try {
+                $data['cloudStorage'] = (new CloudStorageService())->viewModel();
+            } catch (RuntimeException $exception) {
+                $data['cloudStorage'] = [];
+                if ((string) ($data['error'] ?? '') === '') {
+                    $data['error'] = $exception->getMessage();
+                }
+            }
+
+            return Response::html(View::render('workspace/cloud-storage', $data));
+        }
+
+        return Response::html(View::render('workspace/settings', $data));
     }
 
     private function save(Request $request, string $workspace, string $section): Response
@@ -80,7 +95,7 @@ final class WorkspaceSettingsController
         $section = strtolower(trim($section));
         if (
             !in_array($section, self::SECTIONS, true)
-            || ($section === 'storage' && $workspace !== 'dashboard')
+            || (in_array($section, ['storage', 'cloud-storage'], true) && $workspace !== 'dashboard')
         ) {
             return Response::html(View::render('errors/404', ['pageTitle' => 'Page not found']), 404);
         }
@@ -95,6 +110,22 @@ final class WorkspaceSettingsController
         $target = $base . ($section === 'basic' ? '' : '/' . $section);
 
         try {
+            if ($section === 'cloud-storage') {
+                $cloudService = new CloudStorageService();
+                $input = $request->all();
+                $action = strtolower(trim((string) ($input['cloud_action'] ?? '')));
+                $message = match ($action) {
+                    'save_provider' => $this->saveCloudProvider($cloudService, $input),
+                    'test' => $this->testCloudProvider($cloudService, $input),
+                    'activate' => $this->activateCloudStorage($cloudService, $input),
+                    default => throw new InvalidArgumentException('Select a valid cloud storage action.'),
+                };
+
+                return Response::redirect(url(
+                    $target . '?saved=1&message=' . rawurlencode($message)
+                ));
+            }
+
             $profileRepo = new AccountSettingsRepository();
             $profile = $profileRepo->profile($userId);
             $settingsRepo = new WorkspaceSettingsRepository();
@@ -286,6 +317,32 @@ final class WorkspaceSettingsController
         }
     }
 
+    /** @param array<string,mixed> $input */
+    private function saveCloudProvider(CloudStorageService $service, array $input): string
+    {
+        $provider = strtolower(trim((string) ($input['provider'] ?? '')));
+        $service->saveProvider($provider, $input);
+        return strtoupper($provider) . ' configuration saved. Run the connection test before activation.';
+    }
+
+    /** @param array<string,mixed> $input */
+    private function testCloudProvider(CloudStorageService $service, array $input): string
+    {
+        $provider = strtolower(trim((string) ($input['provider'] ?? '')));
+        $service->testProvider($provider);
+        return strtoupper($provider) . ' write/read/delete test passed.';
+    }
+
+    /** @param array<string,mixed> $input */
+    private function activateCloudStorage(CloudStorageService $service, array $input): string
+    {
+        $disk = strtolower(trim((string) ($input['disk'] ?? 'private')));
+        $service->activate($disk);
+        return $disk === 'private'
+            ? 'Local private storage is active for new uploads.'
+            : strtoupper($disk) . ' is active for new uploads.';
+    }
+
     /** @return array{title:string,description:string,workspace_label:string,base:string} */
     private function meta(string $workspace, string $section): array
     {
@@ -318,10 +375,11 @@ final class WorkspaceSettingsController
                 'privacy' => 'Choose whether Admin Dashboard filters persist between visits and clear them on demand.',
                 'security' => 'Manage administrator sign-in credentials and review account security state.',
                 'storage' => 'Inspect application storage health, control Admin-managed Hero and site-media upload limits, and clean temporary files safely.',
+                'cloud-storage' => 'Configure encrypted Amazon S3 and Cloudflare R2 storage for Barama media.',
             ],
         ];
         return [
-            'title' => ucfirst($section) . ' Settings',
+            'title' => $section === 'cloud-storage' ? 'Cloud Storage' : ucfirst($section) . ' Settings',
             'description' => $descriptions[$workspace][$section],
             'workspace_label' => $workspaceLabel,
             'base' => $base,
@@ -387,6 +445,7 @@ final class WorkspaceSettingsController
                 ['label' => 'Privacy', 'path' => '/dashboard/settings/privacy', 'icon' => 'shield'],
                 ['label' => 'Security', 'path' => '/dashboard/settings/security', 'icon' => 'lock'],
                 ['label' => 'Storage', 'path' => '/dashboard/settings/storage', 'icon' => 'image'],
+                ['label' => 'Cloud Storage', 'path' => '/dashboard/settings/cloud-storage', 'icon' => 'layers'],
             ];
         }
 
