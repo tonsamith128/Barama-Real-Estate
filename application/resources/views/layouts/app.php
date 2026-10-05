@@ -562,6 +562,9 @@ $appJsVersion = is_file($appJsFile)
     <?php endif; ?>
 
     <script src="<?= e(asset('js/app.js') . '?v=' . rawurlencode($appJsVersion)) ?>" defer></script>
+    <?php if (!$isWorkspacePage): ?>
+        <script src="<?= e(asset('js/frontend-back-to-top-v100.js') . '?v=100') ?>" defer></script>
+    <?php endif; ?>
     <?php if ($isWorkspacePage): ?>
         <script src="<?= e(asset('js/workspace-sidebar-scroll-v115.js') . '?v=115') ?>" defer></script>
     <?php endif; ?>
