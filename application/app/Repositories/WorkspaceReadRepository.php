@@ -1539,9 +1539,9 @@ final class WorkspaceReadRepository
                 ['search' => $search],
             ],
             'listings' => [
-                'SELECT l.id, p.title AS property_title, p.reference_code,
+                'SELECT l.id, p.id AS property_id, p.title AS property_title, p.reference_code,
                         p.property_type, p.location_id, p.status AS property_status,
-                        p.project_id, c.name AS company_name, c.status AS company_status,
+                        p.project_id, c.id AS company_id, c.name AS company_name, c.status AS company_status,
                         pr.name AS project_name, pr.status AS project_status,
                         loc.name AS location_name,
                         l.transaction_type, l.status, l.price, l.currency,
