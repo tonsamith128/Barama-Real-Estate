@@ -1,0 +1,56 @@
+name: Sync package smoke System Health v1.1.26 assets
+
+on:
+  push:
+    branches:
+      - fix/qa-system-health-v1126-assets
+    paths:
+      - '.github/workflows/sync-package-smoke-system-health-v1126.yml'
+      - 'tools/sync_package_smoke_system_health_v1126.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-package-inventory-repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/qa-system-health-v1126-assets
+          fetch-depth: 0
+
+      - name: Apply package inventory repair
+        run: |
+          set -Eeuo pipefail
+          python3 tools/sync_package_smoke_system_health_v1126.py .
+          php -l tools/package-smoke.php
+
+      - name: Verify idempotence and focused diff
+        run: |
+          set -Eeuo pipefail
+          FIRST="$(sha256sum tools/package-smoke.php | awk '{print $1}')"
+          python3 tools/sync_package_smoke_system_health_v1126.py .
+          SECOND="$(sha256sum tools/package-smoke.php | awk '{print $1}')"
+          test "$FIRST" = "$SECOND"
+          git diff --check
+          ACTUAL="$(git diff --name-only | LC_ALL=C sort)"
+          EXPECTED='tools/package-smoke.php'
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo 'Unexpected diff:'
+            printf '%s\n' "$ACTUAL"
+            exit 1
+          fi
+
+      - name: Commit repair and remove temporary helpers
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/package-smoke.php
+          git rm tools/sync_package_smoke_system_health_v1126.py
+          git rm .github/workflows/sync-package-smoke-system-health-v1126.yml
+          git diff --cached --check
+          git commit -m 'Approve v1.1.26 System Status assets in package smoke'
+          git push origin HEAD:fix/qa-system-health-v1126-assets
