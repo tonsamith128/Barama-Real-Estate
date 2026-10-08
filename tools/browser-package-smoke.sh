@@ -625,6 +625,92 @@ try {
         fullPage: true,
     });
     console.log('[PASS] Exact customer Mail Setup: administrator save, reload and password redaction.');
+    // Test recipient field must remain readable in both stored themes.
+    // The native browser can apply unwanted dark color-scheme input styles.
+    const recipientTheme = await page.evaluate(() => {
+        const root = document.documentElement;
+        const field = document.querySelector('input[name="mail_test_recipient"]');
+        const button = document.querySelector('.barama-mail-settings__test-form button[type="submit"]');
+        const original = root.getAttribute('data-bs-theme');
+        const values = [];
+        for (const theme of ['light', 'dark']) {
+            root.setAttribute('data-bs-theme', theme);
+            values.push({
+                theme,
+                fieldBackground: getComputedStyle(field).backgroundColor,
+                fieldText: getComputedStyle(field).color,
+                buttonBackground: getComputedStyle(button).backgroundColor,
+                buttonText: getComputedStyle(button).color,
+            });
+        }
+        root.setAttribute('data-bs-theme', original || 'light');
+        return values;
+    });
+    assert(
+        recipientTheme[0].fieldBackground === 'rgb(255, 255, 255)'
+            && recipientTheme[1].fieldBackground !== recipientTheme[0].fieldBackground,
+        'Test recipient field light/dark background treatment is incorrect.'
+    );
+    assert(
+        recipientTheme.every((v) =>
+            v.buttonBackground === 'rgb(25, 93, 244)' && v.buttonText === 'rgb(255, 255, 255)'
+        ),
+        'Send test email button must have the blue background in both themes.'
+    );
+    console.log('[PASS] Mail Setup custom test field and blue button light/dark contrast.');
+
+    const footerEditor = await page.goto(
+        installedBase + '/dashboard/footer',
+        { waitUntil: 'networkidle' }
+    );
+    assert(footerEditor && footerEditor.ok(), 'Dedicated Footer editor is unavailable.');
+    await seriousAccessibility(page, 'admin footer editor');
+    assert(
+        await page.locator('input[name="compliance_heading"]').inputValue() === 'Compliance',
+        'Default Compliance heading missing from Footer editor.'
+    );
+    await page.locator('input[name="copyright"]').fill('Copyright {year} | Barama Real Estate QA');
+    await page.locator('input[name="social_facebook"]').fill('https://www.facebook.com/barama-test');
+    await page.locator('button[type="submit"]').filter({ hasText: 'Save Footer' }).click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        page.url().includes('/dashboard/footer') && page.url().includes('saved=1'),
+        'Footer editor did not persist and redirect after Save.'
+    );
+    await page.screenshot({
+        path: artifacts + '/admin-footer-editor-desktop.png',
+        fullPage: true,
+    });
+    await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
+    assert(
+        await page.locator('.site-footer__grid').locator(':scope > *').count() === 4,
+        'Public Footer must keep exactly four columns.'
+    );
+    assert(
+        await page.locator('.site-footer').getByRole('navigation', { name: 'Compliance links' })
+            .getByRole('link', { name: 'Policy Center' }).count() === 1,
+        'Compliance Policy Center link is missing.'
+    );
+    assert(
+        await page.locator('.site-footer a[href$="/policies?=privacy-policy"]').count() === 1
+            && await page.locator('.site-footer a[href$="/policies?=terms-of-service"]').count() === 1,
+        'Policy Center Compliance links do not follow canonical policy URL format.'
+    );
+    assert(
+        await page.locator('.site-footer__meta').innerText().then((s) =>
+            s.includes('Copyright') && s.includes('Barama Real Estate QA')),
+        'Configured copyright was not reflected in the public footer.'
+    );
+    assert(
+        await page.locator('.site-footer__social a[aria-label="Facebook"]').count() === 1,
+        'Configured social icon link is missing.'
+    );
+    await page.screenshot({
+        path: artifacts + '/public-footer-customized-desktop.png',
+        fullPage: true,
+    });
+    console.log('[PASS] Admin Footer save and public 4-column Compliance/copyright/social parity.');
+
 
     const queueResponse = await page.goto(
         installedBase + '/dashboard/mail-queue',
