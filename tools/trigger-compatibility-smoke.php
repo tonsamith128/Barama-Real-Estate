@@ -74,6 +74,26 @@ try {
 
     echo "[PASS] Restricted customer MySQL user rejected before schema changes.\n";
 
+    $migration = require dirname(__DIR__)
+        . '/application/database/migrations/0026_create_email_outbox_event_history.php';
+    try {
+        $migration($limited);
+        throw new RuntimeException('Migration 0026 unexpectedly ran on restricted host.');
+    } catch (RuntimeException $exception) {
+        if (!str_contains($exception->getMessage(), 'required append-only email audit triggers')) {
+            throw $exception;
+        }
+    }
+
+    $count = (int) $limited->query(
+        'SELECT COUNT(*) FROM information_schema.TABLES '
+        . 'WHERE TABLE_SCHEMA = DATABASE()'
+    )->fetchColumn();
+    if ($count !== 0) {
+        throw new RuntimeException('Migration 0026 created a partial table on restricted hosting.');
+    }
+    echo "[PASS] Migration 0026 fails before DDL on restricted hosting.\n";
+
     $pdo->exec('GRANT TRIGGER ON ' . $databaseQuoted . '.* TO ' . $userQuoted . "@'%'");
 
     // Privileges granted to an account take effect on a new MySQL connection.
