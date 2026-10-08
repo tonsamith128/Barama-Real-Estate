@@ -181,6 +181,7 @@ try {
     'assets/css/admin-email-templates-v136.css',
     'assets/css/admin-email-templates-v137.css',
     'assets/css/admin-email-templates-v142.css',
+    'assets/css/admin-mail-queue-compact-v100.css',
     'assets/css/admin-mail-settings-v100.css',
     'assets/css/admin-global-locations-v101.css',
     'assets/css/admin-global-locations-v110.css',
