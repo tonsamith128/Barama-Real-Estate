@@ -77,7 +77,8 @@ final class TriggerCapabilityProbe
                 . 'the host may also need to enable log_bin_trust_function_creators '
                 . 'or use an appropriately privileged database account. '
                 . 'Ask your hosting provider to enable these capabilities; '
-                . 'do not disable audit triggers. No Barama schema migration was applied.',
+                . 'do not disable audit triggers. This compatibility probe did '
+                . 'not create or modify the audit history table.',
                 0,
                 $failure
             );
