@@ -57,6 +57,44 @@ try {
     $assert($kept['password'] === 'qa-secret-do-not-display-123', 'Blank edit lost prior secret.');
     echo "[PASS] Blank password retains the matching SMTP host/account secret.\n";
 
+    // Gmail usernames are presentation-only masked. The real identity must
+    // never be serialized into the form or replaced in the encrypted store.
+    $gmail = array_replace($input, [
+        'mail_username' => 'real.account999@gmail.com',
+        'mail_password' => 'another-private-secret',
+    ]);
+    $repository->save($service->validatedInput($gmail));
+    $mask = MailSettingsService::maskedUsername('real.account999@gmail.com');
+    $assert($mask === '••••@gmail.com', 'Gmail account is not properly masked.');
+    $assert(!str_contains($mask, 'real.account999'), 'Gmail local part leaked.');
+    $validatedMask = $service->validatedInput(array_replace($gmail, [
+        'mail_username' => $mask,
+        'mail_password' => '',
+    ]));
+    $assert(
+        $validatedMask['username'] === 'real.account999@gmail.com'
+            && $validatedMask['password'] === 'another-private-secret',
+        'Unchanged Gmail mask must restore the saved account and password.'
+    );
+    $repository->save($validatedMask);
+    $assert($service->effectiveConfig()['username'] === 'real.account999@gmail.com', 'Gmail username changed during masked save.');
+    $expectFailure(
+        static fn () => $service->validatedInput(array_replace($gmail, [
+            'mail_host' => 'new-server.example.test',
+            'mail_username' => $mask,
+            'mail_password' => '',
+        ])),
+        'Masked identity must not bypass the host-change credential guard.'
+    );
+    $assert(
+        MailSettingsService::maskedUsername('helpdesk@example.org') === 'helpdesk@example.org',
+        'Other SMTP usernames should not be transformed unexpectedly.'
+    );
+    echo "[PASS] Gmail HTML mask protects local part and preserves encrypted SMTP identity.\n";
+
+    // Restore original fixture for remaining transport and tamper checks.
+    $repository->save($validated);
+
     $changedServer = array_replace($blankPasswordEdit, ['mail_host' => 'different.example.test']);
     $expectFailure(
         static fn () => $service->validatedInput($changedServer),
