@@ -19,6 +19,7 @@ use Barama\Http\Controllers\DashboardController;
 use Barama\Http\Controllers\DeveloperController;
 use Barama\Http\Controllers\DeveloperManagementController;
 use Barama\Http\Controllers\WorkspaceSettingsController;
+use Barama\Http\Controllers\FooterController;
 use Barama\Http\Controllers\HomeController;
 use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
@@ -697,6 +698,17 @@ $router->get(
     [DashboardController::class, 'contact'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
 );
+$router->get(
+    '/dashboard/footer',
+    [FooterController::class, 'index'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/footer',
+    [FooterController::class, 'update'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+
 $router->get(
     '/dashboard/navigation',
     [DashboardController::class, 'navigationManager'],
