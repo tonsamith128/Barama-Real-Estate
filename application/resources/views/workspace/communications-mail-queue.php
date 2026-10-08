@@ -6,7 +6,7 @@ $filters = is_array($mailQueueFilters ?? null) ? $mailQueueFilters : [];
 $pagination = is_array($mailQueuePagination ?? null) ? $mailQueuePagination : [];
 $currentPage = max(1, (int) ($pagination['page'] ?? 1));
 $totalPages = max(1, (int) ($pagination['pages'] ?? 1));
-$perPage = (int) ($pagination['per_page'] ?? 25);
+$perPage = 10;
 $totalMessages = max(0, (int) ($pagination['total'] ?? count($outbox)));
 $rangeStart = $totalMessages > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
 $rangeEnd = $totalMessages > 0 ? min($totalMessages, $currentPage * $perPage) : 0;
@@ -39,6 +39,7 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
 };
 ?>
 <!-- BARAMA_MAIL_QUEUE_VERTICAL_CARDS_V100 -->
+<link rel="stylesheet" href="<?= e(asset('css/admin-mail-queue-compact-v100.css') . '?v=100') ?>">
 <section class="workspace-page mail-queue-page" data-mail-queue-page>
     <div class="workspace-page__header">
         <div>
@@ -94,14 +95,25 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
             </div>
         </div>
 
+        <?php if ((int) ($summary['pending_email'] ?? 0) > 0): ?>
+            <div class="mail-queue-worker-note" role="status">
+                <span class="mail-queue-worker-note__icon" aria-hidden="true"><?= app_icon('clock') ?></span>
+                <div>
+                    <strong>Pending means queued, not sent.</strong>
+                    <p>Messages with 0 attempts are waiting for the scheduled outbox worker. Confirm an aaPanel Cron job runs <code>php tools/notifications.php run</code> from the Barama installation using its PHP CLI. New SMTP settings alone do not send queued messages.</p>
+                </div>
+                <a href="<?= e(url('/dashboard/settings/mail')) ?>">Mail Setup</a>
+            </div>
+        <?php endif; ?>
+
         <form class="mail-queue-filters" action="<?= e(url('/dashboard/mail-queue')) ?>" method="get" aria-label="Filter email delivery history" data-mail-queue-filter-form>
             <label class="mail-queue-filter mail-queue-filter--wide"><span>Recipient</span><input type="search" name="recipient" value="<?= e((string) ($filters['recipient'] ?? '')) ?>" placeholder="Name or email address" autocomplete="off"></label>
             <label class="mail-queue-filter mail-queue-filter--wide"><span>Subject</span><input type="search" name="subject" value="<?= e((string) ($filters['subject'] ?? '')) ?>" placeholder="Email subject" autocomplete="off"></label>
             <label class="mail-queue-filter"><span>Status</span><select name="status"><option value="">All statuses</option><?php foreach (['pending', 'processing', 'failed', 'sent', 'cancelled'] as $statusOption): ?><option value="<?= e($statusOption) ?>" <?= $activeStatus === $statusOption ? 'selected' : '' ?>><?= e(ucfirst($statusOption)) ?></option><?php endforeach; ?></select></label>
             <label class="mail-queue-filter"><span>From</span><input type="date" name="date_from" value="<?= e((string) ($filters['date_from'] ?? '')) ?>"></label>
             <label class="mail-queue-filter"><span>To</span><input type="date" name="date_to" value="<?= e((string) ($filters['date_to'] ?? '')) ?>"></label>
-            <label class="mail-queue-filter mail-queue-filter--size"><span>Rows</span><select name="per_page"><?php foreach ([25, 50, 100] as $pageSize): ?><option value="<?= e((string) $pageSize) ?>" <?= $perPage === $pageSize ? 'selected' : '' ?>><?= e((string) $pageSize) ?></option><?php endforeach; ?></select></label>
-            <div class="mail-queue-filter-actions"><button class="mail-queue-filter-submit" type="submit"><?= app_icon('search') ?><span>Filter</span></button><?php if ($hasFilters || $perPage !== 25): ?><a class="mail-queue-filter-clear" href="<?= e(url('/dashboard/mail-queue')) ?>">Clear</a><?php endif; ?></div>
+            <input type="hidden" name="per_page" value="10">
+            <div class="mail-queue-filter-actions"><button class="mail-queue-filter-submit" type="submit"><?= app_icon('search') ?><span>Filter</span></button><?php if ($hasFilters): ?><a class="mail-queue-filter-clear" href="<?= e(url('/dashboard/mail-queue')) ?>">Clear</a><?php endif; ?></div>
         </form>
 
         <div class="mail-queue-presets" data-mail-queue-presets>
@@ -117,7 +129,7 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
         </div>
 
         <div class="mail-queue-filter-summary">
-            <span>Showing <?= e(number_format($rangeStart)) ?>–<?= e(number_format($rangeEnd)) ?> of <?= e(number_format($totalMessages)) ?></span>
+            <span>Showing <?= e(number_format($rangeStart)) ?>–<?= e(number_format($rangeEnd)) ?> of <?= e(number_format($totalMessages)) ?> · 10 per page</span>
             <?php if ($hasFilters): ?><span class="mail-queue-filter-summary__active">Filtered view</span><?php endif; ?>
         </div>
 
@@ -145,14 +157,13 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
                         <th>Status</th>
                         <th>Attempts</th>
                         <th>Available</th>
-                        <th>Sent</th>
-                        <th>Error</th>
+
                         <th aria-label="Actions"></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($outbox === []): ?>
-                        <tr><td colspan="10"><div class="workspace-record-empty"><?= $hasFilters ? 'No email messages match these filters.' : 'The email outbox is empty.' ?><?php if ($hasFilters): ?><a href="<?= e(url('/dashboard/mail-queue')) ?>">Clear filters</a><?php endif; ?></div></td></tr>
+                        <tr><td colspan="8"><div class="workspace-record-empty"><?= $hasFilters ? 'No email messages match these filters.' : 'The email outbox is empty.' ?><?php if ($hasFilters): ?><a href="<?= e(url('/dashboard/mail-queue')) ?>">Clear filters</a><?php endif; ?></div></td></tr>
                     <?php endif; ?>
 
                     <?php foreach ($outbox as $message): ?>
@@ -180,11 +191,10 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
                                 <small><?= e((string) $message['to_address']) ?></small>
                             </td>
                             <td class="mail-queue-table__subject"><?= e((string) $message['subject']) ?></td>
-                            <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span></td>
+                            <td><span class="status-badge status-badge--<?= e($tone) ?>"<?= $status === 'pending' ? ' title="Queued: waiting for the scheduled delivery worker."' : '' ?>><?= e(ucfirst($status)) ?></span><?php if ($status === 'pending' && (int) ($message['attempts'] ?? 0) === 0): ?><small class="mail-queue-status-hint">Not attempted</small><?php endif; ?></td>
                             <td><?= e(number_format((int) $message['attempts'])) ?></td>
                             <td><?= e((string) $message['available_at']) ?></td>
-                            <td><?= e((string) ($message['sent_at'] ?? '—')) ?></td>
-                            <td class="mail-queue-table__error"><small><?= e((string) ($message['last_error'] ?? '—')) ?></small></td>
+
                             <td>
                                 <details class="workspace-row-actions">
                                     <summary aria-label="Mail actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>
@@ -221,6 +231,18 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
                     <?php for ($pageNumber = $pageStart; $pageNumber <= $pageEnd; $pageNumber++): ?><a class="mail-queue-page-link mail-queue-page-link--number<?= $pageNumber === $currentPage ? ' is-active' : '' ?>" href="<?= e($queueUrl(['page' => $pageNumber])) ?>" <?= $pageNumber === $currentPage ? 'aria-current="page"' : '' ?>><?= e((string) $pageNumber) ?></a><?php endfor; ?>
                     <a class="mail-queue-page-link<?= $currentPage >= $totalPages ? ' is-disabled' : '' ?>" href="<?= e($currentPage < $totalPages ? $queueUrl(['page' => $currentPage + 1]) : '#') ?>" <?= $currentPage >= $totalPages ? 'aria-disabled="true" tabindex="-1"' : '' ?>><span>Next</span><?= app_icon('chevron-right') ?></a>
                 </div>
+                <form class="mail-queue-pagination__goto" action="<?= e(url('/dashboard/mail-queue')) ?>" method="get" aria-label="Go to mail history page">
+                    <?php foreach (['recipient', 'subject', 'status', 'date_from', 'date_to'] as $filterName): ?>
+                        <?php $filterValue = trim((string) ($filters[$filterName] ?? '')); ?>
+                        <?php if ($filterValue !== ''): ?>
+                            <input type="hidden" name="<?= e($filterName) ?>" value="<?= e($filterValue) ?>">
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <input type="hidden" name="per_page" value="10">
+                    <label for="mail-queue-page-number">Go to</label>
+                    <input id="mail-queue-page-number" type="number" name="page" min="1" max="<?= e((string) $totalPages) ?>" value="<?= e((string) $currentPage) ?>" required inputmode="numeric" aria-label="Mail queue page number">
+                    <button type="submit">Go</button>
+                </form>
             </nav>
         <?php endif; ?>
     </section>
