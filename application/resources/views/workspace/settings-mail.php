@@ -99,12 +99,19 @@ $driver = (string) ($mail['driver'] ?? 'mail');
     <div class="barama-mail-settings__test">
         <div>
             <h3><?= app_icon('check') ?> Test delivery</h3>
-            <p>Send one test email to your signed-in administrator address. Test uses the currently saved configuration.</p>
+            <p>Send a test message to an email address you control. The recipient may differ from your administrator login email. Uses the currently saved mail configuration.</p>
         </div>
-        <form action="<?= e(url('/dashboard/settings/mail')) ?>" method="post">
-            <?= csrf_field() ?>
-            <input type="hidden" name="mail_action" value="test">
-            <button class="btn btn-outline-secondary" type="submit" <?= empty($mail['ready']) ? 'disabled' : '' ?>><?= app_icon('mail') ?> Send test email</button>
-        </form>
+        <?php if (!empty($mail['test_disabled'])): ?>
+            <p role="status">Outbound test emails are disabled for this demonstration installation.</p>
+        <?php else: ?>
+            <form class="barama-mail-settings__test-form" action="<?= e(url('/dashboard/settings/mail')) ?>" method="post">
+                <?= csrf_field() ?>
+                <input type="hidden" name="mail_action" value="test">
+                <label for="barama-test-email">Test recipient email</label>
+                <input id="barama-test-email" name="mail_test_recipient" type="email" maxlength="191" placeholder="you@example.com" autocomplete="off" required aria-describedby="mail-test-limits">
+                <button class="btn btn-outline-secondary" type="submit" <?= empty($mail['ready']) ? 'disabled' : '' ?>><?= app_icon('mail') ?> Send test email</button>
+                <small id="mail-test-limits">Administrator only. Maximum 3 tests per hour and 10 per day for this installation. No queued messages are sent by this test.</small>
+            </form>
+        <?php endif; ?>
     </div>
 </section>
