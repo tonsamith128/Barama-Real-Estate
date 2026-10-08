@@ -75,6 +75,14 @@
             <p>Access is permission controlled. Public registration does not grant company/vendor or administrator permissions automatically.</p>
         </section>
 
+        <section id="footer">
+            <h2>Footer and Footer Bottom</h2>
+            <p>Go to <strong>Admin Control Center &rarr; Content &amp; Discovery &rarr; Footer</strong> at <code>/dashboard/footer</code>. Only administrators with page-management permission can save footer content.</p>
+            <p>The public footer preserves four columns. Column 1 displays the existing brand logo with an editable footer description. Column 2 remains connected to <strong>Navigation</strong> and its heading can be edited. Column 3 is <strong>Compliance</strong> with Policy Center, Privacy and Terms links using <code>/policies</code>, <code>/policies?=privacy-policy</code> and <code>/policies?=terms-of-service</code>. Column 4 retains Documentation, Contact Support and System Health links.</p>
+            <p>The Footer Bottom editor controls copyright text (use <code>{year}</code> to render the current year) and optional HTTPS social icons. Empty social URLs hide those icons; the existing theme toggle is preserved. Colors, spacing, divider and surface styles remain under <strong>Appearance &rarr; Footer</strong>, so the two configuration areas do not duplicate functionality.</p>
+            <p>Footer content uses the existing <code>application_settings</code> database table and does not require a new migration. Public output escapes custom labels and validates social URLs. Save changes before refreshing the public website.</p>
+        </section>
+
         <section id="email">
             <h2>Email delivery</h2>
             <p>Email delivery is intentionally kept out of the installer. Barama starts with PHP mail using the administrator email and website name.</p>
