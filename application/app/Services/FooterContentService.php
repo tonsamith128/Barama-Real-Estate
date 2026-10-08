@@ -69,6 +69,11 @@ final class FooterContentService
             if (!is_string($raw)) {
                 throw new InvalidArgumentException('Social URL for ' . $network . ' is invalid.');
             }
+            // Reject CRLF, whitespace and invisible controls in the *raw*
+            // URL before trim() could silently sanitize a malicious value.
+            if (preg_match('/[\x00-\x20\x7f]/', $raw) === 1) {
+                throw new InvalidArgumentException('Social URL for ' . $network . ' contains invalid whitespace.');
+            }
             $value = trim($raw);
             if ($value !== '') {
                 if (strlen($value) > 500 || filter_var($value, FILTER_VALIDATE_URL) === false) {
