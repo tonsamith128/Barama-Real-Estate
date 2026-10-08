@@ -46,8 +46,35 @@ final class ChangeConfirmationMiddleware implements MiddlewareInterface
             ], 428);
         }
 
+        // The response must work outside /dashboard/ too. Reuse the shipped
+        // Change Confirmation stylesheet without inline styles or handlers.
+        // The dashboard output-buffer renderer may replace this markup with
+        // its full branded page; both paths preserve HTTP 428.
         return Response::html(
-            '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Change confirmation required</title></head><body><main style="max-width:640px;margin:10vh auto;padding:24px;font-family:system-ui,sans-serif"><h1>Change confirmation required</h1><p>Return to the previous page and confirm this change with your 6-digit passcode.</p></main></body></html>',
+            <<<'HTML'
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Change confirmation required | Barama</title>
+<link rel="stylesheet" href="/assets/css/barama-change-confirmation-v1.0.0.css">
+</head>
+<body>
+<main class="bcc-page">
+  <section class="bcc-shell" aria-labelledby="confirmation-title">
+    <article class="bcc-card">
+      <p class="bcc-eyebrow">Security check</p>
+      <h1 id="confirmation-title">Change confirmation required</h1>
+      <p class="bcc-lead">Return to the previous page and confirm this change with your 6-digit passcode.</p>
+      <p class="bcc-footnote">Your change has not been applied.</p>
+    </article>
+  </section>
+</main>
+</body>
+</html>
+HTML,
             428
         );
     }
