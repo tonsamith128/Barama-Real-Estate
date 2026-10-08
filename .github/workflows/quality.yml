@@ -83,7 +83,7 @@ jobs:
           if ((int) $pdo->query('SELECT @@GLOBAL.log_bin_trust_function_creators')->fetchColumn() !== 1) {
               throw new RuntimeException('CI trigger prerequisite was not enabled.');
           }
-          fwrite(STDOUT, "[PASS] Ephemeral CI MySQL trigger prerequisite enabled.\n");
+          echo "[PASS] Ephemeral CI MySQL trigger prerequisite enabled.\n";
           PHP
 
       - name: Run database migrations
@@ -121,7 +121,7 @@ jobs:
                       }
                   }
               }
-              fwrite(STDOUT, "[PASS] UPDATE and DELETE are rejected by append-only audit triggers.\n");
+              echo "[PASS] UPDATE and DELETE are rejected by append-only audit triggers.\n";
           } finally {
               if ($pdo->inTransaction()) {
                   $pdo->rollBack();
