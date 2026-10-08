@@ -76,6 +76,16 @@ try {
 
     $pdo->exec('GRANT TRIGGER ON ' . $databaseQuoted . '.* TO ' . $userQuoted . "@'%'");
 
+    // Privileges granted to an account take effect on a new MySQL connection.
+    // Keep the first session for the denied case, then reconnect as the same
+    // user to exercise the newly granted privileges.
+    $limited = new PDO(
+        'mysql:host=' . $host . ';port=' . $port . ';dbname='
+        . $database . ';charset=utf8mb4',
+        $username,
+        $pass,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
     TriggerCapabilityProbe::assertSupported($limited);
 
     $count = (int) $limited->query(
