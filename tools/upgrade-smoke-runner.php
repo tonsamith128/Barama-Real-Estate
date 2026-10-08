@@ -117,6 +117,15 @@ function run_barama_upgrade_smoke(
         '0019_create_email_template_foundation.php',
         '0021_create_newsletter_subscribers.php',
         '0022_create_contact_messages.php',
+        '0023_create_user_security_factors.php',
+        '0024_create_role_permission_governance.php',
+        '0025_create_email_template_localization_history.php',
+        '0026_create_email_outbox_event_history.php',
+        '0027_create_billing_payment_methods.php',
+        '0028_create_global_location_governance.php',
+        '0029_create_global_location_hierarchy.php',
+        '0030_update_homepage_hero_copy.php',
+        '0031_add_account_profile_details.php',
     ];
 
     $adminPassword = 'Barama-Upgrade-QA-123!';
