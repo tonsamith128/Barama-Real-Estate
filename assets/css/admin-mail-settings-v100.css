@@ -33,3 +33,27 @@
 .barama-mail-settings .barama-mail-settings__test-form button{min-height:45px;white-space:nowrap}
 .barama-mail-settings .barama-mail-settings__test-form small{grid-column:1 / -1;color:var(--bs-secondary-color,#64748b);font-size:.75rem;line-height:1.45}
 @media(max-width:670px){.barama-mail-settings .barama-mail-settings__test-form{grid-template-columns:minmax(0,1fr)}.barama-mail-settings .barama-mail-settings__test-form button{width:100%}}
+
+/* Test recipient visual parity: explicit theme surfaces prevent browser autofill
+   and third-party form styles from causing a dark input in light mode. */
+[data-bs-theme="light"] .barama-mail-settings .barama-mail-settings__test-form input[name="mail_test_recipient"]{
+  background-color:#fff!important;color:#152238!important;border-color:#cbd5e1!important;color-scheme:light!important;
+}
+[data-bs-theme="dark"] .barama-mail-settings .barama-mail-settings__test-form input[name="mail_test_recipient"]{
+  background-color:#1b273a!important;color:#f1f5f9!important;border-color:#45546a!important;color-scheme:dark!important;
+}
+[data-bs-theme="light"] .barama-mail-settings .barama-mail-settings__test-form input[name="mail_test_recipient"]::placeholder{color:#64748b!important;opacity:1}
+[data-bs-theme="dark"] .barama-mail-settings .barama-mail-settings__test-form input[name="mail_test_recipient"]::placeholder{color:#9caec4!important;opacity:1}
+.barama-mail-settings .barama-mail-settings__test{align-items:stretch}
+.barama-mail-settings .barama-mail-settings__test-form{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:end!important;flex:1 1 100%;width:100%;max-width:none;gap:.55rem .8rem;margin:0}
+.barama-mail-settings .barama-mail-settings__test-form label{grid-column:1/-1!important}
+.barama-mail-settings .barama-mail-settings__test-form small{grid-column:1/-1!important;display:block}
+.barama-mail-settings .barama-mail-settings__test-form button[type="submit"]{
+  display:inline-flex;align-items:center;justify-content:center;gap:.45rem;
+  color:#fff!important;background-color:#195df4!important;border:1px solid #195df4!important;
+  min-height:45px;border-radius:10px;font-weight:700;box-shadow:none
+}
+.barama-mail-settings .barama-mail-settings__test-form button[type="submit"]:hover:not(:disabled){background-color:#114aca!important;border-color:#114aca!important}
+.barama-mail-settings .barama-mail-settings__test-form button[type="submit"]:focus-visible{outline:2px solid #80aaff!important;outline-offset:2px}
+.barama-mail-settings .barama-mail-settings__test-form button[type="submit"]:disabled{opacity:.52!important;cursor:not-allowed}
+@media(max-width:670px){.barama-mail-settings .barama-mail-settings__test-form{grid-template-columns:minmax(0,1fr)!important}.barama-mail-settings .barama-mail-settings__test-form button[type="submit"]{width:100%}}
