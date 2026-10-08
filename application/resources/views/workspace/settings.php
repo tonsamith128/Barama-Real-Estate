@@ -69,6 +69,7 @@ if ($workspace === 'dashboard') {
     $settingsTabs[] = ['key' => 'storage', 'label' => 'Storage', 'icon' => 'image'];
     $settingsTabs[] = ['key' => 'locations', 'label' => 'Locations', 'icon' => 'map'];
     $settingsTabs[] = ['key' => 'cloud-storage', 'label' => 'Cloud Storage', 'icon' => 'layers'];
+    $settingsTabs[] = ['key' => 'mail', 'label' => 'Mail Setup', 'icon' => 'mail'];
 }
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-settings-v120.css') . '?v=120') ?>
@@ -80,6 +81,9 @@ if ($workspace === 'dashboard') {
 <script src="<?= e(asset('js/account-profile-v1131r2.js') . '?v=1131r2') ?>" defer></script>
 <?php endif; ?>
 <?php endif; ?>">
+<?php if ($section === 'mail' && $workspace === 'dashboard'): ?>
+<link rel="stylesheet" href="<?= e(asset('css/admin-mail-settings-v100.css') . '?v=100') ?>">
+<?php endif; ?>
 <?php if ($section === 'locations' && $workspace === 'dashboard'): ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-global-locations-v110.css') . '?v=110') ?>">
 <?php endif; ?>
@@ -967,6 +971,10 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
         </div>
         <?php endif; ?>
 
+    <?php elseif ($section === 'mail' && $workspace === 'dashboard'): ?>
+        <?= \Barama\Core\View::partial('workspace/settings-mail', [
+            'mailSettings' => $mailSettings ?? [],
+        ]) ?>
     <?php elseif ($section === 'storage' && $workspace === 'dashboard'): ?>
         <div class="barama-settings-storage-overview">
             <article>
