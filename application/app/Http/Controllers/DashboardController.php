@@ -1969,6 +1969,7 @@ final class DashboardController
             ['label' => 'Projects', 'path' => '/dashboard/projects', 'icon' => 'layers'],
             ['label' => 'Companies', 'path' => '/dashboard/companies', 'icon' => 'building'],
             ['label' => 'Navigation', 'path' => '/dashboard/navigation', 'icon' => 'menu'],
+            ['label' => 'Footer', 'path' => '/dashboard/footer', 'icon' => 'layers'],
             ['label' => 'About', 'path' => '/dashboard/about', 'icon' => 'users'],
             ['label' => 'Contact', 'path' => '/dashboard/contact', 'icon' => 'mail'],
             // BARAMA_POLICY_CENTER_V102\n            ['label' => 'Policy Center', 'path' => '/dashboard/policies', 'icon' => 'shield'],\n            ['label' => 'Page Manager', 'path' => '/dashboard/pages', 'icon' => 'edit'],
