@@ -159,6 +159,9 @@ jobs:
       - name: Run encrypted Admin Mail Setup smoke test
         run: php tools/admin-mail-settings-smoke.php
 
+      - name: Run footer management and mail theme regression test
+        run: php tools/footer-management-smoke.php
+
       - name: Run SMTP transport smoke test
         run: php tools/smtp-smoke.php
 
