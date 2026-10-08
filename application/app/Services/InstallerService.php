@@ -8,6 +8,7 @@ use Barama\Core\Installation;
 use Barama\Support\IdGenerator;
 use Barama\Support\Locale;
 use Barama\Support\MigrationCatalog;
+use Barama\Support\TriggerCapabilityProbe;
 use DateTimeZone;
 use PDO;
 use PDOException;
@@ -293,6 +294,9 @@ final class InstallerService
 
         $this->assertSupportedDatabase($connection);
         $this->assertDatabaseSuitable($connection);
+        // Inspect real trigger capabilities before Step 4, while the customer
+        // can still select another host/database without any migrations.
+        TriggerCapabilityProbe::assertSupported($connection);
 
         return [
             'host' => $database['host'],
@@ -1260,6 +1264,7 @@ SQL);
 
             $this->assertSupportedDatabase($connection);
             $this->assertDatabaseSuitable($connection);
+            TriggerCapabilityProbe::assertSupported($connection);
         } catch (Throwable $exception) {
             if ($userCreated) {
                 try {
