@@ -175,12 +175,6 @@ $hasHeroBackground = $heroEnabled && (
                         </form>
                     <?php endif; ?>
 
-                    <?php if ($heroEnabled): ?>
-                        <div class="market-home__actions">
-                            <a href="<?= e(url('/projects')) ?>"><?= app_icon('layers') ?><span>Explore developments</span></a>
-                            <a href="<?= e(url('/company')) ?>"><?= app_icon('building') ?><span>Browse companies</span></a>
-                        </div>
-                    <?php endif; ?>
                 </div>
 
                 <?php if (!empty($marketPulse['enabled'])): ?>
