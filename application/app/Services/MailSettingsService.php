@@ -37,7 +37,9 @@ final class MailSettingsService
             'host' => (string) ($config['host'] ?? ''),
             'port' => (int) ($config['port'] ?? 587),
             'encryption' => (string) ($config['encryption'] ?? 'tls'),
-            'username' => (string) ($config['username'] ?? ''),
+            // Do not render the local part of a Gmail SMTP account in HTML.
+            // The server keeps the complete username in its encrypted store.
+            'username' => self::maskedUsername((string) ($config['username'] ?? '')),
             'has_password' => (string) ($config['password'] ?? '') !== '',
             'saved_override' => $this->store()->exists(),
             'ready' => (string) ($config['from_address'] ?? '') !== ''
@@ -105,6 +107,14 @@ final class MailSettingsService
         $driver = strtolower(trim((string) ($input['mail_driver'] ?? 'mail')));
         $host = trim((string) ($input['mail_host'] ?? ''));
         $username = trim((string) ($input['mail_username'] ?? ''));
+        $currentUsername = (string) ($existing['username'] ?? '');
+        // An unchanged masked Gmail field is a display token, not a new
+        // SMTP identity. Restore the server-side canonical username only
+        // when it exactly matches this installation's existing account.
+        if ($currentUsername !== '' && hash_equals(self::maskedUsername($currentUsername), $username)) {
+            $username = $currentUsername;
+        }
+        $input['mail_username'] = $username;
         $newPassword = (string) ($input['mail_password'] ?? '');
 
         // Blank edit fields preserve secrets only when both account and server
@@ -140,6 +150,15 @@ final class MailSettingsService
         }
 
         return $validated;
+    }
+
+    public static function maskedUsername(string $username): string
+    {
+        $username = trim($username);
+        if (preg_match('/^[^@\s]+@gmail\.com$/i', $username) === 1) {
+            return '••••@gmail.com';
+        }
+        return $username;
     }
 
     private function store(): MailSettingsRepository
