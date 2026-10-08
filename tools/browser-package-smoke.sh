@@ -680,7 +680,7 @@ try {
     await brandList.locator('[data-footer-item]').last().locator('[data-footer-url]').fill('/about');
 
     const marketList = page.locator('[data-footer-list="marketplace"]');
-    const originalMarketLinks = await marketList.locator('[data-footer-label]').allInputValues();
+    const originalMarketLinks = await marketList.locator('[data-footer-label]').evaluateAll(elements => elements.map(input => input.value));
     assert(originalMarketLinks.length >= 2, 'Expected at least two existing Marketplace items for reorder test.');
     const removedLabel = originalMarketLinks[0];
     await marketList.locator('[data-footer-item]').first().locator('[data-footer-remove]').click();
@@ -689,7 +689,7 @@ try {
     await marketList.locator('[data-footer-item]').last().locator('[data-footer-url]').fill('/projects');
     await marketList.locator('[data-footer-item]').last().locator('[data-footer-up]').click();
     assert(
-        (await marketList.locator('[data-footer-label]').allInputValues()).includes('Custom Destination'),
+        (await marketList.locator('[data-footer-label]').evaluateAll(elements => elements.map(input => input.value))).includes('Custom Destination'),
         'Marketplace Add/Reorder did not retain custom link.'
     );
     await page.locator('input[name="marketplace_heading"]').fill('Discover');
