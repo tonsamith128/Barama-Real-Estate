@@ -198,6 +198,48 @@ const verifyMobileNavigation = async (page, label) => {
     await noOverflow(page, label + ' compact Properties navigation');
 };
 
+// The public theme control is intentionally relocated into the Account
+// dropdown. Use real visible interactions; never force-click hidden controls.
+const clickPublicThemeToggle = async (page, label) => {
+    const toggle = page.locator('[data-theme-toggle]').first();
+    assert(await toggle.count() === 1, label + ' theme toggle is missing.');
+
+    if (await toggle.isVisible()) {
+        await toggle.click();
+        return;
+    }
+
+    const panel = page.locator('[data-public-user-panel]').first();
+    const accountTrigger = page.locator('[data-public-user-trigger]').first();
+    const relocated = panel.locator('[data-theme-toggle]');
+
+    assert(
+        await relocated.count() === 1,
+        label + ' hidden theme toggle was not relocated into the Account dropdown.'
+    );
+    assert(
+        await accountTrigger.isVisible(),
+        label + ' Account dropdown trigger is not visible.'
+    );
+
+    await accountTrigger.click();
+    assert(
+        await accountTrigger.getAttribute('aria-expanded') === 'true',
+        label + ' Account dropdown did not expose its expanded state.'
+    );
+    assert(
+        await panel.isVisible() && await relocated.isVisible(),
+        label + ' relocated theme toggle was not visible in the opened dropdown.'
+    );
+
+    await relocated.click();
+    await page.keyboard.press('Escape');
+    assert(
+        await accountTrigger.getAttribute('aria-expanded') === 'false',
+        label + ' Account dropdown did not close with Escape.'
+    );
+};
+
 const runCrossBrowserCritical = async (browserType, browserName) => {
     const browser = await browserType.launch({ headless: true });
 
@@ -255,7 +297,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                     localStorage.setItem('barama-theme', 'light');
                 });
                 await page.reload({ waitUntil: 'networkidle' });
-                await page.locator('[data-theme-toggle]').click();
+                await clickPublicThemeToggle(page, browserName);
 
                 assert(
                     await page.locator('html').getAttribute('data-bs-theme')
@@ -526,7 +568,7 @@ try {
         fullPage: true,
     });
 
-    await page.locator('[data-theme-toggle]').click();
+    await clickPublicThemeToggle(page, 'Chromium installed homepage');
     assert(
         await page.locator('html').getAttribute('data-bs-theme') === 'dark',
         'Installed theme toggle did not activate dark mode.'
