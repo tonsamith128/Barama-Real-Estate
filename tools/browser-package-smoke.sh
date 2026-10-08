@@ -671,11 +671,26 @@ try {
     );
     await page.locator('input[name="copyright"]').fill('Copyright {year} | Barama Real Estate QA');
     await page.locator('input[name="social_facebook"]').fill('https://www.facebook.com/barama-test');
-    await page.locator('button[type="submit"]').filter({ hasText: 'Save Footer' }).click();
-    await page.waitForLoadState('networkidle');
+    const [footerSaveResponse] = await Promise.all([
+        page.waitForResponse((r) =>
+            r.url().includes('/dashboard/footer')
+                && r.request().method() === 'POST'
+        ),
+        page.locator('button[type="submit"]').filter({ hasText: 'Save Footer' }).click(),
+    ]);
+    const footerSaveResult = await footerSaveResponse.json();
     assert(
-        page.url().includes('/dashboard/footer') && page.url().includes('saved=1'),
-        'Footer editor did not persist and redirect after Save.'
+        footerSaveResponse.ok() && footerSaveResult?.ok === true,
+        'Footer editor did not return a successful workspace JSON response.'
+    );
+    // The existing workspace form handler reloads after saving; a fresh GET
+    // proves data persisted rather than merely remaining in the input DOM.
+    await page.waitForTimeout(550);
+    await page.goto(installedBase + '/dashboard/footer', { waitUntil: 'networkidle' });
+    assert(
+        await page.locator('input[name="copyright"]').inputValue()
+            === 'Copyright {year} | Barama Real Estate QA',
+        'Footer copyright content was not saved to application settings.'
     );
     await page.screenshot({
         path: artifacts + '/admin-footer-editor-desktop.png',
