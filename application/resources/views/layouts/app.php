@@ -628,7 +628,7 @@ $appJsVersion = is_file($appJsFile)
                     <nav class="site-footer__social" aria-label="<?= e(t((string) ($footerContent['social_heading'] ?? 'Follow us'))) ?>">
                         <?php foreach ($footerSocialNetworks as $platform => $details): ?>
                             <?php $socialHref = trim((string) ($footerSocialLinks[$platform] ?? '')); ?>
-                            <?php if ($socialHref === '' || !str_starts_with($socialHref, 'https://')) { continue; } ?>
+                            <?php if ($socialHref === '' || preg_match('~^https://~i', $socialHref) !== 1) { continue; } ?>
                             <a href="<?= e($socialHref) ?>" target="_blank" rel="noopener noreferrer" class="site-footer__social-link" aria-label="<?= e($details['label']) ?>" title="<?= e($details['label']) ?>"><span aria-hidden="true"><?= e($details['glyph']) ?></span></a>
                         <?php endforeach; ?>
                     </nav>
