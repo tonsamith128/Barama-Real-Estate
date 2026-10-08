@@ -21,7 +21,7 @@ $expectFailure = static function (callable $operation, string $message) use ($as
     $threw = false;
     try {
         $operation();
-    } catch (RuntimeException $exception) {
+    } catch (RuntimeException|InvalidArgumentException $exception) {
         $threw = true;
     }
     $assert($threw, $message);
@@ -63,6 +63,20 @@ try {
         'Changing SMTP host without a new password must fail.'
     );
     echo "[PASS] Secret not reused for a different server.\n";
+
+    $expectFailure(
+        static fn () => $service->validatedInput(
+            array_replace($input, ['mail_encryption' => 'none'])
+        ),
+        'Authenticated SMTP without encryption must be rejected.'
+    );
+    $expectFailure(
+        static fn () => $service->validatedInput(
+            array_replace($input, ['mail_username' => ''])
+        ),
+        'Orphan SMTP passwords without a username must be rejected.'
+    );
+    echo "[PASS] Insecure SMTP credential configurations rejected.\n";
 
     $repository->save((new \Barama\Services\InstallerService())->validateMail([
         'driver' => 'mail',
