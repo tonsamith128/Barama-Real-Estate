@@ -74,11 +74,12 @@ $driver = (string) ($mail['driver'] ?? 'mail');
                 </div>
             </label>
             <label class="barama-settings-field">
-                <span>Username</span>
+                <span>SMTP username</span>
                 <div class="barama-settings-control">
                     <i><?= app_icon('user') ?></i>
-                    <input name="mail_username" value="<?= e((string) ($mail['username'] ?? '')) ?>" maxlength="191" autocomplete="off">
+                    <input name="mail_username" value="<?= e((string) ($mail['username'] ?? '')) ?>" maxlength="191" autocomplete="off" aria-describedby="smtp-account-note">
                 </div>
+                <small id="smtp-account-note">Gmail account names are hidden on this screen. Leave the mask unchanged to keep the saved account, or replace it with a new full address.</small>
             </label>
             <label class="barama-settings-field">
                 <span>SMTP password</span>
