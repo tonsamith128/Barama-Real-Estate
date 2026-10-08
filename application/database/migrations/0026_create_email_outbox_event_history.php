@@ -18,7 +18,7 @@ WHERE trigger_schema = DATABASE()
 SQL)->fetchColumn();
 
     if ((int) $existingTriggers !== 2) {
-        \\Barama\\Support\\TriggerCapabilityProbe::assertSupported($pdo);
+        \Barama\Support\TriggerCapabilityProbe::assertSupported($pdo);
     }
 
     $pdo->exec(<<<'SQL'
