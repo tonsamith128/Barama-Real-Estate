@@ -65,8 +65,69 @@ jobs:
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
+      # Migration 0026 uses append-only audit triggers. MySQL 8 binary logging
+      # requires this server-level setting for non-SUPER schema users to create
+      # triggers. Set it only in the ephemeral CI MySQL service, never on live DBs.
+      - name: Configure CI MySQL trigger prerequisite
+        run: |
+          php <<'PHP'
+          <?php
+          declare(strict_types=1);
+          $pdo = new PDO(
+              'mysql:host=' . getenv('DB_HOST') . ';port=' . getenv('DB_PORT'),
+              'root',
+              (string) getenv('PACKAGE_DB_PASSWORD'),
+              [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+          );
+          $pdo->exec('SET GLOBAL log_bin_trust_function_creators = 1');
+          if ((int) $pdo->query('SELECT @@GLOBAL.log_bin_trust_function_creators')->fetchColumn() !== 1) {
+              throw new RuntimeException('CI trigger prerequisite was not enabled.');
+          }
+          fwrite(STDOUT, "[PASS] Ephemeral CI MySQL trigger prerequisite enabled.\n");
+          PHP
+
       - name: Run database migrations
         run: php tools/migrate.php
+
+      # Enforce the actual immutability rule rather than merely checking that
+      # the privileged test server accepted the trigger definitions.
+      - name: Verify email outbox audit history is append-only
+        run: |
+          php <<'PHP'
+          <?php
+          declare(strict_types=1);
+          $pdo = new PDO(
+              'mysql:host=' . getenv('DB_HOST')
+              . ';port=' . getenv('DB_PORT')
+              . ';dbname=' . getenv('DB_DATABASE') . ';charset=utf8mb4',
+              (string) getenv('DB_USERNAME'),
+              (string) getenv('DB_PASSWORD'),
+              [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+          );
+          $pdo->beginTransaction();
+          try {
+              $pdo->exec("INSERT INTO email_outbox_events (email_outbox_id, event_type) VALUES (0, 'ci_append_only_probe')");
+              $id = (int) $pdo->lastInsertId();
+              foreach ([
+                  "UPDATE email_outbox_events SET event_type='tampered' WHERE id={$id}",
+                  "DELETE FROM email_outbox_events WHERE id={$id}",
+              ] as $statement) {
+                  try {
+                      $pdo->exec($statement);
+                      throw new RuntimeException('Append-only trigger failed to block a modification.');
+                  } catch (PDOException $e) {
+                      if ((string) $e->getCode() !== '45000') {
+                          throw $e;
+                      }
+                  }
+              }
+              fwrite(STDOUT, "[PASS] UPDATE and DELETE are rejected by append-only audit triggers.\n");
+          } finally {
+              if ($pdo->inTransaction()) {
+                  $pdo->rollBack();
+              }
+          }
+          PHP
 
       - name: Verify migrated schema
         run: php tools/schema-smoke.php
