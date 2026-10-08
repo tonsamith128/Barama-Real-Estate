@@ -669,6 +669,41 @@ try {
         await page.locator('input[name="compliance_heading"]').inputValue() === 'Compliance',
         'Default Compliance heading missing from Footer editor.'
     );
+    // Exercise dynamic footer menu editing through real browser controls:
+    // add Brand link, rename Marketplace, remove a saved item, and reorder
+    // Compliance without breaking canonical policy destinations.
+    await page.locator('input[name="brand_heading"]').fill('Our Marketplace');
+    const brandList = page.locator('[data-footer-list="brand"]');
+    await page.locator('[data-footer-add="brand"]').click();
+    assert(await brandList.locator('[data-footer-item]').count() === 1, 'Brand item was not added.');
+    await brandList.locator('[data-footer-item]').last().locator('[data-footer-label]').fill('Our Story');
+    await brandList.locator('[data-footer-item]').last().locator('[data-footer-url]').fill('/about');
+
+    const marketList = page.locator('[data-footer-list="marketplace"]');
+    const originalMarketLinks = await marketList.locator('[data-footer-label]').allInputValues();
+    assert(originalMarketLinks.length >= 2, 'Expected at least two existing Marketplace items for reorder test.');
+    const removedLabel = originalMarketLinks[0];
+    await marketList.locator('[data-footer-item]').first().locator('[data-footer-remove]').click();
+    await page.locator('[data-footer-add="marketplace"]').click();
+    await marketList.locator('[data-footer-item]').last().locator('[data-footer-label]').fill('Custom Destination');
+    await marketList.locator('[data-footer-item]').last().locator('[data-footer-url]').fill('/projects');
+    await marketList.locator('[data-footer-item]').last().locator('[data-footer-up]').click();
+    assert(
+        (await marketList.locator('[data-footer-label]').allInputValues()).includes('Custom Destination'),
+        'Marketplace Add/Reorder did not retain custom link.'
+    );
+    await page.locator('input[name="marketplace_heading"]').fill('Discover');
+
+    const complianceList = page.locator('[data-footer-list="compliance"]');
+    const complianceCount = await complianceList.locator('[data-footer-item]').count();
+    assert(complianceCount === 3, 'Canonical policy links must import as three editable menu rows.');
+    await complianceList.locator('[data-footer-item]').last().locator('[data-footer-up]').click();
+    await complianceList.locator('[data-footer-item]').nth(1).locator('[data-footer-up]').click();
+    assert(
+        await complianceList.locator('[data-footer-label]').first().inputValue() === 'Terms',
+        'Footer item Move Up did not reorder compliance links.'
+    );
+
     await page.locator('input[name="copyright"]').fill('Copyright {year} | Barama Real Estate QA');
     await page.locator('input[name="social_facebook"]').fill('https://www.facebook.com/barama-test');
     const [footerSaveResponse] = await Promise.all([
@@ -692,6 +727,15 @@ try {
             === 'Copyright {year} | Barama Real Estate QA',
         'Footer copyright content was not saved to application settings.'
     );
+    assert(
+        await page.locator('[data-footer-list="marketplace"] [data-footer-label]').allInputValues()
+            .then(labels => labels.includes('Custom Destination') && !labels.includes(removedLabel)),
+        'Footer menu addition/deletion was not persisted after a fresh GET.'
+    );
+    assert(
+        await page.locator('[data-footer-list="compliance"] [data-footer-label]').first().inputValue() === 'Terms',
+        'Footer menu order was not persisted after a fresh GET.'
+    );
     await page.screenshot({
         path: artifacts + '/admin-footer-editor-desktop.png',
         fullPage: true,
@@ -706,6 +750,24 @@ try {
             .getByRole('link', { name: 'Policy Center' }).count() === 1,
         'Compliance Policy Center link is missing.'
     );
+    assert(
+        await page.locator('.site-footer__brand-links a').filter({ hasText: 'Our Story' }).count() === 1,
+        'Brand menu link was not rendered on the public site.'
+    );
+    const publicMarket = page.locator('.site-footer')
+        .getByRole('navigation', { name: 'Discover links' });
+    assert(
+        await publicMarket.getByRole('link', { name: 'Custom Destination' }).count() === 1,
+        'Custom public Marketplace link is missing.'
+    );
+    assert(
+        await publicMarket.getByRole('link', { name: removedLabel, exact: true }).count() === 0,
+        'Deleted footer menu link was unexpectedly restored.'
+    );
+    const publicPolicyOrder = await page.locator('.site-footer')
+        .getByRole('navigation', { name: 'Compliance links' })
+        .locator('a').allTextContents();
+    assert(publicPolicyOrder[0].trim() === 'Terms', 'Reordered policy link did not become first in public footer.');
     assert(
         await page.locator('.site-footer a[href$="/policies?=privacy-policy"]').count() === 1
             && await page.locator('.site-footer a[href$="/policies?=terms-of-service"]').count() === 1,
