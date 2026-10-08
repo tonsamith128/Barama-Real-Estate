@@ -56,6 +56,47 @@ $invalid(static fn () => FooterContentService::validate(array_replace($test, ['c
 $invalid(static fn () => FooterContentService::validate(array_replace($test, ['compliance_heading' => str_repeat('x', 62)])));
 echo "[PASS] HTTPS-only social link input and bounded footer text validation.\n";
 
+$flex = $test;
+$flex['footer_links_submitted'] = '1';
+$flex['brand_heading'] = 'Explore Barama';
+$flex['footer_links'] = [
+    'brand' => [['label' => 'Our Story', 'url' => '/about']],
+    'marketplace' => [
+        ['label' => 'Explore Projects', 'url' => '/projects'],
+        ['label' => 'Browse Properties', 'url' => '/properties'],
+        ['label' => 'External Portal', 'url' => 'https://example.org/catalog'],
+    ],
+    'compliance' => [
+        ['label' => 'Terms', 'url' => '/policies?=terms-of-service'],
+        ['label' => 'Privacy', 'url' => '/policies?=privacy-policy'],
+    ],
+    'help' => [],
+];
+$config = FooterContentService::validate($flex);
+$assert($config['brand_heading'] === 'Explore Barama', 'Custom Brand heading was not accepted.');
+$assert(count($config['links']['brand']) === 1, 'Brand menu items cannot be edited.');
+$assert($config['links']['marketplace'][0]['label'] === 'Explore Projects', 'Menu item order was not preserved.');
+$assert($config['links']['compliance'][0]['label'] === 'Terms', 'Compliance reordering failed.');
+$assert($config['links']['help'] === [], 'Removed links must remain removed.');
+echo "[PASS] Custom headings, addition, removal, order and canonical policy URLs.\n";
+
+foreach ([
+    'javascript:alert(1)', '//evil.example', 'http://example.org',
+    "https://example.org\r\n", "/../admin", '/foo bar',
+    'https://user:pass@example.org',
+] as $bad) {
+    $attempt = $flex;
+    $attempt['footer_links']['brand'][0]['url'] = $bad;
+    $invalid(static fn () => FooterContentService::validate($attempt));
+}
+$tooMany = $flex;
+$tooMany['footer_links']['brand'] = array_fill(0, 16, ['label' => 'Test', 'url' => '/about']);
+$invalid(static fn () => FooterContentService::validate($tooMany));
+$malformed = $flex;
+$malformed['footer_links']['help'] = [['url' => '/contact']];
+$invalid(static fn () => FooterContentService::validate($malformed));
+echo "[PASS] Invalid link schemes, overflow and missing fields fail closed.\n";
+
 $root = dirname(__DIR__);
 $public = (string) file_get_contents($root . '/application/resources/views/layouts/app.php');
 $admin = (string) file_get_contents($root . '/application/resources/views/workspace/footer.php');
@@ -64,14 +105,28 @@ $controller = (string) file_get_contents($root . '/application/app/Http/Controll
 $mailCss = (string) file_get_contents($root . '/assets/css/admin-mail-settings-v100.css');
 
 foreach ([
-    "'?=privacy-policy'",
-    "'?=terms-of-service'",
     "'compliance_heading'",
     "FooterContentRepository",
     'site-footer__social',
+    'site-footer__brand-heading',
+    'editableFooterLinks',
 ] as $need) {
     $assert(str_contains($public, $need), 'Public Footer missing required binding: ' . $need);
 }
+$defaultsSource = (string) file_get_contents($root . '/application/app/Repositories/FooterContentRepository.php');
+$assert(
+    str_contains($defaultsSource, "'/policies?=privacy-policy'")
+    && str_contains($defaultsSource, "'/policies?=terms-of-service'"),
+    'Legacy canonical Policy Center paths must remain available for migration.'
+);
+$assert(
+    str_contains($admin, 'data-footer-add')
+    && str_contains($admin, 'data-footer-remove')
+    && str_contains($admin, 'data-footer-up')
+    && str_contains($admin, 'data-footer-down')
+    && str_contains($admin, 'footer_links_submitted'),
+    'Footer editor is missing dynamic link controls.'
+);
 $assert(!str_contains($public, "url('/pages/privacy')"), 'Legacy Privacy URL still included.');
 $assert(!str_contains($public, "url('/pages/terms')"), 'Legacy Terms URL still included.');
 $assert(
