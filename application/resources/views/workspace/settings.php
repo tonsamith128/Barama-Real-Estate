@@ -82,7 +82,7 @@ if ($workspace === 'dashboard') {
 <?php endif; ?>
 <?php endif; ?>">
 <?php if ($section === 'mail' && $workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-mail-settings-v100.css') . '?v=100') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/admin-mail-settings-v100.css') . '?v=102') ?>">
 <?php endif; ?>
 <?php if ($section === 'locations' && $workspace === 'dashboard'): ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-global-locations-v110.css') . '?v=110') ?>">
