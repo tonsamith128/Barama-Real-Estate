@@ -146,6 +146,58 @@ const seriousAccessibility = async (page, label) => {
     );
 };
 
+// Compact Barama headers intentionally show inline icon navigation rather
+// than a hamburger. Validate whichever accessible interaction is visible.
+const verifyMobileNavigation = async (page, label) => {
+    const menu = page.locator('[data-site-menu-toggle]');
+
+    if (await menu.isVisible()) {
+        await menu.click();
+        assert(
+            await menu.getAttribute('aria-expanded') === 'true',
+            label + ' mobile navigation did not open.'
+        );
+        await page.keyboard.press('Escape');
+        assert(
+            await menu.getAttribute('aria-expanded') === 'false',
+            label + ' mobile navigation did not close with Escape.'
+        );
+        return;
+    }
+
+    const navigation = page.locator('.site-header [data-site-navigation]');
+    assert(
+        await navigation.isVisible(),
+        label + ' compact navigation is hidden while hamburger is unavailable.'
+    );
+
+    const links = navigation.locator('.main-nav a');
+    const count = await links.count();
+    assert(count >= 4, label + ' compact navigation has fewer than four links.');
+
+    for (let i = 0; i < 4; i++) {
+        const link = links.nth(i);
+        assert(await link.isVisible(), label + ' compact navigation link ' + i + ' is hidden.');
+        const accessibleName = (
+            (await link.getAttribute('aria-label')) || await link.textContent() || ''
+        ).trim();
+        assert(accessibleName.length > 0, label + ' compact icon link ' + i + ' has no name.');
+    }
+
+    const properties = navigation.locator('.main-nav a[href$="/properties"]').first();
+    assert(
+        await properties.isVisible(),
+        label + ' compact Properties navigation is not visible.'
+    );
+    await properties.click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        new URL(page.url()).pathname === '/properties',
+        label + ' compact Properties navigation did not navigate.'
+    );
+    await noOverflow(page, label + ' compact Properties navigation');
+};
+
 const runCrossBrowserCritical = async (browserType, browserName) => {
     const browser = await browserType.launch({ headless: true });
 
@@ -194,17 +246,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
                 });
-                const menu = page.locator('[data-site-menu-toggle]');
-                await menu.click();
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'true',
-                    browserName + ' mobile navigation did not open.'
-                );
-                await page.keyboard.press('Escape');
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'false',
-                    browserName + ' mobile navigation did not close with Escape.'
-                );
+                await verifyMobileNavigation(page, browserName);
             } else {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
@@ -348,17 +390,7 @@ try {
 
         if (viewport.name === 'mobile') {
             await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
-            const menu = page.locator('[data-site-menu-toggle]');
-            await menu.click();
-            assert(
-                await menu.getAttribute('aria-expanded') === 'true',
-                'Mobile navigation did not expose expanded state.'
-            );
-            await page.keyboard.press('Escape');
-            assert(
-                await menu.getAttribute('aria-expanded') === 'false',
-                'Mobile navigation did not close with Escape.'
-            );
+            await verifyMobileNavigation(page, 'Chromium');
         }
 
         await context.close();
