@@ -524,7 +524,7 @@ final class DashboardController
     {
         $repository = new NotificationRepository();
         $validStatuses = ['pending', 'processing', 'failed', 'sent', 'cancelled'];
-        $validPageSizes = [25, 50, 100];
+        $validPageSizes = [10];
 
         $cleanText = static function (mixed $value): string {
             $value = trim((string) $value);
@@ -545,10 +545,9 @@ final class DashboardController
             $status = '';
         }
 
-        $perPage = (int) $request->input('per_page', 25);
-        if (!in_array($perPage, $validPageSizes, true)) {
-            $perPage = 25;
-        }
+        // Compact mail history is intentionally 10 per page; ignore stale
+        // saved views requesting 25/50/100 rows.
+        $perPage = 10;
 
         $filters = [
             'recipient' => $cleanText($request->input('recipient', '')),
