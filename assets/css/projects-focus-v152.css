@@ -1,0 +1,52 @@
+/* Barama Projects Table Focus v1.5.2 */
+.workspace-project-context,
+.workspace-project-inventory,
+.workspace-project-state {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+.workspace-project-context strong {
+    font-weight: 650;
+    line-height: 1.25;
+}
+.workspace-project-context small,
+.workspace-project-inventory small,
+.workspace-project-state small {
+    display: block;
+    opacity: 0.72;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.workspace-project-context__meta,
+.workspace-project-inventory__meta,
+.workspace-project-state__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.48rem;
+}
+.workspace-project-context__meta span,
+.workspace-project-inventory__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.workspace-project-context__meta span + span::before,
+.workspace-project-inventory__meta span + span::before {
+    content: "•";
+    margin-right: 0.48rem;
+    opacity: 0.48;
+}
+@media (max-width: 900px) {
+    .workspace-project-context__meta,
+    .workspace-project-inventory__meta {
+        display: grid;
+        gap: 0.2rem;
+    }
+    .workspace-project-context__meta span + span::before,
+    .workspace-project-inventory__meta span + span::before {
+        content: none;
+        margin: 0;
+    }
+}

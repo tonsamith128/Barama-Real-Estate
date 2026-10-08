@@ -25,19 +25,23 @@ final class PageContentSanitizer
             return $content;
         }
 
-        $content = preg_replace('#<(script|style|iframe|object|embed|form|input|button|textarea|select|option)[^>]*>.*?</\\1>#is', '', $content) ?? '';
+        $content = preg_replace(
+            '#<(script|style|iframe|object|embed|form|input|button|textarea|select|option)[^>]*>.*?</\1>#is',
+            '',
+            $content
+        ) ?? '';
 
         // Browser contenteditable surfaces may emit div blocks for Enter.
         // Normalize them to semantic paragraphs before the allowlist pass.
-        $content = preg_replace('/<div\\b[^>]*>/i', '<p>', $content) ?? '';
-        $content = preg_replace('/<\\/div>/i', '</p>', $content) ?? '';
+        $content = preg_replace('/<div\b[^>]*>/i', '<p>', $content) ?? '';
+        $content = preg_replace('/<\/div>/i', '</p>', $content) ?? '';
         $content = preg_replace('/<!--.*?-->/s', '', $content) ?? '';
 
         $allowed = '<' . implode('><', self::ALLOWED_TAGS) . '>';
         $content = strip_tags($content, $allowed);
 
         $content = preg_replace_callback(
-            '/<\\/?([a-z0-9]+)([^>]*)>/i',
+            '/<\/?([a-z0-9]+)([^>]*)>/i',
             static function (array $match): string {
                 $tag = strtolower((string) ($match[1] ?? ''));
                 $raw = (string) ($match[0] ?? '');
@@ -48,7 +52,9 @@ final class PageContentSanitizer
                 }
 
                 if (str_starts_with($raw, '</')) {
-                    return in_array($tag, ['br', 'hr', 'img'], true) ? '' : '</' . $tag . '>';
+                    return in_array($tag, ['br', 'hr', 'img'], true)
+                        ? ''
+                        : '</' . $tag . '>';
                 }
 
                 if (in_array($tag, ['br', 'hr'], true)) {
@@ -62,7 +68,8 @@ final class PageContentSanitizer
                         return '<a>';
                     }
 
-                    return '<a href="' . self::escapeAttribute($href) . '" rel="noopener noreferrer">';
+                    return '<a href="' . self::escapeAttribute($href)
+                        . '" rel="noopener noreferrer">';
                 }
 
                 if ($tag === 'img') {
@@ -102,20 +109,30 @@ final class PageContentSanitizer
             return '';
         }
 
-        if (preg_match('/<(?:p|h2|h3|h4|ul|ol|blockquote|pre|img|hr)\\b/i', $stored) === 1) {
+        if (preg_match(
+            '/<(?:p|h2|h3|h4|ul|ol|blockquote|pre|img|hr)\b/i',
+            $stored
+        ) === 1) {
             return $stored;
         }
 
-        $parts = preg_split('/\\R{2,}/u', $stored) ?: [];
+        $parts = preg_split('/\R{2,}/u', $stored) ?: [];
         $html = [];
 
         foreach ($parts as $part) {
             $part = trim((string) $part);
+
             if ($part === '') {
                 continue;
             }
 
-            $html[] = '<p>' . nl2br(htmlspecialchars($part, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>';
+            $html[] = '<p>'
+                . nl2br(htmlspecialchars(
+                    $part,
+                    ENT_QUOTES | ENT_SUBSTITUTE,
+                    'UTF-8'
+                ))
+                . '</p>';
         }
 
         return implode("\n", $html);
@@ -123,10 +140,16 @@ final class PageContentSanitizer
 
     private static function attribute(string $attrs, string $name): string
     {
-        $pattern = '/\\b' . preg_quote($name, '/') . '\\s*=\\s*(["\\\'])(.*?)\\1/is';
+        $pattern = '/\b'
+            . preg_quote($name, '/')
+            . '\s*=\s*(["\'])(.*?)\1/is';
 
         if (preg_match($pattern, $attrs, $match) === 1) {
-            return html_entity_decode(trim((string) ($match[2] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            return html_entity_decode(
+                trim((string) ($match[2] ?? '')),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            );
         }
 
         return '';
@@ -136,7 +159,7 @@ final class PageContentSanitizer
     {
         $url = trim($url);
 
-        if ($url === '' || preg_match('/[\\x00-\\x1F\\x7F]/', $url) === 1) {
+        if ($url === '' || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
             return false;
         }
 
@@ -155,6 +178,10 @@ final class PageContentSanitizer
 
     private static function escapeAttribute(string $value): string
     {
-        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return htmlspecialchars(
+            $value,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        );
     }
 }

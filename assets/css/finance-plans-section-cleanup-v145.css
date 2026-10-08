@@ -1,0 +1,40 @@
+/*
+ * Barama Dashboard Plans Section Background Cleanup v1.4.5
+ * Scope: Admin /dashboard/plans only.
+ *
+ * Removes only the large visual wrapper around Pricing plan presets.
+ * Individual Basic / Pro / Premium pricing cards remain untouched.
+ */
+
+.finance-plans__tiers {
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.finance-plans__tiers::before,
+.finance-plans__tiers::after {
+    display: none !important;
+    content: none !important;
+}
+
+.finance-plans__tiers .finance-plans__section-head,
+.finance-plans__tiers .finance-plans__section-head h2,
+.finance-plans__tiers .finance-plans__section-head p {
+    color: inherit !important;
+}
+
+.finance-plans__tiers .finance-plans__section-head {
+    margin-bottom: 18px;
+}
+
+/* Cards are intentionally not restyled here. */
+@media (max-width: 760px) {
+    .finance-plans__tiers {
+        padding: 0 !important;
+        border-radius: 0 !important;
+    }
+}

@@ -2,6 +2,32 @@
 
 declare(strict_types=1);
 
+
+
+/* BARAMA_CHANGE_CONFIRMATION_PAGE_V100_BOOTSTRAP */
+$baramaChangeConfirmationSupport = __DIR__ . '/application/support/BaramaChangeConfirmationPage.php';
+if (!is_file($baramaChangeConfirmationSupport)) {
+    $baramaChangeConfirmationSupport = dirname(__DIR__) . '/application/support/BaramaChangeConfirmationPage.php';
+}
+if (is_file($baramaChangeConfirmationSupport)) {
+    require_once $baramaChangeConfirmationSupport;
+    if (function_exists('barama_change_confirmation_page_buffer')) {
+        ob_start('barama_change_confirmation_page_buffer');
+    }
+}
+/* /BARAMA_CHANGE_CONFIRMATION_PAGE_V100_BOOTSTRAP */
+
+/* BARAMA_SESSION_EXPIRED_PAGE_V100_BOOTSTRAP */
+$baramaSessionExpiredSupport = __DIR__ . '/application/support/BaramaSessionExpiredPage.php';
+if (is_file($baramaSessionExpiredSupport)) {
+    require_once $baramaSessionExpiredSupport;
+    if (function_exists('barama_session_expired_page_buffer')) {
+        ob_start('barama_session_expired_page_buffer');
+    }
+}
+/* /BARAMA_SESSION_EXPIRED_PAGE_V100_BOOTSTRAP */
+
+
 define('BARAMA_START', microtime(true));
 
 $lock = __DIR__

@@ -1,0 +1,75 @@
+/* BARAMA_ADMIN_SECURITY_FACTORS_V132 */
+.barama-security-factor-note {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 18px;
+    padding: 14px 15px;
+    border: 1px solid color-mix(in srgb, var(--settings-accent, #6b96ff) 28%, var(--settings-border, #334155));
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--settings-accent, #6b96ff) 7%, transparent);
+}
+.barama-security-factor-note strong { font-size: 11.5px; }
+.barama-security-factor-note span { color: var(--settings-muted, #94a3b8); font-size: 10.5px; line-height: 1.55; }
+.barama-security-copy-row {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 9px;
+    align-items: center;
+}
+.barama-security-copy-row code {
+    min-width: 0;
+    padding: 13px 14px;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--settings-border, #334155);
+    border-radius: 11px;
+    color: var(--bs-body-color, #e5e7eb);
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 94%, transparent);
+    font-size: 12px;
+    letter-spacing: .06em;
+}
+.barama-security-recovery {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, #35c98b 40%, var(--settings-border, #334155));
+    border-radius: 14px;
+    background: color-mix(in srgb, #35c98b 7%, transparent);
+}
+.barama-security-recovery > strong { display: block; font-size: 12px; }
+.barama-security-recovery > p { margin: 4px 0 12px; color: var(--settings-muted, #94a3b8); font-size: 10.5px; }
+.barama-security-recovery > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+.barama-security-recovery code {
+    padding: 9px 10px;
+    border-radius: 9px;
+    color: inherit;
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 88%, transparent);
+    font-size: 10.5px;
+    text-align: center;
+}
+.barama-security-danger-form,
+.barama-security-inline-cancel {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
+    gap: 9px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--settings-border, #334155);
+}
+.barama-security-inline-cancel { grid-template-columns: minmax(0,1fr) auto; }
+.barama-security-danger-form input,
+.barama-security-inline-cancel input {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--settings-border, #334155);
+    border-radius: 10px;
+    outline: 0;
+    color: inherit;
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 94%, transparent);
+}
+.barama-security-danger-form input:focus,
+.barama-security-inline-cancel input:focus { border-color: var(--settings-accent, #6b96ff); }
+@media (max-width: 680px) {
+    .barama-security-recovery > div { grid-template-columns: 1fr; }
+    .barama-security-danger-form,
+    .barama-security-inline-cancel,
+    .barama-security-copy-row { grid-template-columns: 1fr; }
+}

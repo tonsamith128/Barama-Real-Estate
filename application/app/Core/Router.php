@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Barama\Core;
 
+use Barama\Http\Middleware\ChangeConfirmationMiddleware;
+use Barama\Services\SecurityProtectionService;
 use Closure;
 use RuntimeException;
 
@@ -44,9 +46,19 @@ final class Router
             }
         }
 
+        $normalizedMethod = strtoupper($method);
+        $normalizedPath = $this->normalizePath($path);
+
+        if (
+            $normalizedMethod === 'POST'
+            && $this->isWorkspaceMutationPath($normalizedPath)
+        ) {
+            $middleware[] = new ChangeConfirmationMiddleware();
+        }
+
         $this->routes[] = [
-            'method' => strtoupper($method),
-            'path' => $this->normalizePath($path),
+            'method' => $normalizedMethod,
+            'path' => $normalizedPath,
             'handler' => $handler,
             'middleware' => $middleware,
         ];
@@ -56,6 +68,15 @@ final class Router
 
     public function dispatch(Request $request): Response
     {
+        try {
+            $blocked = (new SecurityProtectionService())->guard($request);
+            if ($blocked instanceof Response) {
+                return $blocked;
+            }
+        } catch (\Throwable) {
+            // Protection must fail open if its configuration store is unavailable.
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] !== $request->method()) {
                 continue;
@@ -159,6 +180,17 @@ final class Router
         }
 
         return $params;
+    }
+
+    private function isWorkspaceMutationPath(string $path): bool
+    {
+        foreach (['/dashboard', '/developer', '/account'] as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalizePath(string $path): string

@@ -5,8 +5,90 @@ declare(strict_types=1);
 $summary = is_array($billingOperationsSummary ?? null) ? $billingOperationsSummary : [];
 $reconciliation = is_array($reconciliationInvoices ?? null) ? $reconciliationInvoices : [];
 $webhookOperations = is_array($webhookOperationalEvents ?? null) ? $webhookOperationalEvents : [];
+
+// Billing Operations Pagination Standard v1.8.15.
+$billingOpsPerPage = 10;
+
+$reconciliationTotal = count($reconciliation);
+$reconciliationPages = max(1, (int) ceil($reconciliationTotal / $billingOpsPerPage));
+$reconciliationPage = filter_var(
+    $_GET['reconciliation_page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$reconciliationPage = $reconciliationPage === false
+    ? 1
+    : min((int) $reconciliationPage, $reconciliationPages);
+
+$visibleReconciliation = array_slice(
+    $reconciliation,
+    ($reconciliationPage - 1) * $billingOpsPerPage,
+    $billingOpsPerPage
+);
+
+$webhookOpsTotal = count($webhookOperations);
+$webhookOpsPages = max(1, (int) ceil($webhookOpsTotal / $billingOpsPerPage));
+$webhookOpsPage = filter_var(
+    $_GET['webhook_ops_page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$webhookOpsPage = $webhookOpsPage === false
+    ? 1
+    : min((int) $webhookOpsPage, $webhookOpsPages);
+
+$visibleWebhookOperations = array_slice(
+    $webhookOperations,
+    ($webhookOpsPage - 1) * $billingOpsPerPage,
+    $billingOpsPerPage
+);
+
+$reconciliationPageUrl = static function (
+    int $target
+) use ($webhookOpsPage): string {
+    return url(
+        '/dashboard/billing-operations?'
+        . http_build_query(
+            [
+                'reconciliation_page' => max(1, $target),
+                'webhook_ops_page' => $webhookOpsPage,
+            ]
+        )
+    );
+};
+
+$webhookOpsPageUrl = static function (
+    int $target
+) use ($reconciliationPage): string {
+    return url(
+        '/dashboard/billing-operations?'
+        . http_build_query(
+            [
+                'reconciliation_page' => $reconciliationPage,
+                'webhook_ops_page' => max(1, $target),
+            ]
+        )
+    );
+};
+
 ?>
-<section class="workspace-page">
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-billing-operations-pagination-v1815.css') . '?v=1815') ?>"
+>
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-billing-operations-focus-v1819.css') . '?v=1819') ?>"
+>
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-billing-operations-empty-state-v1822.css') . '?v=1822') ?>"
+>
+
+<section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--billing-operations">
+    <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -21,7 +103,7 @@ $webhookOperations = is_array($webhookOperationalEvents ?? null) ? $webhookOpera
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
+    <div class="workspace-stat-grid finance-summary-cards">
         <div class="workspace-stat">
             <span><?= app_icon('layers') ?></span>
             <strong><?= e(number_format((int) ($summary['open_invoices'] ?? 0))) ?></strong>
@@ -68,26 +150,23 @@ $webhookOperations = is_array($webhookOperationalEvents ?? null) ? $webhookOpera
         </div>
 
         <div class="workspace-table-wrap">
-            <table class="workspace-table">
+            <table class="workspace-table finance-billing-ops-invoice-focus">
                 <thead>
                     <tr>
                         <th>Invoice</th>
                         <th>Company</th>
-                        <th>Status</th>
-                        <th>Due</th>
-                        <th>Total</th>
-                        <th>Settled</th>
-                        <th>Delta</th>
-                        <th>Reconciliation</th>
+                        <th>Billing</th>
+                        <th>Settlement</th>
+                        <th>State</th>
                         <th>Updated</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($reconciliation === []): ?>
-                        <tr><td colspan="9"><div class="workspace-record-empty">No invoice reconciliation records require display yet.</div></td></tr>
+                    <?php if ($visibleReconciliation === []): ?>
+                        <tr><td colspan="6"><div class="workspace-record-empty">No invoice reconciliation records require display yet.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($reconciliation as $invoice): ?>
+                    <?php foreach ($visibleReconciliation as $invoice): ?>
                         <?php
                         $state = (string) ($invoice['reconciliation_state'] ?? 'review');
                         $tone = in_array($state, ['balanced'], true)
@@ -99,18 +178,88 @@ $webhookOperations = is_array($webhookOperationalEvents ?? null) ? $webhookOpera
                         <tr>
                             <td><strong><?= e((string) $invoice['invoice_number']) ?></strong></td>
                             <td><?= e((string) $invoice['company_name']) ?></td>
-                            <td><?= e(ucfirst((string) $invoice['status'])) ?></td>
-                            <td><?= e((string) ($invoice['due_at'] ?? '—')) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['total'], 2)) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['settled_amount'], 2)) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['settlement_delta'], 2)) ?></td>
-                            <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucwords(str_replace('_', ' ', $state))) ?></span></td>
+                            <td>
+                                <div class="finance-billing-ops-billing">
+                                    <strong><?= e(ucfirst((string) $invoice['status'])) ?></strong>
+                                    <small>Due: <?= e((string) ($invoice['due_at'] ?? '—')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-billing-ops-settlement">
+                                    <small>Total: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['total'], 2)) ?></small>
+                                    <small>Settled: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['settled_amount'], 2)) ?></small>
+                                    <small>Delta: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['settlement_delta'], 2)) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-badge--<?= e($tone) ?>">
+                                    <?= e(ucwords(str_replace('_', ' ', $state))) ?>
+                                </span>
+                            </td>
                             <td><?= e((string) $invoice['updated_at']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+
+        <?php if ($reconciliationTotal > 0): ?>
+            <div class="finance-billing-ops-pager">
+                <span>
+                    Page <?= $reconciliationPage ?> of <?= $reconciliationPages ?>
+                    &middot; <?= $reconciliationTotal ?> record<?= $reconciliationTotal === 1 ? '' : 's' ?>
+                    &middot; 10 per page
+                </span>
+
+                <?php if ($reconciliationPages > 1): ?>
+                    <nav aria-label="Invoice reconciliation pages">
+                        <?php if ($reconciliationPage > 1): ?>
+                            <a href="<?= e($reconciliationPageUrl($reconciliationPage - 1)) ?>">Previous</a>
+                        <?php endif; ?>
+
+                        <?php
+                        $reconciliationFrom = max(1, $reconciliationPage - 2);
+                        $reconciliationTo = min($reconciliationPages, $reconciliationPage + 2);
+                        ?>
+                        <?php for ($i = $reconciliationFrom; $i <= $reconciliationTo; $i++): ?>
+                            <a
+                                href="<?= e($reconciliationPageUrl($i)) ?>"
+                                class="<?= $i === $reconciliationPage ? 'is-active' : '' ?>"
+                            ><?= $i ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($reconciliationPage < $reconciliationPages): ?>
+                            <a href="<?= e($reconciliationPageUrl($reconciliationPage + 1)) ?>">Next</a>
+                        <?php endif; ?>
+                    </nav>
+
+                    <form
+                        class="finance-billing-ops-goto"
+                        method="get"
+                        action="<?= e(url('/dashboard/billing-operations')) ?>"
+                    >
+                        <input
+                            type="hidden"
+                            name="webhook_ops_page"
+                            value="<?= $webhookOpsPage ?>"
+                        >
+                        <label>
+                            <span>Go To</span>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="reconciliation_page"
+                                min="1"
+                                max="<?= $reconciliationPages ?>"
+                                value="<?= $reconciliationPage ?>"
+                            >
+                        </label>
+                        <button class="btn btn-outline-secondary" type="submit">Go</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
     </section>
 
     <section class="workspace-table-section">
@@ -122,36 +271,48 @@ $webhookOperations = is_array($webhookOperationalEvents ?? null) ? $webhookOpera
         </div>
 
         <div class="workspace-table-wrap">
-            <table class="workspace-table">
+            <table class="workspace-table finance-billing-ops-webhook-focus">
                 <thead>
                     <tr>
                         <th>Received</th>
                         <th>Provider</th>
                         <th>Event</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Provider status</th>
-                        <th>Error</th>
+                        <th>State</th>
+                        <th>Issue</th>
                         <th aria-label="Actions"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($webhookOperations === []): ?>
-                        <tr><td colspan="8"><div class="workspace-record-empty">No webhook events currently require operational attention.</div></td></tr>
+                    <?php if ($visibleWebhookOperations === []): ?>
+                        <tr><td colspan="6"><div class="workspace-record-empty">No webhook events currently require operational attention.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($webhookOperations as $event): ?>
+                    <?php foreach ($visibleWebhookOperations as $event): ?>
                         <tr>
                             <td><?= e((string) $event['received_at']) ?></td>
                             <td>
                                 <strong><?= e((string) $event['provider_name']) ?></strong>
                                 <small><?= e((string) $event['provider_code']) ?></small>
                             </td>
-                            <td><?= e((string) $event['event_id']) ?></td>
-                            <td><?= e((string) $event['event_type']) ?></td>
-                            <td><span class="status-badge status-badge--<?= e((string) $event['status'] === 'failed' ? 'neutral' : 'pending') ?>"><?= e(ucfirst((string) $event['status'])) ?></span></td>
-                            <td><?= e(ucfirst((string) $event['provider_status'])) ?></td>
-                            <td><small><?= e((string) ($event['error_message'] ?? '—')) ?></small></td>
+                            <td>
+                                <div class="finance-billing-ops-event">
+                                    <strong><?= e((string) $event['event_id']) ?></strong>
+                                    <small><?= e((string) $event['event_type']) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-billing-ops-state">
+                                    <span class="status-badge status-badge--<?= e((string) $event['status'] === 'failed' ? 'neutral' : 'pending') ?>">
+                                        <?= e(ucfirst((string) $event['status'])) ?>
+                                    </span>
+                                    <small>Provider: <?= e(ucfirst((string) $event['provider_status'])) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-billing-ops-issue">
+                                    <small><?= e((string) ($event['error_message'] ?? '—')) ?></small>
+                                </div>
+                            </td>
                             <td>
                                 <details class="workspace-row-actions">
                                     <summary aria-label="Webhook operations" title="Actions"><span aria-hidden="true">&#8942;</span></summary>
@@ -177,5 +338,63 @@ $webhookOperations = is_array($webhookOperationalEvents ?? null) ? $webhookOpera
                 </tbody>
             </table>
         </div>
+
+        <?php if ($webhookOpsTotal > 0): ?>
+            <div class="finance-billing-ops-pager">
+                <span>
+                    Page <?= $webhookOpsPage ?> of <?= $webhookOpsPages ?>
+                    &middot; <?= $webhookOpsTotal ?> event<?= $webhookOpsTotal === 1 ? '' : 's' ?>
+                    &middot; 10 per page
+                </span>
+
+                <?php if ($webhookOpsPages > 1): ?>
+                    <nav aria-label="Webhook attention pages">
+                        <?php if ($webhookOpsPage > 1): ?>
+                            <a href="<?= e($webhookOpsPageUrl($webhookOpsPage - 1)) ?>">Previous</a>
+                        <?php endif; ?>
+
+                        <?php
+                        $webhookOpsFrom = max(1, $webhookOpsPage - 2);
+                        $webhookOpsTo = min($webhookOpsPages, $webhookOpsPage + 2);
+                        ?>
+                        <?php for ($i = $webhookOpsFrom; $i <= $webhookOpsTo; $i++): ?>
+                            <a
+                                href="<?= e($webhookOpsPageUrl($i)) ?>"
+                                class="<?= $i === $webhookOpsPage ? 'is-active' : '' ?>"
+                            ><?= $i ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($webhookOpsPage < $webhookOpsPages): ?>
+                            <a href="<?= e($webhookOpsPageUrl($webhookOpsPage + 1)) ?>">Next</a>
+                        <?php endif; ?>
+                    </nav>
+
+                    <form
+                        class="finance-billing-ops-goto"
+                        method="get"
+                        action="<?= e(url('/dashboard/billing-operations')) ?>"
+                    >
+                        <input
+                            type="hidden"
+                            name="reconciliation_page"
+                            value="<?= $reconciliationPage ?>"
+                        >
+                        <label>
+                            <span>Go To</span>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="webhook_ops_page"
+                                min="1"
+                                max="<?= $webhookOpsPages ?>"
+                                value="<?= $webhookOpsPage ?>"
+                            >
+                        </label>
+                        <button class="btn btn-outline-secondary" type="submit">Go</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
     </section>
 </section>

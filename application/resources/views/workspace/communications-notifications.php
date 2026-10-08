@@ -5,7 +5,8 @@ declare(strict_types=1);
 $notifications = is_array($notifications ?? null) ? $notifications : [];
 $summary = is_array($communicationsSummary ?? null) ? $communicationsSummary : [];
 ?>
-<section class="workspace-page">
+<section class="workspace-page notification-center-page">
+    <!-- BARAMA_NOTIFICATION_CENTER_LITERAL_NEWLINE_FIX_V102 -->    <!-- BARAMA_NOTIFICATION_CENTER_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -18,11 +19,27 @@ $summary = is_array($communicationsSummary ?? null) ? $communicationsSummary : [
         </span>
     </div>
 
-    <div class="workspace-stat-grid">
-        <div class="workspace-stat"><span><?= app_icon('message') ?></span><strong><?= e(number_format((int) ($summary['notifications'] ?? 0))) ?></strong><small>Total notifications</small></div>
-        <div class="workspace-stat"><span><?= app_icon('alert') ?></span><strong><?= e(number_format((int) ($summary['unread_notifications'] ?? 0))) ?></strong><small>Unread</small></div>
-        <div class="workspace-stat"><span><?= app_icon('pipeline') ?></span><strong><?= e(number_format((int) ($summary['pending_email'] ?? 0))) ?></strong><small>Pending email</small></div>
-        <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['sent_email'] ?? 0))) ?></strong><small>Sent email</small></div>
+    <div class="workspace-stat-grid notification-center-stats" aria-label="Notification overview">
+        <article class="workspace-stat notification-center-stat notification-center-stat--total">
+            <span class="notification-center-stat__icon"><?= app_icon('message') ?></span>
+            <strong><?= e(number_format((int) ($summary['notifications'] ?? 0))) ?></strong>
+            <small>Total notifications</small>
+        </article>
+        <article class="workspace-stat notification-center-stat notification-center-stat--unread">
+            <span class="notification-center-stat__icon"><?= app_icon('alert') ?></span>
+            <strong><?= e(number_format((int) ($summary['unread_notifications'] ?? 0))) ?></strong>
+            <small>Unread</small>
+        </article>
+        <article class="workspace-stat notification-center-stat notification-center-stat--pending">
+            <span class="notification-center-stat__icon"><?= app_icon('pipeline') ?></span>
+            <strong><?= e(number_format((int) ($summary['pending_email'] ?? 0))) ?></strong>
+            <small>Pending email</small>
+        </article>
+        <article class="workspace-stat notification-center-stat notification-center-stat--sent">
+            <span class="notification-center-stat__icon"><?= app_icon('check') ?></span>
+            <strong><?= e(number_format((int) ($summary['sent_email'] ?? 0))) ?></strong>
+            <small>Sent email</small>
+        </article>
     </div>
 
     <section class="workspace-table-section">

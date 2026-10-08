@@ -30,7 +30,10 @@ final class HomeController
             'latestListings' => $repository->listings([], 1, 6)['rows'],
             'latestProjects' => $repository->projects([], 1, 3)['rows'],
             'featuredCompanies' => $repository->companies([], 1, 3)['rows'],
-            'locations' => $repository->activeLocations(),
+            /* BARAMA_HOME_POPULAR_LOCATIONS_V1113 */
+            'locations' => $repository->popularLocations(6),
+            /* BARAMA_HOME_POPULAR_LOCATION_CARDS_V1124 */
+            'popularLocationCards' => $repository->popularLocationCards(20),
             'marketStats' => [
                 'sale' => (int) $sale['total'],
                 'rent' => (int) $rent['total'],

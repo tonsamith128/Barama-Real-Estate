@@ -25,7 +25,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 This repository intentionally starts with a small canonical foundation.
 
 - One application front controller: `index.php`
-- One custom stylesheet: `assets/css/app.css`
+- `assets/css/app.css` is the canonical global stylesheet; page-scoped first-party stylesheets are loaded only where required by specific features or hardened interfaces.
 - One custom JavaScript entry point: `assets/js/app.js`
 - No duplicate versions of application files
 - No abandoned legacy implementations
@@ -91,7 +91,7 @@ The 0.9.1 development line consolidates the public marketplace, customer account
 - administrator dashboard backed by existing moderation and catalog actions
 - premium authentication with SVG field icons, password visibility controls, secure password generation for registration/reset, and existing CSRF/login-throttle/reset protections
 - modern translucent featured cards using the existing property/project/company data
-- one first-party stylesheet and one first-party JavaScript file remain canonical
+- `assets/css/app.css` and `assets/js/app.js` remain the canonical global asset entry points; page-scoped first-party CSS and JavaScript files may support isolated features without creating parallel application implementations.
 
 
 ## Public marketplace experience
@@ -107,7 +107,7 @@ The 0.9.2 development line upgrades the public discovery experience while preser
 - project and company inquiry forms prefill signed-in customer identity
 - shared interactive image preview for property, project, and company media
 - search submission/loading behavior remains inside the canonical JavaScript entry point
-- all marketplace styling remains inside the canonical stylesheet
+- marketplace styling uses the canonical global stylesheet plus page-scoped first-party stylesheets where specific marketplace interfaces require isolated rules.
 
 
 ## Account security and company onboarding
@@ -272,7 +272,7 @@ The 0.9.12 development line closes the automated customer-package compliance and
 - demo-site marketplace content remains separate from the customer package
 - exact-ZIP compliance QA rejects Node/Composer dependency manifests, vendor/node_modules directories, internal QA files, runtime state, logs, SQL dumps, backups, and known test credentials
 - exact-ZIP compliance QA scans HTTPS hosts and rejects undeclared external service dependencies
-- one first-party stylesheet and one first-party JavaScript file remain canonical
+- `assets/css/app.css` and `assets/js/app.js` remain the canonical global asset entry points; page-scoped first-party CSS and JavaScript files may support isolated features without creating parallel application implementations.
 
 The final human CodeCanyon submission/package review remains a v1.0.0 gate. See `docs/PACKAGE_COMPLIANCE.md`.
 

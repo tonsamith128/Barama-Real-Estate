@@ -166,9 +166,22 @@ final class NotificationRepository
             'dedupe_key' => $data['dedupe_key'],
         ]);
 
-        return $statement->rowCount() > 0
-            ? (int) Database::connection()->lastInsertId()
-            : null;
+        if ($statement->rowCount() === 0) {
+            return null;
+        }
+
+        $id = (int) Database::connection()->lastInsertId();
+        $this->recordOutboxEventSafely(
+            $id,
+            'queued',
+            0,
+            null,
+            null,
+            'pending',
+            null,
+            ['source' => 'queue_email']
+        );
+        return $id;
     }
 
     /** @return array<int,array<string,mixed>> */
@@ -318,6 +331,211 @@ final class NotificationRepository
         );
         $statement->execute();
 
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /* BARAMA_MAIL_QUEUE_OPERATIONS_V110 */
+    /**
+     * @param array{recipient?:string,subject?:string,status?:string,date_from?:string,date_to?:string} $filters
+     * @return array{rows:array<int,array<string,mixed>>,total:int,page:int,pages:int,per_page:int}
+     */
+    public function adminOutboxPage(
+        array $filters,
+        int $page = 1,
+        int $perPage = 25
+    ): array {
+        $where = [];
+        $params = [];
+
+        $recipient = trim((string) ($filters['recipient'] ?? ''));
+        if ($recipient !== '') {
+            $where[] = '(o.to_address LIKE :recipient_address OR u.name LIKE :recipient_name)';
+            $needle = '%' . $recipient . '%';
+            $params['recipient_address'] = $needle;
+            $params['recipient_name'] = $needle;
+        }
+
+        $subject = trim((string) ($filters['subject'] ?? ''));
+        if ($subject !== '') {
+            $where[] = 'o.subject LIKE :subject';
+            $params['subject'] = '%' . $subject . '%';
+        }
+
+        $status = strtolower(trim((string) ($filters['status'] ?? '')));
+        if (in_array($status, ['pending', 'processing', 'failed', 'sent', 'cancelled'], true)) {
+            $where[] = 'o.status = :status';
+            $params['status'] = $status;
+        }
+
+        $dateFrom = trim((string) ($filters['date_from'] ?? ''));
+        if ($dateFrom !== '') {
+            $where[] = 'o.created_at >= :date_from';
+            $params['date_from'] = $dateFrom . ' 00:00:00';
+        }
+
+        $dateTo = trim((string) ($filters['date_to'] ?? ''));
+        if ($dateTo !== '') {
+            $nextDay = date('Y-m-d', strtotime($dateTo . ' +1 day'));
+            $where[] = 'o.created_at < :date_to';
+            $params['date_to'] = $nextDay . ' 00:00:00';
+        }
+
+        $from = ' FROM email_outbox o LEFT JOIN users u ON u.id = o.user_id';
+        $whereSql = $where !== [] ? ' WHERE ' . implode(' AND ', $where) : '';
+        $pdo = Database::connection();
+
+        $count = $pdo->prepare('SELECT COUNT(*)' . $from . $whereSql);
+        foreach ($params as $key => $value) {
+            $count->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
+        $count->execute();
+        $total = (int) $count->fetchColumn();
+
+        $perPage = in_array($perPage, [25, 50, 100], true) ? $perPage : 25;
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = max(1, min($page, $pages));
+        $offset = ($page - 1) * $perPage;
+
+        /* BARAMA_MAIL_QUEUE_SQL_FIX_V148
+           Keep SQL whitespace literal and portable. Do not embed \\n in
+           PHP single-quoted SQL fragments. */
+        $statement = $pdo->prepare(
+            'SELECT o.id, o.uuid, o.user_id, u.name AS user_name, '
+            . 'o.notification_id, o.to_address, o.subject, '
+            . 'o.status, o.attempts, o.available_at, o.locked_at, '
+            . 'o.sent_at, o.last_error, o.dedupe_key, '
+            . 'o.created_at, o.updated_at'
+            . $from
+            . $whereSql
+            . ' ORDER BY o.created_at DESC, o.id DESC LIMIT :limit OFFSET :offset'
+        );
+
+        foreach ($params as $key => $value) {
+            $statement->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
+        $statement->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $statement->execute();
+
+        return [
+            'rows' => $statement->fetchAll(PDO::FETCH_ASSOC),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
+            'per_page' => $perPage,
+        ];
+    }
+
+    /* BARAMA_MAIL_QUEUE_OPERATIONS_V120 */
+    /** @return array<string,mixed>|null */
+    public function adminOutboxDetail(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT o.id, o.uuid, o.user_id, u.name AS user_name, u.email AS user_email,
+                    o.notification_id, o.to_address, o.subject, o.html_body, o.text_body,
+                    o.status, o.attempts, o.available_at, o.locked_at, o.sent_at,
+                    o.last_error, o.created_at, o.updated_at
+             FROM email_outbox o
+             LEFT JOIN users u ON u.id = o.user_id
+             WHERE o.id = :id
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    /* BARAMA_MAIL_QUEUE_AUDIT_HISTORY_V130 */
+    /** @param array<string,mixed> $metadata */
+    public function recordOutboxEvent(
+        int $emailOutboxId,
+        string $eventType,
+        ?int $attemptNumber = null,
+        ?int $actorUserId = null,
+        ?string $statusFrom = null,
+        ?string $statusTo = null,
+        ?string $errorText = null,
+        array $metadata = []
+    ): void {
+        $eventType = trim($eventType);
+        if ($emailOutboxId < 1 || $eventType === '') {
+            throw new \InvalidArgumentException('A valid outbox event is required.');
+        }
+
+        $metadataJson = $metadata !== []
+            ? json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            : null;
+        if ($metadataJson === false) {
+            $metadataJson = null;
+        }
+
+        $statement = Database::connection()->prepare(
+            'INSERT INTO email_outbox_events
+                (email_outbox_id, event_type, attempt_number, actor_user_id,
+                 status_from, status_to, error_text, metadata_json)
+             VALUES
+                (:email_outbox_id, :event_type, :attempt_number, :actor_user_id,
+                 :status_from, :status_to, :error_text, :metadata_json)'
+        );
+        $statement->execute([
+            'email_outbox_id' => $emailOutboxId,
+            'event_type' => mb_substr($eventType, 0, 40),
+            'attempt_number' => $attemptNumber !== null ? max(0, $attemptNumber) : null,
+            'actor_user_id' => $actorUserId !== null && $actorUserId > 0 ? $actorUserId : null,
+            'status_from' => $statusFrom !== null ? mb_substr(trim($statusFrom), 0, 24) : null,
+            'status_to' => $statusTo !== null ? mb_substr(trim($statusTo), 0, 24) : null,
+            'error_text' => $errorText !== null ? mb_substr($errorText, 0, 1000) : null,
+            'metadata_json' => $metadataJson,
+        ]);
+    }
+
+    /** @param array<string,mixed> $metadata */
+    public function recordOutboxEventSafely(
+        int $emailOutboxId,
+        string $eventType,
+        ?int $attemptNumber = null,
+        ?int $actorUserId = null,
+        ?string $statusFrom = null,
+        ?string $statusTo = null,
+        ?string $errorText = null,
+        array $metadata = []
+    ): void {
+        try {
+            $this->recordOutboxEvent(
+                $emailOutboxId,
+                $eventType,
+                $attemptNumber,
+                $actorUserId,
+                $statusFrom,
+                $statusTo,
+                $errorText,
+                $metadata
+            );
+        } catch (\Throwable $exception) {
+            error_log(
+                '[Barama Mail Queue Audit] Could not append event for outbox '
+                . $emailOutboxId . ': ' . $exception->getMessage()
+            );
+        }
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function outboxEvents(int $emailOutboxId, int $limit = 250): array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT e.id, e.email_outbox_id, e.event_type, e.attempt_number,
+                    e.actor_user_id, u.name AS actor_name, u.email AS actor_email,
+                    e.status_from, e.status_to, e.error_text,
+                    e.metadata_json, e.created_at
+             FROM email_outbox_events e
+             LEFT JOIN users u ON u.id = e.actor_user_id
+             WHERE e.email_outbox_id = :email_outbox_id
+             ORDER BY e.created_at ASC, e.id ASC
+             LIMIT :limit'
+        );
+        $statement->bindValue(':email_outbox_id', $emailOutboxId, PDO::PARAM_INT);
+        $statement->bindValue(':limit', max(1, min(500, $limit)), PDO::PARAM_INT);
+        $statement->execute();
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -478,7 +696,21 @@ final class NotificationRepository
         $statement->execute(['id' => $id]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
-        return is_array($row) ? $row : null;
+        if (is_array($row)) {
+            $this->recordOutboxEventSafely(
+                $id,
+                'attempt_started',
+                max(1, (int) ($row['attempts'] ?? 1)),
+                null,
+                null,
+                'processing',
+                null,
+                ['source' => 'outbox_worker']
+            );
+            return $row;
+        }
+
+        return null;
     }
 
     public function markEmailSent(int $id): void
@@ -493,10 +725,25 @@ final class NotificationRepository
              WHERE id = :id'
         );
         $statement->execute(['id' => $id]);
+
+        if ($statement->rowCount() > 0) {
+            $message = $this->outboxMessage($id);
+            $this->recordOutboxEventSafely(
+                $id,
+                'sent',
+                is_array($message) ? max(1, (int) ($message['attempts'] ?? 1)) : null,
+                null,
+                'processing',
+                'sent',
+                null,
+                ['source' => 'outbox_worker']
+            );
+        }
     }
 
     public function markEmailFailed(int $id, string $error, string $availableAt): void
     {
+        $safeError = mb_substr($error, 0, 1000);
         $statement = Database::connection()->prepare(
             'UPDATE email_outbox
              SET status = "failed",
@@ -509,8 +756,22 @@ final class NotificationRepository
         $statement->execute([
             'id' => $id,
             'available_at' => $availableAt,
-            'last_error' => mb_substr($error, 0, 1000),
+            'last_error' => $safeError,
         ]);
+
+        if ($statement->rowCount() > 0) {
+            $message = $this->outboxMessage($id);
+            $this->recordOutboxEventSafely(
+                $id,
+                'failed',
+                is_array($message) ? max(1, (int) ($message['attempts'] ?? 1)) : null,
+                null,
+                'processing',
+                'failed',
+                $safeError,
+                ['source' => 'outbox_worker', 'retry_available_at' => $availableAt]
+            );
+        }
     }
 
     public function outboxCount(string $status): int

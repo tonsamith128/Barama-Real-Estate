@@ -1,0 +1,46 @@
+/* Barama Leads Table Focus v1.6.1 */
+.workspace-lead-context,
+.workspace-lead-interest,
+.workspace-lead-assignment,
+.workspace-lead-stage,
+.workspace-lead-activity {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+.workspace-lead-context__meta,
+.workspace-lead-interest__meta,
+.workspace-lead-activity__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.48rem;
+}
+.workspace-lead-context__meta span,
+.workspace-lead-interest__meta span,
+.workspace-lead-activity__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.workspace-lead-context__meta span + span::before,
+.workspace-lead-interest__meta span + span::before,
+.workspace-lead-activity__meta span + span::before {
+    content: "•";
+    margin-right: 0.48rem;
+    opacity: 0.48;
+}
+@media (max-width: 900px) {
+    .workspace-lead-context__meta,
+    .workspace-lead-interest__meta,
+    .workspace-lead-activity__meta {
+        display: grid;
+        gap: 0.2rem;
+    }
+    .workspace-lead-context__meta span + span::before,
+    .workspace-lead-interest__meta span + span::before,
+    .workspace-lead-activity__meta span + span::before {
+        content: none;
+        margin: 0;
+    }
+}

@@ -1,0 +1,151 @@
+/*
+ * Barama Dashboard Plans Typography v1.4.6
+ * Scope: Admin /dashboard/plans only.
+ *
+ * Normalizes the micro typography from finance-plans-v139.css to Barama's
+ * global Inter/system font and standard admin body scale.
+ * Large plan labels and prices retain their visual hierarchy.
+ */
+
+.finance-plans,
+.finance-plans button,
+.finance-plans input,
+.finance-plans select,
+.finance-plans textarea,
+.finance-plans table {
+    font-family: inherit !important;
+}
+
+/* Section headings / supporting copy */
+.finance-plans__hero p,
+.finance-plans__section-head p {
+    font-size: 0.875rem !important;
+    line-height: 1.55 !important;
+}
+
+.finance-plans__section-head > span,
+.finance-plans__pager > span {
+    font-size: 0.75rem !important;
+    line-height: 1.4 !important;
+}
+
+/* Stats */
+.finance-plans__stats small {
+    font-size: 0.75rem !important;
+    line-height: 1.35 !important;
+}
+
+/* Pricing card body typography */
+.finance-plan-tier__state {
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+}
+
+.finance-plan-tier > p {
+    font-size: 0.9rem !important;
+    line-height: 1.55 !important;
+}
+
+.finance-plan-tier__limits span {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+}
+
+.finance-plan-tier__limits strong {
+    font-size: 0.95rem !important;
+    line-height: 1.25 !important;
+}
+
+.finance-plan-tier > button {
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+}
+
+.finance-plan-tier__price span {
+    font-size: 0.8rem !important;
+    line-height: 1.2 !important;
+}
+
+/* Filters use normal global control text */
+.finance-plans__filters input,
+.finance-plans__filters select {
+    font-size: 0.95rem !important;
+}
+
+/* Configured plans table */
+.finance-plans__table th {
+    font-size: 0.75rem !important;
+    line-height: 1.3 !important;
+}
+
+.finance-plans__table td {
+    font-size: 0.875rem !important;
+    line-height: 1.45 !important;
+}
+
+.finance-plans__table td small {
+    font-size: 0.75rem !important;
+    line-height: 1.35 !important;
+}
+
+.finance-plans__number {
+    font-size: 0.8rem !important;
+}
+
+.finance-plans__name {
+    font-size: 0.9rem !important;
+    line-height: 1.35 !important;
+}
+
+.finance-plans__status {
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+}
+
+/* Pagination */
+.finance-plans__pager nav a,
+.finance-plans__pager form button {
+    font-size: 0.8rem !important;
+}
+
+.finance-plans__pager form label span {
+    font-size: 0.72rem !important;
+}
+
+.finance-plans__pager form input {
+    font-size: 0.875rem !important;
+}
+
+/* Empty state */
+.finance-plans__empty span {
+    font-size: 0.875rem !important;
+}
+
+/* Modal follows same readable scale */
+.finance-plan-modal__dialog header p {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+}
+
+.finance-plan-modal__presets > span {
+    font-size: 0.75rem !important;
+}
+
+.finance-plan-modal__presets button,
+.finance-plan-modal input,
+.finance-plan-modal select,
+.finance-plan-modal textarea,
+.finance-plan-modal label,
+.finance-plan-modal p,
+.finance-plan-modal small {
+    font-family: inherit !important;
+}
+
+/* Preserve display hierarchy from the visual design. */
+.finance-plan-tier__label {
+    font-family: inherit !important;
+}
+
+.finance-plan-tier__price strong {
+    font-family: inherit !important;
+}

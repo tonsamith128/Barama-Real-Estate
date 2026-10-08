@@ -6,8 +6,98 @@ $invoices = is_array($invoices ?? null) ? $invoices : [];
 $companies = is_array($companies ?? null) ? $companies : [];
 $subscriptions = is_array($subscriptions ?? null) ? $subscriptions : [];
 $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
+
+// Finance Invoices Pagination Standard v1.8.24.
+$invoiceQ = substr(trim((string) ($_GET['invoice_q'] ?? '')), 0, 120);
+$invoiceStatus = trim((string) ($_GET['invoice_status'] ?? ''));
+$allowedInvoiceStatuses = ['draft', 'open', 'paid', 'void'];
+
+if ($invoiceStatus !== '' && !in_array($invoiceStatus, $allowedInvoiceStatuses, true)) {
+    $invoiceStatus = '';
+}
+
+$filteredInvoices = array_values(array_filter(
+    $invoices,
+    static function (array $invoice) use ($invoiceQ, $invoiceStatus): bool {
+        $status = (string) ($invoice['status'] ?? 'draft');
+
+        if ($invoiceStatus !== '' && $status !== $invoiceStatus) {
+            return false;
+        }
+
+        if ($invoiceQ === '') {
+            return true;
+        }
+
+        $haystack = strtolower(
+            (string) ($invoice['invoice_number'] ?? '')
+            . ' '
+            . (string) ($invoice['company_name'] ?? '')
+            . ' '
+            . (string) ($invoice['plan_name'] ?? '')
+            . ' '
+            . (string) ($invoice['coupon_code'] ?? '')
+            . ' '
+            . (string) ($invoice['tax_rule_code'] ?? '')
+            . ' '
+            . $status
+        );
+
+        return str_contains($haystack, strtolower($invoiceQ));
+    }
+));
+
+$invoicePerPage = 10;
+$invoiceTotal = count($filteredInvoices);
+$invoicePages = max(1, (int) ceil($invoiceTotal / $invoicePerPage));
+$invoicePage = filter_var(
+    $_GET['invoice_page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$invoicePage = $invoicePage === false
+    ? 1
+    : min((int) $invoicePage, $invoicePages);
+
+$visibleInvoices = array_slice(
+    $filteredInvoices,
+    ($invoicePage - 1) * $invoicePerPage,
+    $invoicePerPage
+);
+
+$invoiceQuery = array_filter(
+    [
+        'invoice_q' => $invoiceQ,
+        'invoice_status' => $invoiceStatus,
+    ],
+    static fn (string $value): bool => $value !== ''
+);
+
+$invoicePageUrl = static function (int $target) use ($invoiceQuery): string {
+    return url(
+        '/dashboard/invoices?'
+        . http_build_query(
+            array_merge(
+                $invoiceQuery,
+                ['invoice_page' => max(1, $target)]
+            )
+        )
+    );
+};
+
 ?>
-<section class="workspace-page">
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-invoices-pagination-v1824.css') . '?v=1824') ?>"
+>
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-invoices-focus-v1827.css') . '?v=1827') ?>"
+>
+
+<section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--invoices">
+    <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -16,13 +106,17 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
         </div>
         <span class="workspace-context-note">
             <?= app_icon('layers') ?>
-            Draft → Open → Paid / Void
+            <!-- BARAMA_INVOICE_TEMPLATE_V150 -->
+<button type="button" class="invoice-template-trigger" data-invoice-template-open aria-haspopup="dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 10h6M9 14h6M9 18h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span>Invoice Template</span>
+</button>
         </span>
     </div>
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
+    <div class="workspace-stat-grid finance-summary-cards">
         <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['invoices'] ?? 0))) ?></strong><small>Invoices</small></div>
         <div class="workspace-stat"><span><?= app_icon('edit') ?></span><strong><?= e(number_format((int) ($summary['draft_invoices'] ?? 0))) ?></strong><small>Draft</small></div>
         <div class="workspace-stat"><span><?= app_icon('alert') ?></span><strong><?= e(number_format((int) ($summary['open_invoices'] ?? 0))) ?></strong><small>Open</small></div>
@@ -81,35 +175,64 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
             </div>
         </div>
 
-        <div class="workspace-table-wrap">
-            <table class="workspace-table">
+        
+        <form
+            class="finance-invoices-tools"
+            method="get"
+            action="<?= e(url('/dashboard/invoices')) ?>"
+        >
+            <label>
+                <?= app_icon('search') ?>
+                <input
+                    class="form-control"
+                    type="search"
+                    name="invoice_q"
+                    value="<?= e($invoiceQ) ?>"
+                    placeholder="Search invoice, company, plan, coupon, or tax rule"
+                >
+            </label>
+
+            <select
+                class="form-select"
+                name="invoice_status"
+                aria-label="Invoice status"
+            >
+                <option value="">All statuses</option>
+                <?php foreach ($allowedInvoiceStatuses as $statusOption): ?>
+                    <option
+                        value="<?= e($statusOption) ?>"
+                        <?= $invoiceStatus === $statusOption ? 'selected' : '' ?>
+                    ><?= e(ucfirst($statusOption)) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a
+                class="btn btn-outline-secondary"
+                href="<?= e(url('/dashboard/invoices')) ?>"
+            >Reset</a>
+        </form>
+
+<div class="workspace-table-wrap">
+            <table class="workspace-table finance-invoices-focus">
                 <thead>
                     <tr>
                         <th>Invoice</th>
-                        <th>Company</th>
-                        <th>Plan</th>
-                        <th>Subtotal</th>
-                        <th>Discount</th>
-                        <th>Coupon</th>
-                        <th>Taxable</th>
+                        <th>Account</th>
+                        <th>Pricing</th>
                         <th>Tax</th>
-                        <th>Tax rule</th>
-                        <th>Total</th>
-                        <th>Settled</th>
-                        <th>Status</th>
-                        <th>Issued</th>
-                        <th>Due</th>
-                        <th>Paid</th>
-                        <th>Updated</th>
+                        <th>Settlement</th>
+                        <th>Lifecycle</th>
+                        <th>Dates</th>
                         <th aria-label="Actions"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($invoices === []): ?>
-                        <tr><td colspan="17"><div class="workspace-record-empty">No invoices have been created yet.</div></td></tr>
+                    <?php if ($visibleInvoices === []): ?>
+                        <tr><td colspan="8"><div class="workspace-record-empty">No invoices have been created yet.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($invoices as $invoice): ?>
+                    <?php foreach ($visibleInvoices as $invoice): ?>
                         <?php
                         $status = (string) ($invoice['status'] ?? 'draft');
                         $tone = $status === 'paid'
@@ -117,22 +240,49 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                             : ($status === 'open' ? 'pending' : ($status === 'void' ? 'neutral' : 'draft'));
                         ?>
                         <tr>
-                            <td><strong><?= e((string) $invoice['invoice_number']) ?></strong><small><?= e(number_format((int) ($invoice['item_count'] ?? 0))) ?> item(s)</small></td>
-                            <td><?= e((string) $invoice['company_name']) ?></td>
-                            <td><?= e((string) ($invoice['plan_name'] ?? '—')) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['subtotal'], 2)) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['discount_total'] ?? 0), 2)) ?></td>
-                            <td><?= e((string) ($invoice['coupon_code'] ?? '—')) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['taxable_total'] ?? 0), 2)) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['tax_total'] ?? 0), 2)) ?><small><?= e(number_format((float) ($invoice['tax_rate'] ?? 0), 4)) ?>%</small></td>
-                            <td><?= e((string) ($invoice['tax_rule_code'] ?? '—')) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['total'], 2)) ?></td>
-                            <td><?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['settled_amount'] ?? 0), 2)) ?></td>
-                            <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span></td>
-                            <td><?= e((string) ($invoice['issued_at'] ?? '—')) ?></td>
-                            <td><?= e((string) ($invoice['due_at'] ?? '—')) ?></td>
-                            <td><?= e((string) ($invoice['paid_at'] ?? '—')) ?></td>
-                            <td><?= e((string) $invoice['updated_at']) ?></td>
+                            <td>
+                                <div class="finance-invoices-focus__stack">
+                                    <strong><?= e((string) $invoice['invoice_number']) ?></strong>
+                                    <small><?= e(number_format((int) ($invoice['item_count'] ?? 0))) ?> item(s)</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-invoices-focus__stack">
+                                    <strong><?= e((string) $invoice['company_name']) ?></strong>
+                                    <small>Plan: <?= e((string) ($invoice['plan_name'] ?? '—')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-invoices-focus__stack finance-invoices-focus__money">
+                                    <small>Subtotal: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['subtotal'], 2)) ?></small>
+                                    <small>Discount: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['discount_total'] ?? 0), 2)) ?></small>
+                                    <small>Coupon: <?= e((string) ($invoice['coupon_code'] ?? '—')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-invoices-focus__stack finance-invoices-focus__money">
+                                    <small>Taxable: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['taxable_total'] ?? 0), 2)) ?></small>
+                                    <small>Tax: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['tax_total'] ?? 0), 2)) ?> · <?= e(number_format((float) ($invoice['tax_rate'] ?? 0), 4)) ?>%</small>
+                                    <small>Rule: <?= e((string) ($invoice['tax_rule_code'] ?? '—')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-invoices-focus__stack finance-invoices-focus__money">
+                                    <strong>Total: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) $invoice['total'], 2)) ?></strong>
+                                    <small>Settled: <?= e((string) $invoice['currency']) ?> <?= e(number_format((float) ($invoice['settled_amount'] ?? 0), 2)) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span>
+                            </td>
+                            <td>
+                                <div class="finance-invoices-focus__stack">
+                                    <small>Issued: <?= e((string) ($invoice['issued_at'] ?? '—')) ?></small>
+                                    <small>Due: <?= e((string) ($invoice['due_at'] ?? '—')) ?></small>
+                                    <small>Paid: <?= e((string) ($invoice['paid_at'] ?? '—')) ?></small>
+                                    <small>Updated: <?= e((string) $invoice['updated_at']) ?></small>
+                                </div>
+                            </td>
                             <td>
                                 <details class="workspace-row-actions">
                                     <summary aria-label="Invoice actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>
@@ -166,5 +316,70 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
                 </tbody>
             </table>
         </div>
+
+        <?php if ($invoiceTotal > 0): ?>
+            <div class="finance-invoices-pager">
+                <span>
+                    Page <?= $invoicePage ?> of <?= $invoicePages ?>
+                    &middot; <?= $invoiceTotal ?> invoice<?= $invoiceTotal === 1 ? '' : 's' ?>
+                    &middot; 10 per page
+                </span>
+
+                <?php if ($invoicePages > 1): ?>
+                    <nav aria-label="Invoice ledger pages">
+                        <?php if ($invoicePage > 1): ?>
+                            <a href="<?= e($invoicePageUrl($invoicePage - 1)) ?>">Previous</a>
+                        <?php endif; ?>
+
+                        <?php
+                        $invoiceFrom = max(1, $invoicePage - 2);
+                        $invoiceTo = min($invoicePages, $invoicePage + 2);
+                        ?>
+                        <?php for ($i = $invoiceFrom; $i <= $invoiceTo; $i++): ?>
+                            <a
+                                href="<?= e($invoicePageUrl($i)) ?>"
+                                class="<?= $i === $invoicePage ? 'is-active' : '' ?>"
+                            ><?= $i ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($invoicePage < $invoicePages): ?>
+                            <a href="<?= e($invoicePageUrl($invoicePage + 1)) ?>">Next</a>
+                        <?php endif; ?>
+                    </nav>
+
+                    <form
+                        class="finance-invoices-goto"
+                        method="get"
+                        action="<?= e(url('/dashboard/invoices')) ?>"
+                    >
+                        <?php foreach ($invoiceQuery as $key => $value): ?>
+                            <input
+                                type="hidden"
+                                name="<?= e((string) $key) ?>"
+                                value="<?= e((string) $value) ?>"
+                            >
+                        <?php endforeach; ?>
+
+                        <label>
+                            <span>Go To</span>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="invoice_page"
+                                min="1"
+                                max="<?= $invoicePages ?>"
+                                value="<?= $invoicePage ?>"
+                            >
+                        </label>
+                        <button class="btn btn-outline-secondary" type="submit">Go</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
     </section>
 </section>
+
+<?php
+require __DIR__ . '/partials/invoice-template.php';
+?>

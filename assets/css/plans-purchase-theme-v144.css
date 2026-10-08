@@ -1,0 +1,94 @@
+/*
+ * Barama Plan Purchase Theme Integration v1.4.4
+ * Scope: /developer/plan-purchase/{id} only
+ *
+ * The selected pricing card is deliberately untouched.
+ * The confirmation UI derives its surfaces and text from the surrounding
+ * global layout via inherited color/currentColor instead of forcing a light
+ * panel in dark mode.
+ */
+
+.barama-plan-purchase {
+    color: inherit;
+    color-scheme: inherit;
+}
+
+.barama-plan-purchase__panel {
+    background: color-mix(in srgb, currentColor 4%, transparent) !important;
+    border-color: color-mix(in srgb, currentColor 16%, transparent) !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+
+.barama-plan-purchase__panel h1,
+.barama-plan-purchase__panel h2,
+.barama-plan-purchase__panel h3,
+.barama-plan-purchase__panel strong,
+.barama-plan-purchase__form label,
+.barama-plan-purchase__form label > span {
+    color: inherit !important;
+}
+
+.barama-plan-purchase__panel > p,
+.barama-plan-purchase__empty > span,
+.barama-plan-purchase__terms > span,
+.barama-plan-purchase__notice > span,
+.barama-plan-purchase__notice > small {
+    color: color-mix(in srgb, currentColor 72%, transparent) !important;
+}
+
+.barama-plan-purchase__empty,
+.barama-plan-purchase__terms {
+    background: transparent !important;
+    border-color: color-mix(in srgb, currentColor 18%, transparent) !important;
+    color: inherit !important;
+}
+
+.barama-plan-purchase__empty a {
+    color: var(--brand, #a329b5) !important;
+}
+
+.barama-plan-purchase__form select {
+    background: color-mix(in srgb, currentColor 6%, transparent) !important;
+    border-color: color-mix(in srgb, currentColor 20%, transparent) !important;
+    color: inherit !important;
+    color-scheme: inherit;
+    box-shadow: none !important;
+}
+
+.barama-plan-purchase__form select:focus {
+    outline: 2px solid color-mix(in srgb, var(--brand, #a329b5) 48%, transparent);
+    outline-offset: 2px;
+}
+
+.barama-plan-purchase__form select option {
+    background: var(--paper, Canvas);
+    color: var(--text, CanvasText);
+}
+
+.barama-plan-purchase__notice {
+    color: inherit !important;
+}
+
+.barama-plan-purchase__notice.is-success {
+    background: color-mix(in srgb, #159765 12%, transparent) !important;
+    border-color: color-mix(in srgb, #159765 42%, transparent) !important;
+}
+
+.barama-plan-purchase__notice.is-error {
+    background: color-mix(in srgb, #ca344a 12%, transparent) !important;
+    border-color: color-mix(in srgb, #ca344a 42%, transparent) !important;
+}
+
+/* Explicit global theme hooks, when the Barama layout exposes them. */
+html[data-theme="dark"] .barama-plan-purchase__panel,
+body[data-theme="dark"] .barama-plan-purchase__panel,
+html[data-color-scheme="dark"] .barama-plan-purchase__panel {
+    background: color-mix(in srgb, currentColor 5%, transparent) !important;
+}
+
+html[data-theme="light"] .barama-plan-purchase__panel,
+body[data-theme="light"] .barama-plan-purchase__panel,
+html[data-color-scheme="light"] .barama-plan-purchase__panel {
+    background: color-mix(in srgb, currentColor 3%, transparent) !important;
+}

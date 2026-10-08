@@ -1,0 +1,40 @@
+/* Barama Companies Table Focus v1.5.6 */
+.workspace-company-context,
+.workspace-company-portfolio,
+.workspace-company-state {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+.workspace-company-context__meta,
+.workspace-company-portfolio__meta,
+.workspace-company-state__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.48rem;
+}
+.workspace-company-context__meta span,
+.workspace-company-portfolio__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.workspace-company-context__meta span + span::before,
+.workspace-company-portfolio__meta span + span::before {
+    content: "•";
+    margin-right: 0.48rem;
+    opacity: 0.48;
+}
+@media (max-width: 900px) {
+    .workspace-company-context__meta,
+    .workspace-company-portfolio__meta {
+        display: grid;
+        gap: 0.2rem;
+    }
+    .workspace-company-context__meta span + span::before,
+    .workspace-company-portfolio__meta span + span::before {
+        content: none;
+        margin: 0;
+    }
+}

@@ -55,11 +55,71 @@ final class AuthController
             ], 429);
         }
 
+        if ($result === 'mfa_required') {
+            return Response::redirect(url('/mfa-challenge'));
+        }
+
         if ($result !== 'success') {
             return $this->authView('auth/login', 'Sign in', [
                 'email' => $email,
                 'errors' => ['The email address or password is incorrect.'],
                 'success' => null,
+            ], 422);
+        }
+
+        if ($auth->requiresEmailVerification()) {
+            return Response::redirect(url('/verify-email'));
+        }
+
+        $intended = Session::pull('auth.intended');
+        $destination = is_string($intended)
+            && str_starts_with($intended, '/')
+            && !str_starts_with($intended, '//')
+            && $this->canAccessIntendedPath($auth, $intended)
+                ? $intended
+                : $auth->homePath();
+
+        return Response::redirect(url($destination));
+    }
+
+    public function showMfaChallenge(Request $request): Response
+    {
+        $auth = new AuthService();
+        if (!$auth->hasPendingMfaChallenge()) {
+            return Response::redirect(url('/login'));
+        }
+
+        return $this->authView('auth/mfa-challenge', 'Security verification', [
+            'errors' => [],
+        ]);
+    }
+
+    public function mfaChallenge(Request $request): Response
+    {
+        $auth = new AuthService();
+        if (!$auth->hasPendingMfaChallenge()) {
+            return Response::redirect(url('/login'));
+        }
+
+        $code = trim((string) $request->input('code', ''));
+        if ($code === '') {
+            return $this->authView('auth/mfa-challenge', 'Security verification', [
+                'errors' => ['Enter the 6-digit authenticator code or one recovery code.'],
+            ], 422);
+        }
+
+        $result = $auth->completeMfaChallenge($code, $request->ip());
+        if ($result === 'locked') {
+            return $this->authView('auth/mfa-challenge', 'Security verification', [
+                'errors' => ['Too many verification attempts. Please try again later.'],
+            ], 429);
+        }
+        if ($result === 'expired') {
+            return Response::redirect(url('/login'));
+        }
+        if ($result !== 'success') {
+            return $this->authView('auth/mfa-challenge', 'Security verification', [
+                'errors' => ['The authenticator or recovery code is invalid.'],
             ], 422);
         }
 

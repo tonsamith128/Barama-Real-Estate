@@ -1,4 +1,4 @@
-/* BARAMA_PAGE_BUILDER_V119 */
+/* BARAMA_PAGE_BUILDER_V120 */
 (() => {
     'use strict';
 

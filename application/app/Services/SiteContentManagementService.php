@@ -378,7 +378,7 @@ final class SiteContentManagementService
         );
         $overlay = $overlay === false ? 44 : (int) $overlay;
 
-        $imageSource = strtolower(trim((string) ($input['image_source'] ?? $background['image_source'] ?? 'url')));
+        $imageSource = strtolower(trim((string) ($input['image_source'] ?? $background['image_source'] ?? 'auto')));
         $allowedImageSources = $allowAutomaticImageDefaults
             ? ['auto', 'url', 'media']
             : ['url', 'media'];

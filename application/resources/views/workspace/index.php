@@ -10,8 +10,12 @@ $perPage = (int) ($records['per_page'] ?? 0);
 $perPage = $perPage > 0 ? $perPage : max(1, count($rows));
 $showAdminMarketplaceNumbers = $workspaceType === 'admin'
     && in_array($activeSection, ['companies', 'projects', 'properties', 'listings'], true);
-$showAdminPageNumbers = $workspaceType === 'admin' && $activeSection === 'pages';
-$showAdminRowNumbers = $showAdminMarketplaceNumbers || $showAdminPageNumbers;
+$showAdminPageNumbers =
+    $workspaceType === 'admin'
+    && $activeSection === 'pages';
+$showAdminRowNumbers =
+    $showAdminMarketplaceNumbers
+    || $showAdminPageNumbers;
 $hasMarketplacePageConfiguration = $workspaceType === 'admin'
     && in_array($activeSection, ['companies', 'projects', 'properties'], true);
 $marketplacePageDefaults = $hasMarketplacePageConfiguration
@@ -32,7 +36,7 @@ $marketplaceGridConfig = is_array($marketplacePageConfig['grid'] ?? null) ? $mar
 $marketplaceSliderImages = is_array($marketplaceHeroBackground['slider_images'] ?? null)
     ? array_values($marketplaceHeroBackground['slider_images'])
     : [];
-$marketplaceImageSource = strtolower(trim((string) ($marketplaceHeroBackground['image_source'] ?? 'url')));
+$marketplaceImageSource = strtolower(trim((string) ($marketplaceHeroBackground['image_source'] ?? 'auto')));
 if (
     trim((string) ($marketplaceHeroBackground['image_url'] ?? '')) === ''
     && trim((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) === ''
@@ -65,12 +69,32 @@ $filterOptions = is_array($filterOptions ?? null) ? $filterOptions : [];
 $tableSort = trim((string) ($tableSort ?? 'updated_desc'));
 $emptyState = is_array($emptyState ?? null) ? $emptyState : [];
 $sectionGuide = is_array($sectionGuide ?? null) ? $sectionGuide : [];
+$propertyQualityOperations = is_array($propertyQualityOperations ?? null) ? $propertyQualityOperations : [];
+$propertyQualityMetrics = is_array($propertyQualityOperations['metrics'] ?? null) ? $propertyQualityOperations['metrics'] : [];
+$propertyQualityTopIssues = is_array($propertyQualityOperations['top_issues'] ?? null) ? $propertyQualityOperations['top_issues'] : [];
+$propertyQualityCompanies = is_array($propertyQualityOperations['companies'] ?? null) ? $propertyQualityOperations['companies'] : [];
+$propertyQualityQueue = is_array($propertyQualityOperations['action_queue'] ?? null) ? $propertyQualityOperations['action_queue'] : [];
+$propertyQualityStaleBuckets = is_array($propertyQualityOperations['stale_buckets'] ?? null) ? $propertyQualityOperations['stale_buckets'] : [];
+$propertyQualityHealth = is_array($propertyQualityOperations['health'] ?? null) ? $propertyQualityOperations['health'] : [];
 $bulkMode = $workspaceType === 'admin' && $activeSection === 'approvals';
+
+// BARAMA_MEDIA_LIBRARY_FOCUS_V145
+$mediaLibraryFocus = $workspaceType === 'admin' && $activeSection === 'media';
+if ($mediaLibraryFocus) {
+    $columns = [
+        'original_name' => 'Media',
+        'target_title' => 'Context',
+        'attachment_state' => 'State',
+        'created_at' => 'Uploaded',
+    ];
+}
 $queryBase = array_filter([
     'q' => $search,
     'status' => (string) ($tableFilters['status'] ?? ''),
     'type' => (string) ($tableFilters['type'] ?? ''),
     'location' => (string) ($tableFilters['location'] ?? ''),
+    'readiness' => (string) ($tableFilters['readiness'] ?? ''),
+    'quality' => (string) ($tableFilters['quality'] ?? ''),
     'sort' => $tableSort,
 ], static fn (string $value): bool => $value !== '');
 
@@ -79,7 +103,81 @@ $humanize = static fn (mixed $value): string =>
 
 $currentUserId = (int) (auth_user()['id'] ?? 0);
 
-$formatCell = static function (string $key, array $row) use ($humanize): string {
+$formatCell = static function (string $key, array $row) use ($humanize, $workspaceType, $activeSection, $mediaLibraryFocus) : string {
+    if ($mediaLibraryFocus && $key === 'original_name') {
+        $uuid = trim((string) ($row['uuid'] ?? ''));
+        $mime = trim((string) ($row['mime_type'] ?? ''));
+        $name = trim((string) ($row['original_name'] ?? 'Media asset'));
+        $mediaUrl = $uuid !== '' ? url('/media/' . rawurlencode($uuid)) : '';
+        $isImage = str_starts_with($mime, 'image/');
+        $size = (int) ($row['size_bytes'] ?? 0);
+        $sizeLabel = $size >= 1048576
+            ? number_format($size / 1048576, 1) . ' MB'
+            : number_format(max(1, $size) / 1024, 1) . ' KB';
+        $width = (int) ($row['width_px'] ?? 0);
+        $height = (int) ($row['height_px'] ?? 0);
+        $dimensions = $width > 0 && $height > 0 ? $width . ' × ' . $height . ' px' : '';
+        $typeLabel = match ($mime) {
+            'image/jpeg' => 'JPEG',
+            'image/png' => 'PNG',
+            'image/webp' => 'WebP',
+            'application/pdf' => 'PDF',
+            default => $mime !== '' ? $mime : 'File',
+        };
+        $alt = trim((string) ($row['alt_text'] ?? ''));
+
+        $preview = '<span class="barama-media-focus-thumb"><span class="barama-media-focus-thumb__fallback">'
+            . e($typeLabel) . '</span></span>';
+        if ($mediaUrl !== '') {
+            if ($isImage) {
+                $preview = '<a class="barama-media-focus-thumb" href="' . e($mediaUrl)
+                    . '" target="_blank" rel="noopener noreferrer" title="Open media">'
+                    . '<img src="' . e($mediaUrl) . '" alt="" loading="lazy" decoding="async">'
+                    . '</a>';
+            } else {
+                $preview = '<a class="barama-media-focus-thumb" href="' . e($mediaUrl)
+                    . '" target="_blank" rel="noopener noreferrer" title="Open media">'
+                    . '<span class="barama-media-focus-thumb__fallback">' . e($typeLabel) . '</span></a>';
+            }
+        }
+
+        $meta = e($typeLabel . ' · ' . $sizeLabel . ($dimensions !== '' ? ' · ' . $dimensions : ''));
+        $accessibility = $isImage
+            ? ($alt !== '' ? 'Alt text ready' : 'Alt text missing')
+            : 'Document asset';
+
+        return '<div class="barama-media-focus-file" data-media-focus-preview>'
+            . $preview
+            . '<div class="barama-media-focus-copy"><strong title="' . e($name) . '">' . e($name) . '</strong>'
+            . '<small>' . $meta . '</small>'
+            . '<small>' . e($accessibility) . '</small></div></div>';
+    }
+
+    if ($mediaLibraryFocus && $key === 'target_title') {
+        $targetTitle = trim((string) ($row['target_title'] ?? ''));
+        $targetType = trim((string) ($row['target_type'] ?? $row['entity_type'] ?? ''));
+        $attachments = (int) ($row['attachment_count'] ?? 0);
+        $primary = (int) ($row['primary_count'] ?? 0);
+
+        if ($attachments < 1) {
+            return '<div class="barama-media-focus-context"><strong>Not attached</strong>'
+                . '<small class="barama-media-focus-meta">Safe orphan cleanup is available from Actions.</small></div>';
+        }
+
+        $contextLabel = $targetTitle !== '' ? $targetTitle : ($targetType !== '' ? $humanize($targetType) : 'Attached record');
+        $metaParts = [];
+        if ($targetType !== '') {
+            $metaParts[] = $humanize($targetType);
+        }
+        $metaParts[] = number_format($attachments) . ' attachment' . ($attachments === 1 ? '' : 's');
+        if ($primary > 0) {
+            $metaParts[] = $primary === 1 ? 'Primary image' : number_format($primary) . ' primary uses';
+        }
+
+        return '<div class="barama-media-focus-context"><strong title="' . e($contextLabel) . '">' . e($contextLabel) . '</strong>'
+            . '<small class="barama-media-focus-meta">' . e(implode(' · ', $metaParts)) . '</small></div>';
+    }
+
     $value = $row[$key] ?? null;
 
     if ($value === null || $value === '') {
@@ -110,8 +208,164 @@ $formatCell = static function (string $key, array $row) use ($humanize): string 
         return e(number_format((int) $value));
     }
 
+    /* BARAMA_MEDIA_LIBRARY_CELL_V137 */
+    if (
+        $workspaceType === 'admin'
+        && $activeSection === 'media'
+        && $key === 'original_name'
+    ) {
+        $uuid = trim((string) ($row['uuid'] ?? ''));
+        $name = trim((string) $value);
+        $name = $name !== '' ? $name : 'Untitled media';
+
+        if ($uuid === '') {
+            return e($name);
+        }
+
+        $mime = strtolower(trim((string) ($row['mime_type'] ?? '')));
+        $previewUrl = url(
+            '/dashboard/media/preview/' . rawurlencode($uuid)
+        );
+
+        $kind = match (true) {
+            str_starts_with($mime, 'image/') => 'image',
+            str_starts_with($mime, 'video/') => 'video',
+            str_starts_with($mime, 'audio/') => 'audio',
+            $mime === 'application/pdf' => 'pdf',
+            default => 'document',
+        };
+
+        $extension = strtolower(
+            (string) pathinfo($name, PATHINFO_EXTENSION)
+        );
+        $extension = preg_replace(
+            '/[^a-z0-9]+/',
+            '',
+            $extension
+        ) ?: $kind;
+
+        $width = (int) ($row['width_px'] ?? 0);
+        $height = (int) ($row['height_px'] ?? 0);
+        $dimensions = $width > 0 && $height > 0
+            ? $width . ' × ' . $height . ' px'
+            : '';
+
+        $attributes = ' data-media-preview'
+            . ' data-media-url="' . e($previewUrl) . '"'
+            . ' data-media-name="' . e($name) . '"'
+            . ' data-media-mime="' . e($mime) . '"'
+            . ' data-media-kind="' . e($kind) . '"'
+            . ' data-media-alt="' . e(
+                trim((string) ($row['alt_text'] ?? ''))
+            ) . '"'
+            . ' data-media-dimensions="'
+            . e($dimensions)
+            . '"';
+
+        $preview = $kind === 'image'
+            ? '<img src="' . e($previewUrl)
+                . '" alt="" loading="lazy" decoding="async">'
+            : '<span class="workspace-media-file__type">'
+                . e(strtoupper(mb_substr($extension, 0, 5)))
+                . '</span>';
+
+        return '<div class="workspace-media-file">'
+            . '<button class="workspace-media-file__preview"'
+            . ' type="button"'
+            . $attributes
+            . ' aria-label="Preview ' . e($name) . '">'
+            . $preview
+            . '<span class="workspace-media-file__preview-action"'
+            . ' aria-hidden="true">'
+            . '<svg viewBox="0 0 24 24" fill="none"'
+            . ' stroke="currentColor" stroke-width="1.8"'
+            . ' stroke-linecap="round" stroke-linejoin="round">'
+            . '<path d="M2.5 12s3.5-6 9.5-6 9.5 6'
+            . ' 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>'
+            . '<circle cx="12" cy="12" r="2.6"/>'
+            . '</svg></span>'
+            . '</button>'
+            . '<span class="workspace-media-file__copy">'
+            . '<button class="workspace-media-file__title"'
+            . ' type="button"'
+            . $attributes
+            . ' title="Preview ' . e($name) . '">'
+            . e($name)
+            . '</button>'
+            . '<small>'
+            . e($mime !== '' ? $mime : strtoupper($kind))
+            . ($dimensions !== ''
+                ? ' · ' . e($dimensions)
+                : '')
+            . '</small>'
+            . '</span>'
+            . '</div>';
+    }
     if (in_array($key, ['original_name', 'target_title', 'parent_name', 'uploaded_by'], true)) {
         return e((string) $value);
+    }
+
+    if ($key === 'readiness_score') {
+        $score = max(0, min(100, (int) $value));
+        $readiness = (new \Barama\Services\PropertyReadinessService())->evaluate($row, []);
+        $band = (string) ($readiness['band'] ?? 'incomplete');
+        $bandLabel = (string) ($readiness['band_label'] ?? 'Incomplete');
+        $approvalReady = !empty($readiness['approval_ready']);
+        $tone = $approvalReady ? 'approved' : ($score < 50 ? 'rejected' : 'pending');
+        $missing = (array) ($readiness['missing'] ?? []);
+        $tooltipParts = [];
+        $detailItems = '';
+        foreach (array_slice($missing, 0, 5) as $check) {
+            $checkLabel = trim((string) ($check['label'] ?? 'Requirement'));
+            $checkMessage = trim((string) ($check['message'] ?? ''));
+            if ($checkMessage !== '') {
+                $tooltipParts[] = $checkLabel . ': ' . $checkMessage;
+                $detailItems .= '<li><strong>' . e($checkLabel) . '</strong><span>' . e($checkMessage) . '</span></li>';
+            }
+        }
+        if ($detailItems === '') {
+            $detailItems = '<li><strong>Approval ready</strong><span>All scored readiness requirements are complete.</span></li>';
+        }
+        $tooltip = $tooltipParts === []
+            ? 'All scored readiness requirements are complete.'
+            : implode(' · ', $tooltipParts);
+        $fixLink = '';
+        if (
+            $workspaceType === 'developer'
+            && $activeSection === 'properties'
+            && !$approvalReady
+            && in_array(strtolower((string) ($row['status'] ?? '')), ['draft', 'rejected'], true)
+            && (int) ($row['id'] ?? 0) > 0
+        ) {
+            $firstMissing = is_array($readiness['first_missing'] ?? null) ? $readiness['first_missing'] : [];
+            $focusKey = trim((string) ($firstMissing['key'] ?? ''));
+            $href = url('/developer/manage/property/' . (int) $row['id'])
+                . ($focusKey !== '' ? '?readiness_focus=' . rawurlencode($focusKey) : '')
+                . '#workspace-record-edit';
+            $fixLink = '<a class="workspace-readiness-fix" href="' . e($href) . '">Fix issues</a>';
+        }
+        return '<span class="workspace-readiness-wrap">'
+            . '<span class="workspace-readiness-cell workspace-readiness-cell--quality" data-band="' . e($band) . '" tabindex="0" title="' . e($tooltip) . '">'
+            . '<strong>' . e((string) $score) . '%</strong>'
+            . '<span class="status-badge status-badge--' . e($tone) . '">' . e($bandLabel) . '</span>'
+            . '<span class="workspace-readiness-popover" role="tooltip"><strong>' . e($bandLabel . ' · ' . $score . '/100') . '</strong>'
+            . '<span>' . e($approvalReady ? 'Approval ready.' : count($missing) . ' scored requirement(s) still need attention.') . '</span>'
+            . '<ul>' . $detailItems . '</ul></span></span>'
+            . $fixLink . '</span>';
+    }
+
+    if (
+        $key === 'readiness'
+        && strtolower((string) ($row['entity_type'] ?? '')) === 'property'
+        && array_key_exists('readiness_score', $row)
+        && $row['readiness_score'] !== null
+    ) {
+        $score = max(0, min(100, (int) $row['readiness_score']));
+        $band = \Barama\Services\PropertyReadinessService::qualityBand($score);
+        $tone = $score === 100 ? 'approved' : ($score < 50 ? 'rejected' : 'pending');
+        return '<span class="workspace-readiness-cell workspace-readiness-cell--quality" data-band="' . e((string) $band['key']) . '">'
+            . '<strong>' . e((string) $score) . '%</strong>'
+            . '<span class="status-badge status-badge--' . e($tone) . '">' . e((string) $band['label']) . '</span></span>';
     }
 
     if (in_array($key, ['readiness', 'marketplace_readiness'], true)) {
@@ -377,55 +631,96 @@ $renderActions = static function (array $row) use (
         return $renderRowMenu($buttons, 'admin-property-' . $id);
     }
 
-    if ($workspaceType === 'admin' && $activeSection === 'pages') {
+    if (
+        $workspaceType === 'admin'
+        && $activeSection === 'pages'
+    ) {
         $slug = trim((string) ($row['slug'] ?? ''));
-        $editUrl = url('/dashboard/pages/' . $id . '/edit');
-        $publicUrl = $slug !== '' ? url('/' . rawurlencode($slug)) : '';
+        $editUrl =
+            url('/dashboard/pages/' . $id . '/edit');
+        $publicUrl = $slug !== ''
+            ? url('/' . rawurlencode($slug))
+            : '';
 
-        $buttons[] = '<a class="table-action table-action--primary" href="' . e($editUrl) . '">Edit</a>';
+        $buttons[] =
+            '<a class="table-action table-action--primary" href="'
+            . e($editUrl)
+            . '">Edit</a>';
 
         if ($publicUrl !== '') {
-            $buttons[] = '<button class="table-action" type="button" data-copy-slug '
-                . 'data-copy-value="' . e($publicUrl) . '">Copy URL</button>';
+            $buttons[] =
+                '<button class="table-action" type="button" '
+                . 'data-copy-slug data-copy-value="'
+                . e($publicUrl)
+                . '">Copy URL</button>';
         }
 
         if ($status === 'published' && $publicUrl !== '') {
-            $buttons[] = '<a class="table-action" href="' . e($publicUrl)
+            $buttons[] =
+                '<a class="table-action" href="'
+                . e($publicUrl)
                 . '" target="_blank" rel="noopener">View</a>';
         } else {
-            $buttons[] = '<button class="table-action table-action--disabled" type="button" disabled '
-                . 'title="Publish this page before opening the public URL.">View</button>';
+            $buttons[] =
+                '<button class="table-action '
+                . 'table-action--disabled" type="button" disabled '
+                . 'title="Publish this page before opening '
+                . 'the public URL.">View</button>';
         }
 
         if ($status === 'draft') {
-            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+            $buttons[] =
+                '<form action="'
+                . e(url('/dashboard/pages/' . $id . '/status'))
                 . '" method="post" data-workspace-form>'
                 . csrf_field()
-                . '<input type="hidden" name="status" value="published">'
-                . '<button class="table-action" type="submit">Publish</button></form>';
+                . '<input type="hidden" name="status" '
+                . 'value="published">'
+                . '<button class="table-action" '
+                . 'type="submit">Publish</button></form>';
         } elseif ($status === 'published') {
-            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+            $buttons[] =
+                '<form action="'
+                . e(url('/dashboard/pages/' . $id . '/status'))
                 . '" method="post" data-workspace-form>'
                 . csrf_field()
-                . '<input type="hidden" name="status" value="draft">'
-                . '<button class="table-action" type="submit">Move to draft</button></form>';
+                . '<input type="hidden" name="status" '
+                . 'value="draft">'
+                . '<button class="table-action" '
+                . 'type="submit">Move to draft</button></form>';
         }
 
-        if (in_array($status, ['draft', 'published'], true)) {
-            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+        if (in_array(
+            $status,
+            ['draft', 'published'],
+            true
+        )) {
+            $buttons[] =
+                '<form action="'
+                . e(url('/dashboard/pages/' . $id . '/status'))
                 . '" method="post" data-workspace-form>'
                 . csrf_field()
-                . '<input type="hidden" name="status" value="archived">'
-                . '<button class="table-action table-action--danger" type="submit">Archive</button></form>';
+                . '<input type="hidden" name="status" '
+                . 'value="archived">'
+                . '<button class="table-action '
+                . 'table-action--danger" '
+                . 'type="submit">Archive</button></form>';
         } elseif ($status === 'archived') {
-            $buttons[] = '<form action="' . e(url('/dashboard/pages/' . $id . '/status'))
+            $buttons[] =
+                '<form action="'
+                . e(url('/dashboard/pages/' . $id . '/status'))
                 . '" method="post" data-workspace-form>'
                 . csrf_field()
-                . '<input type="hidden" name="status" value="draft">'
-                . '<button class="table-action" type="submit">Restore draft</button></form>';
+                . '<input type="hidden" name="status" '
+                . 'value="draft">'
+                . '<button class="table-action" '
+                . 'type="submit">Restore draft</button></form>';
         }
 
-        return $renderRowMenu($buttons, 'admin-page-' . $id);
+        return $renderRowMenu(
+            $buttons,
+            'admin-page-' . $id
+        );
     }
 
     $viewResource = $workspaceType === 'developer'
@@ -808,8 +1103,49 @@ $renderActions = static function (array $row) use (
 };
 ?>
 
-<?php if ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>">
+
+<?php /* BARAMA_MARKETPLACE_ADMIN_CANONICAL_SHELL_FIX_V106: preserve table columns; render through canonical layouts/app shell. */ ?>
+<?php if (
+    $workspaceType === 'admin'
+    && $activeSection === 'pages'
+): ?>
+    <link
+        rel="stylesheet"
+        href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>"
+    >
+<?php endif; ?>
+<!-- BARAMA_GLOBAL_LOCATION_CASCADE_INDEX_V110 -->
+<link rel="stylesheet" href="<?= e(asset('css/global-location-cascade-v110.css') . '?v=110') ?>">
+<script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
+<?php if ($mediaLibraryFocus): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/media-library-focus-v145.css') . '?v=145') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'listings'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/listings-focus-v148.css') . '?v=148') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'projects'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/projects-focus-v152.css') . '?v=152') ?>">
+<?php endif; ?>
+<?php if (in_array($activeSection, ['companies', 'company'], true)): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/companies-focus-v156.css') . '?v=156') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'leads'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/leads-focus-v161.css') . '?v=161') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'viewings'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/viewings-focus-v164.css') . '?v=164') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'catalog'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/catalog-focus-v167.css') . '?v=167') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'seo'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/seo-focus-v170.css') . '?v=170') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'users'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/users-focus-v172.css') . '?v=172') ?>">
+<?php endif; ?>
+<?php if ($activeSection === 'verification'): ?>
+    <link rel="stylesheet" href="<?= e(asset('css/verification-focus-v174.css') . '?v=174') ?>">
 <?php endif; ?>
 <section class="workspace-page<?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?><?= $workspaceType === 'admin' && $activeSection === 'pages' ? ' workspace-page--pages' : '' ?>">
     <div class="workspace-page__header">
@@ -820,22 +1156,50 @@ $renderActions = static function (array $row) use (
         </div>
 
         <?php if ($workspaceType === 'developer' && in_array($activeSection, ['company', 'projects', 'properties', 'listings', 'team', 'media'], true)): ?>
-            <span class="workspace-context-note">
-                <?= app_icon('shield') ?>
-                Company-scoped access enforced
-            </span>
+            <?php if ($activeSection === 'properties' && $propertyQualityOperations !== []): ?>
+                <div class="workspace-header-actions">
+                    <span class="workspace-context-note">
+                        <?= app_icon('shield') ?>
+                        Company-scoped access enforced
+                    </span>
+                    <button
+                        class="content-config-button workspace-quality-operations-trigger"
+                        type="button"
+                        data-configure-open="property-quality-operations-control"
+                    >
+                        <?= app_icon('check') ?>
+                        <span>Quality Operations</span>
+                    </button>
+                </div>
+            <?php else: ?>
+                <span class="workspace-context-note">
+                    <?= app_icon('shield') ?>
+                    Company-scoped access enforced
+                </span>
+            <?php endif; ?>
         <?php elseif ($workspaceType === 'admin' && in_array($activeSection, ['inquiries', 'leads', 'viewings'], true)): ?>
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Platform oversight · company-owned operations
             </span>
-        <?php elseif ($workspaceType === 'admin' && in_array($activeSection, ['catalog', 'media'], true)): ?>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'media'): ?>
+            <a
+                class="workspace-context-note workspace-context-note--media-upload"
+                href="<?= e(url('/dashboard/media/upload')) ?>"
+            >
+                <?= app_icon('plus') ?>
+                <span>Upload</span>
+            </a>
+        <?php elseif ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
                 Canonical real-estate platform data
             </span>
         <?php elseif ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
-            <a class="workspace-context-note workspace-context-note--create" href="<?= e(url('/dashboard/pages/new')) ?>">
+            <a
+                class="workspace-context-note workspace-context-note--create"
+                href="<?= e(url('/dashboard/pages/new')) ?>"
+            >
                 <?= app_icon('plus') ?>
                 <span>Create New Page</span>
             </a>
@@ -860,14 +1224,26 @@ $renderActions = static function (array $row) use (
                 Immutable security events
             </span>
         <?php elseif ($hasMarketplacePageConfiguration): ?>
-            <button
-                class="content-config-button workspace-marketplace-configure"
-                type="button"
-                data-configure-open="marketplace-page-configuration-control"
-            >
-                <?= app_icon('settings') ?>
-                <span>Configure</span>
-            </button>
+            <div class="workspace-header-actions">
+                <?php if ($activeSection === 'properties' && $propertyQualityOperations !== []): ?>
+                    <button
+                        class="content-config-button workspace-quality-operations-trigger"
+                        type="button"
+                        data-configure-open="property-quality-operations-control"
+                    >
+                        <?= app_icon('check') ?>
+                        <span>Quality Operations</span>
+                    </button>
+                <?php endif; ?>
+                <button
+                    class="content-config-button workspace-marketplace-configure"
+                    type="button"
+                    data-configure-open="marketplace-page-configuration-control"
+                >
+                    <?= app_icon('settings') ?>
+                    <span>Configure</span>
+                </button>
+            </div>
         <?php elseif ($workspaceType === 'admin'): ?>
             <span class="workspace-context-note">
                 <?= app_icon('shield') ?>
@@ -875,6 +1251,196 @@ $renderActions = static function (array $row) use (
             </span>
         <?php endif; ?>
     </div>
+
+    <?php if ($activeSection === 'properties' && $propertyQualityOperations !== []): ?>
+        <dialog
+            class="config-dialog config-dialog--wide workspace-quality-ops-dialog"
+            id="property-quality-operations-control"
+            data-config-dialog
+            aria-labelledby="property-quality-operations-dialog-title"
+        >
+            <div class="config-dialog__panel workspace-quality-ops-dialog__panel">
+                <header class="config-dialog__head">
+                    <div>
+                        <span class="eyebrow">PROPERTY MANAGEMENT</span>
+                        <h2 id="property-quality-operations-dialog-title">QUALITY OPERATIONS</h2>
+                        <p>Review readiness, quality workload, stale inventory, company ranking and remediation actions without crowding the Property inventory page.</p>
+                    </div>
+                    <button type="button" data-configure-close aria-label="Close Quality Operations"><?= app_icon('plus') ?></button>
+                </header>
+                <div class="config-dialog__body workspace-quality-ops-dialog__body">
+        <?php
+            $qualityPropertiesPath = $workspaceType === 'admin' ? '/dashboard/properties' : '/developer/properties';
+            $qualityFilterBase = array_filter([
+                'q' => (string) $tableSearch,
+                'status' => (string) ($tableFilters['status'] ?? ''),
+                'type' => (string) ($tableFilters['type'] ?? ''),
+                'location' => (string) ($tableFilters['location'] ?? ''),
+                'readiness' => (string) ($tableFilters['readiness'] ?? ''),
+            ], static fn ($value): bool => trim((string) $value) !== '');
+            $qualityExportQuery = $qualityFilterBase;
+            $qualityExportQuery['quality'] = (string) ($tableFilters['quality'] ?? '');
+            $qualityExportQuery = array_filter($qualityExportQuery, static fn ($value): bool => trim((string) $value) !== '');
+            $qualityExportQuery['export'] = 'readiness_csv';
+            $qualityExportPath = $qualityPropertiesPath . '?' . http_build_query($qualityExportQuery);
+            $qualityFilterUrl = static function (string $qualityKey) use ($qualityPropertiesPath, $qualityFilterBase): string {
+                $query = $qualityFilterBase;
+                if ($qualityKey !== '') {
+                    $query['quality'] = $qualityKey;
+                }
+                return $qualityPropertiesPath . ($query !== [] ? '?' . http_build_query($query) : '');
+            };
+            $readinessFilterUrl = static function (string $readinessKey) use ($qualityPropertiesPath, $qualityFilterBase): string {
+                $query = $qualityFilterBase;
+                unset($query['readiness']);
+                if ($readinessKey !== '') {
+                    $query['readiness'] = $readinessKey;
+                }
+                return $qualityPropertiesPath . ($query !== [] ? '?' . http_build_query($query) : '');
+            };
+        ?>
+        <section class="workspace-quality-ops" aria-labelledby="property-quality-operations-title">
+            <div class="workspace-quality-ops__head">
+                <div class="workspace-quality-ops__title">
+                    <span aria-hidden="true"><?= app_icon('shield') ?></span>
+                    <div>
+                        <strong id="property-quality-operations-title">Property Quality Operations</strong>
+                        <small>Computed audit across the full scoped property portfolio · no stored readiness field</small>
+                    </div>
+                </div>
+                <a class="btn btn-sm btn-outline-secondary workspace-quality-ops__export" href="<?= e(url($qualityExportPath)) ?>">
+                    <?= app_icon('database') ?> Export readiness CSV
+                </a>
+            </div>
+
+            <div class="workspace-quality-ops__metrics">
+                <div class="workspace-quality-ops__metric"><span><?= app_icon('check') ?></span><div><strong><?= e(number_format((float) ($propertyQualityMetrics['average_score'] ?? 0), 1)) ?>%</strong><span>Average readiness</span></div></div>
+                <div class="workspace-quality-ops__metric"><span><?= app_icon('alert') ?></span><div><strong><?= e(number_format((int) (($propertyQualityMetrics['needs_attention'] ?? 0) + ($propertyQualityMetrics['incomplete'] ?? 0)))) ?></strong><span>Need quality work</span></div></div>
+                <div class="workspace-quality-ops__metric"><span><?= app_icon('lock') ?></span><div><strong><?= e(number_format((int) ($propertyQualityMetrics['parent_blocked'] ?? 0))) ?></strong><span>Parent blocked</span></div></div>
+                <div class="workspace-quality-ops__metric"><span><?= app_icon('clock') ?></span><div><strong><?= e(number_format((int) ($propertyQualityMetrics['stale_draft'] ?? 0))) ?></strong><span>Stale drafts · 30+ days</span></div></div>
+            </div>
+
+            <?php
+                $qualityQuickFilters = [
+                    'missing_media' => ['Missing media', (int) ($propertyQualityMetrics['missing_media'] ?? 0)],
+                    'missing_primary_media' => ['Missing primary image', (int) ($propertyQualityMetrics['missing_primary_media'] ?? 0)],
+                    'missing_location' => ['Missing location', (int) ($propertyQualityMetrics['missing_location'] ?? 0)],
+                    'missing_description' => ['Short description', (int) ($propertyQualityMetrics['missing_description'] ?? 0)],
+                    'parent_blocked' => ['Parent blocked', (int) ($propertyQualityMetrics['parent_blocked'] ?? 0)],
+                    'stale_draft' => ['Stale 30+ days', (int) ($propertyQualityMetrics['stale_draft'] ?? 0)],
+                ];
+            ?>
+            <!-- Property Inventory Focus v1.4.2 -->
+            <?php
+                $readinessAttentionCount = (int) ($propertyQualityMetrics['good'] ?? 0)
+                    + (int) ($propertyQualityMetrics['needs_attention'] ?? 0)
+                    + (int) ($propertyQualityMetrics['incomplete'] ?? 0);
+            ?>
+            <div class="workspace-quality-ops__quick-filters" aria-label="Property readiness scope">
+                <a class="workspace-quality-ops__chip <?= (string) ($tableFilters['readiness'] ?? '') === '' ? 'is-active' : '' ?>" href="<?= e(url($readinessFilterUrl(''))) ?>">
+                    <span>All readiness</span><strong><?= e(number_format((int) ($propertyQualityMetrics['total'] ?? 0))) ?></strong>
+                </a>
+                <a class="workspace-quality-ops__chip <?= (string) ($tableFilters['readiness'] ?? '') === 'ready' ? 'is-active' : '' ?>" href="<?= e(url($readinessFilterUrl('ready'))) ?>">
+                    <span>Ready · 100%</span><strong><?= e(number_format((int) ($propertyQualityMetrics['excellent'] ?? 0))) ?></strong>
+                </a>
+                <a class="workspace-quality-ops__chip <?= (string) ($tableFilters['readiness'] ?? '') === 'attention' ? 'is-active' : '' ?>" href="<?= e(url($readinessFilterUrl('attention'))) ?>">
+                    <span>Needs review · below 100%</span><strong><?= e(number_format($readinessAttentionCount)) ?></strong>
+                </a>
+            </div>
+
+            <div class="workspace-quality-ops__quick-filters" aria-label="Property quality quick filters">
+                <?php foreach ($qualityQuickFilters as $qualityKey => [$qualityLabel, $qualityCount]): ?>
+                    <a class="workspace-quality-ops__chip <?= (string) ($tableFilters['quality'] ?? '') === $qualityKey ? 'is-active' : '' ?>" href="<?= e(url($qualityFilterUrl($qualityKey))) ?>">
+                        <span><?= e($qualityLabel) ?></span><strong><?= e(number_format($qualityCount)) ?></strong>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="workspace-quality-health">
+                <div class="workspace-quality-health__panel">
+                    <strong>Property Quality Health</strong>
+                    <small>Current computed portfolio health snapshot; no historical score is persisted.</small>
+                    <div class="workspace-quality-health__bands">
+                        <div class="workspace-quality-health__band"><span>Excellent · 100%</span><strong><?= e(number_format((int) ($propertyQualityMetrics['excellent'] ?? 0))) ?></strong></div>
+                        <div class="workspace-quality-health__band"><span>Good · 80–99%</span><strong><?= e(number_format((int) ($propertyQualityMetrics['good'] ?? 0))) ?></strong></div>
+                        <div class="workspace-quality-health__band"><span>Needs attention · 50–79%</span><strong><?= e(number_format((int) ($propertyQualityMetrics['needs_attention'] ?? 0))) ?></strong></div>
+                        <div class="workspace-quality-health__band"><span>Incomplete · below 50%</span><strong><?= e(number_format((int) ($propertyQualityMetrics['incomplete'] ?? 0))) ?></strong></div>
+                    </div>
+                </div>
+                <div class="workspace-quality-health__panel">
+                    <span class="workspace-quality-stale__title">Stale draft workload</span>
+                    <span class="workspace-quality-stale__subtitle">Age buckets help prioritize older draft inventory.</span>
+                    <div class="workspace-quality-stale__buckets">
+                        <a class="workspace-quality-stale__bucket" href="<?= e(url($qualityFilterUrl('stale_30_59'))) ?>"><span>30–59 days</span><strong><?= e(number_format((int) ($propertyQualityStaleBuckets['30_59'] ?? 0))) ?></strong></a>
+                        <a class="workspace-quality-stale__bucket" href="<?= e(url($qualityFilterUrl('stale_60_89'))) ?>"><span>60–89 days</span><strong><?= e(number_format((int) ($propertyQualityStaleBuckets['60_89'] ?? 0))) ?></strong></a>
+                        <a class="workspace-quality-stale__bucket" href="<?= e(url($qualityFilterUrl('stale_90_plus'))) ?>"><span>90+ days</span><strong><?= e(number_format((int) ($propertyQualityStaleBuckets['90_plus'] ?? 0))) ?></strong></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workspace-quality-ops__grid">
+                <div class="workspace-quality-ops__panel">
+                    <strong>Recurring missing requirements</strong>
+                    <small>Highest-frequency scored readiness gaps.</small>
+                    <?php if ($propertyQualityTopIssues !== []): ?>
+                        <ul class="workspace-quality-ops__list">
+                            <?php foreach ($propertyQualityTopIssues as $issue): ?>
+                                <li class="workspace-quality-ops__issue"><span><?= e((string) ($issue['label'] ?? 'Requirement')) ?></span><strong><?= e(number_format((int) ($issue['count'] ?? 0))) ?></strong></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?><p class="workspace-quality-ops__empty">No scored readiness gaps detected.</p><?php endif; ?>
+                </div>
+
+                <div class="workspace-quality-ops__panel">
+                    <strong><?= $workspaceType === 'admin' ? 'Company quality ranking' : 'Portfolio company quality' ?></strong>
+                    <small>Companies with the greatest property quality workload first.</small>
+                    <?php if ($propertyQualityCompanies !== []): ?>
+                        <ul class="workspace-quality-ops__list">
+                            <?php foreach ($propertyQualityCompanies as $companyQuality): ?>
+                                <?php $companyQualityName = (string) ($companyQuality['name'] ?? 'Company'); $companyQualityPath = $qualityPropertiesPath . '?q=' . rawurlencode($companyQualityName); ?>
+                                <li class="workspace-quality-ops__company"><a href="<?= e(url($companyQualityPath)) ?>"><?= e($companyQualityName) ?></a><strong><?= e(number_format((float) ($companyQuality['average_score'] ?? 0), 1)) ?>%</strong></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?><p class="workspace-quality-ops__empty">No company quality data available.</p><?php endif; ?>
+                </div>
+
+                <div class="workspace-quality-ops__panel">
+                    <strong>Priority action queue</strong>
+                    <small>Lowest-readiness properties first.</small>
+                    <?php if ($propertyQualityQueue !== []): ?>
+                        <ul class="workspace-quality-ops__list">
+                            <?php foreach ($propertyQualityQueue as $qualityItem): ?>
+                                <?php
+                                    $qualityId = (int) ($qualityItem['id'] ?? 0);
+                                    $qualityFocus = trim((string) ($qualityItem['first_issue'] ?? ''));
+                                    $qualityBasePath = $workspaceType === 'admin'
+                                        ? '/dashboard/manage/property/' . $qualityId
+                                        : '/developer/manage/property/' . $qualityId;
+                                    $qualityQuery = ['edit' => '1'];
+                                    if ($qualityFocus !== '') { $qualityQuery['readiness_focus'] = $qualityFocus; }
+                                    $qualityPath = $qualityBasePath . '?' . http_build_query($qualityQuery) . '#workspace-record-edit';
+                                    $qualityIssueLabels = [
+                                        'title' => 'Add title', 'property_type' => 'Select type', 'location' => 'Set location',
+                                        'address' => 'Add address', 'area' => 'Add area', 'description' => 'Improve description',
+                                        'media' => 'Add media', 'primary_media' => 'Select primary image',
+                                        'company_dependency' => 'Resolve company approval', 'project_dependency' => 'Resolve project approval',
+                                    ];
+                                    $qualityIssueLabel = $qualityIssueLabels[$qualityFocus] ?? 'Review readiness';
+                                ?>
+                                <li class="workspace-quality-ops__queue-item">
+                                    <span class="workspace-quality-ops__queue-copy"><a href="<?= e(url($qualityPath)) ?>"><?= e((string) ($qualityItem['title'] ?? $qualityItem['reference_code'] ?? 'Property')) ?></a><small><?= e($qualityIssueLabel) ?></small></span>
+                                    <span class="workspace-quality-ops__queue-actions"><strong><?= e((string) ((int) ($qualityItem['readiness_score'] ?? 0))) ?>%</strong><a class="workspace-quality-ops__fix" href="<?= e(url($qualityPath)) ?>">Fix first issue</a></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?><p class="workspace-quality-ops__empty">All scoped properties are approval-ready.</p><?php endif; ?>
+                </div>
+            </div>
+        </section>
+                </div>
+            </div>
+        </dialog>
+    <?php endif; ?>
 
     <?php if ($hasMarketplacePageConfiguration): ?>
         <link rel="stylesheet" href="<?= e(asset('css/marketplace-config-v109.css')) ?>">
@@ -922,9 +1488,9 @@ $renderActions = static function (array $row) use (
                         <div class="config-source-panel" data-hero-background-panel="image">
                             <h3>Image Background</h3>
                             <div class="config-field-grid">
-                                <label><span>Source</span><select class="form-select" name="image_source" data-marketplace-image-source><option value="auto" <?= $marketplaceImageSource === 'auto' ? 'selected' : '' ?>>Automatic Barama default</option><option value="url" <?= $marketplaceImageSource === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= $marketplaceImageSource === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select><small>Automatic uses the bundled Barama Hero image for this page.</small></label>
+                                <label><span>Source</span><select class="form-select" name="image_source" data-marketplace-image-source><option value="auto" <?= $marketplaceImageSource === 'auto' ? 'selected' : '' ?>>Automatic Barama default</option><option value="url" <?= $marketplaceImageSource === 'url' ? 'selected' : '' ?>>Image URL</option><option value="media" <?= $marketplaceImageSource === 'media' ? 'selected' : '' ?>>Upload / Media Library</option></select><small>Automatic uses the photorealistic Barama Hero image set for this page.</small></label>
                                 <label><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($marketplaceHeroBackground['image_url'] ?? '')) ?>" placeholder="https://example.com/hero.jpg"></label>
-                                <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library. If no custom image is supplied, Barama uses the bundled default Hero image.</small></label>
+                                <label class="config-field-grid__wide"><span>Upload image</span><input class="form-control" type="file" name="hero_image_file" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG or WebP. Saved through the Barama Media Library. If no custom image is supplied, Barama uses the photorealistic default Hero image.</small></label>
                                 <input type="hidden" name="image_media_uuid" value="<?= e((string) ($marketplaceHeroBackground['image_media_uuid'] ?? '')) ?>">
                             </div>
                         </div>
@@ -949,7 +1515,7 @@ $renderActions = static function (array $row) use (
                                 <label><span>Interval (ms)</span><input class="form-control" type="number" name="slider_interval" min="2500" max="20000" step="500" value="<?= e((string) ($marketplaceHeroBackground['slider_interval'] ?? 6000)) ?>"></label>
                                 <label class="config-check-field"><input type="hidden" name="slider_autoplay" value="0"><input type="checkbox" name="slider_autoplay" value="1" <?= !empty($marketplaceHeroBackground['slider_autoplay']) ? 'checked' : '' ?>><span>Autoplay slider</span></label>
                                 <label class="config-field-grid__wide"><span>Add image URLs</span><textarea class="form-control" name="slider_urls" rows="3" placeholder="One HTTPS image URL per line"></textarea></label>
-                                <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"><small>If no slider URLs or uploads are provided, Barama uses the bundled three-image default slider.</small></label>
+                                <label class="config-field-grid__wide"><span>Upload slider images</span><input class="form-control" type="file" name="hero_slider_files[]" multiple accept="image/jpeg,image/png,image/webp"><small>If no slider URLs or uploads are provided, Barama uses the three-image photorealistic default slider.</small></label>
                             </div>
                         </div>
                         <div class="config-source-panel" data-hero-background-panel="video">
@@ -1001,10 +1567,9 @@ $renderActions = static function (array $row) use (
                     </section>
                 </div>
 
-                <div class="config-dialog__notice" data-marketplace-config-notice hidden aria-live="polite"></div>
                 <footer class="config-dialog__footer">
                     <button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button>
-                    <button class="btn btn-primary" type="submit" data-marketplace-config-submit>Save configuration</button>
+                    <button class="btn btn-primary" type="submit">Save configuration</button>
                 </footer>
             </form>
         </dialog>
@@ -1073,16 +1638,12 @@ $renderActions = static function (array $row) use (
                     </label>
                     <label><span>Email</span><input class="form-control" name="email" type="email" maxlength="191"></label>
                     <label><span>Phone</span><input class="form-control" name="phone" maxlength="60"></label>
-                    <label class="workspace-form__span-2"><span>Location</span>
-                        <select class="form-select" name="location_id">
-                            <option value="">Select location</option>
-                            <?php foreach ($locations as $location): ?>
-                                <option value="<?= e((string) $location['id']) ?>">
-                                    <?= e((string) $location['name']) ?> · <?= e($humanize($location['type'])) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
+                    <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'location_id',
+    'currentLocationId' => 0,
+    'label' => 'Location',
+    'spanTwo' => true,
+]) ?>
                 </div>
                 <button class="btn btn-primary" type="submit">Create company</button>
             </form>
@@ -1122,14 +1683,12 @@ $renderActions = static function (array $row) use (
                             <option value="on_hold">On hold</option>
                         </select>
                     </label>
-                    <label class="workspace-form__span-2"><span>Location</span>
-                        <select class="form-select" name="location_id">
-                            <option value="">Select location</option>
-                            <?php foreach ($locations as $location): ?>
-                                <option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
+                    <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'location_id',
+    'currentLocationId' => 0,
+    'label' => 'Location',
+    'spanTwo' => true,
+]) ?>
                 </div>
                 <button class="btn btn-primary" type="submit">Create project</button>
             </form>
@@ -1164,6 +1723,12 @@ $renderActions = static function (array $row) use (
                             <?php endforeach; ?>
                         </select>
                     </label>
+                    <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'location_id',
+    'currentLocationId' => 0,
+    'label' => 'Location',
+    'spanTwo' => true,
+]) ?>
                     <label><span>Bedrooms</span><input class="form-control" name="bedrooms" type="number" min="0" step="0.5"></label>
                     <label><span>Bathrooms</span><input class="form-control" name="bathrooms" type="number" min="0" step="0.5"></label>
                     <label><span>Area</span><input class="form-control" name="area_value" type="number" min="0" step="0.01"></label>
@@ -1306,7 +1871,7 @@ $renderActions = static function (array $row) use (
                         <label><span>Name</span><input class="form-control" name="name" required maxlength="160"></label>
                         <label><span>Type</span>
                             <select class="form-select" name="type" required>
-                                <?php foreach (['country','province','state','city','district','commune','neighborhood'] as $type): ?>
+                                <?php foreach (['country','province','state','region','district','county','department','prefecture','municipality','city','commune','neighborhood','territory','administrative_area'] as $type): ?>
                                     <option value="<?= e($type) ?>"><?= e($humanize($type)) ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -1350,7 +1915,14 @@ $renderActions = static function (array $row) use (
             <div><span><?= app_icon('check') ?></span><strong>Status, not deletion</strong><small>Catalog records are activated or deactivated without destroying historical real-estate references.</small></div>
         </section>
     <?php elseif ($workspaceType === 'admin' && $activeSection === 'media'): ?>
-        <section class="workspace-management-guide workspace-management-guide--media" aria-label="Platform media safeguards">
+        <link
+            rel="stylesheet"
+            href="<?= e(asset('css/media-library-index-v137.css') . '?v=137') ?>"
+        >
+        <script
+            src="<?= e(asset('js/media-library-index-v137.js') . '?v=137') ?>"
+            defer
+        ></script>        <section class="workspace-management-guide workspace-management-guide--media" aria-label="Platform media safeguards">
             <div><span><?= app_icon('image') ?></span><strong>Attachment context</strong><small>Every attached asset shows the first real-estate record, attachment count and primary-image usage.</small></div>
             <div><span><?= app_icon('shield') ?></span><strong>Owned media protected</strong><small>Attached assets stay under their Company, Project, Property or Listing workflow.</small></div>
             <div><span><?= app_icon('alert') ?></span><strong>Orphan cleanup only</strong><small>Admin deletion is limited to assets with zero real-estate attachments.</small></div>
@@ -1410,6 +1982,14 @@ $renderActions = static function (array $row) use (
                     </select>
                 <?php endif; ?>
 
+                <?php if ($activeSection === 'properties' && trim((string) ($tableFilters['readiness'] ?? '')) !== ''): ?>
+                    <input type="hidden" name="readiness" value="<?= e((string) ($tableFilters['readiness'] ?? '')) ?>">
+                <?php endif; ?>
+
+                <?php if ($activeSection === 'properties' && trim((string) ($tableFilters['quality'] ?? '')) !== ''): ?>
+                    <input type="hidden" name="quality" value="<?= e((string) ($tableFilters['quality'] ?? '')) ?>">
+                <?php endif; ?>
+
                 <?php if (($filterOptions['types'] ?? []) !== []): ?>
                     <select name="type" aria-label="Filter by type">
                         <option value="">All types</option>
@@ -1466,10 +2046,11 @@ $renderActions = static function (array $row) use (
             </div>
         <?php endif; ?>
 
+
         <div class="workspace-table-wrap">
             <table class="workspace-table<?= $workspaceType === 'admin' && $activeSection === 'listings'
                 ? ' workspace-table--admin-listings-v1128'
-                : '' ?>">
+                : '' ?><?= $activeSection === 'listings' ? ' workspace-table--listings-focus-v148' : '' ?>">
                 <thead>
                     <tr>
                         <?php if ($bulkMode): ?>
@@ -1553,6 +2134,301 @@ $renderActions = static function (array $row) use (
                                                     . '?edit=1#workspace-record-edit'
                                                 ) ?>"
                                             ><?= e((string) ($row[$key] ?? '—')) ?></a>
+                                        <?php elseif ($activeSection === 'verification' && $key === 'verification_account'): ?>
+                                            <?php
+                                            $verificationName = trim((string) ($row['name'] ?? ''));
+                                            $verificationEmail = trim((string) ($row['email'] ?? ''));
+                                            ?>
+                                            <div class="workspace-verification-account">
+                                                <?php if ($verificationName !== ''): ?><strong><?= e($verificationName) ?></strong><?php endif; ?>
+                                                <?php if ($verificationEmail !== ''): ?><span class="workspace-verification-account__email"><?= e($verificationEmail) ?></span><?php endif; ?>
+                                                <?php if ($verificationName === '' && $verificationEmail === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'verification' && $key === 'verification_access'): ?>
+                                            <div class="workspace-verification-access">
+                                                <div class="workspace-verification-access__meta">
+                                                    <span><?= $formatCell('roles', $row) ?></span>
+                                                    <span><?= $formatCell('company_count', $row) ?> companies</span>
+                                                    <span><?= $formatCell('developer_role', $row) ?></span>
+                                                </div>
+                                            </div>
+                                        <?php elseif ($activeSection === 'verification' && $key === 'verification_state_focus'): ?>
+                                            <div class="workspace-verification-state">
+                                                <?= $formatCell('verification_state', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'verification' && $key === 'verification_issue'): ?>
+                                            <div class="workspace-verification-issue">
+                                                <?= $formatCell('issue_type', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'users' && $key === 'user_identity'): ?>
+                                            <?php
+                                            $userName = trim((string) ($row['name'] ?? ''));
+                                            $userEmail = trim((string) ($row['email'] ?? ''));
+                                            ?>
+                                            <div class="workspace-user-identity">
+                                                <?php if ($userName !== ''): ?><strong><?= e($userName) ?></strong><?php endif; ?>
+                                                <?php if ($userEmail !== ''): ?><span class="workspace-user-identity__email"><?= e($userEmail) ?></span><?php endif; ?>
+                                                <?php if ($userName === '' && $userEmail === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'users' && $key === 'user_access'): ?>
+                                            <div class="workspace-user-access">
+                                                <div class="workspace-user-access__meta">
+                                                    <span><?= $formatCell('account_role', $row) ?></span>
+                                                    <span><?= $formatCell('company_count', $row) ?> companies</span>
+                                                    <span><?= $formatCell('owned_company_count', $row) ?> owned</span>
+                                                </div>
+                                            </div>
+                                        <?php elseif ($activeSection === 'users' && $key === 'user_state'): ?>
+                                            <div class="workspace-user-state">
+                                                <div class="workspace-user-state__meta">
+                                                    <span><?= $formatCell('email_state', $row) ?></span>
+                                                    <span><?= $formatCell('status', $row) ?></span>
+                                                </div>
+                                            </div>
+                                        <?php elseif ($activeSection === 'users' && $key === 'user_activity'): ?>
+                                            <div class="workspace-user-activity">
+                                                <?= $formatCell('last_login_at', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'seo' && $key === 'seo_record'): ?>
+                                            <?php
+                                            $seoType = trim((string) ($row['entity_type'] ?? ''));
+                                            $seoTitle = trim((string) ($row['title'] ?? ''));
+                                            $seoPath = trim((string) ($row['path'] ?? ''));
+                                            ?>
+                                            <div class="workspace-seo-record">
+                                                <?php if ($seoTitle !== ''): ?><strong><?= e($seoTitle) ?></strong><?php endif; ?>
+                                                <div class="workspace-seo-record__meta">
+                                                    <?php if ($seoType !== ''): ?><span><?= e(ucwords(str_replace('_', ' ', $seoType))) ?></span><?php endif; ?>
+                                                    <?php if ($seoPath !== ''): ?><span class="workspace-seo-record__path"><?= e($seoPath) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($seoTitle === '' && $seoType === '' && $seoPath === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'seo' && $key === 'seo_coverage'): ?>
+                                            <div class="workspace-seo-coverage">
+                                                <div class="workspace-seo-coverage__meta">
+                                                    <span>Index <?= $formatCell('index_state', $row) ?></span>
+                                                    <span>Description <?= $formatCell('description_state', $row) ?></span>
+                                                    <span>Social image <?= $formatCell('image_state', $row) ?></span>
+                                                    <span>Alt text <?= $formatCell('alt_state', $row) ?></span>
+                                                </div>
+                                            </div>
+                                        <?php elseif ($activeSection === 'seo' && $key === 'seo_governance'): ?>
+                                            <div class="workspace-seo-governance">
+                                                <?= $formatCell('issue_state', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'catalog' && $key === 'catalog_item'): ?>
+                                            <?php
+                                            $catalogType = trim((string) ($row['entity_type'] ?? ''));
+                                            $catalogTitle = trim((string) ($row['title'] ?? ''));
+                                            $catalogContext = trim((string) ($row['context'] ?? ''));
+                                            ?>
+                                            <div class="workspace-catalog-item">
+                                                <?php if ($catalogTitle !== ''): ?><strong><?= e($catalogTitle) ?></strong><?php endif; ?>
+                                                <div class="workspace-catalog-item__meta">
+                                                    <?php if ($catalogType !== ''): ?><span><?= e(ucwords(str_replace('_', ' ', $catalogType))) ?></span><?php endif; ?>
+                                                    <?php if ($catalogContext !== ''): ?><span><?= e($catalogContext) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($catalogTitle === '' && $catalogType === '' && $catalogContext === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'catalog' && $key === 'catalog_hierarchy'): ?>
+                                            <?php
+                                            $catalogParent = trim((string) ($row['parent_name'] ?? ''));
+                                            $catalogChildren = $row['children_count'] ?? null;
+                                            ?>
+                                            <div class="workspace-catalog-hierarchy">
+                                                <div class="workspace-catalog-hierarchy__meta">
+                                                    <?php if ($catalogParent !== ''): ?><span>Parent <?= e($catalogParent) ?></span><?php endif; ?>
+                                                    <?php if ($catalogChildren !== null && $catalogChildren !== ''): ?><span><?= $formatCell('children_count', $row) ?> children</span><?php endif; ?>
+                                                </div>
+                                                <?php if ($catalogParent === '' && ($catalogChildren === null || $catalogChildren === '')): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'catalog' && $key === 'catalog_usage'): ?>
+                                            <div class="workspace-catalog-usage">
+                                                <?= $formatCell('usage_count', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'catalog' && $key === 'catalog_state'): ?>
+                                            <div class="workspace-catalog-state">
+                                                <?= $formatCell('status', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'viewings' && $key === 'viewing_context'): ?>
+                                            <?php
+                                            $viewingCompany = trim((string) ($row['company_name'] ?? ''));
+                                            $viewingProperty = trim((string) ($row['reference_code'] ?? $row['property_title'] ?? ''));
+                                            $viewingOffer = trim((string) ($row['transaction_type'] ?? ''));
+                                            $viewingLocation = trim((string) ($row['location_name'] ?? ''));
+                                            ?>
+                                            <div class="workspace-viewing-context">
+                                                <div class="workspace-viewing-context__meta">
+                                                    <?php if ($viewingCompany !== ''): ?><span><?= e($viewingCompany) ?></span><?php endif; ?>
+                                                    <?php if ($viewingProperty !== ''): ?><span><?= e($viewingProperty) ?></span><?php endif; ?>
+                                                    <?php if ($viewingOffer !== ''): ?><span><?= $formatCell('transaction_type', $row) ?></span><?php endif; ?>
+                                                    <?php if ($viewingLocation !== ''): ?><span><?= e($viewingLocation) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($viewingCompany === '' && $viewingProperty === '' && $viewingOffer === '' && $viewingLocation === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'viewings' && $key === 'viewing_schedule'): ?>
+                                            <?php
+                                            $viewingPreferred = trim((string) ($row['preferred_date'] ?? ''));
+                                            $viewingScheduled = trim((string) ($row['scheduled_for'] ?? ''));
+                                            ?>
+                                            <div class="workspace-viewing-schedule">
+                                                <div class="workspace-viewing-schedule__meta">
+                                                    <?php if ($viewingPreferred !== ''): ?><span>Preferred <?= $formatCell('preferred_date', $row) ?></span><?php endif; ?>
+                                                    <?php if ($viewingScheduled !== ''): ?><span>Scheduled <?= $formatCell('scheduled_for', $row) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($viewingPreferred === '' && $viewingScheduled === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'viewings' && $key === 'viewing_state'): ?>
+                                            <div class="workspace-viewing-state">
+                                                <?= $formatCell('status', $row) ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'leads' && $key === 'lead_context'): ?>
+                                            <?php
+                                            $leadCompany = trim((string) ($row['company_name'] ?? ''));
+                                            $leadProperty = trim((string) ($row['source_property_reference'] ?? $row['source_property_title'] ?? ''));
+                                            $leadLocation = trim((string) ($row['preferred_location_name'] ?? ''));
+                                            ?>
+                                            <div class="workspace-lead-context">
+                                                <div class="workspace-lead-context__meta">
+                                                    <?php if ($leadCompany !== ''): ?><span><?= e($leadCompany) ?></span><?php endif; ?>
+                                                    <?php if ($leadProperty !== ''): ?><span><?= e($leadProperty) ?></span><?php endif; ?>
+                                                    <?php if ($leadLocation !== ''): ?><span><?= e($leadLocation) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($leadCompany === '' && $leadProperty === '' && $leadLocation === ''): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'leads' && $key === 'lead_interest'): ?>
+                                            <?php
+                                            $leadTransaction = trim((string) ($row['transaction_type'] ?? ''));
+                                            $leadBudget = $row['budget_max'] ?? null;
+                                            ?>
+                                            <div class="workspace-lead-interest">
+                                                <div class="workspace-lead-interest__meta">
+                                                    <?php if ($leadTransaction !== ''): ?><span><?= $formatCell('transaction_type', $row) ?></span><?php endif; ?>
+                                                    <?php if ($leadBudget !== null && $leadBudget !== ''): ?><span><?= $formatCell('budget_max', $row) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($leadTransaction === '' && ($leadBudget === null || $leadBudget === '')): ?><span>-</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'leads' && $key === 'lead_assignment'): ?>
+                                            <div class="workspace-lead-assignment"><?= $formatCell('assigned_user_name', $row) ?></div>
+                                        <?php elseif ($activeSection === 'leads' && $key === 'lead_stage'): ?>
+                                            <div class="workspace-lead-stage"><?= $formatCell('stage', $row) ?></div>
+                                        <?php elseif ($activeSection === 'leads' && $key === 'lead_activity'): ?>
+                                            <?php $leadFollowUp = trim((string) ($row['next_follow_up_at'] ?? '')); ?>
+                                            <div class="workspace-lead-activity">
+                                                <div class="workspace-lead-activity__meta">
+                                                    <?php if ($leadFollowUp !== ''): ?><span>Follow-up <?= $formatCell('next_follow_up_at', $row) ?></span><?php endif; ?>
+                                                    <span>Updated <?= $formatCell('updated_at', $row) ?></span>
+                                                </div>
+                                            </div>
+                                        <?php elseif (in_array($activeSection, ['companies', 'company'], true) && $key === 'company_context'): ?>
+                                            <?php
+                                            $companyLocation = trim((string) ($row['location_name'] ?? ''));
+                                            $companyMembersRaw = $row['members_count'] ?? null;
+                                            $companyMembers = $companyMembersRaw === null ? null : (int) $companyMembersRaw;
+                                            $companyRole = trim((string) ($row['member_role'] ?? ''));
+                                            ?>
+                                            <div class="workspace-company-context">
+                                                <div class="workspace-company-context__meta">
+                                                    <?php if ($companyLocation !== ''): ?><span><?= e($companyLocation) ?></span><?php endif; ?>
+                                                    <?php if ($companyMembers !== null): ?><span><?= e((string) $companyMembers) ?> members</span><?php endif; ?>
+                                                    <?php if ($companyRole !== ''): ?><span>Role <?= $formatCell('member_role', $row) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($companyLocation === '' && $companyMembers === null && $companyRole === ''): ?><span>—</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif (in_array($activeSection, ['companies', 'company'], true) && $key === 'company_portfolio'): ?>
+                                            <?php
+                                            $companyProjects = array_key_exists('projects_count', $row) ? (int) $row['projects_count'] : null;
+                                            $companyPublishedProjects = array_key_exists('published_projects_count', $row) ? (int) $row['published_projects_count'] : null;
+                                            $companyProperties = array_key_exists('properties_count', $row) ? (int) $row['properties_count'] : null;
+                                            $companyApprovedProperties = array_key_exists('approved_properties_count', $row) ? (int) $row['approved_properties_count'] : null;
+                                            $companyLiveListings = array_key_exists('published_listings_count', $row) ? (int) $row['published_listings_count'] : null;
+                                            ?>
+                                            <div class="workspace-company-portfolio">
+                                                <div class="workspace-company-portfolio__meta">
+                                                    <?php if ($companyProjects !== null): ?><span><?= e((string) $companyProjects) ?> projects</span><?php endif; ?>
+                                                    <?php if ($companyPublishedProjects !== null): ?><span><?= e((string) $companyPublishedProjects) ?> published</span><?php endif; ?>
+                                                    <?php if ($companyProperties !== null): ?><span><?= e((string) $companyProperties) ?> properties</span><?php endif; ?>
+                                                    <?php if ($companyApprovedProperties !== null): ?><span><?= e((string) $companyApprovedProperties) ?> approved</span><?php endif; ?>
+                                                    <?php if ($companyLiveListings !== null): ?><span><?= e((string) $companyLiveListings) ?> live listings</span><?php endif; ?>
+                                                </div>
+                                                <?php if ($companyProjects === null && $companyPublishedProjects === null && $companyProperties === null && $companyApprovedProperties === null && $companyLiveListings === null): ?><span>—</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif (in_array($activeSection, ['companies', 'company'], true) && $key === 'company_state'): ?>
+                                            <div class="workspace-company-state">
+                                                <div class="workspace-company-state__badges">
+                                                    <?= $formatCell('status', $row) ?>
+                                                </div>
+                                            </div>
+                                        <?php elseif ($activeSection === 'projects' && $key === 'project_context'): ?>
+                                            <?php
+                                            $projectCompany = trim((string) ($row['company_name'] ?? ''));
+                                            $projectLocation = trim((string) ($row['location_name'] ?? ''));
+                                            $projectCompanyStatus = trim((string) ($row['company_status'] ?? ''));
+                                            ?>
+                                            <div class="workspace-project-context">
+                                                <?php if ($projectCompany !== ''): ?><strong><?= e($projectCompany) ?></strong><?php endif; ?>
+                                                <div class="workspace-project-context__meta">
+                                                    <?php if ($projectLocation !== ''): ?><span><?= e($projectLocation) ?></span><?php endif; ?>
+                                                    <?php if ($projectCompanyStatus !== ''): ?><span>Company <?= $formatCell('company_status', $row) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($projectCompany === '' && $projectLocation === '' && $projectCompanyStatus === ''): ?><span>—</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'projects' && $key === 'project_inventory'): ?>
+                                            <?php
+                                            $projectProperties = (int) ($row['properties_count'] ?? 0);
+                                            $projectApprovedPropertiesRaw = $row['approved_properties_count'] ?? null;
+                                            $projectApprovedProperties = $projectApprovedPropertiesRaw === null ? null : (int) $projectApprovedPropertiesRaw;
+                                            ?>
+                                            <div class="workspace-project-inventory">
+                                                <div class="workspace-project-inventory__meta">
+                                                    <span><?= e((string) $projectProperties) ?> properties</span>
+                                                    <?php if ($projectApprovedProperties !== null): ?><span><?= e((string) $projectApprovedProperties) ?> approved</span><?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php elseif ($activeSection === 'projects' && $key === 'project_state'): ?>
+                                            <?php
+                                            $projectReadiness = trim((string) ($row['marketplace_readiness'] ?? ''));
+                                            $projectCompletion = trim((string) ($row['completion_status'] ?? ''));
+                                            ?>
+                                            <div class="workspace-project-state">
+                                                <div class="workspace-project-state__badges">
+                                                    <?= $formatCell('status', $row) ?>
+                                                    <?php if ($projectReadiness !== ''): ?><?= $formatCell('marketplace_readiness', $row) ?><?php endif; ?>
+                                                </div>
+                                                <?php if ($projectCompletion !== ''): ?><small>Completion <?= $formatCell('completion_status', $row) ?></small><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'listings' && $key === 'listing_context'): ?>
+                                            <?php
+                                            $listingCompany = trim((string) ($row['company_name'] ?? ''));
+                                            $listingProject = trim((string) ($row['project_name'] ?? ''));
+                                            $listingLocation = trim((string) ($row['location_name'] ?? ''));
+                                            ?>
+                                            <div class="workspace-listing-context">
+                                                <?php if ($listingCompany !== ''): ?><strong><?= e($listingCompany) ?></strong><?php endif; ?>
+                                                <div class="workspace-listing-context__meta">
+                                                    <?php if ($listingProject !== ''): ?><span><?= e($listingProject) ?></span><?php endif; ?>
+                                                    <?php if ($listingLocation !== ''): ?><span><?= e($listingLocation) ?></span><?php endif; ?>
+                                                </div>
+                                                <?php if ($listingCompany === '' && $listingProject === '' && $listingLocation === ''): ?><span>—</span><?php endif; ?>
+                                            </div>
+                                        <?php elseif ($activeSection === 'listings' && $key === 'listing_state'): ?>
+                                            <?php
+                                            $listingReadiness = trim((string) ($row['marketplace_readiness'] ?? ''));
+                                            $listingPublished = trim((string) ($row['published_at'] ?? ''));
+                                            $listingExpires = trim((string) ($row['expires_at'] ?? ''));
+                                            ?>
+                                            <div class="workspace-listing-state">
+                                                <div class="workspace-listing-state__badges">
+                                                    <?= $formatCell('status', $row) ?>
+                                                    <?php if ($listingReadiness !== ''): ?><?= $formatCell('marketplace_readiness', $row) ?><?php endif; ?>
+                                                </div>
+                                                <?php if ($listingPublished !== '' || $listingExpires !== ''): ?>
+                                                    <small class="workspace-listing-state__dates">
+                                                        <?php if ($listingPublished !== ''): ?><span>Published <?= $formatCell('published_at', $row) ?></span><?php endif; ?>
+                                                        <?php if ($listingExpires !== ''): ?><span>Expires <?= $formatCell('expires_at', $row) ?></span><?php endif; ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php else: ?>
                                             <?= $formatCell($key, $row) ?>
                                         <?php endif; ?>

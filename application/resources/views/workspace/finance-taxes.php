@@ -4,8 +4,86 @@ declare(strict_types=1);
 
 $taxRules = is_array($taxRules ?? null) ? $taxRules : [];
 $summary = is_array($taxSummary ?? null) ? $taxSummary : [];
+
+$q = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 80);
+$statusFilter = strtolower(trim((string) ($_GET['status'] ?? '')));
+if (!in_array($statusFilter, ['', 'active', 'inactive', 'archived'], true)) {
+    $statusFilter = '';
+}
+
+$filteredTaxRules = array_values(array_filter(
+    $taxRules,
+    static function (array $rule) use ($q, $statusFilter): bool {
+        if (
+            $statusFilter !== ''
+            && strtolower((string) ($rule['status'] ?? '')) !== $statusFilter
+        ) {
+            return false;
+        }
+
+        if ($q === '') {
+            return true;
+        }
+
+        $haystack = strtolower(
+            (string) ($rule['code'] ?? '')
+            . ' '
+            . (string) ($rule['name'] ?? '')
+            . ' '
+            . (string) ($rule['description'] ?? '')
+            . ' '
+            . (string) ($rule['country_code'] ?? '')
+            . ' '
+            . (string) ($rule['region_code'] ?? '')
+        );
+
+        return str_contains($haystack, strtolower($q));
+    }
+));
+
+$perPage = 10;
+$total = count($filteredTaxRules);
+$pages = max(1, (int) ceil($total / $perPage));
+$page = filter_var(
+    $_GET['page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$page = $page === false ? 1 : min((int) $page, $pages);
+
+$visibleTaxRules = array_slice(
+    $filteredTaxRules,
+    ($page - 1) * $perPage,
+    $perPage
+);
+
+$query = array_filter(
+    [
+        'q' => $q,
+        'status' => $statusFilter,
+    ],
+    static fn (string $value): bool => $value !== ''
+);
+
+$pageUrl = static function (int $target) use ($query): string {
+    return url(
+        '/dashboard/taxes?'
+        . http_build_query(
+            array_merge(
+                $query,
+                ['page' => max(1, $target)]
+            )
+        )
+    );
+};
 ?>
-<section class="workspace-page">
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-taxes-pagination-v186.css') . '?v=186') ?>"
+>
+
+<section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--taxes" data-taxes-workspace>
+    <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -20,7 +98,7 @@ $summary = is_array($taxSummary ?? null) ? $taxSummary : [];
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
+    <div class="workspace-stat-grid finance-summary-cards">
         <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['tax_rules'] ?? 0))) ?></strong><small>Tax rules</small></div>
         <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['active_tax_rules'] ?? 0))) ?></strong><small>Active</small></div>
         <div class="workspace-stat"><span><?= app_icon('edit') ?></span><strong><?= e(number_format((int) ($summary['taxed_invoices'] ?? 0))) ?></strong><small>Taxed invoices</small></div>
@@ -52,7 +130,45 @@ $summary = is_array($taxSummary ?? null) ? $taxSummary : [];
             </div>
         </div>
 
-        <div class="workspace-table-wrap">
+        
+        <form
+            class="finance-taxes__filters"
+            method="get"
+            action="<?= e(url('/dashboard/taxes')) ?>"
+        >
+            <label>
+                <?= app_icon('search') ?>
+                <input
+                    class="form-control"
+                    type="search"
+                    name="q"
+                    value="<?= e($q) ?>"
+                    placeholder="Search code, name, country, or region"
+                >
+            </label>
+
+            <select class="form-select" name="status" aria-label="Tax rule status">
+                <option value="">All statuses</option>
+                <?php foreach ([
+                    'active' => 'Active',
+                    'inactive' => 'Inactive',
+                    'archived' => 'Archived',
+                ] as $value => $label): ?>
+                    <option
+                        value="<?= e($value) ?>"
+                        <?= $statusFilter === $value ? 'selected' : '' ?>
+                    ><?= e($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a
+                class="btn btn-outline-secondary"
+                href="<?= e(url('/dashboard/taxes')) ?>"
+            >Reset</a>
+        </form>
+
+<div class="workspace-table-wrap">
             <table class="workspace-table">
                 <thead>
                     <tr>
@@ -66,11 +182,11 @@ $summary = is_array($taxSummary ?? null) ? $taxSummary : [];
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($taxRules === []): ?>
+                    <?php if ($visibleTaxRules === []): ?>
                         <tr><td colspan="7"><div class="workspace-record-empty">No tax rules exist yet.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($taxRules as $rule): ?>
+                    <?php foreach ($visibleTaxRules as $rule): ?>
                         <?php $status = (string) ($rule['status'] ?? 'inactive'); ?>
                         <tr>
                             <td><strong><?= e((string) $rule['code']) ?></strong><small><?= e((string) $rule['name']) ?></small></td>
@@ -111,5 +227,64 @@ $summary = is_array($taxSummary ?? null) ? $taxSummary : [];
                 </tbody>
             </table>
         </div>
+
+        <div class="finance-taxes__pager">
+            <span>
+                Page <?= $page ?> of <?= $pages ?>
+                · <?= $total ?> tax rule<?= $total === 1 ? '' : 's' ?>
+                · 10 per page
+            </span>
+
+            <?php if ($pages > 1): ?>
+                <nav aria-label="Tax rule pages">
+                    <?php if ($page > 1): ?>
+                        <a href="<?= e($pageUrl($page - 1)) ?>">Previous</a>
+                    <?php endif; ?>
+
+                    <?php
+                    $from = max(1, $page - 2);
+                    $to = min($pages, $page + 2);
+                    ?>
+                    <?php for ($i = $from; $i <= $to; $i++): ?>
+                        <a
+                            href="<?= e($pageUrl($i)) ?>"
+                            class="<?= $i === $page ? 'is-active' : '' ?>"
+                        ><?= $i ?></a>
+                    <?php endfor; ?>
+
+                    <?php if ($page < $pages): ?>
+                        <a href="<?= e($pageUrl($page + 1)) ?>">Next</a>
+                    <?php endif; ?>
+                </nav>
+            <?php endif; ?>
+
+            <form
+                class="finance-taxes__goto"
+                method="get"
+                action="<?= e(url('/dashboard/taxes')) ?>"
+            >
+                <?php foreach ($query as $key => $value): ?>
+                    <input
+                        type="hidden"
+                        name="<?= e((string) $key) ?>"
+                        value="<?= e((string) $value) ?>"
+                    >
+                <?php endforeach; ?>
+
+                <label>
+                    <span>Go To</span>
+                    <input
+                        class="form-control"
+                        type="number"
+                        name="page"
+                        min="1"
+                        max="<?= $pages ?>"
+                        value="<?= $page ?>"
+                    >
+                </label>
+                <button class="btn btn-outline-secondary" type="submit">Go</button>
+            </form>
+        </div>
+
     </section>
 </section>

@@ -57,7 +57,15 @@ $propertySearchUrl = static function (array $search): string {
     return url('/properties' . ($query !== [] ? '?' . http_build_query($query) : ''));
 };
 ?>
-<section class="account-page">
+<section class="account-page<?= $activeSection === 'security'
+    ? ' account-page--security-v1129'
+    : '' ?>">
+
+
+
+
+
+
     <div class="account-page__head">
         <div>
             <span class="eyebrow">Customer Account</span>

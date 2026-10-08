@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Barama\Services;
 
+use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\NotificationRepository;
 use InvalidArgumentException;
 
@@ -19,7 +20,8 @@ final class NotificationService
      * @param array{
      *   type:string,title:string,message:string,action_url?:?string,
      *   entity_type?:?string,entity_id?:?int,dedupe_key:string,
-     *   email_subject?:?string,email_html?:?string,email_text?:?string
+     *   email_subject?:?string,email_html?:?string,email_text?:?string,
+     *   email_variables?:array<string,string>
      * } $data
      */
     public function notifyUser(int $userId, string $category, array $data): void
@@ -68,10 +70,13 @@ final class NotificationService
         [$html, $text] = $this->emailBodies($data);
         $subject = (string) ($data['email_subject'] ?? $data['title']);
 
-        if (!$this->hasExplicitEmailBodies($data)) {
-            $action = trim((string) ($data['action_url'] ?? ''));
-            $rendered = (new EmailTemplateRendererService())->render(
-                (string) $data['type'],
+        $action = trim((string) ($data['action_url'] ?? ''));
+        $extraVariables = is_array($data['email_variables'] ?? null)
+            ? array_map('strval', $data['email_variables'])
+            : [];
+        $rendered = (new EmailTemplateRendererService())->render(
+            (string) $data['type'],
+            array_merge(
                 [
                     'title' => (string) $data['title'],
                     'message' => (string) $data['message'],
@@ -80,16 +85,18 @@ final class NotificationService
                     'app_name' => (string) config('app.name', 'Barama Real Estate'),
                     'app_url' => rtrim((string) config('app.url', ''), '/'),
                 ],
-                [
-                    'subject' => $subject,
-                    'html' => $html,
-                    'text' => $text,
-                ]
-            );
-            $subject = $rendered['subject'];
-            $html = $rendered['html'];
-            $text = $rendered['text'];
-        }
+                $extraVariables
+            ),
+            [
+                'subject' => $subject,
+                'html' => $html,
+                'text' => $text,
+            ],
+            (new AccountSettingsRepository())->preferredLanguage($userId)
+        );
+        $subject = $rendered['subject'];
+        $html = $rendered['html'];
+        $text = $rendered['text'];
 
         $repository->queueEmail([
             'user_id' => $userId,
@@ -106,7 +113,8 @@ final class NotificationService
      * @param array{
      *   type:string,title:string,message:string,action_url?:?string,
      *   entity_type?:?string,entity_id?:?int,dedupe_key:string,
-     *   email_subject?:?string,email_html?:?string,email_text?:?string
+     *   email_subject?:?string,email_html?:?string,email_text?:?string,
+     *   email_variables?:array<string,string>
      * } $data
      */
     public function notifyCompany(int $companyId, string $category, array $data): void
@@ -126,7 +134,7 @@ final class NotificationService
     /**
      * Queue a transactional email for a guest/contact address that has no user preferences.
      *
-     * @param array{subject:string,html:string,text:string,dedupe_key:string} $data
+     * @param array{subject:string,html:string,text:string,dedupe_key:string,template_key?:string,variables?:array<string,string>,locale?:string,user_id?:int} $data
      */
     public function notifyAddress(string $email, array $data): void
     {
@@ -136,13 +144,42 @@ final class NotificationService
             return;
         }
 
+        $subject = (string) $data['subject'];
+        $html = (string) $data['html'];
+        $text = (string) $data['text'];
+        $templateKey = strtolower(trim((string) ($data['template_key'] ?? '')));
+
+        if ($templateKey !== '') {
+            $variables = is_array($data['variables'] ?? null)
+                ? array_map('strval', $data['variables'])
+                : [];
+            $variables = array_merge([
+                'app_name' => (string) config('app.name', 'Barama Real Estate'),
+                'app_url' => rtrim((string) config('app.url', ''), '/'),
+            ], $variables);
+            $locale = trim((string) ($data['locale'] ?? ''));
+            $linkedUserId = (int) ($data['user_id'] ?? 0);
+            if ($linkedUserId > 0) {
+                $locale = (string) ((new AccountSettingsRepository())->preferredLanguage($linkedUserId) ?? $locale);
+            }
+            $rendered = (new EmailTemplateRendererService())->render(
+                $templateKey,
+                $variables,
+                ['subject' => $subject, 'html' => $html, 'text' => $text],
+                $locale !== '' ? $locale : null
+            );
+            $subject = $rendered['subject'];
+            $html = $rendered['html'];
+            $text = $rendered['text'];
+        }
+
         (new NotificationRepository())->queueEmail([
             'user_id' => null,
             'notification_id' => null,
             'to_address' => $email,
-            'subject' => $data['subject'],
-            'html_body' => $data['html'],
-            'text_body' => $data['text'],
+            'subject' => $subject,
+            'html_body' => $html,
+            'text_body' => $text,
             'dedupe_key' => 'guest:' . hash('sha256', $email) . ':' . $data['dedupe_key'],
         ]);
     }

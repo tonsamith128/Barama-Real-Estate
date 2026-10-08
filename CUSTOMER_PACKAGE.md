@@ -20,8 +20,8 @@ The customer ZIP contains only the runtime product and customer-facing support f
 - five-step installer
 - secure updater
 - application PHP source
-- one first-party stylesheet: `assets/css/app.css`
-- one first-party JavaScript file: `assets/js/app.js`
+- canonical global stylesheet: `assets/css/app.css`, with page-scoped first-party stylesheets for feature-specific interfaces
+- canonical global JavaScript entry point: `assets/js/app.js`, with page-scoped first-party scripts for feature-specific behavior
 - runtime storage directories without customer data
 - notification worker CLI entry point
 - product license notice

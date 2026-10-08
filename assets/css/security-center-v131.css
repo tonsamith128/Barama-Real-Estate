@@ -1,0 +1,94 @@
+/* BARAMA_ADMIN_SECURITY_CENTER_PHASE5_V131 */
+.security-center__incident-ops { margin-bottom:18px; }
+.security-center__incident-metrics {
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:9px;
+    margin-bottom:14px;
+}
+.security-center__incident-metrics a {
+    display:block;
+    padding:12px;
+    border:1px solid var(--sc-border);
+    border-radius:12px;
+    color:var(--bs-body-color);
+    background:var(--sc-panel-strong);
+    text-decoration:none;
+}
+.security-center__incident-metrics a:hover { border-color:var(--sc-accent); }
+.security-center__incident-metrics small,
+.security-center__incident-metrics strong { display:block; }
+.security-center__incident-metrics small { color:var(--sc-muted); font-size:8px; }
+.security-center__incident-metrics strong { margin-top:3px; font-size:16px; }
+.security-center__incident-filters {
+    display:grid;
+    grid-template-columns:minmax(180px,1.3fr) repeat(4,minmax(120px,.8fr)) auto;
+    gap:9px;
+    align-items:end;
+}
+.security-center__incident-filters label { display:grid; gap:5px; margin:0; }
+.security-center__incident-filters label>span { color:var(--sc-muted); font-size:8.5px; font-weight:700; }
+.security-center__incident-filters input,
+.security-center__incident-filters select {
+    width:100%; height:40px; min-width:0; padding:0 10px;
+    border:1px solid var(--sc-border); border-radius:10px;
+    color:var(--bs-body-color);
+    background:color-mix(in srgb,var(--bs-body-bg,#091321) 94%,transparent);
+}
+.security-center__incident-toolbar {
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-top:12px;
+}
+.security-center__incident-toolbar>div { display:flex; gap:8px; flex-wrap:wrap; }
+.security-center__incident-toolbar form { margin:0; }
+.security-center__sla-policy {
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    margin-top:12px; padding:10px 12px; border:1px solid var(--sc-border);
+    border-radius:11px; color:var(--sc-muted); font-size:8.5px;
+}
+.security-center__sla-policy strong { color:var(--bs-body-color); }
+.security-center__phase5-grid { align-items:start; }
+.security-center__incident.is-overdue {
+    border-color:color-mix(in srgb,var(--sc-bad) 52%,var(--sc-border));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--sc-bad) 10%,transparent);
+}
+.security-center__incident-select { display:flex; gap:10px; align-items:flex-start; }
+.security-center__incident-select>input { margin-top:4px; accent-color:var(--sc-accent); }
+.security-center__pill.is-sla-overdue {
+    color:var(--sc-bad); background:color-mix(in srgb,var(--sc-bad) 12%,transparent);
+}
+.security-center__pill.is-sla-on_track,
+.security-center__pill.is-sla-resolved {
+    color:var(--sc-good); background:color-mix(in srgb,var(--sc-good) 12%,transparent);
+}
+.security-center__pill.is-sla-resolved_late {
+    color:var(--sc-warn); background:color-mix(in srgb,var(--sc-warn) 12%,transparent);
+}
+.security-center__sla-strip {
+    display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:12px;
+}
+.security-center__sla-strip>span {
+    padding:9px; border:1px solid var(--sc-border); border-radius:10px;
+}
+.security-center__sla-strip small,
+.security-center__sla-strip strong { display:block; }
+.security-center__sla-strip small { color:var(--sc-muted); font-size:7.5px; }
+.security-center__sla-strip strong { margin-top:3px; font-size:9px; overflow-wrap:anywhere; }
+.security-center__overdue-warning {
+    display:flex; gap:8px; align-items:center; margin-top:10px; padding:9px 10px;
+    border:1px solid color-mix(in srgb,var(--sc-bad) 42%,var(--sc-border));
+    border-radius:10px; color:var(--sc-bad);
+    background:color-mix(in srgb,var(--sc-bad) 7%,transparent); font-size:8.5px;
+}
+.security-center__overdue-warning svg { width:14px; height:14px; }
+@media(max-width:1220px) {
+    .security-center__incident-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .security-center__incident-filters { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:780px) {
+    .security-center__incident-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .security-center__incident-filters { grid-template-columns:1fr; }
+    .security-center__incident-toolbar { display:grid; }
+    .security-center__incident-toolbar>div { display:grid; }
+    .security-center__sla-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}

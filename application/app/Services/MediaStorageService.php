@@ -32,20 +32,17 @@ final class MediaStorageService
         }
 
         $entityType = DomainInput::requiredString($input, 'entity_type', 32);
-
         if (!in_array($entityType, DomainRules::MEDIA_ENTITY_TYPES, true)) {
             throw new InvalidArgumentException('Invalid media entity type.');
         }
 
         $entityId = DomainInput::requiredPositiveInt($input, 'entity_id');
         $context = (new WorkflowRepository())->context($entityType, $entityId);
-
         if ($context === null || $context['company_id'] === null) {
             throw new InvalidArgumentException('Media target was not found.');
         }
 
         (new CompanyAccessService())->assertCanManage((int) $context['company_id']);
-
         if (!in_array((string) $context['status'], ['draft', 'rejected'], true)) {
             throw new DomainException(
                 'Reviewed or published records are locked. Return the target to an editable review state before changing its media.'
@@ -53,13 +50,11 @@ final class MediaStorageService
         }
 
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
-
         if ($error !== UPLOAD_ERR_OK) {
             throw new InvalidArgumentException('The uploaded file is incomplete or invalid.');
         }
 
         $temporaryPath = (string) ($file['tmp_name'] ?? '');
-
         if (
             $temporaryPath === ''
             || !is_file($temporaryPath)
@@ -69,14 +64,12 @@ final class MediaStorageService
         }
 
         $actualSize = filesize($temporaryPath);
-
         if ($actualSize === false) {
             throw new InvalidArgumentException('The uploaded file size could not be verified.');
         }
 
         $size = (int) $actualSize;
         $maxBytes = max(1, (int) config('domain.media_max_upload_bytes', 10 * 1024 * 1024));
-
         if ($size < 1 || $size > $maxBytes) {
             throw new InvalidArgumentException('The uploaded file exceeds the allowed size.');
         }
@@ -84,7 +77,6 @@ final class MediaStorageService
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime = (string) $finfo->file($temporaryPath);
         $allowed = (array) config('domain.media_allowed_mime_types', []);
-
         if (!isset($allowed[$mime])) {
             throw new InvalidArgumentException('This file type is not allowed.');
         }
@@ -95,55 +87,63 @@ final class MediaStorageService
 
         if (str_starts_with($mime, 'image/')) {
             $dimensions = @getimagesize($temporaryPath);
-
             if (!is_array($dimensions) || !isset($dimensions[0], $dimensions[1])) {
                 throw new InvalidArgumentException('The uploaded image is invalid.');
             }
-
             $width = (int) $dimensions[0];
             $height = (int) $dimensions[1];
             $maxPixels = max(1, (int) config('domain.media_max_image_pixels', 50_000_000));
-
             if ($width < 1 || $height < 1 || ($width * $height) > $maxPixels) {
                 throw new InvalidArgumentException('The uploaded image dimensions are not allowed.');
             }
         }
 
         $relativeDirectory = date('Y/m');
-        $directory = APP_PATH . '/storage/uploads/private/' . $relativeDirectory;
-
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            throw new RuntimeException('Media storage directory could not be created.');
+        $filename = str_replace('-', '', IdGenerator::uuid()) . '.' . $extension;
+        $relativePath = 'private/' . $relativeDirectory . '/' . $filename;
+        $checksum = hash_file('sha256', $temporaryPath);
+        if (!is_string($checksum)) {
+            throw new RuntimeException('The uploaded file checksum could not be generated.');
         }
 
-        $filename = str_replace('-', '', IdGenerator::uuid()) . '.' . $extension;
-        $destination = $directory . '/' . $filename;
+        $disk = (new CloudStorageService())->activeDisk();
+        $cloud = null;
+        $destination = null;
 
-        if (defined('BARAMA_CLI')) {
-            $moved = copy($temporaryPath, $destination);
-
-            if ($moved) {
+        if ($disk === 'private') {
+            $directory = APP_PATH . '/storage/uploads/private/' . $relativeDirectory;
+            if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+                throw new RuntimeException('Media storage directory could not be created.');
+            }
+            $destination = $directory . '/' . $filename;
+            if (defined('BARAMA_CLI')) {
+                $moved = copy($temporaryPath, $destination);
+                if ($moved) {
+                    @unlink($temporaryPath);
+                }
+            } else {
+                $moved = move_uploaded_file($temporaryPath, $destination);
+            }
+            if (!$moved) {
+                throw new RuntimeException('The uploaded file could not be stored.');
+            }
+            @chmod($destination, 0640);
+        } else {
+            $cloud = new CloudObjectStorageService($disk);
+            $cloud->putFile($temporaryPath, $cloud->objectKey($relativePath), $mime);
+            if (defined('BARAMA_CLI')) {
                 @unlink($temporaryPath);
             }
-        } else {
-            $moved = move_uploaded_file($temporaryPath, $destination);
         }
 
-        if (!$moved) {
-            throw new RuntimeException('The uploaded file could not be stored.');
-        }
-
-        @chmod($destination, 0640);
-
-        $relativePath = 'private/' . $relativeDirectory . '/' . $filename;
         $repository = new MediaRepository();
         $pdo = Database::connection();
 
         try {
             $pdo->beginTransaction();
-
             $mediaId = $repository->create([
                 'created_by_user_id' => (int) $user['id'],
+                'disk' => $disk,
                 'path' => $relativePath,
                 'original_name' => basename((string) ($file['name'] ?? 'upload.' . $extension)),
                 'mime_type' => $mime,
@@ -152,9 +152,8 @@ final class MediaStorageService
                 'width_px' => $width,
                 'height_px' => $height,
                 'alt_text' => DomainInput::optionalString($input, 'alt_text', 255),
-                'checksum_sha256' => hash_file('sha256', $destination),
+                'checksum_sha256' => $checksum,
             ]);
-
             $repository->attach(
                 $mediaId,
                 $entityType,
@@ -163,16 +162,21 @@ final class MediaStorageService
                 (int) ($input['position'] ?? 0),
                 DomainInput::boolean($input, 'is_primary')
             );
-
             $pdo->commit();
-
             return $mediaId;
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-
-            @unlink($destination);
+            if ($disk === 'private' && is_string($destination)) {
+                @unlink($destination);
+            } elseif ($cloud instanceof CloudObjectStorageService) {
+                try {
+                    $cloud->delete($cloud->objectKey($relativePath));
+                } catch (Throwable) {
+                    error_log('Barama cloud rollback could not remove object: ' . $relativePath);
+                }
+            }
             throw $exception;
         }
     }

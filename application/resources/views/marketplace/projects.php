@@ -43,7 +43,7 @@ $activeFilters = array_filter([
         <?php if ($rows === []): ?>
             <div class="marketplace-empty marketplace-empty--premium"><?= app_icon('layers') ?><strong>No projects match these filters.</strong><span>Try another location, stage, or project type.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/projects')) ?>">View all projects</a></div>
         <?php else: ?>
-            <div class="inventory-grid inventory-grid--projects marketplace-config-grid marketplace-config-grid--<?= e((string) $gridColumns) ?>"><?php foreach ($rows as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
+            <div class="inventory-grid inventory-grid--projects marketplace-config-grid" data-barama-marketplace-grid-columns="<?= e((string) $gridColumns) ?>"><?php foreach ($rows as $project): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'project', 'item' => $project]) ?><?php endforeach; ?></div>
         <?php endif; ?>
 
         <?php if ($pages > 1): ?><nav class="marketplace-pagination" aria-label="Project result pages"><span>Page <?= e((string) $page) ?> of <?= e((string) $pages) ?></span><div>

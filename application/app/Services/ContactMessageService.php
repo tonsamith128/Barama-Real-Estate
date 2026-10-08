@@ -81,6 +81,14 @@ final class ContactMessageService
             $safeMessage = nl2br(e($message));
 
             (new NotificationService())->notifyAddress($destination, [
+                'template_key' => 'contact_form_admin',
+                'variables' => [
+                    'contact_name' => $name,
+                    'contact_email' => $email,
+                    'contact_phone' => (string) ($phone ?? 'Not provided'),
+                    'contact_subject' => $subject,
+                    'contact_message' => $message,
+                ],
                 'subject' => 'Contact form: ' . $subject,
                 'html' => '<p><strong>New Barama contact message</strong></p>'
                     . '<p><strong>From:</strong> ' . $safeName . '<br>'

@@ -22,12 +22,13 @@ $homeOrder = is_array($homepageContent['section_order'] ?? null)
     ? array_values($homepageContent['section_order'])
     : array_values(\Barama\Repositories\SiteContentRepository::defaults()['homepage']['section_order']);
 
-$heroEyebrow = trim((string) ($hero['eyebrow'] ?? $homepageContent['hero_eyebrow'] ?? 'Barama Real Estate'));
-$heroTitle = trim((string) ($hero['title'] ?? $homepageContent['hero_title'] ?? 'Property Discovery Simplified'));
+/* BARAMA_HERO_COPY_V1122 */
+$heroEyebrow = trim((string) ($hero['eyebrow'] ?? $homepageContent['hero_eyebrow'] ?? 'Approved Real Estate'));
+$heroTitle = trim((string) ($hero['title'] ?? $homepageContent['hero_title'] ?? 'Property Discovery'));
 $heroDescription = trim((string) (
     $hero['description']
     ?? $homepageContent['hero_description']
-    ?? 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.'
+    ?? 'Find approved homes, rental opportunities, and new developments.'
 ));
 
 $heroEnabled = !empty($hero['enabled']);
@@ -100,6 +101,13 @@ $hasHeroBackground = $heroEnabled && (
     || ($backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null))
 );
 ?>
+<link rel="stylesheet" href="<?= e(asset('css/homepage-agent-v1112.css') . '?v=1112') ?>">
+<!-- BARAMA_HOMEPAGE_AGENT_V114 -->
+<!-- BARAMA_HOMEPAGE_AGENT_V116 -->
+<!-- BARAMA_HOMEPAGE_AGENT_V119 -->
+<!-- BARAMA_HOMEPAGE_AGENT_V1110 -->
+<!-- BARAMA_HOMEPAGE_AGENT_V1111 -->
+<!-- BARAMA_HOMEPAGE_AGENT_V1112 -->
 <section class="market-home market-home--background-<?= e($backgroundType) ?> <?= $hasHeroBackground ? 'market-home--rich-background' : '' ?>">
     <?php if ($heroEnabled && $backgroundType === 'color'): ?>
         <div class="market-home__background market-home__background--color hero-bg-preset--<?= e($colorPreset) ?>" aria-hidden="true"></div>
@@ -132,7 +140,7 @@ $hasHeroBackground = $heroEnabled && (
     <?php endif; ?>
 
     <?php if ($hasHeroBackground && $backgroundType !== 'color'): ?>
-        <svg class="market-home__background" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="1" height="1" fill="#030912" fill-opacity="<?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>"></rect></svg>
+        <div class="market-home__background-overlay" data-barama-hero-overlay="<?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>" aria-hidden="true"></div>
     <?php endif; ?>
 
     <div class="container app-container market-home__content">
@@ -146,7 +154,7 @@ $hasHeroBackground = $heroEnabled && (
                     <?php endif; ?>
 
                     <?php if (!empty($search['enabled'])): ?>
-                        <form class="market-searchbar" action="<?= e(url('/properties')) ?>" method="get" data-marketplace-filter>
+                        <form class="market-searchbar barama-search-v115" action="<?= e(url('/properties')) ?>" method="get" data-marketplace-filter>
                             <label class="market-searchbar__query">
                                 <span><?= app_icon('search') ?></span>
                                 <input name="q" placeholder="<?= e((string) ($search['placeholder'] ?? 'Search property, company, or location')) ?>" aria-label="<?= e((string) ($search['placeholder'] ?? 'Search property, company, or location')) ?>">
@@ -159,40 +167,32 @@ $hasHeroBackground = $heroEnabled && (
                                     <option value="rent">For rent</option>
                                 </select>
                             </label>
-                            <label>
-                                <span class="visually-hidden">Location</span>
-                                <select name="location" aria-label="Location">
-                                    <option value="">All locations</option>
-                                    <?php foreach (array_slice($locations, 0, 100) as $location): ?>
-                                        <option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </label>
+                            <?php /* BARAMA_PUBLIC_LOCATION_PICKER_HOME_V112 */ ?>
+
+                            <?= \Barama\Core\View::partial('components/public-location-picker', [
+
+                                'name' => 'location',
+
+                                'value' => '',
+
+                                'label' => 'All locations',
+
+                            ]) ?>
                             <button type="submit">
                                 <span><?= e((string) ($search['button_label'] ?? 'Search')) ?></span>
                                 <?= app_icon('search') ?>
+                            </button>
+                            <?php /* BARAMA_HOMEPAGE_SEARCH_V115 */ ?>
+                            <button type="button" class="barama-home-advanced" data-public-location-advanced-trigger aria-label="Advanced location search">
+                                <?= app_icon('settings') ?><span>Advanced</span>
                             </button>
                         </form>
                     <?php endif; ?>
 
                 </div>
-
                 <?php if (!empty($marketPulse['enabled'])): ?>
-                    <aside class="market-pulse" aria-label="Marketplace overview">
-                        <div class="market-pulse__glow" aria-hidden="true"></div>
-                        <div class="market-pulse__head">
-                            <span><?= app_icon('home') ?></span>
-                            <div><strong><?= e((string) ($marketPulse['title'] ?? 'Marketplace')) ?></strong><small><?= e((string) ($marketPulse['subtitle'] ?? 'Approved public inventory')) ?></small></div>
-                        </div>
-                        <div class="market-pulse__stats">
-                            <a href="<?= e(url('/properties?offer=sale')) ?>"><strong><?= e(number_format((int) ($marketStats['sale'] ?? 0))) ?></strong><span>For sale</span></a>
-                            <a href="<?= e(url('/properties?offer=rent')) ?>"><strong><?= e(number_format((int) ($marketStats['rent'] ?? 0))) ?></strong><span>For rent</span></a>
-                            <a href="<?= e(url('/projects')) ?>"><strong><?= e(number_format((int) ($marketStats['projects'] ?? 0))) ?></strong><span>Projects</span></a>
-                            <a href="<?= e(url('/company')) ?>"><strong><?= e(number_format((int) ($marketStats['companies'] ?? 0))) ?></strong><span>Companies</span></a>
-                        </div>
-                        <?php if (trim((string) ($marketPulse['note'] ?? '')) !== ''): ?>
-                            <div class="market-pulse__note"><?= app_icon('shield') ?><span><?= e((string) $marketPulse['note']) ?></span></div>
-                        <?php endif; ?>
+                    <aside class="market-home__agent market-home__agent--real market-home__agent--fullbody" aria-label="Professional Asian property agent">
+                        <img src="<?= e(asset('images/marketplace-asian-agent-fullbody-v116.svg') . '?v=116') ?>" alt="Full-body professional Asian real estate businesswoman holding a tablet">
                     </aside>
                 <?php endif; ?>
             </div>
@@ -283,11 +283,15 @@ $hasHeroBackground = $heroEnabled && (
         </section>
     <?php elseif ($homeSectionKey === 'featured_locations' && $homeEnabled): ?>
         <?php
-        $locationLimit = max(3, min(8, (int) ($homeSection['limit'] ?? 6)));
-        $featuredLocations = array_slice(is_array($locations ?? null) ? $locations : [], 0, $locationLimit);
+        /* BARAMA_HOME_LOCATION_MARQUEE_V1124 */
+        $locationCards = array_slice(
+            is_array($popularLocationCards ?? null) ? array_values($popularLocationCards) : [],
+            0,
+            20
+        );
         ?>
-        <?php if ($featuredLocations !== []): ?>
-            <section class="marketplace-section marketplace-section--home homepage-locations">
+        <?php if (count($locationCards) === 20): ?>
+            <section class="marketplace-section marketplace-section--home homepage-location-marquee">
                 <div class="container app-container">
                     <div class="section-heading-row section-heading-row--compact">
                         <div>
@@ -296,15 +300,7 @@ $hasHeroBackground = $heroEnabled && (
                         </div>
                         <a href="<?= e(url('/properties')) ?>"><?= e((string) ($homeSection['link_label'] ?? 'Browse all properties')) ?></a>
                     </div>
-                    <div class="homepage-location-grid">
-                        <?php foreach ($featuredLocations as $location): ?>
-                            <a class="homepage-location-card" href="<?= e(url('/properties?location=' . rawurlencode((string) ($location['id'] ?? '')))) ?>">
-                                <span class="homepage-location-card__icon"><?= app_icon('map') ?></span>
-                                <span><strong><?= e((string) ($location['name'] ?? 'Location')) ?></strong><small>Explore published properties</small></span>
-                                <b>↗</b>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
+                    <?= \Barama\Core\View::partial('components/popular-location-marquee', ['items' => $locationCards]) ?>
                 </div>
             </section>
         <?php endif; ?>

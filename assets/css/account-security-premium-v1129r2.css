@@ -1,0 +1,56 @@
+/* BARAMA_ACCOUNT_SECURITY_PREMIUM_TABLE_V1129_R2 */
+.account-page--security-v1129 .barama-security-live-table-v1129r2 {
+  --s-border: color-mix(in srgb, var(--bs-border-color,#d9e1ec) 92%, transparent);
+  --s-surface: var(--bs-body-bg,#fff);
+  --s-soft: color-mix(in srgb, var(--barama-primary,#2563eb) 5%, var(--bs-body-bg,#fff));
+  --s-text: var(--bs-body-color,#172033);
+  --s-muted: var(--bs-secondary-color,#667085);
+  margin-top:18px!important; overflow:hidden!important; border:1px solid var(--s-border)!important;
+  border-radius:20px!important; background:var(--s-surface)!important;
+  box-shadow:0 18px 46px rgba(15,23,42,.065)!important;
+}
+.account-page--security-v1129 .barama-security-live-caption-v1129r2{margin:0 0 10px!important;color:var(--s-muted)!important;font-size:.82rem!important;font-weight:750!important}
+.account-page--security-v1129 .barama-security-live-header-v1129r2,
+.account-page--security-v1129 .barama-security-live-row-v1129r2{display:grid!important;grid-template-columns:minmax(250px,30%) minmax(112px,13%) minmax(330px,43%) minmax(112px,14%)!important;width:100%!important;min-width:0!important;align-items:stretch!important}
+.account-page--security-v1129 .barama-security-live-header-v1129r2{background:var(--s-soft)!important;border-bottom:1px solid var(--s-border)!important}
+.account-page--security-v1129 .barama-security-live-header-cell-v1129r2{display:flex!important;align-items:center!important;padding:14px 18px!important;color:var(--s-muted)!important;font-size:.73rem!important;font-weight:850!important;letter-spacing:.075em!important;text-transform:uppercase!important}
+.account-page--security-v1129 .barama-security-live-header-cell-v1129r2:last-child{justify-content:flex-end!important;text-align:right!important}
+.account-page--security-v1129 .barama-security-live-row-v1129r2{border-bottom:1px solid var(--s-border)!important;background:transparent!important;transition:background-color .18s ease!important}
+.account-page--security-v1129 .barama-security-live-row-v1129r2:last-child{border-bottom:0!important}
+.account-page--security-v1129 .barama-security-live-row-v1129r2:hover{background:color-mix(in srgb,var(--barama-primary,#2563eb) 3%,transparent)!important}
+.account-page--security-v1129 .barama-security-live-cell-v1129r2{display:flex!important;min-width:0!important;min-height:84px!important;align-items:center!important;padding:17px 18px!important;border:0!important;background:transparent!important;color:var(--s-text)!important;font-size:.92rem!important;line-height:1.5!important}
+.account-page--security-v1129 .barama-security-live-cell-v1129r2 + .barama-security-live-cell-v1129r2{border-left:1px solid color-mix(in srgb,var(--s-border) 72%,transparent)!important}
+.account-page--security-v1129 .barama-security-live-feature-v1129r2{gap:12px!important;align-items:flex-start!important}
+.account-page--security-v1129 .barama-security-feature-icon-v1129r2{display:grid!important;width:40px!important;height:40px!important;flex:0 0 40px!important;place-items:center!important;border-radius:12px!important;background:color-mix(in srgb,var(--barama-primary,#2563eb) 9%,transparent)!important;color:var(--barama-primary,#2563eb)!important}
+.account-page--security-v1129 .barama-security-feature-icon-v1129r2 svg{width:19px!important;height:19px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.account-page--security-v1129 .barama-security-feature-copy-v1129r2{display:grid!important;gap:4px!important;min-width:0!important}
+.account-page--security-v1129 .barama-security-feature-copy-v1129r2 strong{color:var(--s-text)!important;font-size:.97rem!important;font-weight:820!important;line-height:1.28!important}
+.account-page--security-v1129 .barama-security-feature-copy-v1129r2 small{color:var(--s-muted)!important;font-size:.79rem!important;font-weight:550!important;line-height:1.45!important}
+.account-page--security-v1129 .barama-security-live-status-v1129r2{justify-content:flex-start!important}
+.account-page--security-v1129 .barama-security-status-pill-v1129r2{display:inline-flex!important;min-height:30px!important;align-items:center!important;gap:7px!important;padding:6px 10px!important;border:1px solid color-mix(in srgb,#10b981 26%,transparent)!important;border-radius:999px!important;background:color-mix(in srgb,#10b981 10%,transparent)!important;color:#059669!important;font-size:.78rem!important;font-weight:820!important;line-height:1.1!important;white-space:nowrap!important}
+.account-page--security-v1129 .barama-security-status-pill-v1129r2::before{content:""!important;width:7px!important;height:7px!important;flex:0 0 7px!important;border-radius:50%!important;background:currentColor!important}
+.account-page--security-v1129 .barama-security-status-pill-v1129r2.is-warning{border-color:color-mix(in srgb,#f59e0b 30%,transparent)!important;background:color-mix(in srgb,#f59e0b 11%,transparent)!important;color:#d97706!important}
+.account-page--security-v1129 .barama-security-status-pill-v1129r2.is-neutral{border-color:color-mix(in srgb,var(--s-muted) 26%,transparent)!important;background:color-mix(in srgb,var(--s-muted) 9%,transparent)!important;color:var(--s-muted)!important}
+.account-page--security-v1129 .barama-security-live-protection-v1129r2{align-items:flex-start!important;color:var(--s-muted)!important;font-size:.87rem!important;line-height:1.6!important}
+.account-page--security-v1129 .barama-security-live-action-v1129r2{justify-content:flex-end!important}
+.account-page--security-v1129 .barama-security-configure-v1129r2{display:inline-flex!important;min-width:106px!important;min-height:40px!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:9px 14px!important;border:1px solid color-mix(in srgb,var(--barama-primary,#2563eb) 32%,var(--s-border))!important;border-radius:11px!important;background:color-mix(in srgb,var(--barama-primary,#2563eb) 8%,var(--s-surface))!important;color:var(--barama-primary,#2563eb)!important;box-shadow:none!important;font:inherit!important;font-size:.84rem!important;font-weight:820!important;text-decoration:none!important;white-space:nowrap!important;cursor:pointer!important;transition:transform .16s ease,border-color .16s ease,background-color .16s ease!important}
+.account-page--security-v1129 .barama-security-configure-v1129r2:hover,.account-page--security-v1129 .barama-security-configure-v1129r2:focus-visible{transform:translateY(-1px)!important;border-color:color-mix(in srgb,var(--barama-primary,#2563eb) 58%,var(--s-border))!important;background:color-mix(in srgb,var(--barama-primary,#2563eb) 13%,var(--s-surface))!important}
+html[data-bs-theme="dark"] .account-page--security-v1129 .barama-security-live-table-v1129r2{--s-border:rgba(148,163,184,.18);--s-surface:#101a2a;--s-soft:#132238;--s-text:#edf4ff;--s-muted:#a7b5c8;box-shadow:0 20px 50px rgba(0,0,0,.24)!important}
+@media(max-width:980px){
+ .account-page--security-v1129 .barama-security-live-table-v1129r2{overflow:visible!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+ .account-page--security-v1129 .barama-security-live-header-v1129r2{display:none!important}
+ .account-page--security-v1129 .barama-security-live-body-v1129r2{display:grid!important;gap:14px!important}
+ .account-page--security-v1129 .barama-security-live-row-v1129r2{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(120px,.35fr)!important;border:1px solid var(--s-border)!important;border-radius:17px!important;overflow:hidden!important;background:var(--s-surface)!important;box-shadow:0 12px 30px rgba(15,23,42,.05)!important}
+ .account-page--security-v1129 .barama-security-live-feature-v1129r2{grid-column:1/2!important}
+ .account-page--security-v1129 .barama-security-live-status-v1129r2{grid-column:2/3!important;justify-content:flex-end!important}
+ .account-page--security-v1129 .barama-security-live-protection-v1129r2,.account-page--security-v1129 .barama-security-live-action-v1129r2{grid-column:1/-1!important;min-height:0!important;border-top:1px solid var(--s-border)!important;border-left:0!important}
+ .account-page--security-v1129 .barama-security-live-action-v1129r2{padding-top:12px!important;padding-bottom:14px!important}
+ .account-page--security-v1129 .barama-security-configure-v1129r2{width:100%!important}
+}
+@media(max-width:620px){
+ .account-page--security-v1129 .barama-security-live-row-v1129r2{grid-template-columns:1fr!important}
+ .account-page--security-v1129 .barama-security-live-feature-v1129r2,.account-page--security-v1129 .barama-security-live-status-v1129r2,.account-page--security-v1129 .barama-security-live-protection-v1129r2,.account-page--security-v1129 .barama-security-live-action-v1129r2{grid-column:1!important;min-height:0!important;padding:13px 15px!important;border-left:0!important}
+ .account-page--security-v1129 .barama-security-live-status-v1129r2,.account-page--security-v1129 .barama-security-live-protection-v1129r2,.account-page--security-v1129 .barama-security-live-action-v1129r2{border-top:1px solid var(--s-border)!important}
+ .account-page--security-v1129 .barama-security-live-status-v1129r2{justify-content:flex-start!important}
+}
+@media(prefers-reduced-motion:reduce){.account-page--security-v1129 .barama-security-live-row-v1129r2,.account-page--security-v1129 .barama-security-configure-v1129r2{transition:none!important}}

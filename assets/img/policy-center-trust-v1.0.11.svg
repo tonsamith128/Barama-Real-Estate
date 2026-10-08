@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="620" viewBox="0 0 920 620" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="120" y1="80" x2="800" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2C572" stop-opacity=".70"/>
+      <stop offset=".5" stop-color="#D7A348" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#B77B1E" stop-opacity=".12"/>
+    </linearGradient>
+    <radialGradient id="g2" cx="0" cy="0" r="1" gradientTransform="translate(620 310) rotate(90) scale(270 350)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6D99B" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#F6D99B" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <ellipse cx="640" cy="312" rx="300" ry="250" fill="url(#g2)" filter="url(#blur)"/>
+
+  <path d="M615 86 774 144v116c0 122-67 203-159 256-92-53-159-134-159-256V144L615 86Z"
+        stroke="url(#g1)" stroke-width="8" opacity=".62"/>
+  <path d="m540 292 48 49 105-120" stroke="#C68B28" stroke-width="13"
+        stroke-linecap="round" stroke-linejoin="round" opacity=".58"/>
+
+  <g opacity=".24" stroke="#B67C21" stroke-width="2">
+    <circle cx="615" cy="301" r="206"/>
+    <circle cx="615" cy="301" r="164"/>
+    <circle cx="615" cy="301" r="122"/>
+  </g>
+
+  <g opacity=".26" fill="#B67C21">
+    <circle cx="428" cy="244" r="7"/>
+    <circle cx="472" cy="152" r="5"/>
+    <circle cx="752" cy="174" r="6"/>
+    <circle cx="821" cy="306" r="7"/>
+    <circle cx="765" cy="450" r="5"/>
+    <circle cx="503" cy="463" r="6"/>
+  </g>
+
+  <text x="424" y="562" fill="#A96F16" fill-opacity=".20"
+        font-family="Arial, Helvetica, sans-serif" font-size="88"
+        font-weight="800" letter-spacing="16">TRUST</text>
+</svg>

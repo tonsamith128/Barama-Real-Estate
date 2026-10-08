@@ -198,14 +198,14 @@ final class SiteContentRepository
         return [
             'homepage' => [
                 /* Legacy keys remain readable by older packages during upgrade. */
-                'hero_eyebrow' => 'Barama Real Estate',
-                'hero_title' => 'Property Discovery Simplified',
-                'hero_description' => 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.',
+                'hero_eyebrow' => 'Approved Real Estate',
+                'hero_title' => 'Property Discovery',
+                'hero_description' => 'Find approved homes, rental opportunities, and new developments.',
                 'hero' => [
                     'enabled' => true,
-                    'eyebrow' => 'Barama Real Estate',
-                    'title' => 'Property Discovery Simplified',
-                    'description' => 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.',
+                    'eyebrow' => 'Approved Real Estate',
+                    'title' => 'Property Discovery',
+                    'description' => 'Find approved homes, rental opportunities, and new developments.',
                     'background' => [
                         'type' => 'plain',
                         'color_preset' => 'ocean',

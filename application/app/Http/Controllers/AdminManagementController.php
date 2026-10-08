@@ -15,6 +15,7 @@ use Barama\Services\CommunicationsManagementService;
 use Barama\Services\DomainWorkflowService;
 use Barama\Services\EmailTemplateManagementService;
 use Barama\Services\FinanceManagementService;
+use Barama\Services\PaymentMethodManagementService;
 use Barama\Services\PageManagementService;
 use Barama\Services\CompanyManagementService;
 use Barama\Services\ProjectManagementService;
@@ -107,7 +108,6 @@ final class AdminManagementController
             ];
         });
     }
-
     public function updatePlanStatus(Request $request, string $id): Response
     {
         return $this->execute(function () use ($request, $id): array {
@@ -204,17 +204,89 @@ final class AdminManagementController
         });
     }
 
+    /* BARAMA_PAYMENT_METHODS_V110 */
+    /* BARAMA_PAYMENT_METHODS_V120 */
+    public function createManualPaymentMethod(Request $request): Response
+    {
+        return $this->executePaymentManagement(function () use ($request): array {
+            $id = (new PaymentMethodManagementService())->createManual(
+                $request->all(),
+                $_FILES
+            );
+            return [
+                'payment_method_id' => $id,
+                'message' => 'Manual payment method created successfully.',
+            ];
+        }, 201);
+    }
+
+    public function updatePaymentMethodStatus(Request $request, string $id): Response
+    {
+        return $this->executePaymentManagement(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid payment method ID is required.');
+            }
+
+            $status = trim((string) $request->input('status', ''));
+            (new PaymentMethodManagementService())->setStatus((int) $id, $status);
+
+            return [
+                'payment_method_id' => (int) $id,
+                'status' => $status,
+                'message' => 'Payment method status updated.',
+            ];
+        });
+    }
+
+    public function configurePaymentMethod(Request $request, string $id): Response
+    {
+        return $this->executePaymentManagement(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid payment method ID is required.');
+            }
+
+            (new PaymentMethodManagementService())->configure((int) $id, $request->all(), $_FILES);
+
+            return [
+                'payment_method_id' => (int) $id,
+                'message' => 'Payment method configuration saved.',
+            ];
+        });
+    }
+
     public function createPaymentProvider(Request $request): Response
     {
-        return $this->execute(fn (): array => [
+        return $this->executePaymentManagement(fn (): array => [
             'payment_provider_id' => (new FinanceManagementService())->createPaymentProvider($request->all()),
             'message' => 'Payment provider created as inactive.',
         ], 201);
     }
 
+    /* BARAMA_PAYMENT_PROVIDERS_PREMIUM_V100 */
+    public function updatePaymentProvider(Request $request, string $id): Response
+    {
+        return $this->executePaymentManagement(function () use ($request, $id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException(
+                    'A valid payment provider ID is required.'
+                );
+            }
+
+            (new FinanceManagementService())->updatePaymentProvider(
+                (int) $id,
+                $request->all()
+            );
+
+            return [
+                'payment_provider_id' => (int) $id,
+                'message' => 'Payment provider configuration updated.',
+            ];
+        });
+    }
+
     public function updatePaymentProviderStatus(Request $request, string $id): Response
     {
-        return $this->execute(function () use ($request, $id): array {
+        return $this->executePaymentManagement(function () use ($request, $id): array {
             if (!ctype_digit($id) || (int) $id < 1) {
                 throw new InvalidArgumentException('A valid payment provider ID is required.');
             }
@@ -329,6 +401,24 @@ final class AdminManagementController
         });
     }
 
+    /* BARAMA_MAIL_QUEUE_OPERATIONS_V120 */
+    public function mailQueueDetail(Request $request, string $id): Response
+    {
+        return $this->execute(function () use ($id): array {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new InvalidArgumentException('A valid mail queue ID is required.');
+            }
+            return (new CommunicationsManagementService())->mailDetail((int) $id);
+        });
+    }
+
+    public function bulkMail(Request $request): Response
+    {
+        return $this->execute(fn (): array =>
+            (new CommunicationsManagementService())->bulkMail($request->all())
+        );
+    }
+
     public function createEmailTemplate(Request $request): Response
     {
         return $this->execute(fn (): array => [
@@ -356,6 +446,69 @@ final class AdminManagementController
                 'email_template_id' => (int) $id,
                 'message' => 'Email template updated.',
             ];
+        });
+    }
+
+    /* BARAMA_EMAIL_TEMPLATE_MEDIA_LIBRARY_V143 */
+    public function emailTemplateMediaLibrary(Request $request): Response
+    {
+        return $this->execute(function () use ($request): array {
+            $items = (new \Barama\Services\EmailTemplateMediaLibraryService())->items(
+                (string) $request->input('q', ''),
+                (string) $request->input('type', 'all')
+            );
+
+            return [
+                'items' => $items,
+                'message' => 'Media Library loaded.',
+            ];
+        });
+    }
+
+    /* BARAMA_EMAIL_TEMPLATE_TEST_V139 */
+    public function testEmailTemplate(Request $request, string $key): Response
+    {
+        return $this->execute(function () use ($request, $key): array {
+            $key = strtolower(trim($key));
+            $input = $request->all();
+            $input['template_key'] = $key;
+            $recipient = trim((string) $request->input('test_recipient', ''));
+
+            (new EmailTemplateManagementService())->sendTest($input, $recipient);
+
+            return [
+                'template_key' => $key,
+                'message' => 'Test email sent to ' . $recipient . '.',
+            ];
+        });
+    }
+
+    /* BARAMA_EMAIL_TEMPLATE_LOCALIZATION_ACTIONS_V140 */
+    public function saveEmailTemplateVariant(Request $request, string $key, string $locale): Response
+    {
+        return $this->execute(function () use ($request, $key, $locale): array {
+            $id = (new EmailTemplateManagementService())->saveVariant($key, $locale, $request->all());
+            return ['email_template_variant_id' => $id, 'template_key' => $key, 'locale' => $locale, 'message' => 'Email language variant saved.'];
+        });
+    }
+
+    public function updateEmailTemplateVariantStatus(Request $request, string $key, string $locale): Response
+    {
+        return $this->execute(function () use ($request, $key, $locale): array {
+            $status = trim((string) $request->input('status', ''));
+            (new EmailTemplateManagementService())->setVariantStatus($key, $locale, $status);
+            return ['template_key' => $key, 'locale' => $locale, 'status' => $status, 'message' => 'Email language variant status updated.'];
+        });
+    }
+
+    public function restoreEmailTemplateRevision(Request $request, string $key, string $revisionId): Response
+    {
+        return $this->execute(function () use ($key, $revisionId): array {
+            if (!ctype_digit($revisionId) || (int) $revisionId < 1) {
+                throw new InvalidArgumentException('A valid email template revision ID is required.');
+            }
+            (new EmailTemplateManagementService())->restoreRevision($key, (int) $revisionId);
+            return ['template_key' => $key, 'revision_id' => (int) $revisionId, 'message' => 'Email template revision restored into the inactive editor.'];
         });
     }
 
@@ -485,11 +638,10 @@ final class AdminManagementController
 
             return Response::json([
                 'ok' => false,
-                'message' => 'Marketplace page configuration could not be saved. Please retry or review the server error log.',
+                'message' => 'Marketplace page configuration could not be saved.',
             ], 500);
         }
     }
-
     public function updateHomepageFeature(Request $request, string $feature): Response
     {
         return $this->execute(function () use ($request, $feature): array {
@@ -1017,6 +1169,68 @@ final class AdminManagementController
     /**
      * @param callable(): array<string, mixed> $action
      */
+    /* BARAMA_PAYMENT_NATIVE_POST_V128 */
+    /**
+     * @param callable(): array<string,mixed> $action
+     */
+    private function executePaymentManagement(
+        callable $action,
+        int $successStatus = 200
+    ): Response {
+        $ajax = strtolower(trim((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''))) === 'xmlhttprequest';
+
+        try {
+            $data = $action();
+            $message = trim((string) ($data['message'] ?? ''));
+            if ($message === '') {
+                $message = 'Payment configuration saved.';
+            }
+
+            if ($ajax) {
+                return Response::json(['ok' => true, 'data' => $data], $successStatus);
+            }
+
+            return Response::redirect(
+                '/dashboard/payment-providers?payment_notice=' . rawurlencode($message)
+            );
+        } catch (InvalidArgumentException $exception) {
+            if ($ajax) {
+                return Response::json(['ok' => false, 'message' => $exception->getMessage()], 422);
+            }
+            return Response::redirect(
+                '/dashboard/payment-providers?payment_error=' . rawurlencode($exception->getMessage())
+            );
+        } catch (DomainException $exception) {
+            if ($ajax) {
+                return Response::json(['ok' => false, 'message' => $exception->getMessage()], 403);
+            }
+            return Response::redirect(
+                '/dashboard/payment-providers?payment_error=' . rawurlencode($exception->getMessage())
+            );
+        } catch (\Throwable $exception) {
+            try {
+                $reference = strtoupper(bin2hex(random_bytes(4)));
+            } catch (\Throwable) {
+                $reference = strtoupper(substr(sha1((string) microtime(true)), 0, 8));
+            }
+
+            error_log(
+                '[Barama Payment Management ' . $reference . '] '
+                . $exception::class . ': ' . $exception->getMessage()
+            );
+
+            $message = 'The payment change could not be completed. Reference: ' . $reference;
+
+            if ($ajax) {
+                return Response::json(['ok' => false, 'message' => $message], 500);
+            }
+
+            return Response::redirect(
+                '/dashboard/payment-providers?payment_error=' . rawurlencode($message)
+            );
+        }
+    }
+
     private function execute(callable $action, int $successStatus = 200): Response
     {
         try {

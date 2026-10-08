@@ -1052,6 +1052,48 @@ final class FinanceRepository
         return (int) Database::connection()->lastInsertId();
     }
 
+    /* BARAMA_PAYMENT_PROVIDERS_PREMIUM_V100 */
+    /** @param array<string,mixed> $data */
+    public function updatePaymentProvider(int $id, array $data): void
+    {
+        $tokenHash = $data['webhook_token_hash'] ?? null;
+
+        if (is_string($tokenHash) && $tokenHash !== '') {
+            $statement = Database::connection()->prepare(
+                'UPDATE billing_payment_providers
+                 SET name = :name,
+                     environment = :environment,
+                     webhook_token_hash = :webhook_token_hash,
+                     updated_by_user_id = :actor_id,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id'
+            );
+            $statement->execute([
+                'name' => $data['name'],
+                'environment' => $data['environment'],
+                'webhook_token_hash' => $tokenHash,
+                'actor_id' => $data['actor_id'],
+                'id' => $id,
+            ]);
+            return;
+        }
+
+        $statement = Database::connection()->prepare(
+            'UPDATE billing_payment_providers
+             SET name = :name,
+                 environment = :environment,
+                 updated_by_user_id = :actor_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'name' => $data['name'],
+            'environment' => $data['environment'],
+            'actor_id' => $data['actor_id'],
+            'id' => $id,
+        ]);
+    }
+
     public function setPaymentProviderStatus(
         int $id,
         string $status,

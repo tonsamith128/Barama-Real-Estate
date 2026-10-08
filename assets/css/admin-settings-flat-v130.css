@@ -1,0 +1,281 @@
+/* BARAMA_ADMIN_SETTINGS_FLAT_GOVERNANCE_V130 */
+.barama-settings--flat {
+    --settings-flat-line: color-mix(in srgb, var(--settings-border) 78%, transparent);
+    --settings-flat-hover: color-mix(in srgb, var(--settings-accent) 7%, transparent);
+}
+
+/* Tabs: no tray, no filled active pill. */
+.barama-settings--flat .barama-settings-tabs {
+    gap: 26px;
+    margin: 0 0 30px;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--settings-flat-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.barama-settings--flat .barama-settings-tabs a {
+    position: relative;
+    min-width: 0;
+    padding: 10px 1px 14px;
+    border-radius: 0;
+    color: var(--settings-muted);
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.barama-settings--flat .barama-settings-tabs a:hover {
+    color: var(--bs-body-color);
+    background: transparent !important;
+}
+
+.barama-settings--flat .barama-settings-tabs a.is-active {
+    color: var(--settings-accent);
+    background: transparent !important;
+}
+
+.barama-settings--flat .barama-settings-tabs a.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 999px 999px 0 0;
+    background: var(--settings-accent);
+    box-shadow: 0 -3px 12px color-mix(in srgb, var(--settings-accent) 34%, transparent);
+}
+
+.barama-settings--flat .barama-settings-tabs a.is-active span {
+    color: var(--settings-accent);
+}
+
+/* Main content: transparent sections with separators instead of cards. */
+.barama-settings--flat .barama-settings-card {
+    padding: 0 0 28px;
+    border: 0;
+    border-bottom: 1px solid var(--settings-flat-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.barama-settings--flat .barama-settings-grid {
+    gap: 34px;
+    margin-bottom: 34px;
+}
+
+.barama-settings--flat .barama-settings-grid--wide {
+    grid-template-columns: minmax(0, 1.85fr) minmax(280px, .72fr);
+}
+
+.barama-settings--flat .barama-settings-grid--wide > .barama-settings-card:last-child {
+    padding-left: 30px;
+    border-left: 1px solid var(--settings-flat-line);
+}
+
+.barama-settings--flat .barama-settings-grid--equal > .barama-settings-card {
+    padding-right: 28px;
+}
+
+.barama-settings--flat .barama-settings-grid--equal > .barama-settings-card + .barama-settings-card {
+    padding-right: 0;
+    padding-left: 30px;
+    border-left: 1px solid var(--settings-flat-line);
+}
+
+.barama-settings--flat .barama-settings-security-status,
+.barama-settings--flat .barama-settings-storage-overview {
+    gap: 24px;
+    margin-bottom: 34px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--settings-flat-line);
+}
+
+.barama-settings--flat .barama-settings-security-status > div,
+.barama-settings--flat .barama-settings-storage-overview > article {
+    padding: 4px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.barama-settings--flat .barama-settings-summary > div,
+.barama-settings--flat .barama-settings-status-row {
+    padding: 14px 0;
+}
+
+.barama-settings--flat .barama-settings-avatar,
+.barama-settings--flat .barama-settings-toggle,
+.barama-settings--flat .barama-settings-control {
+    box-shadow: none;
+}
+
+.barama-settings--flat .barama-settings-toggle {
+    background: transparent;
+}
+
+/* Platform governance hub: real links to existing modules, no fake toggles. */
+.barama-settings-governance {
+    margin: -4px 0 34px;
+    padding: 0 0 28px;
+    border-bottom: 1px solid var(--settings-flat-line);
+}
+
+.barama-settings-governance__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 14px;
+}
+
+.barama-settings-governance__head h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+
+.barama-settings-governance__head p {
+    margin: 3px 0 0;
+    color: var(--settings-muted);
+    font-size: 11px;
+}
+
+.barama-settings-governance__head > span {
+    color: var(--settings-muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.barama-settings-governance__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 30px;
+}
+
+.barama-settings-governance__link {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+    padding: 14px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--settings-flat-line) 76%, transparent);
+    color: inherit;
+    text-decoration: none;
+    transition: color .16s ease, transform .16s ease, border-color .16s ease;
+}
+
+.barama-settings-governance__link:hover {
+    color: var(--settings-accent);
+    border-color: color-mix(in srgb, var(--settings-accent) 35%, transparent);
+    transform: translateX(2px);
+}
+
+.barama-settings-governance__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: var(--settings-accent);
+}
+
+.barama-settings-governance__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.barama-settings-governance__copy {
+    min-width: 0;
+}
+
+.barama-settings-governance__copy strong,
+.barama-settings-governance__copy small {
+    display: block;
+}
+
+.barama-settings-governance__copy strong {
+    font-size: 12px;
+    font-weight: 760;
+}
+
+.barama-settings-governance__copy small {
+    margin-top: 3px;
+    overflow: hidden;
+    color: var(--settings-muted);
+    font-size: 10px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barama-settings-governance__arrow {
+    color: var(--settings-muted);
+    font-size: 16px;
+    transition: transform .16s ease, color .16s ease;
+}
+
+.barama-settings-governance__link:hover .barama-settings-governance__arrow {
+    color: var(--settings-accent);
+    transform: translateX(2px);
+}
+
+/* Cloud Storage inherits the same transparent settings language. */
+.barama-settings--flat.cloud-storage-ui .cloud-provider-card {
+    padding-bottom: 28px;
+    border: 0 !important;
+    border-bottom: 1px solid var(--settings-flat-line) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.barama-settings--flat.cloud-storage-ui .cloud-provider-head {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent !important;
+}
+
+@media (max-width: 1100px) {
+    .barama-settings-governance__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .barama-settings--flat .barama-settings-grid--wide > .barama-settings-card:last-child,
+    .barama-settings--flat .barama-settings-grid--equal > .barama-settings-card + .barama-settings-card {
+        padding-left: 0;
+        border-left: 0;
+    }
+}
+
+@media (max-width: 760px) {
+    .barama-settings--flat .barama-settings-tabs {
+        gap: 20px;
+    }
+
+    .barama-settings--flat .barama-settings-tabs a {
+        flex: 0 0 auto;
+        padding-bottom: 12px;
+    }
+
+    .barama-settings-governance__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .barama-settings-governance__head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .barama-settings--flat .barama-settings-grid--wide,
+    .barama-settings--flat .barama-settings-grid--equal {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,32 @@
+/* Barama Payment Providers Webhook Table Focus v1.8.13 */
+
+.finance-payment-webhook-section .finance-payment-webhook-table-focus {
+    min-width: 880px;
+}
+
+.finance-payment-webhook-section .finance-payment-webhook-provider,
+.finance-payment-webhook-section .finance-payment-webhook-event,
+.finance-payment-webhook-section .finance-payment-webhook-audit,
+.finance-payment-webhook-section .finance-payment-webhook-processing {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+
+.finance-payment-webhook-section .finance-payment-webhook-audit small,
+.finance-payment-webhook-section .finance-payment-webhook-processing small {
+    overflow-wrap: anywhere;
+}
+
+.finance-payment-webhook-section .finance-payment-webhook-table-focus th:nth-child(1),
+.finance-payment-webhook-section .finance-payment-webhook-table-focus td:nth-child(1) { width: 15%; }
+.finance-payment-webhook-section .finance-payment-webhook-table-focus th:nth-child(2),
+.finance-payment-webhook-section .finance-payment-webhook-table-focus td:nth-child(2) { width: 17%; }
+.finance-payment-webhook-section .finance-payment-webhook-table-focus th:nth-child(3),
+.finance-payment-webhook-section .finance-payment-webhook-table-focus td:nth-child(3) { width: 22%; }
+.finance-payment-webhook-section .finance-payment-webhook-table-focus th:nth-child(4),
+.finance-payment-webhook-section .finance-payment-webhook-table-focus td:nth-child(4) { width: 11%; }
+.finance-payment-webhook-section .finance-payment-webhook-table-focus th:nth-child(5),
+.finance-payment-webhook-section .finance-payment-webhook-table-focus td:nth-child(5) { width: 17%; }
+.finance-payment-webhook-section .finance-payment-webhook-table-focus th:nth-child(6),
+.finance-payment-webhook-section .finance-payment-webhook-table-focus td:nth-child(6) { width: 18%; }

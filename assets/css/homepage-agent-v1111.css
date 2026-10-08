@@ -1,0 +1,99 @@
+/* BARAMA_HOMEPAGE_AGENT_V1111 */
+/*
+ * True bottom-edge repair:
+ * - .market-home__hero must NOT be the containing block.
+ * - .market-home__content is the containing block and includes the quick-action row.
+ * - The -2.2rem bottom offset crosses the canonical .market-home bottom padding,
+ *   placing the agent's shoes on the actual Hero section bottom edge.
+ */
+.market-home__content{
+    position:relative!important;
+}
+
+.market-home__hero{
+    position:static!important;
+    min-height:0!important;
+}
+
+.market-home__agent.market-home__agent--real.market-home__agent--fullbody{
+    position:absolute!important;
+    right:clamp(-150px,-7vw,-80px)!important;
+    bottom:-2.2rem!important;
+    top:auto!important;
+    width:clamp(430px,35vw,530px)!important;
+    height:clamp(585px,42vw,670px)!important;
+    min-width:0!important;
+    min-height:0!important;
+    max-width:none!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    display:flex!important;
+    align-items:flex-end!important;
+    justify-content:center!important;
+    overflow:visible!important;
+    pointer-events:none!important;
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    z-index:4!important;
+}
+
+.market-home__agent.market-home__agent--fullbody img{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    margin:0!important;
+    object-fit:contain!important;
+    object-position:center bottom!important;
+    filter:drop-shadow(0 22px 30px rgba(2,6,23,.30))!important;
+    transform:none!important;
+    user-select:none!important;
+    -webkit-user-drag:none!important;
+}
+
+.market-home__copy{
+    position:relative!important;
+    z-index:2!important;
+}
+
+.market-intent-grid{
+    position:relative!important;
+    z-index:3!important;
+}
+
+@media (max-width:1280px){
+    .market-home__agent.market-home__agent--fullbody{
+        right:-92px!important;
+        width:430px!important;
+        height:590px!important;
+    }
+}
+
+@media (max-width:1080px){
+    .market-home__agent.market-home__agent--fullbody{
+        right:-72px!important;
+        width:365px!important;
+        height:515px!important;
+        opacity:.98!important;
+    }
+}
+
+@media (max-width:900px){
+    .market-home__agent.market-home__agent--fullbody{
+        right:-58px!important;
+        width:305px!important;
+        height:440px!important;
+        opacity:.94!important;
+    }
+}
+
+/* Compact layouts prioritize the search experience. */
+@media (max-width:760px){
+    .market-home__agent.market-home__agent--fullbody{
+        display:none!important;
+    }
+}

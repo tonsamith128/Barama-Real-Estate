@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Barama\Repositories;
 
 use Barama\Core\Database;
+use Barama\Services\PropertyReadinessService;
 use InvalidArgumentException;
 use PDO;
 
@@ -186,6 +187,8 @@ final class WorkspaceReadRepository
         string $sort = 'updated_desc'
     ): array {
         $search = '%' . trim($search) . '%';
+        $propertyReadinessScoreSql = PropertyReadinessService::sqlScoreExpression('p', 'c', 'pr');
+        $propertyQualityIssueSql = PropertyReadinessService::sqlIssueExpressions('p', 'c', 'pr');
 
         [$sql, $countSql, $params] = match ($section) {
             'overview', 'inquiries' => [
@@ -269,12 +272,28 @@ final class WorkspaceReadRepository
             ],
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.property_type, p.status,
-                        p.location_id, p.bedrooms, p.bathrooms, p.updated_at,
-                        c.name AS company_name, loc.name AS location_name,
+                        p.project_id, p.location_id, p.address_line, p.area_value, p.area_unit,
+                        p.description, p.bedrooms, p.bathrooms, p.updated_at,
+                        c.name AS company_name, c.status AS company_status,
+                        pr.status AS project_status, loc.name AS location_name,
+                        (' . $propertyReadinessScoreSql . ') AS readiness_score,
+                        CASE WHEN (' . $propertyReadinessScoreSql . ') = 100 THEN "ready" ELSE "attention" END AS property_readiness,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_media'] . ') THEN 1 ELSE 0 END AS issue_missing_media,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_primary_media'] . ') THEN 1 ELSE 0 END AS issue_missing_primary_media,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_location'] . ') THEN 1 ELSE 0 END AS issue_missing_location,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_description'] . ') THEN 1 ELSE 0 END AS issue_missing_description,
+                        CASE WHEN (' . $propertyQualityIssueSql['parent_blocked'] . ') THEN 1 ELSE 0 END AS issue_parent_blocked,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_draft'] . ') THEN 1 ELSE 0 END AS issue_stale_draft,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_30_59'] . ') THEN 1 ELSE 0 END AS issue_stale_30_59,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_60_89'] . ') THEN 1 ELSE 0 END AS issue_stale_60_89,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_90_plus'] . ') THEN 1 ELSE 0 END AS issue_stale_90_plus,
+                        (SELECT COUNT(*) FROM media_attachments ma WHERE ma.entity_type = "property" AND ma.entity_id = p.id) AS media_count,
+                        (SELECT COUNT(*) FROM media_attachments ma WHERE ma.entity_type = "property" AND ma.entity_id = p.id AND ma.is_primary = 1) AS primary_media_count,
                         (SELECT COUNT(*) FROM listings li WHERE li.property_id = p.id AND li.deleted_at IS NULL) AS listings_count
                  FROM properties p
                  INNER JOIN company_members cm ON cm.company_id = p.company_id
                  INNER JOIN companies c ON c.id = p.company_id
+                 LEFT JOIN projects pr ON pr.id = p.project_id AND pr.deleted_at IS NULL
                  LEFT JOIN locations loc ON loc.id = p.location_id
                  WHERE cm.user_id = :user_id
                    AND cm.status = "active"
@@ -1368,6 +1387,8 @@ final class WorkspaceReadRepository
         string $sort = 'updated_desc'
     ): array {
         $search = '%' . trim($search) . '%';
+        $propertyReadinessScoreSql = PropertyReadinessService::sqlScoreExpression('p', 'c', 'pr');
+        $propertyQualityIssueSql = PropertyReadinessService::sqlIssueExpressions('p', 'c', 'pr');
 
         [$sql, $countSql, $params] = match ($section) {
             'overview', 'approvals' => [
@@ -1375,14 +1396,16 @@ final class WorkspaceReadRepository
                  FROM (
                     SELECT "company" AS entity_type, c.id, c.name AS title,
                            c.status, c.updated_at, c.company_type AS context,
-                           "ready" AS readiness
+                           "ready" AS readiness,
+                           NULL AS readiness_score
                     FROM companies c
                     WHERE c.status = "pending"
                       AND c.deleted_at IS NULL
                     UNION ALL
                     SELECT "project" AS entity_type, p.id, p.name AS title,
                            p.status, p.updated_at, p.project_type AS context,
-                           CASE WHEN c.status = "approved" THEN "ready" ELSE "blocked" END AS readiness
+                           CASE WHEN c.status = "approved" THEN "ready" ELSE "blocked" END AS readiness,
+                           NULL AS readiness_score
                     FROM projects p
                     INNER JOIN companies c ON c.id = p.company_id
                     WHERE p.status = "pending"
@@ -1391,12 +1414,9 @@ final class WorkspaceReadRepository
                     UNION ALL
                     SELECT "property" AS entity_type, p.id, p.title,
                            p.status, p.updated_at, p.property_type AS context,
-                           CASE
-                               WHEN c.status = "approved"
-                                AND (p.project_id IS NULL OR pr.status IN ("approved", "published"))
-                               THEN "ready"
-                               ELSE "blocked"
-                           END AS readiness
+                           CASE WHEN (' . $propertyReadinessScoreSql . ') = 100
+                                THEN "ready" ELSE "blocked" END AS readiness,
+                           (' . $propertyReadinessScoreSql . ') AS readiness_score
                     FROM properties p
                     INNER JOIN companies c ON c.id = p.company_id
                     LEFT JOIN projects pr
@@ -1408,7 +1428,8 @@ final class WorkspaceReadRepository
                     UNION ALL
                     SELECT "listing" AS entity_type, l.id, p.title,
                            l.status, l.updated_at, l.transaction_type AS context,
-                           CASE WHEN p.status = "approved" THEN "ready" ELSE "blocked" END AS readiness
+                           CASE WHEN p.status = "approved" THEN "ready" ELSE "blocked" END AS readiness,
+                           NULL AS readiness_score
                     FROM listings l
                     INNER JOIN properties p ON p.id = l.property_id
                     WHERE l.status = "pending"
@@ -1499,7 +1520,8 @@ final class WorkspaceReadRepository
             ],
             'properties' => [
                 'SELECT p.id, p.reference_code, p.title, p.slug, p.property_type,
-                        p.location_id, p.status, p.updated_at,
+                        p.project_id, p.location_id, p.address_line, p.area_value, p.area_unit,
+                        p.description, p.status, p.updated_at,
                         c.name AS company_name, c.status AS company_status,
                         pr.name AS project_name, pr.status AS project_status,
                         loc.name AS location_name,
@@ -1509,6 +1531,19 @@ final class WorkspaceReadRepository
                             THEN "ready"
                             ELSE "blocked"
                         END AS marketplace_readiness,
+                        (' . $propertyReadinessScoreSql . ') AS readiness_score,
+                        CASE WHEN (' . $propertyReadinessScoreSql . ') = 100 THEN "ready" ELSE "attention" END AS property_readiness,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_media'] . ') THEN 1 ELSE 0 END AS issue_missing_media,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_primary_media'] . ') THEN 1 ELSE 0 END AS issue_missing_primary_media,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_location'] . ') THEN 1 ELSE 0 END AS issue_missing_location,
+                        CASE WHEN (' . $propertyQualityIssueSql['missing_description'] . ') THEN 1 ELSE 0 END AS issue_missing_description,
+                        CASE WHEN (' . $propertyQualityIssueSql['parent_blocked'] . ') THEN 1 ELSE 0 END AS issue_parent_blocked,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_draft'] . ') THEN 1 ELSE 0 END AS issue_stale_draft,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_30_59'] . ') THEN 1 ELSE 0 END AS issue_stale_30_59,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_60_89'] . ') THEN 1 ELSE 0 END AS issue_stale_60_89,
+                        CASE WHEN (' . $propertyQualityIssueSql['stale_90_plus'] . ') THEN 1 ELSE 0 END AS issue_stale_90_plus,
+                        (SELECT COUNT(*) FROM media_attachments ma WHERE ma.entity_type = "property" AND ma.entity_id = p.id) AS media_count,
+                        (SELECT COUNT(*) FROM media_attachments ma WHERE ma.entity_type = "property" AND ma.entity_id = p.id AND ma.is_primary = 1) AS primary_media_count,
                         (SELECT COUNT(*) FROM listings li
                          WHERE li.property_id = p.id AND li.deleted_at IS NULL) AS listings_count,
                         (SELECT COUNT(*) FROM listings li
@@ -2259,12 +2294,14 @@ final class WorkspaceReadRepository
                 ],
             ],
             'developer:properties' => [
-                'filters' => ['status' => 'status', 'type' => 'property_type', 'location' => 'location_id'],
+                'filters' => ['status' => 'status', 'type' => 'property_type', 'location' => 'location_id', 'readiness' => 'property_readiness', 'quality' => 'quality_issue'],
                 'sorts' => [
                     'updated_desc' => 'updated_at DESC',
                     'updated_asc' => 'updated_at ASC',
                     'name_asc' => 'title ASC',
                     'name_desc' => 'title DESC',
+                    'readiness_desc' => 'readiness_score DESC',
+                    'readiness_asc' => 'readiness_score ASC',
                 ],
             ],
             'developer:listings' => [
@@ -2320,8 +2357,8 @@ final class WorkspaceReadRepository
                 'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'name ASC', 'name_desc' => 'name DESC'],
             ],
             'admin:properties' => [
-                'filters' => ['status' => 'status', 'type' => 'property_type', 'location' => 'location_id'],
-                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'title ASC', 'name_desc' => 'title DESC'],
+                'filters' => ['status' => 'status', 'type' => 'property_type', 'location' => 'location_id', 'readiness' => 'property_readiness', 'quality' => 'quality_issue'],
+                'sorts' => ['updated_desc' => 'updated_at DESC', 'updated_asc' => 'updated_at ASC', 'name_asc' => 'title ASC', 'name_desc' => 'title DESC', 'readiness_desc' => 'readiness_score DESC', 'readiness_asc' => 'readiness_score ASC'],
             ],
             'admin:listings' => [
                 'filters' => ['status' => 'status', 'type' => 'transaction_type', 'location' => 'location_id'],
@@ -2419,6 +2456,25 @@ final class WorkspaceReadRepository
             $value = trim((string) ($filters[$filterKey] ?? ''));
 
             if ($value === '') {
+                continue;
+            }
+
+            if ($filterKey === 'quality') {
+                $qualityColumns = [
+                    'missing_media' => 'issue_missing_media',
+                    'missing_primary_media' => 'issue_missing_primary_media',
+                    'missing_location' => 'issue_missing_location',
+                    'missing_description' => 'issue_missing_description',
+                    'parent_blocked' => 'issue_parent_blocked',
+                    'stale_draft' => 'issue_stale_draft',
+                    'stale_30_59' => 'issue_stale_30_59',
+                    'stale_60_89' => 'issue_stale_60_89',
+                    'stale_90_plus' => 'issue_stale_90_plus',
+                ];
+                if (!isset($qualityColumns[$value])) {
+                    continue;
+                }
+                $outerWhere[] = $qualityColumns[$value] . ' = 1';
                 continue;
             }
 

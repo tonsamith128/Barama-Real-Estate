@@ -47,6 +47,14 @@
     text-underline-offset: 3px;
 }
 
-.content-page__body.cms-rich-content [data-align="center"] { text-align: center; }
-.content-page__body.cms-rich-content [data-align="right"] { text-align: right; }
-.content-page__body.cms-rich-content [data-align="justify"] { text-align: justify; }
+.content-page__body.cms-rich-content [data-align="center"] {
+    text-align: center;
+}
+
+.content-page__body.cms-rich-content [data-align="right"] {
+    text-align: right;
+}
+
+.content-page__body.cms-rich-content [data-align="justify"] {
+    text-align: justify;
+}
