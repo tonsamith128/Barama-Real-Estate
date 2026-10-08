@@ -42,6 +42,7 @@ final class MailSettingsService
             'username' => self::maskedUsername((string) ($config['username'] ?? '')),
             'has_password' => (string) ($config['password'] ?? '') !== '',
             'saved_override' => $this->store()->exists(),
+            'test_disabled' => self::testDisabled(),
             'ready' => (string) ($config['from_address'] ?? '') !== ''
                 && ((string) ($config['driver'] ?? '') !== 'smtp'
                     || (string) ($config['host'] ?? '') !== ''),
@@ -63,28 +64,44 @@ final class MailSettingsService
         );
     }
 
-    /** Sends only to the signed-in administrator; never trusts recipient input. */
-    public function sendTest(): void
+    /**
+     * Accept a separate, explicitly entered test recipient because publicly
+     * demonstrated administrator accounts may use non-deliverable addresses.
+     *
+     * The recipient is never persisted to application settings. The global
+     * send quota protects publicly accessible demonstration admin accounts.
+     */
+    public function sendTest(string $recipient): void
     {
         $userId = $this->assertAdministrator();
-        $user = auth_user();
-        $to = strtolower(trim((string) ($user['email'] ?? '')));
-        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('Your administrator account needs a valid email address.');
+        if (self::testDisabled()) {
+            throw new DomainException('Sending test emails is disabled on this installation.');
         }
+        $to = self::validateTestRecipient($recipient);
 
         $mail = $this->effectiveConfig();
-        if (!in_array((string) ($mail['driver'] ?? ''), ['mail', 'smtp'], true)) {
-            throw new DomainException('Save a PHP Mail or SMTP configuration before sending a test.');
+        if (!in_array((string) ($mail['driver'] ?? ''), ['mail', 'smtp'], true)
+            || !filter_var((string) ($mail['from_address'] ?? ''), FILTER_VALIDATE_EMAIL)) {
+            throw new DomainException('Save a valid PHP Mail or SMTP configuration before sending a test.');
         }
+
+        // Rate-limit BEFORE network activity; unsuccessful attempts count so
+        // repeated errors cannot bypass the demo-protection quota.
+        (new MailTestLimiter())->consume();
 
         $sent = (new MailService($mail))->send(
             $to,
             'Barama Real Estate mail setup test',
-            '<p>Barama Mail Setup successfully sent this message.</p>',
-            'Barama Mail Setup successfully sent this message.'
+            '<p>Barama Mail Setup submitted this test message to the configured mail transport.</p>',
+            'Barama Mail Setup submitted this test message to the configured mail transport.'
         );
         if (!$sent) {
+            (new SecurityAuditService())->record(
+                'admin.mail_settings_test_failed',
+                $userId,
+                null,
+                ['driver' => (string) $mail['driver']]
+            );
             throw new DomainException(
                 'Mail test failed. Check the mail delivery logs and your hosting transport configuration.'
             );
@@ -96,6 +113,23 @@ final class MailSettingsService
             null,
             ['driver' => (string) $mail['driver']]
         );
+    }
+
+    public static function validateTestRecipient(string $recipient): string
+    {
+        $recipient = trim($recipient);
+        if ($recipient === '' || strlen($recipient) > 191
+            || preg_match('/[\x00-\x1f\x7f,;]/', $recipient) === 1
+            || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Enter one valid test recipient email address.');
+        }
+
+        return $recipient;
+    }
+
+    public static function testDisabled(): bool
+    {
+        return filter_var((string) env('MAIL_TEST_DISABLED', 'false'), FILTER_VALIDATE_BOOLEAN);
     }
 
     /** @param array<string,mixed> $input
