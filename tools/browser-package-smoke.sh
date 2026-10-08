@@ -594,6 +594,32 @@ try {
         await page.locator('input[name="mail_username"]').inputValue() === '••••@gmail.com',
         'Saved Gmail SMTP identity was altered by masked edit.'
     );
+    // Custom test recipients are no longer tied to the administrator login,
+    // which may intentionally use a non-deliverable demo identity. Do not
+    // submit this form during QA; it can dispatch a real external email.
+    const testRecipient = page.locator('input[name="mail_test_recipient"]');
+    assert(
+        await testRecipient.count() === 1
+            && await testRecipient.getAttribute('type') === 'email'
+            && await testRecipient.getAttribute('required') !== null,
+        'Mail Setup must require a dedicated validated custom test recipient.'
+    );
+    assert(
+        (await testRecipient.inputValue()) === '',
+        'Custom test recipient must never be populated from the demo administrator address.'
+    );
+    await testRecipient.fill('test.recipient@example.org');
+    assert(
+        await testRecipient.evaluate((input) => input.checkValidity()),
+        'Valid custom test recipient was not accepted in the form.'
+    );
+    await testRecipient.fill('not-a-real-email');
+    assert(
+        !(await testRecipient.evaluate((input) => input.checkValidity())),
+        'Invalid custom test recipient passed browser validation.'
+    );
+    await testRecipient.fill('');
+
     await page.screenshot({
         path: artifacts + '/admin-mail-settings-desktop.png',
         fullPage: true,
