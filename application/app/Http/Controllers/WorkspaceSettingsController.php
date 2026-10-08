@@ -207,8 +207,14 @@ final class WorkspaceSettingsController
                     $mail->save($request->all());
                     $message = 'Mail Setup saved securely. Send a test email to confirm delivery.';
                 } elseif ($action === 'test') {
-                    $mail->sendTest();
-                    $message = 'Test email sent to your administrator email address.';
+                    $recipient = $request->input('mail_test_recipient', '');
+                    if (!is_string($recipient)) {
+                        throw new InvalidArgumentException('Enter one valid test recipient email address.');
+                    }
+                    $mail->sendTest($recipient);
+                    // A successful SMTP handoff does not establish inbox delivery.
+                    // Do not put the user-supplied recipient into a URL or logs.
+                    $message = 'Test message submitted to mail transport. Check the recipient inbox and Spam folder.';
                 } else {
                     throw new InvalidArgumentException('Select a supported mail action.');
                 }
