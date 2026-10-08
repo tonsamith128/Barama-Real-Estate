@@ -327,7 +327,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                     browserName + ' administrator login did not complete.'
                 );
 
-                for (const path of ['/account', '/developer', '/dashboard']) {
+                for (const path of ['/account', '/developer', '/dashboard', '/dashboard/settings/mail']) {
                     const response = await page.goto(installedBase + path, {
                         waitUntil: 'networkidle',
                     });
@@ -534,6 +534,56 @@ try {
             fullPage: true,
         });
     }
+
+    // Mail Setup is a customer-facing administrator configuration surface.
+    // Exercise the exact package, not just isolated repository unit tests.
+    const mailSetupResponse = await page.goto(
+        installedBase + '/dashboard/settings/mail',
+        { waitUntil: 'networkidle' }
+    );
+    assert(
+        mailSetupResponse && mailSetupResponse.ok(),
+        'Authenticated administrator Mail Setup is unavailable.'
+    );
+    await seriousAccessibility(page, 'admin mail setup');
+    assert(
+        await page.locator('select[name="mail_driver"]').count() === 1,
+        'Mail Setup delivery method selector is missing.'
+    );
+    await page.locator('select[name="mail_driver"]').selectOption('smtp');
+    await page.locator('input[name="mail_from_name"]').fill('Browser Test Mailer');
+    await page.locator('input[name="mail_from_address"]').fill('noreply@example.test');
+    await page.locator('input[name="mail_host"]').fill('smtp.example.test');
+    await page.locator('input[name="mail_port"]').fill('587');
+    await page.locator('select[name="mail_encryption"]').selectOption('tls');
+    await page.locator('input[name="mail_username"]').fill('browser@example.test');
+    const qaMailPassword = 'Browser-QA-Encrypted-SMTP-Only-123!';
+    await page.locator('input[name="mail_password"]').fill(qaMailPassword);
+    await page.locator('button[type="submit"]').filter({ hasText: 'Save Mail Setup' }).click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        page.url().includes('/dashboard/settings/mail')
+            && page.url().includes('saved=1'),
+        'Admin Mail Setup did not persist and redirect successfully.'
+    );
+    const mailHtml = await page.content();
+    assert(
+        !mailHtml.includes(qaMailPassword),
+        'Saved SMTP secret was exposed in the returned HTML.'
+    );
+    assert(
+        await page.locator('input[name="mail_password"]').inputValue() === '',
+        'Saved SMTP password must remain masked/empty in the editor.'
+    );
+    assert(
+        await page.locator('input[name="mail_host"]').inputValue() === 'smtp.example.test',
+        'Saved SMTP host was not persisted.'
+    );
+    await page.screenshot({
+        path: artifacts + '/admin-mail-settings-desktop.png',
+        fullPage: true,
+    });
+    console.log('[PASS] Exact customer Mail Setup: administrator save, reload and password redaction.');
 
     await page.goto(installedBase + '/dashboard', { waitUntil: 'networkidle' });
     await page.setViewportSize({ width: 390, height: 844 });
