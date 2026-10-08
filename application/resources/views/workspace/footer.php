@@ -30,7 +30,7 @@ $networks = [
         <p class="barama-footer-editor__notice barama-footer-editor__notice--error" role="alert"><?= e((string) $footerError) ?></p>
     <?php endif; ?>
 
-    <form class="barama-footer-editor__form" action="<?= e(url('/dashboard/footer')) ?>" method="post">
+    <form class="barama-footer-editor__form" action="<?= e(url('/dashboard/footer')) ?>" method="post" data-workspace-form>
         <?= csrf_field() ?>
         <section class="barama-footer-editor__section" aria-labelledby="footer-layout-heading">
             <div class="barama-footer-editor__section-head">
