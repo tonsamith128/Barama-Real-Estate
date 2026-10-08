@@ -153,6 +153,9 @@ jobs:
       - name: Run notification delivery smoke test
         run: php tools/notification-smoke.php
 
+      - name: Run compact Mail Queue pagination and pending-status QA
+        run: php tools/mail-queue-pagination-smoke.php
+
       - name: Run encrypted Admin Mail Setup smoke test
         run: php tools/admin-mail-settings-smoke.php
 
