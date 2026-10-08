@@ -19,7 +19,12 @@ final class FooterContentService
         }
 
         $new = self::validate($input);
-        (new FooterContentRepository())->save($new);
+        $repository = new FooterContentRepository();
+        if (!array_key_exists('footer_links_submitted', $input)) {
+            // Older open forms must retain the stored links during upgrades.
+            $new['links'] = $repository->get()['links'];
+        }
+        $repository->save($new);
         (new SecurityAuditService())->record(
             'admin.footer_content_updated',
             (int) (auth_user()['id'] ?? 0),
@@ -93,11 +98,10 @@ final class FooterContentService
         }
         $config['social'] = $social;
 
-        $old = (new FooterContentRepository())->get();
         if (!array_key_exists('footer_links_submitted', $input)) {
-            // An older form in an already-open browser must not silently
-            // erase previously saved links while upgrading from CI485.
-            $config['links'] = $old['links'];
+            // The update method preserves stored links for legacy browsers;
+            // pure validation remains deterministic and DB-independent.
+            $config['links'] = FooterContentRepository::defaultLinks($config);
             return $config;
         }
 
