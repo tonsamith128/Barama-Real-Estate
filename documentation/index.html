@@ -32,7 +32,7 @@
             <h2>System requirements</h2>
             <ul>
                 <li>PHP 8.2 or newer</li>
-                <li>MySQL 8.0+ or MariaDB 10.6+</li>
+                <li>MySQL 8.0+ or MariaDB 10.6+, with CREATE, DROP and TRIGGER privileges for the email audit history check. The database account also needs standard migration DDL and data privileges.</li>
                 <li>PDO and PDO MySQL</li>
                 <li>JSON, Mbstring, Ctype, Session, OpenSSL, Fileinfo, and cURL extensions</li>
                 <li>Writable Barama application runtime directories</li>
@@ -54,6 +54,7 @@
                 <li>Review <strong>System Health / Finish</strong> and open the website.</li>
             </ol>
             <p>The customer-facing installer always contains exactly five visible steps. Permissions checks remain inside Requirements. Requirements are shown in a clean status table, and the header language control shows flag + language options for English, Khmer, and Chinese.</p>
+            <p><strong>Database compatibility:</strong> Step 3 briefly creates and deletes an isolated test table and two triggers to verify your host supports append-only email audit history. Some shared-hosting databases restrict TRIGGER privileges or binary-log trigger creation. Ask your host to enable the necessary privileges and, if required, the server-managed <code>log_bin_trust_function_creators</code> setting. Installation stops safely rather than disabling audit protection. No customer-facing server setting is modified automatically.</p>
             <p><strong>Existing Database</strong> uses database credentials already created by your hosting provider. <strong>Create Database</strong> asks for database-server administrative access, creates a dedicated database and application user, verifies the new connection, and does not store the administrative credentials.</p>
         </section>
 
