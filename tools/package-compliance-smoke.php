@@ -327,6 +327,7 @@ $allowedHosts = [
     'codecanyon.net',
     'getbootstrap.com',
     'github.com',
+    'i.ytimg.com', // YouTube thumbnail host used by the email template builder.
     'tonsamith.com',
     'youtube.com',
     'youtube-nocookie.com',

@@ -1,0 +1,133 @@
+
+/* BARAMA_ADMIN_SECURITY_HARDENING_V123 */
+.barama-security-session {
+    display: grid;
+    gap: 12px;
+}
+
+.barama-security-session__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 0;
+    border-top: 1px solid var(--settings-border);
+}
+
+.barama-security-session__row:first-child {
+    border-top: 0;
+}
+
+.barama-security-session__row span {
+    color: var(--settings-muted);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.barama-security-session__row strong {
+    max-width: 64%;
+    text-align: right;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.barama-security-activity {
+    display: grid;
+}
+
+.barama-security-activity__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 0;
+    border-top: 1px solid var(--settings-border);
+}
+
+.barama-security-activity__item:first-child {
+    border-top: 0;
+}
+
+.barama-security-activity__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    color: var(--settings-accent);
+    background: var(--settings-accent-soft);
+}
+
+.barama-security-activity__icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.barama-security-activity__copy {
+    min-width: 0;
+}
+
+.barama-security-activity__copy strong,
+.barama-security-activity__copy small {
+    display: block;
+}
+
+.barama-security-activity__copy strong {
+    font-size: 11px;
+}
+
+.barama-security-activity__copy small {
+    margin-top: 3px;
+    color: var(--settings-muted);
+    font-size: 9.5px;
+    line-height: 1.45;
+}
+
+.barama-security-activity__time {
+    color: var(--settings-muted);
+    font-size: 9.5px;
+    white-space: nowrap;
+}
+
+.barama-security-action-card {
+    border-color: color-mix(in srgb, var(--settings-accent) 22%, var(--settings-border));
+}
+
+.barama-security-action-card .btn {
+    width: 100%;
+}
+
+.barama-security-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 13px;
+    padding: 12px;
+    border: 1px solid var(--settings-border);
+    border-radius: 13px;
+    color: var(--settings-muted);
+    background: color-mix(in srgb, var(--settings-panel-strong) 66%, transparent);
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.barama-security-note svg {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: var(--settings-accent);
+}
+
+@media (max-width: 760px) {
+    .barama-security-activity__item {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .barama-security-activity__time {
+        grid-column: 2;
+    }
+
+    .barama-security-session__row {
+        align-items: flex-start;
+    }
+}

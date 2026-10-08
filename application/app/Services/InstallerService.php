@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Barama\Services;
 
 use Barama\Core\Installation;
+use Barama\Repositories\MailSettingsRepository;
 use Barama\Support\IdGenerator;
 use Barama\Support\Locale;
 use Barama\Support\MigrationCatalog;
+use Barama\Support\TriggerCapabilityProbe;
 use DateTimeZone;
 use PDO;
 use PDOException;
@@ -84,16 +86,17 @@ final class InstallerService
             );
         }
 
+        $css = glob(BASE_PATH . '/assets/css/*.css') ?: [];
+        $js = glob(BASE_PATH . '/assets/js/*.js') ?: [];
+
         $checks[] = $this->requiredCheck(
             'Canonical stylesheet',
-            is_file(BASE_PATH . '/assets/css/app.css')
-                && is_readable(BASE_PATH . '/assets/css/app.css'),
+            count($css) === 1 && basename((string) ($css[0] ?? '')) === 'app.css',
             'assets/css/app.css'
         );
         $checks[] = $this->requiredCheck(
             'Canonical JavaScript',
-            is_file(BASE_PATH . '/assets/js/app.js')
-                && is_readable(BASE_PATH . '/assets/js/app.js'),
+            count($js) === 1 && basename((string) ($js[0] ?? '')) === 'app.js',
             'assets/js/app.js'
         );
 
@@ -292,6 +295,9 @@ final class InstallerService
 
         $this->assertSupportedDatabase($connection);
         $this->assertDatabaseSuitable($connection);
+        // Inspect real trigger capabilities before Step 4, while the customer
+        // can still select another host/database without any migrations.
+        TriggerCapabilityProbe::assertSupported($connection);
 
         return [
             'host' => $database['host'],
@@ -652,8 +658,6 @@ final class InstallerService
             (string) $license['domain']
         );
 
-        $this->removeKnownHostingPlaceholder();
-
         $pdo = $this->connect(
             $database['host'],
             $database['port'],
@@ -836,21 +840,32 @@ SQL);
             'Production configuration is stored securely.'
         );
 
+        // Post-install Mail Setup overrides the original installer defaults.
+        // Never describe a corrupted encrypted override as a healthy fallback.
+        $mailOverride = [];
+        if (Installation::isInstalled()) {
+            try {
+                $mailOverride = (new MailSettingsRepository())->get();
+            } catch (Throwable) {
+                $mailOverride = ['driver' => 'invalid'];
+            }
+        }
+
         $mailDriver = strtolower(trim((string) (
-            $runtime['MAIL_DRIVER'] ?? ''
+            $mailOverride['driver'] ?? $runtime['MAIL_DRIVER'] ?? ''
         )));
         $mailHealthy = in_array($mailDriver, ['smtp', 'mail'], true)
             && filter_var(
-                (string) ($runtime['MAIL_FROM_ADDRESS'] ?? ''),
+                (string) ($mailOverride['from_address'] ?? $runtime['MAIL_FROM_ADDRESS'] ?? ''),
                 FILTER_VALIDATE_EMAIL
             ) !== false;
 
         if ($mailDriver === 'smtp') {
             $mailHealthy = $mailHealthy
-                && trim((string) ($runtime['MAIL_HOST'] ?? '')) !== ''
-                && (int) ($runtime['MAIL_PORT'] ?? 0) >= 1
+                && trim((string) ($mailOverride['host'] ?? $runtime['MAIL_HOST'] ?? '')) !== ''
+                && (int) ($mailOverride['port'] ?? $runtime['MAIL_PORT'] ?? 0) >= 1
                 && in_array(
-                    strtolower((string) ($runtime['MAIL_ENCRYPTION'] ?? '')),
+                    strtolower((string) ($mailOverride['encryption'] ?? $runtime['MAIL_ENCRYPTION'] ?? '')),
                     ['tls', 'ssl', 'none'],
                     true
                 );
@@ -985,16 +1000,19 @@ SQL);
             'Required runtime folders are writable.'
         );
 
+        $css = glob(BASE_PATH . '/assets/css/*.css') ?: [];
+        $js = glob(BASE_PATH . '/assets/js/*.js') ?: [];
+
         $checks[] = $this->healthCheck(
             'Canonical stylesheet',
-            is_file(BASE_PATH . '/assets/css/app.css')
-                && is_readable(BASE_PATH . '/assets/css/app.css'),
+            count($css) === 1
+                && basename((string) ($css[0] ?? '')) === 'app.css',
             'assets/css/app.css'
         );
         $checks[] = $this->healthCheck(
             'Canonical JavaScript',
-            is_file(BASE_PATH . '/assets/js/app.js')
-                && is_readable(BASE_PATH . '/assets/js/app.js'),
+            count($js) === 1
+                && basename((string) ($js[0] ?? '')) === 'app.js',
             'assets/js/app.js'
         );
 
@@ -1258,6 +1276,7 @@ SQL);
 
             $this->assertSupportedDatabase($connection);
             $this->assertDatabaseSuitable($connection);
+            TriggerCapabilityProbe::assertSupported($connection);
         } catch (Throwable $exception) {
             if ($userCreated) {
                 try {
@@ -1612,47 +1631,6 @@ SQL);
             'status' => $passed ? 'pass' : 'fix',
             'detail' => $detail,
         ];
-    }
-
-    private function removeKnownHostingPlaceholder(): void
-    {
-        $path = BASE_PATH . '/index.html';
-
-        if (!is_file($path)) {
-            return;
-        }
-
-        $contents = @file_get_contents($path);
-
-        if (!is_string($contents)) {
-            throw new RuntimeException(
-                'The hosting placeholder index.html could not be inspected.'
-            );
-        }
-
-        $knownAaPanelPlaceholder =
-            str_contains(
-                $contents,
-                'Congratulations, the site is created successfully!'
-            )
-            && str_contains(
-                $contents,
-                'This is the default index.html, this page is automatically generated by the system'
-            );
-        $knownBaramaBootstrap = str_contains(
-            $contents,
-            'BARAMA_INSTALLER_BOOTSTRAP_V1'
-        );
-
-        if (!$knownAaPanelPlaceholder && !$knownBaramaBootstrap) {
-            return;
-        }
-
-        if (!@unlink($path)) {
-            throw new RuntimeException(
-                'Remove the hosting provider default index.html and retry installation.'
-            );
-        }
     }
 
     private function relative(string $path): string

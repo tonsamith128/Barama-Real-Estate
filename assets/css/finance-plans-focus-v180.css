@@ -1,0 +1,73 @@
+/* Barama Finance Plans Inventory Focus v1.8.0 */
+
+/*
+ * Keep the main Plans workspace focused on configured inventory.
+ * Presets remain available inside the existing Create/Edit Plan dialog.
+ */
+.finance-plans .finance-plans__tiers {
+    display: none;
+}
+
+/*
+ * Existing table source remains intact. Hide secondary entitlement-detail
+ * columns from the primary list; they remain available in edit/create UI.
+ *
+ * Source order:
+ * 1 No. | 2 Plan | 3 Price | 4 Interval | 5 Listings | 6 Properties
+ * 7 Projects | 8 Team | 9 Featured | 10 Subscriptions | 11 Status | 12 Actions
+ */
+.finance-plans .finance-plans__table th:nth-child(1),
+.finance-plans .finance-plans__table td:nth-child(1),
+.finance-plans .finance-plans__table th:nth-child(5),
+.finance-plans .finance-plans__table td:nth-child(5),
+.finance-plans .finance-plans__table th:nth-child(6),
+.finance-plans .finance-plans__table td:nth-child(6),
+.finance-plans .finance-plans__table th:nth-child(7),
+.finance-plans .finance-plans__table td:nth-child(7),
+.finance-plans .finance-plans__table th:nth-child(8),
+.finance-plans .finance-plans__table td:nth-child(8),
+.finance-plans .finance-plans__table th:nth-child(9),
+.finance-plans .finance-plans__table td:nth-child(9) {
+    display: none;
+}
+
+.finance-plans .finance-plans__table {
+    min-width: 760px;
+}
+
+.finance-plans .finance-plans__table th:nth-child(2),
+.finance-plans .finance-plans__table td:nth-child(2) {
+    width: 34%;
+}
+
+.finance-plans .finance-plans__table th:nth-child(3),
+.finance-plans .finance-plans__table td:nth-child(3) {
+    width: 16%;
+}
+
+.finance-plans .finance-plans__table th:nth-child(4),
+.finance-plans .finance-plans__table td:nth-child(4) {
+    width: 15%;
+}
+
+.finance-plans .finance-plans__table th:nth-child(10),
+.finance-plans .finance-plans__table td:nth-child(10) {
+    width: 15%;
+}
+
+.finance-plans .finance-plans__table th:nth-child(11),
+.finance-plans .finance-plans__table td:nth-child(11) {
+    width: 14%;
+}
+
+.finance-plans .finance-plans__table th:nth-child(12),
+.finance-plans .finance-plans__table td:nth-child(12) {
+    width: 44px;
+    text-align: right;
+}
+
+@media (max-width: 900px) {
+    .finance-plans .finance-plans__table {
+        min-width: 680px;
+    }
+}

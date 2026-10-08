@@ -1,0 +1,17 @@
+/* Barama Catalog Table Focus v1.6.7 */
+.workspace-catalog-item,
+.workspace-catalog-hierarchy,
+.workspace-catalog-usage,
+.workspace-catalog-state { display:grid; gap:.28rem; min-width:0; }
+.workspace-catalog-item__meta,
+.workspace-catalog-hierarchy__meta { display:flex; flex-wrap:wrap; align-items:center; gap:.32rem .48rem; }
+.workspace-catalog-item__meta span,
+.workspace-catalog-hierarchy__meta span { display:inline-flex; align-items:center; min-width:0; }
+.workspace-catalog-item__meta span + span::before,
+.workspace-catalog-hierarchy__meta span + span::before { content:"•"; margin-right:.48rem; opacity:.48; }
+@media (max-width:900px) {
+  .workspace-catalog-item__meta,
+  .workspace-catalog-hierarchy__meta { display:grid; gap:.2rem; }
+  .workspace-catalog-item__meta span + span::before,
+  .workspace-catalog-hierarchy__meta span + span::before { content:none; margin:0; }
+}

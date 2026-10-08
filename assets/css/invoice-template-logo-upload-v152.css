@@ -1,0 +1,141 @@
+
+/*
+ * Barama Invoice Template Logo Upload v1.5.2
+ * Keeps the existing Logo URL / site path field and adds Upload | Drag & Drop.
+ */
+
+.invoice-template-logo-upload {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.invoice-template-logo-dropzone {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 82px;
+    padding: 14px;
+    border: 1.5px dashed var(--it-border, #2a3a51);
+    border-radius: 13px;
+    background: var(--it-surface-soft, #142236);
+    color: var(--it-text, #eef4ff);
+    transition:
+        border-color .16s ease,
+        background-color .16s ease,
+        box-shadow .16s ease;
+}
+
+.invoice-template-logo-dropzone:hover,
+.invoice-template-logo-dropzone:focus-within,
+.invoice-template-logo-dropzone.is-dragover {
+    border-color: var(--it-accent, #5f8cff);
+    background: color-mix(
+        in srgb,
+        var(--it-accent, #5f8cff) 10%,
+        var(--it-surface-soft, #142236)
+    );
+}
+
+.invoice-template-logo-dropzone.is-dragover {
+    box-shadow: 0 0 0 3px
+        color-mix(in srgb, var(--it-accent, #5f8cff) 14%, transparent);
+}
+
+.invoice-template-logo-upload__icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: var(--it-accent-soft, rgba(95, 140, 255, .14));
+    color: var(--it-accent, #5f8cff);
+}
+
+.invoice-template-logo-upload__icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.invoice-template-logo-upload__copy strong {
+    display: block;
+    color: var(--it-text, #eef4ff);
+    font-size: .86rem;
+    line-height: 1.35;
+}
+
+.invoice-template-logo-upload__copy span {
+    display: block;
+    margin-top: 3px;
+    color: var(--it-muted, #9eabc0);
+    font-size: .74rem;
+    line-height: 1.4;
+}
+
+.invoice-template-logo-upload__browse {
+    min-height: 36px;
+    padding: 7px 11px;
+    border: 1px solid var(--it-border, #2a3a51);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--it-text, #eef4ff);
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.invoice-template-logo-upload__browse:hover {
+    border-color: var(--it-accent, #5f8cff);
+    background: var(--it-accent-soft, rgba(95, 140, 255, .14));
+}
+
+.invoice-template-logo-upload__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.invoice-template-logo-upload__status {
+    color: var(--it-muted, #9eabc0);
+    font-size: .73rem;
+    line-height: 1.4;
+}
+
+.invoice-template-logo-upload__status.is-ready {
+    color: var(--it-text, #eef4ff);
+}
+
+.invoice-template-logo-upload__status.is-error {
+    color: #ef6679;
+}
+
+.invoice-template-logo-upload__clear {
+    display: none;
+    flex: 0 0 auto;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--it-accent, #5f8cff);
+    font: inherit;
+    font-size: .73rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.invoice-template-logo-upload__clear.is-visible {
+    display: inline-flex;
+}
+
+@media (max-width: 620px) {
+    .invoice-template-logo-dropzone {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .invoice-template-logo-upload__browse {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+}

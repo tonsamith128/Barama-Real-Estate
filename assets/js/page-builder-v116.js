@@ -3,7 +3,8 @@
     'use strict';
 
     const qs = (selector, root = document) => root.querySelector(selector);
-    const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+    const qsa = (selector, root = document) =>
+        Array.from(root.querySelectorAll(selector));
 
     const iconState = (button, active) => {
         if (!(button instanceof HTMLElement)) return;
@@ -38,16 +39,24 @@
         try {
             document.execCommand('defaultParagraphSeparator', false, 'p');
         } catch (_) {
-            // Browser may not expose this command; sanitizer still normalizes blocks.
+            // Sanitizer still normalizes browser-generated div blocks.
         }
 
         const showToast = (message, error = false) => {
             if (!(toast instanceof HTMLElement)) return;
-            toast.textContent = message || (error ? 'The request could not be completed.' : 'Saved.');
+
+            toast.textContent = message
+                || (error ? 'The request could not be completed.' : 'Saved.');
             toast.classList.toggle('is-error', error);
             toast.classList.remove('is-visible');
-            window.requestAnimationFrame(() => toast.classList.add('is-visible'));
-            window.setTimeout(() => toast.classList.remove('is-visible'), 2800);
+
+            window.requestAnimationFrame(() => {
+                toast.classList.add('is-visible');
+            });
+
+            window.setTimeout(() => {
+                toast.classList.remove('is-visible');
+            }, 2800);
         };
 
         const slugify = (value) => String(value || '')
@@ -61,32 +70,53 @@
 
         const updateUrl = () => {
             const value = slugify(slug.value);
+
             if (slug.value !== value && slug.value.trim() !== '') {
                 slug.value = value;
             }
 
-            const url = baseUrl.replace(/\/$/, '') + '/' + value;
+            const url =
+                baseUrl.replace(/\/$/, '') + '/pages/' + value;
+
             if (fullUrl instanceof HTMLElement) {
-                fullUrl.textContent = value ? url : baseUrl.replace(/\/$/, '') + '/…';
+                fullUrl.textContent = value
+                    ? url
+                    : baseUrl.replace(/\/$/, '') + '/pages/…';
                 fullUrl.dataset.copyValue = value ? url : '';
             }
         };
 
         const syncEditor = () => {
             hidden.value = editor.innerHTML.trim();
+
             const text = (editor.innerText || '').trim();
-            const words = text === '' ? 0 : text.split(/\s+/).filter(Boolean).length;
+            const words = text === ''
+                ? 0
+                : text.split(/\s+/).filter(Boolean).length;
+
             if (wordCount instanceof HTMLElement) {
-                wordCount.textContent = String(words) + (words === 1 ? ' word' : ' words');
+                wordCount.textContent =
+                    String(words) + (words === 1 ? ' word' : ' words');
             }
         };
 
         const block = () => {
             const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) return null;
+
+            if (!selection || selection.rangeCount === 0) {
+                return null;
+            }
+
             let node = selection.anchorNode;
-            if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-            if (!(node instanceof HTMLElement)) return null;
+
+            if (node && node.nodeType === Node.TEXT_NODE) {
+                node = node.parentElement;
+            }
+
+            if (!(node instanceof HTMLElement)) {
+                return null;
+            }
+
             return node.closest('p,h2,h3,h4,blockquote,li,pre') || node;
         };
 
@@ -97,20 +127,33 @@
         };
 
         qsa('[data-editor-command]', builder).forEach((button) => {
-            button.addEventListener('mousedown', (event) => event.preventDefault());
+            button.addEventListener(
+                'mousedown',
+                (event) => event.preventDefault()
+            );
+
             button.addEventListener('click', () => {
                 const command = button.dataset.editorCommand || '';
+
                 if (!command) return;
 
                 if (command === 'createLink') {
                     const href = window.prompt('Enter link URL');
-                    if (href && href.trim()) exec('createLink', href.trim());
+
+                    if (href && href.trim()) {
+                        exec('createLink', href.trim());
+                    }
+
                     return;
                 }
 
                 if (command === 'insertImage') {
                     const src = window.prompt('Enter image URL');
-                    if (src && /^https?:\/\//i.test(src.trim())) exec('insertImage', src.trim());
+
+                    if (src && /^https?:\/\//i.test(src.trim())) {
+                        exec('insertImage', src.trim());
+                    }
+
                     return;
                 }
 
@@ -132,12 +175,18 @@
         });
 
         qsa('[data-editor-align]', builder).forEach((button) => {
-            button.addEventListener('mousedown', (event) => event.preventDefault());
+            button.addEventListener(
+                'mousedown',
+                (event) => event.preventDefault()
+            );
+
             button.addEventListener('click', () => {
                 const target = block();
+
                 if (!(target instanceof HTMLElement)) return;
 
                 const align = button.dataset.editorAlign || 'left';
+
                 if (align === 'left') {
                     target.removeAttribute('data-align');
                     target.style.textAlign = '';
@@ -151,18 +200,35 @@
         });
 
         document.addEventListener('selectionchange', () => {
-            if (!editor.contains(document.activeElement) && !editor.contains(window.getSelection()?.anchorNode || null)) {
+            const selection = window.getSelection();
+            const selectedNode = selection?.anchorNode || null;
+
+            if (!editor.contains(document.activeElement)
+                && !editor.contains(selectedNode)) {
                 return;
             }
 
             qsa('[data-editor-command]', builder).forEach((button) => {
                 const command = button.dataset.editorCommand || '';
-                if (!['bold','italic','underline','strikeThrough','insertUnorderedList','insertOrderedList','subscript','superscript'].includes(command)) {
+
+                if (![
+                    'bold',
+                    'italic',
+                    'underline',
+                    'strikeThrough',
+                    'insertUnorderedList',
+                    'insertOrderedList',
+                    'subscript',
+                    'superscript'
+                ].includes(command)) {
                     return;
                 }
 
                 try {
-                    iconState(button, document.queryCommandState(command));
+                    iconState(
+                        button,
+                        document.queryCommandState(command)
+                    );
                 } catch (_) {
                     iconState(button, false);
                 }
@@ -184,8 +250,12 @@
 
         copyButton?.addEventListener('click', async () => {
             const value = fullUrl?.dataset.copyValue || '';
+
             if (!value) {
-                showToast('Add a page slug before copying the URL.', true);
+                showToast(
+                    'Add a page slug before copying the URL.',
+                    true
+                );
                 return;
             }
 
@@ -197,10 +267,12 @@
                 temp.value = value;
                 temp.style.position = 'fixed';
                 temp.style.opacity = '0';
+
                 document.body.appendChild(temp);
                 temp.select();
                 document.execCommand('copy');
                 temp.remove();
+
                 showToast('Full page URL copied.');
             }
         });
@@ -209,19 +281,29 @@
 
         qsa('[data-seo-count-source]', builder).forEach((field) => {
             const targetId = field.dataset.seoCountTarget;
-            const target = targetId ? qs('#' + CSS.escape(targetId), builder) : null;
+            const target = targetId
+                ? qs('#' + CSS.escape(targetId), builder)
+                : null;
+
             const update = () => {
                 if (target instanceof HTMLElement) {
-                    target.textContent = String(field.value.length) + ' / ' + String(field.maxLength || '');
+                    target.textContent =
+                        String(field.value.length)
+                        + ' / '
+                        + String(field.maxLength || '');
                 }
             };
+
             field.addEventListener('input', update);
             update();
         });
 
         const submitJsonForm = async (targetForm) => {
             const button = qs('[type="submit"]', targetForm);
-            const previous = button instanceof HTMLButtonElement ? button.textContent : '';
+            const previous =
+                button instanceof HTMLButtonElement
+                    ? button.textContent
+                    : '';
 
             if (button instanceof HTMLButtonElement) {
                 button.disabled = true;
@@ -239,10 +321,14 @@
                     credentials: 'same-origin'
                 });
 
-                const payload = await response.json().catch(() => ({}));
+                const payload =
+                    await response.json().catch(() => ({}));
 
                 if (!response.ok || payload.ok !== true) {
-                    throw new Error(payload.message || 'The request could not be completed.');
+                    throw new Error(
+                        payload.message
+                        || 'The request could not be completed.'
+                    );
                 }
 
                 return payload.data || {};
@@ -260,38 +346,69 @@
 
             try {
                 const data = await submitJsonForm(form);
-                showToast(mode === 'create' ? 'Page draft created.' : 'Page saved successfully.');
+
+                showToast(
+                    mode === 'create'
+                        ? 'Page draft created.'
+                        : 'Page saved successfully.'
+                );
 
                 if (mode === 'create' && data.page_id) {
                     window.setTimeout(() => {
-                        window.location.href = baseUrl.replace(/\/$/, '') + '/dashboard/pages/' + encodeURIComponent(String(data.page_id)) + '/edit?created=1';
+                        window.location.href =
+                            baseUrl.replace(/\/$/, '')
+                            + '/dashboard/pages/'
+                            + encodeURIComponent(String(data.page_id))
+                            + '/edit?created=1';
                     }, 420);
                 }
             } catch (error) {
-                showToast(error instanceof Error ? error.message : 'The request could not be completed.', true);
+                showToast(
+                    error instanceof Error
+                        ? error.message
+                        : 'The request could not be completed.',
+                    true
+                );
             }
         });
 
-        qsa('[data-page-status-form]', builder).forEach((statusForm) => {
-            statusForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
+        qsa('[data-page-status-form]', builder)
+            .forEach((statusForm) => {
+                statusForm.addEventListener(
+                    'submit',
+                    async (event) => {
+                        event.preventDefault();
 
-                try {
-                    await submitJsonForm(statusForm);
-                    showToast('Page status updated.');
-                    window.setTimeout(() => window.location.reload(), 420);
-                } catch (error) {
-                    showToast(error instanceof Error ? error.message : 'The request could not be completed.', true);
-                }
+                        try {
+                            await submitJsonForm(statusForm);
+                            showToast('Page status updated.');
+
+                            window.setTimeout(
+                                () => window.location.reload(),
+                                420
+                            );
+                        } catch (error) {
+                            showToast(
+                                error instanceof Error
+                                    ? error.message
+                                    : 'The request could not be completed.',
+                                true
+                            );
+                        }
+                    }
+                );
             });
-        });
 
         updateUrl();
         syncEditor();
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
+        document.addEventListener(
+            'DOMContentLoaded',
+            init,
+            { once: true }
+        );
     } else {
         init();
     }

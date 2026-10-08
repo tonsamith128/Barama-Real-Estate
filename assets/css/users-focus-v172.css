@@ -1,0 +1,43 @@
+/* Barama Users Table Focus v1.7.2 */
+.workspace-user-identity,
+.workspace-user-access,
+.workspace-user-state,
+.workspace-user-activity {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+.workspace-user-identity__email {
+    overflow-wrap: anywhere;
+}
+.workspace-user-access__meta,
+.workspace-user-state__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.48rem;
+}
+.workspace-user-access__meta span,
+.workspace-user-state__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.workspace-user-access__meta span + span::before,
+.workspace-user-state__meta span + span::before {
+    content: "•";
+    margin-right: 0.48rem;
+    opacity: 0.48;
+}
+@media (max-width: 900px) {
+    .workspace-user-access__meta,
+    .workspace-user-state__meta {
+        display: grid;
+        gap: 0.2rem;
+    }
+    .workspace-user-access__meta span + span::before,
+    .workspace-user-state__meta span + span::before {
+        content: none;
+        margin: 0;
+    }
+}

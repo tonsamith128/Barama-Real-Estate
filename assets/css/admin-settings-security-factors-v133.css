@@ -1,0 +1,249 @@
+/* BARAMA_ADMIN_SECURITY_FACTORS_V133 */
+.barama-security-factor-note {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 18px;
+    padding: 14px 15px;
+    border: 1px solid color-mix(in srgb, var(--settings-accent, #6b96ff) 28%, var(--settings-border, #334155));
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--settings-accent, #6b96ff) 7%, transparent);
+}
+.barama-security-factor-note strong { font-size: 11.5px; }
+.barama-security-factor-note span { color: var(--settings-muted, #94a3b8); font-size: 10.5px; line-height: 1.55; }
+.barama-security-copy-row {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 9px;
+    align-items: center;
+}
+.barama-security-copy-row code {
+    min-width: 0;
+    padding: 13px 14px;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--settings-border, #334155);
+    border-radius: 11px;
+    color: var(--bs-body-color, #e5e7eb);
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 94%, transparent);
+    font-size: 12px;
+    letter-spacing: .06em;
+}
+.barama-security-recovery {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, #35c98b 40%, var(--settings-border, #334155));
+    border-radius: 14px;
+    background: color-mix(in srgb, #35c98b 7%, transparent);
+}
+.barama-security-recovery > strong { display: block; font-size: 12px; }
+.barama-security-recovery > p { margin: 4px 0 12px; color: var(--settings-muted, #94a3b8); font-size: 10.5px; }
+.barama-security-recovery > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+.barama-security-recovery code {
+    padding: 9px 10px;
+    border-radius: 9px;
+    color: inherit;
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 88%, transparent);
+    font-size: 10.5px;
+    text-align: center;
+}
+.barama-security-danger-form,
+.barama-security-inline-cancel {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
+    gap: 9px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--settings-border, #334155);
+}
+.barama-security-inline-cancel { grid-template-columns: minmax(0,1fr) auto; }
+.barama-security-danger-form input,
+.barama-security-inline-cancel input {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--settings-border, #334155);
+    border-radius: 10px;
+    outline: 0;
+    color: inherit;
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 94%, transparent);
+}
+.barama-security-danger-form input:focus,
+.barama-security-inline-cancel input:focus { border-color: var(--settings-accent, #6b96ff); }
+@media (max-width: 680px) {
+    .barama-security-recovery > div { grid-template-columns: 1fr; }
+    .barama-security-danger-form,
+    .barama-security-inline-cancel,
+    .barama-security-copy-row { grid-template-columns: 1fr; }
+}
+
+
+/* Segmented passcode / MFA inputs */
+.barama-security-code-group {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(42px, 56px));
+    gap: 9px;
+    width: min(100%, 390px);
+    margin-top: 8px;
+}
+.barama-security-code-group input[data-security-code-digit] {
+    width: 100%;
+    min-width: 0;
+    height: 54px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--settings-border, #334155) 92%, transparent);
+    border-radius: 12px;
+    outline: 0;
+    color: var(--bs-body-color, #e5e7eb);
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 94%, transparent);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.barama-security-code-group input[data-security-code-digit]:focus {
+    border-color: var(--settings-accent, #6b96ff);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--settings-accent, #6b96ff) 16%, transparent);
+    transform: translateY(-1px);
+}
+.barama-security-code-group.is-complete input[data-security-code-digit] {
+    border-color: color-mix(in srgb, #35c98b 42%, var(--settings-border, #334155));
+}
+.barama-security-code-group.is-error input[data-security-code-digit] {
+    border-color: #ff6b7a;
+    box-shadow: 0 0 0 2px color-mix(in srgb, #ff6b7a 12%, transparent);
+}
+.barama-security-code-group--compact { grid-template-columns: repeat(6, minmax(38px, 48px)); width: min(100%, 340px); }
+.barama-security-code-group--compact input[data-security-code-digit] { height: 46px; font-size: 17px; }
+.barama-security-code-error { margin: 2px 0 0; color: #ff7c89; font-size: 10.5px; }
+
+/* MFA setup flow */
+.barama-security-mfa-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+}
+.barama-security-mfa-steps span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--settings-border, #334155);
+    border-radius: 11px;
+    color: var(--settings-muted, #94a3b8);
+    font-size: 10.5px;
+    font-weight: 750;
+}
+.barama-security-mfa-steps b {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 88%, transparent);
+    font-size: 10px;
+}
+.barama-security-mfa-steps .is-complete { color: #35c98b; border-color: color-mix(in srgb, #35c98b 30%, var(--settings-border, #334155)); }
+.barama-security-mfa-steps .is-active { color: var(--settings-accent, #6b96ff); border-color: color-mix(in srgb, var(--settings-accent, #6b96ff) 52%, var(--settings-border, #334155)); background: color-mix(in srgb, var(--settings-accent, #6b96ff) 6%, transparent); }
+.barama-security-mfa-enroll {
+    display: grid;
+    grid-template-columns: minmax(210px, 250px) minmax(0,1fr);
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 20px;
+}
+.barama-security-qr-card,
+.barama-security-manual-card {
+    padding: 16px;
+    border: 1px solid var(--settings-border, #334155);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--bs-body-bg, #091321) 88%, transparent);
+}
+.barama-security-qr-card { display: grid; justify-items: center; align-content: start; gap: 8px; text-align: center; }
+.barama-security-qr-card > strong { font-size: 11.5px; }
+.barama-security-qr-card > small { color: var(--settings-muted, #94a3b8); font-size: 9.8px; line-height: 1.5; }
+.barama-security-qr {
+    display: grid;
+    place-items: center;
+    width: 210px;
+    max-width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 4px;
+    overflow: hidden;
+    border: 8px solid #fff;
+    border-radius: 14px;
+    background: #fff;
+    color: #334155;
+    font-size: 10px;
+}
+.barama-security-qr.is-error { padding: 14px; border-color: #fff; }
+.barama-security-qr-svg { display: block; width: 100%; height: 100%; }
+.barama-security-qr-bg { fill: #fff; }
+.barama-security-qr-modules { fill: #050a12; }
+.barama-security-step-label {
+    display: inline-flex;
+    margin-bottom: 7px;
+    color: var(--settings-accent, #6b96ff);
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+.barama-security-manual-card h3 { margin: 0 0 5px; font-size: 15px; }
+.barama-security-manual-card > p { margin: 0 0 16px; color: var(--settings-muted, #94a3b8); font-size: 10.5px; line-height: 1.55; }
+.barama-security-mfa-meta {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--settings-border, #334155);
+    font-size: 10px;
+}
+.barama-security-mfa-meta span { color: var(--settings-muted, #94a3b8); }
+.barama-security-mfa-meta strong { font-weight: 760; }
+.barama-security-verify-form {
+    margin-top: 4px;
+    padding-top: 18px;
+    border-top: 1px solid var(--settings-border, #334155);
+}
+.barama-security-mfa-summary { grid-template-columns: repeat(3,minmax(0,1fr)); }
+
+/* Recovery-code actions */
+.barama-security-recovery__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+.barama-security-recovery__head > div > strong { display: block; font-size: 12px; }
+.barama-security-recovery__head > div > p { margin: 4px 0 0; color: var(--settings-muted, #94a3b8); font-size: 10.5px; }
+.barama-security-recovery__head > span { padding: 5px 8px; border-radius: 999px; color: #35c98b; background: color-mix(in srgb, #35c98b 10%, transparent); font-size: 9.5px; font-weight: 800; white-space: nowrap; }
+.barama-security-recovery__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.barama-security-recovery__actions .btn { min-height: 36px; padding-inline: 12px; font-size: 10.5px; }
+.barama-security-danger-form--stacked { grid-template-columns: minmax(0,1fr); }
+.barama-security-danger-form--stacked > .btn { justify-self: end; }
+
+@media (max-width: 760px) {
+    .barama-security-mfa-enroll { grid-template-columns: 1fr; }
+    .barama-security-qr-card { justify-items: center; }
+    .barama-security-mfa-steps { grid-template-columns: 1fr; }
+    .barama-security-mfa-summary { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+    .barama-security-code-group,
+    .barama-security-code-group--compact { grid-template-columns: repeat(6, minmax(34px,1fr)); gap: 6px; width: 100%; }
+    .barama-security-code-group input[data-security-code-digit],
+    .barama-security-code-group--compact input[data-security-code-digit] { height: 46px; border-radius: 9px; font-size: 17px; }
+    .barama-security-recovery__head { flex-direction: column; }
+    .barama-security-recovery__actions { justify-content: stretch; }
+    .barama-security-recovery__actions .btn { flex: 1 1 100%; }
+}
+.barama-security-recovery > .barama-security-recovery__head { display: flex; grid-template-columns: none; }
+.barama-security-recovery > [data-security-recovery-list] { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+.barama-security-recovery > .barama-security-recovery__actions { display: flex; grid-template-columns: none; }
+@media (max-width: 680px) {
+    .barama-security-recovery > [data-security-recovery-list] { grid-template-columns: 1fr; }
+}

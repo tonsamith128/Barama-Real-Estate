@@ -93,6 +93,14 @@ final class MembershipService
         }
 
         (new NotificationService())->notifyAddress($email, [
+            'template_key' => 'company_invitation',
+            'user_id' => $target !== null ? (int) $target['id'] : 0,
+            'variables' => [
+                'company_name' => (string) $company['name'],
+                'member_role' => ucwords(str_replace('_', ' ', $memberRole)),
+                'action_url' => url('/account/company'),
+                'expires_days' => '7',
+            ],
             'subject' => 'Company invitation · Barama Real Estate',
             'html' => '<p><strong>You have been invited to ' . e((string) $company['name']) . '</strong></p>'
                 . '<p>Sign in or create an account using this email address, then open Company Access in your account to accept the invitation.</p>'

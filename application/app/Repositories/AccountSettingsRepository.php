@@ -16,9 +16,14 @@ final class AccountSettingsRepository
         $statement = Database::connection()->prepare(
             'SELECT u.id, u.name, u.email, u.status, u.email_verified_at,
                     u.last_login_at, u.created_at,
-                    p.phone, p.timezone, p.preferred_language, p.remember_recent_views
+                    p.phone, p.date_of_birth, p.address, p.avatar_media_id,
+                    p.timezone, p.preferred_language, p.remember_recent_views,
+                    avatar.uuid AS avatar_uuid
              FROM users u
              LEFT JOIN user_profiles p ON p.user_id = u.id
+             LEFT JOIN media_assets avatar
+                ON avatar.id = p.avatar_media_id
+               AND avatar.mime_type IN (\'image/jpeg\', \'image/png\', \'image/webp\')
              WHERE u.id = :user_id
              LIMIT 1'
         );
@@ -32,6 +37,8 @@ final class AccountSettingsRepository
         int $userId,
         string $name,
         ?string $phone,
+        ?string $dateOfBirth,
+        ?string $address,
         string $timezone,
         string $language
     ): void {
@@ -43,11 +50,13 @@ final class AccountSettingsRepository
 
         $profile = $pdo->prepare(
             'INSERT INTO user_profiles
-                (user_id, phone, timezone, preferred_language)
+                (user_id, phone, date_of_birth, address, timezone, preferred_language)
              VALUES
-                (:user_id, :phone, :timezone, :language)
+                (:user_id, :phone, :date_of_birth, :address, :timezone, :language)
              ON DUPLICATE KEY UPDATE
                 phone = VALUES(phone),
+                date_of_birth = VALUES(date_of_birth),
+                address = VALUES(address),
                 timezone = VALUES(timezone),
                 preferred_language = VALUES(preferred_language),
                 updated_at = CURRENT_TIMESTAMP'
@@ -55,8 +64,47 @@ final class AccountSettingsRepository
         $profile->execute([
             'user_id' => $userId,
             'phone' => $phone,
+            'date_of_birth' => $dateOfBirth,
+            'address' => $address,
             'timezone' => $timezone,
             'language' => $language,
+        ]);
+    }
+
+    /** @return array<string,mixed>|null */
+    public function avatarMediaForUser(int $userId, string $uuid): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT m.*
+             FROM user_profiles p
+             INNER JOIN media_assets m ON m.id = p.avatar_media_id
+             WHERE p.user_id = :user_id
+               AND m.uuid = :uuid
+               AND m.disk <> "external"
+               AND m.mime_type IN ("image/jpeg", "image/png", "image/webp")
+             LIMIT 1'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'uuid' => trim($uuid),
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function setAvatarMediaId(int $userId, ?int $mediaId): void
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO user_profiles (user_id, avatar_media_id)
+             VALUES (:user_id, :avatar_media_id)
+             ON DUPLICATE KEY UPDATE
+                avatar_media_id = VALUES(avatar_media_id),
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'avatar_media_id' => $mediaId,
         ]);
     }
 
@@ -111,6 +159,15 @@ final class AccountSettingsRepository
         );
         $statement->execute(['user_id' => $userId]);
     }
+
+    public function clearComparisonItems(int $userId): void
+    {
+        $statement = Database::connection()->prepare(
+            'DELETE FROM comparison_items WHERE user_id = :user_id'
+        );
+        $statement->execute(['user_id' => $userId]);
+    }
+
 
     public function updateUserEmail(int $userId, string $email): void
     {

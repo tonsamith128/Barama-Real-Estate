@@ -40,6 +40,22 @@ final class EmailTemplateRepository
     }
 
     /** @return array<string,mixed>|null */
+    public function findByKey(string $key): ?array
+    {
+        $statement = Database::connection()->prepare(
+            'SELECT t.*, uu.name AS updated_by_name
+             FROM communication_email_templates t
+             LEFT JOIN users uu ON uu.id = t.updated_by_user_id
+             WHERE t.template_key = :template_key
+             LIMIT 1'
+        );
+        $statement->execute(['template_key' => strtolower(trim($key))]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string,mixed>|null */
     public function activeByKey(string $key): ?array
     {
         $statement = Database::connection()->prepare(

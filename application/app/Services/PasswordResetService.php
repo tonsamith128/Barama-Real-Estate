@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Barama\Services;
 
 use Barama\Core\Database;
+use Barama\Repositories\AccountSettingsRepository;
 use Barama\Repositories\PasswordResetRepository;
 use Barama\Repositories\UserRepository;
 use Barama\Security\PasswordPolicy;
@@ -65,7 +66,20 @@ final class PasswordResetService
             . "This link expires in {$minutes} minutes.\n"
             . "If you did not request this, you can ignore this email.";
 
-        if (!$this->mailer->send($email, $subject, $html, $text)) {
+        $rendered = (new EmailTemplateRendererService())->render(
+            'auth_password_reset',
+            [
+                'recipient_name' => (string) ($user['name'] ?? ''),
+                'action_url' => $resetUrl,
+                'expires_minutes' => (string) $minutes,
+                'app_name' => (string) config('app.name', 'Barama Real Estate'),
+                'app_url' => $applicationUrl,
+            ],
+            ['subject' => $subject, 'html' => $html, 'text' => $text],
+            (new AccountSettingsRepository())->preferredLanguage((int) $user['id'])
+        );
+
+        if (!$this->mailer->send($email, $rendered['subject'], $rendered['html'], $rendered['text'])) {
             $this->tokens->deleteByHash($tokenHash);
         }
     }

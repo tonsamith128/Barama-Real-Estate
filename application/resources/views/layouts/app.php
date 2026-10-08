@@ -28,7 +28,7 @@ if ($authRoutePath === '') {
 
 $isStandaloneAuthPage = in_array(
     $authRoutePath,
-    ['/login', '/register', '/forgot-password', '/verify-email'],
+    ['/login', '/register', '/forgot-password', '/verify-email', '/mfa-challenge'],
     true
 ) || str_starts_with($authRoutePath, '/reset-password/')
     || str_starts_with($authRoutePath, '/verify-email/');
@@ -41,6 +41,36 @@ if ($queryString !== '') {
 /* BARAMA_WORKSPACE_HEADER_V100 */
 /* BARAMA_WORKSPACE_BOUNDARY_HEADER_V100 */
 $isWorkspacePage = isset($workspaceNavigation) && is_array($workspaceNavigation);
+
+$publicContentProtection = [
+    'enabled' => false,
+    'block_context_menu' => false,
+    'block_image_drag' => false,
+    'block_text_selection' => false,
+];
+if (!$isWorkspacePage && !$isStandaloneAuthPage) {
+    try {
+        $publicContentProtection = (new \Barama\Services\SecurityProtectionService())
+            ->publicContentProtection();
+    } catch (\Throwable) {
+        $publicContentProtection = [
+            'enabled' => false,
+            'block_context_menu' => false,
+            'block_image_drag' => false,
+            'block_text_selection' => false,
+        ];
+    }
+}
+
+$changeConfirmationRequired = false;
+if ($isWorkspacePage && $isAuthenticated) {
+    try {
+        $changeConfirmationRequired = (new \Barama\Services\SecurityFactorService())
+            ->passcodeEnabled((int) $headerUser['id']);
+    } catch (\Throwable) {
+        $changeConfirmationRequired = false;
+    }
+}
 
 $frontendAppearance = null;
 $frontendAppearanceVersion = '';
@@ -66,6 +96,16 @@ if (!$isWorkspacePage) {
 $publicNavigation = (!$isStandaloneAuthPage && !$isWorkspacePage)
     ? (new \Barama\Repositories\SiteContentRepository())->navigation()
     : [];
+
+// Content-only footer settings remain separate from Appearance's footer style.
+$footerContent = \Barama\Repositories\FooterContentRepository::defaults();
+if (!$isWorkspacePage && !$isStandaloneAuthPage) {
+    try {
+        $footerContent = (new \Barama\Repositories\FooterContentRepository())->get();
+    } catch (\Throwable $exception) {
+        error_log('[Barama Footer] Unable to read footer configuration.');
+    }
+}
 $workspaceHeaderUserName = trim((string) ($headerUser['name'] ?? ''));
 $workspaceHeaderUserName = $workspaceHeaderUserName !== '' ? $workspaceHeaderUserName : t('My account');
 $workspaceHeaderUserEmail = trim((string) ($headerUser['email'] ?? ''));
@@ -80,6 +120,27 @@ $workspaceHeaderLabel = (string) ($workspaceLabel ?? match ($workspaceHeaderArea
     'developer' => t('Company / Vendor Workspace'),
     default => t('Customer Account'),
 });
+
+/* BARAMA_ADMIN_DEFAULT_THEME_SETTINGS_V101 */
+$workspaceDefaultTheme = '';
+if ($isWorkspacePage && $workspaceHeaderArea === 'dashboard' && is_array($headerUser) && isset($headerUser['id'])) {
+    try {
+        $themePreferences = (new \Barama\Repositories\WorkspaceSettingsRepository())->get((int) $headerUser['id'], 'dashboard');
+        $themeCandidate = strtolower(trim((string) ($themePreferences['default_theme'] ?? '')));
+        if (in_array($themeCandidate, ['light', 'dark'], true)) $workspaceDefaultTheme = $themeCandidate;
+    } catch (\Throwable) {
+        $workspaceDefaultTheme = '';
+    }
+}
+
+/* BARAMA_GLOBAL_DEFAULT_THEME_V103 */
+if ($workspaceDefaultTheme === '') {
+    try {
+        $workspaceDefaultTheme = (new \Barama\Repositories\GlobalThemeRepository())->get();
+    } catch (\Throwable) {
+        $workspaceDefaultTheme = 'light';
+    }
+}
 
 $seoTitle = trim((string) ($pageTitle ?? config('app.name')));
 $seoDescription = trim(strip_tags((string) ($metaDescription ?? 'Barama Real Estate marketplace and property management platform.')));
@@ -109,33 +170,24 @@ $appJsVersion = is_file($appJsFile)
     : APP_VERSION;
 ?>
 <!doctype html>
-<html lang="<?= e(app_locale()) ?>" data-bs-theme="light"<?= !$isWorkspacePage ? ' class="barama-public-root appearance-skin-' . e($frontendAppearanceSkin) . '"' : '' ?>>
+<html lang="<?= e(app_locale()) ?>" data-bs-theme="light"
+    <?= $workspaceDefaultTheme !== '' ? 'data-barama-default-theme="' . e($workspaceDefaultTheme) . '"' : '' ?><?= !$isWorkspacePage ? ' class="barama-public-root appearance-skin-' . e($frontendAppearanceSkin) . '"' : '' ?><?= !empty($publicContentProtection['enabled']) ? ' data-right-click-protection="1"' : '' ?><?= !empty($publicContentProtection['block_context_menu']) ? ' data-right-click-context-menu="1"' : '' ?><?= !empty($publicContentProtection['block_image_drag']) ? ' data-right-click-image-drag="1"' : '' ?><?= !empty($publicContentProtection['block_text_selection']) ? ' data-right-click-selection="1"' : '' ?>>
 <head>
     <script data-barama-theme-prepaint>
         (() => {
             const root = document.documentElement;
+            const serverDefault = root.getAttribute('data-barama-default-theme');
             let theme = 'light';
 
             try {
                 const stored = window.localStorage.getItem('barama-theme');
-
-                if (stored === 'light' || stored === 'dark') {
-                    theme = stored;
-                } else if (
-                    window.matchMedia
-                    && window.matchMedia('(prefers-color-scheme: dark)').matches
-                ) {
-                    theme = 'dark';
-                }
+                if (stored === 'light' || stored === 'dark') theme = stored;
+                else if (serverDefault === 'light' || serverDefault === 'dark') theme = serverDefault;
+                else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
             } catch (error) {
-                if (
-                    window.matchMedia
-                    && window.matchMedia('(prefers-color-scheme: dark)').matches
-                ) {
-                    theme = 'dark';
-                }
+                if (serverDefault === 'light' || serverDefault === 'dark') theme = serverDefault;
+                else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
             }
-
             root.setAttribute('data-bs-theme', theme);
         })();
     </script>
@@ -166,17 +218,48 @@ $appJsVersion = is_file($appJsFile)
         rel="stylesheet"
     >
     <link href="<?= e(asset('css/app.css') . '?v=' . rawurlencode($appCssVersion)) ?>" rel="stylesheet">
+    <link href="<?= e(asset('css/footer-management-v100.css') . '?v=100') ?>" rel="stylesheet">
     <?php if ($isWorkspacePage): ?>
         <link href="<?= e(asset('css/workspace-sidebar-scroll-v115.css') . '?v=115') ?>" rel="stylesheet">
+        <?php if ($changeConfirmationRequired): ?>
+            <link href="<?= e(asset('css/change-confirmation-v133.css') . '?v=133') ?>" rel="stylesheet">
+        <?php endif; ?>
     <?php endif; ?>
     <?php if (!$isWorkspacePage): ?>
         <link href="<?= e(url('/appearance.css?v=' . rawurlencode($frontendAppearanceVersion))) ?>" rel="stylesheet">
+        <!-- BARAMA_PUBLIC_MOBILE_V1114 -->
+        <link href="<?= e(asset('css/public-mobile-v1114.css') . '?v=1114') ?>" rel="stylesheet">
+        <!-- BARAMA_HERO_SEARCH_V1117 -->
+        <link href="<?= e(asset('css/hero-search-v1117.css') . '?v=1117') ?>" rel="stylesheet">
+        <!-- BARAMA_HERO_SEARCH_V1118 -->
+        <link href="<?= e(asset('css/hero-search-v1118.css') . '?v=1118') ?>" rel="stylesheet">
+        <!-- BARAMA_HERO_SEARCH_V1122 -->
+        <link href="<?= e(asset('css/hero-search-v1122.css') . '?v=1122') ?>" rel="stylesheet">
+        <!-- BARAMA_HERO_SEARCH_V1123 -->
+        <link href="<?= e(asset('css/hero-search-v1123.css') . '?v=1123') ?>" rel="stylesheet">
+        <!-- BARAMA_POPULAR_LOCATION_MARQUEE_V1125 -->
+        <link href="<?= e(asset('css/popular-location-marquee-v1125.css') . '?v=1125') ?>" rel="stylesheet">
+        <!-- BARAMA_PUBLIC_HEADER_INLINE_V1119 -->
+        <link href="<?= e(asset('css/public-header-inline-v1119.css') . '?v=1119') ?>" rel="stylesheet">
+        <!-- BARAMA_PUBLIC_HEADER_INLINE_V1120 -->
+        <link href="<?= e(asset('css/public-header-inline-v1120.css') . '?v=1120') ?>" rel="stylesheet">
+        <!-- BARAMA_PUBLIC_HEADER_INLINE_V1121 -->
+        <link href="<?= e(asset('css/public-header-inline-v1121.css') . '?v=1121') ?>" rel="stylesheet">
+        <script src="<?= e(asset('js/public-header-inline-v1121.js') . '?v=1121') ?>" defer></script>
+                <?php if (!empty($publicContentProtection['enabled'])): ?>
+            <link href="<?= e(asset('css/right-click-protection-v134.css') . '?v=134') ?>" rel="stylesheet">
+        <?php endif; ?>
+    <?php endif; ?>
+    <?php if (!$isWorkspacePage): ?>
+        <link href="<?= e(asset('css/frontend-back-to-top-v102.css') . '?v=102') ?>" rel="stylesheet">
     <?php endif; ?>
 </head>
 <body class="<?= e(trim(
     ($isStandaloneAuthPage ? 'auth-standalone-body ' : '')
     . (!$isWorkspacePage ? 'barama-public-surface appearance-skin-' . $frontendAppearanceSkin : '')
-)) ?>">
+)) ?>"<?= $changeConfirmationRequired
+    ? ' data-change-confirmation-required="1" data-change-confirmation-endpoint="' . e(url('/security/change-confirmation')) . '"'
+    : '' ?>>
     <?php if (!$isStandaloneAuthPage && !$isWorkspacePage): ?>
     <header class="site-header" data-site-header>
         <div class="container app-container">
@@ -483,6 +566,20 @@ $appJsVersion = is_file($appJsFile)
     <?php if (!$isStandaloneAuthPage && !$isWorkspacePage): ?>
     <footer class="site-footer">
         <div class="container app-container">
+            <?php
+            $editableFooterLinks = is_array($footerContent['links'] ?? null) ? $footerContent['links'] : [];
+            $footerHeadings = [
+                'marketplace' => (string) ($footerContent['marketplace_heading'] ?? 'Marketplace'),
+                'compliance' => (string) ($footerContent['compliance_heading'] ?? 'Compliance'),
+                'help' => (string) ($footerContent['help_heading'] ?? 'Help'),
+            ];
+            $footerItemHref = static function (string $href): string {
+                if (!\Barama\Services\FooterContentService::validLink($href)) {
+                    return '';
+                }
+                return str_starts_with($href, '/') ? url($href) : $href;
+            };
+            ?>
             <div class="site-footer__grid">
                 <div class="site-footer__brand">
                     <a class="brand brand--image" href="<?= e(url('/')) ?>" aria-label="<?= e(t('Barama Real Estate home')) ?>">
@@ -494,54 +591,61 @@ $appJsVersion = is_file($appJsFile)
                             height="220"
                         >
                     </a>
-                    <p><?= e(t('Property marketplace, developer discovery, and secure real estate management in one focused platform.')) ?></p>
+                    <strong class="site-footer__brand-heading"><?= e(t((string) ($footerContent['brand_heading'] ?? 'Barama Real Estate'))) ?></strong>
+                    <p><?= e(t((string) ($footerContent['brand_description'] ?? ''))) ?></p>
+                    <?php $brandLinks = (array) ($editableFooterLinks['brand'] ?? []); ?>
+                    <?php if ($brandLinks !== []): ?>
+                        <nav class="site-footer__brand-links" aria-label="<?= e(t('Brand links')) ?>">
+                            <?php foreach ($brandLinks as $link): ?>
+                                <?php
+                                $href = $footerItemHref((string) ($link['url'] ?? ''));
+                                if ($href === '') { continue; }
+                                $external = str_starts_with($href, 'https://');
+                                ?>
+                                <a href="<?= e($href) ?>" <?= $external ? 'target="_blank" rel="noopener noreferrer"' : '' ?>><?= e(t((string) ($link['label'] ?? 'Link'))) ?></a>
+                            <?php endforeach; ?>
+                        </nav>
+                    <?php endif; ?>
                 </div>
 
-                <nav aria-label="<?= e(t('Marketplace links')) ?>">
-                    <strong><?= e(t('Marketplace')) ?></strong>
-                    <?php foreach ($publicNavigation as $navigationItem): ?>
-                        <?php if ((string) ($navigationItem['path'] ?? '/') === '/'): ?>
-                            <?php continue; ?>
-                        <?php endif; ?>
-                        <a href="<?= e(url((string) ($navigationItem['path'] ?? '/'))) ?>">
-                            <?= e(t((string) ($navigationItem['label'] ?? 'Link'))) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </nav>
-
-                <nav aria-label="<?= e(t('Account links')) ?>">
-                    <strong><?= e(t('Accounts')) ?></strong>
-                    <?php if ($isAuthenticated): ?>
-                        <?php if (auth_workspace_can('account')): ?><a href="<?= e(url('/account')) ?>"><?= e(t('My Account')) ?></a><?php endif; ?>
-                        <?php if (auth_workspace_can('developer')): ?><a href="<?= e(url('/developer')) ?>"><?= e(t('Company / Vendor')) ?></a><?php endif; ?>
-                        <?php if (auth_workspace_can('dashboard')): ?><a href="<?= e(url('/dashboard')) ?>"><?= e(t('Dashboard')) ?></a><?php endif; ?>
-                    <?php else: ?>
-                        <a href="<?= e(url('/login')) ?>"><?= e(t('Sign in')) ?></a>
-                        <a href="<?= e(url('/register')) ?>"><?= e(t('Create account')) ?></a>
-                        <a href="<?= e(url('/forgot-password')) ?>"><?= e(t('Password recovery')) ?></a>
-                    <?php endif; ?>
-                </nav>
-
-                <nav aria-label="<?= e(t('Help links')) ?>">
-                    <strong><?= e(t('Help')) ?></strong>
-                    <a href="<?= e((string) config('app.documentation_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Documentation')) ?></a>
-                    <a href="<?= e((string) config('app.support_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Contact Support')) ?></a>
-                    <a href="<?= e(url('/health')) ?>"><?= e(t('System Health')) ?></a>
-                </nav>
-
+                <?php foreach ($footerHeadings as $columnId => $heading): ?>
+                    <nav aria-label="<?= e(t($heading . ' links')) ?>">
+                        <strong><?= e(t($heading)) ?></strong>
+                        <?php foreach ((array) ($editableFooterLinks[$columnId] ?? []) as $link): ?>
+                            <?php
+                            $href = $footerItemHref((string) ($link['url'] ?? ''));
+                            if ($href === '') { continue; }
+                            $external = str_starts_with($href, 'https://');
+                            ?>
+                            <a href="<?= e($href) ?>" <?= $external ? 'target="_blank" rel="noopener noreferrer"' : '' ?>><?= e(t((string) ($link['label'] ?? 'Link'))) ?></a>
+                        <?php endforeach; ?>
+                    </nav>
+                <?php endforeach; ?>
             </div>
 
             <div class="site-footer__bottom">
                 <div class="site-footer__meta">
-                    <span>© <span data-current-year></span> Barama Real Estate · Version <?= e(APP_VERSION) ?></span>
-                    <span><?= e(t('Built by Ton Samith')) ?></span>
+                    <span><?= e(str_replace('{year}', date('Y'), (string) ($footerContent['copyright'] ?? 'Copyright {year} | Barama Real Estate'))) ?></span>
                 </div>
 
                 <div class="site-footer__utility">
-                    <nav class="site-footer__legal" aria-label="<?= e(t('Legal links')) ?>">
-                        <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
-                        <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
-                        <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
+                    <?php
+                    $footerSocialNetworks = [
+                        'facebook' => ['label' => 'Facebook', 'glyph' => 'f'],
+                        'instagram' => ['label' => 'Instagram', 'glyph' => '◎'],
+                        'youtube' => ['label' => 'YouTube', 'glyph' => '▶'],
+                        'tiktok' => ['label' => 'TikTok', 'glyph' => '♪'],
+                        'x' => ['label' => 'X', 'glyph' => '𝕏'],
+                        'linkedin' => ['label' => 'LinkedIn', 'glyph' => 'in'],
+                    ];
+                    $footerSocialLinks = is_array($footerContent['social'] ?? null) ? $footerContent['social'] : [];
+                    ?>
+                    <nav class="site-footer__social" aria-label="<?= e(t((string) ($footerContent['social_heading'] ?? 'Follow us'))) ?>">
+                        <?php foreach ($footerSocialNetworks as $platform => $details): ?>
+                            <?php $socialHref = trim((string) ($footerSocialLinks[$platform] ?? '')); ?>
+                            <?php if ($socialHref === '' || preg_match('~^https://~i', $socialHref) !== 1) { continue; } ?>
+                            <a href="<?= e($socialHref) ?>" target="_blank" rel="noopener noreferrer" class="site-footer__social-link" aria-label="<?= e($details['label']) ?>" title="<?= e($details['label']) ?>"><span aria-hidden="true"><?= e($details['glyph']) ?></span></a>
+                        <?php endforeach; ?>
                     </nav>
 
                     <button
@@ -561,9 +665,65 @@ $appJsVersion = is_file($appJsFile)
     </footer>
     <?php endif; ?>
 
+    <?php if ($changeConfirmationRequired): ?>
+    <dialog class="change-confirmation-dialog" data-change-confirmation-dialog aria-labelledby="change-confirmation-title">
+        <form method="dialog" class="change-confirmation-dialog__shell" data-change-confirmation-shell>
+            <header class="change-confirmation-dialog__head">
+                <span class="change-confirmation-dialog__icon"><?= app_icon('key') ?></span>
+                <div>
+                    <h2 id="change-confirmation-title">Confirm this change</h2>
+                    <p>Enter your 6-digit change passcode. The approval is single-use and expires quickly.</p>
+                </div>
+                <button type="button" class="change-confirmation-dialog__close" data-change-confirmation-cancel aria-label="Cancel change">×</button>
+            </header>
+            <div class="change-confirmation-dialog__body">
+                <label>Enter your 6-digit passcode</label>
+                <div class="change-confirmation-code" data-change-confirmation-code aria-label="6-digit change passcode">
+                    <?php for ($i = 1; $i <= 6; $i++): ?>
+                        <input type="password" inputmode="numeric" maxlength="1" autocomplete="off" data-change-confirmation-digit aria-label="Digit <?= $i ?>">
+                    <?php endfor; ?>
+                    <input type="hidden" data-change-confirmation-passcode>
+                </div>
+                <small class="change-confirmation-dialog__hint">Each block accepts one digit. You can paste all six digits at once.</small>
+                <p class="change-confirmation-dialog__error" data-change-confirmation-error hidden></p>
+            </div>
+            <footer class="change-confirmation-dialog__actions">
+                <button class="btn btn-outline-secondary" type="button" data-change-confirmation-cancel>Cancel</button>
+                <button class="btn btn-primary" type="button" data-change-confirmation-approve><?= app_icon('check') ?> Confirm change</button>
+            </footer>
+        </form>
+    </dialog>
+    <?php endif; ?>
+
+    <?php if (!$isWorkspacePage): ?>
+        <button
+            class="barama-back-to-top"
+            type="button"
+            data-back-to-top
+            data-visible="false"
+            aria-label="<?= e(t('Back to top')) ?>"
+            title="<?= e(t('Back to top')) ?>"
+            aria-hidden="true"
+            tabindex="-1"
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 19V5"></path>
+                <path d="m6 11 6-6 6 6"></path>
+            </svg>
+        </button>
+    <?php endif; ?>
+
     <script src="<?= e(asset('js/app.js') . '?v=' . rawurlencode($appJsVersion)) ?>" defer></script>
+    <?php if (!$isWorkspacePage): ?>
+        <script src="<?= e(asset('js/frontend-back-to-top-v102.js') . '?v=102') ?>" defer></script>
+    <?php endif; ?>
     <?php if ($isWorkspacePage): ?>
         <script src="<?= e(asset('js/workspace-sidebar-scroll-v115.js') . '?v=115') ?>" defer></script>
+        <?php if ($changeConfirmationRequired): ?>
+            <script src="<?= e(asset('js/change-confirmation-v133.js') . '?v=133') ?>" defer></script>
+        <?php endif; ?>
+    <?php elseif (!empty($publicContentProtection['enabled'])): ?>
+        <script src="<?= e(asset('js/right-click-protection-v134.js') . '?v=134') ?>" defer></script>
     <?php endif; ?>
 </body>
 </html>

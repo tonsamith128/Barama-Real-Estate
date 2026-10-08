@@ -215,6 +215,9 @@ $preflightResult = $run($preflightTool, [
     '--root=' . $packageRoot,
     '--url=' . $baseUrl,
     '--phase=' . $phase,
+    // This ZIP was verified against the RC artifact manifest above.
+    // The preflight uses it to reject unapproved/missing assets and code drift.
+    '--package=' . $packagePath,
     '--json',
 ]);
 

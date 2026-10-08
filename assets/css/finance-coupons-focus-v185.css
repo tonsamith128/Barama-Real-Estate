@@ -1,0 +1,54 @@
+/* Barama Finance Coupons Table Focus v1.8.5 */
+[data-coupons-workspace] .finance-coupons__table-focus { min-width: 820px; }
+[data-coupons-workspace] .finance-coupons__coupon,
+[data-coupons-workspace] .finance-coupons__offer,
+[data-coupons-workspace] .finance-coupons__availability,
+[data-coupons-workspace] .finance-coupons__usage,
+[data-coupons-workspace] .finance-coupons__state {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+[data-coupons-workspace] .finance-coupons__availability small,
+[data-coupons-workspace] .finance-coupons__usage small { overflow-wrap: anywhere; }
+[data-coupons-workspace] .finance-coupons__table-focus th:nth-child(1),
+[data-coupons-workspace] .finance-coupons__table-focus td:nth-child(1) { width: 22%; }
+[data-coupons-workspace] .finance-coupons__table-focus th:nth-child(2),
+[data-coupons-workspace] .finance-coupons__table-focus td:nth-child(2) { width: 14%; }
+[data-coupons-workspace] .finance-coupons__table-focus th:nth-child(3),
+[data-coupons-workspace] .finance-coupons__table-focus td:nth-child(3) { width: 23%; }
+[data-coupons-workspace] .finance-coupons__table-focus th:nth-child(4),
+[data-coupons-workspace] .finance-coupons__table-focus td:nth-child(4) { width: 23%; }
+[data-coupons-workspace] .finance-coupons__table-focus th:nth-child(5),
+[data-coupons-workspace] .finance-coupons__table-focus td:nth-child(5) { width: 10%; }
+[data-coupons-workspace] .finance-coupons__table-focus th:nth-child(6),
+[data-coupons-workspace] .finance-coupons__table-focus td:nth-child(6) { width: 12%; }
+[data-coupons-workspace] .finance-coupons__table-focus th:last-child,
+[data-coupons-workspace] .finance-coupons__table-focus td:last-child {
+    width: 44px;
+    text-align: right;
+}
+
+/* Barama Finance Coupons Empty-State Centering v1.8.5-r1 */
+[data-coupons-workspace]
+.finance-coupons__table-focus
+tbody
+td[colspan="7"] {
+    text-align: center;
+    vertical-align: middle;
+    padding: 2rem 1rem;
+}
+
+[data-coupons-workspace]
+.finance-coupons__table-focus
+tbody
+td[colspan="7"]
+.workspace-record-empty {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    text-align: center;
+}

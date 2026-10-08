@@ -10,6 +10,7 @@ use PDO;
 
 final class MarketplaceRepository
 {
+    /* BARAMA_PUBLIC_LOCATION_FILTER_V112 */
     /**
      * @param array<string, mixed> $filters
      * @return array{rows:array<int,array<string,mixed>>,total:int,page:int,pages:int,per_page:int}
@@ -51,12 +52,42 @@ final class MarketplaceRepository
             $params['property_type'] = $propertyType;
         }
 
-        $locationId = filter_var($filters['location'] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        if ($locationId !== false && $locationId !== null) {
-            $where[] = 'p.location_id = :location_id';
-            $params['location_id'] = (int) $locationId;
+        $locationFilter = trim((string) ($filters['location'] ?? ''));
+
+
+        if (preg_match('/^country:([A-Za-z]{2})$/', $locationFilter, $locationCountry) === 1) {
+
+
+            $where[] = 'UPPER(loc.country_code) = :location_country';
+
+
+            $params['location_country'] = strtoupper((string) $locationCountry[1]);
+
+
+        } else {
+
+
+            $locationId = filter_var($locationFilter !== '' ? $locationFilter : null, FILTER_VALIDATE_INT, [
+
+
+                'options' => ['min_range' => 1],
+
+
+            ]);
+
+
+            if ($locationId !== false && $locationId !== null) {
+
+
+                $where[] = 'p.location_id = :location_id';
+
+
+                $params['location_id'] = (int) $locationId;
+
+
+            }
+
+
         }
 
         $bedrooms = filter_var($filters['bedrooms'] ?? null, FILTER_VALIDATE_FLOAT);
@@ -222,7 +253,6 @@ final class MarketplaceRepository
 
         return $uuids;
     }
-
     /** @return array<string,mixed>|null */
     public function listingBySlug(string $slug): ?array
     {
@@ -298,12 +328,42 @@ final class MarketplaceRepository
             $params['completion'] = $completion;
         }
 
-        $locationId = filter_var($filters['location'] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        if ($locationId !== false && $locationId !== null) {
-            $where[] = 'p.location_id = :location_id';
-            $params['location_id'] = (int) $locationId;
+        $locationFilter = trim((string) ($filters['location'] ?? ''));
+
+
+        if (preg_match('/^country:([A-Za-z]{2})$/', $locationFilter, $locationCountry) === 1) {
+
+
+            $where[] = 'UPPER(loc.country_code) = :location_country';
+
+
+            $params['location_country'] = strtoupper((string) $locationCountry[1]);
+
+
+        } else {
+
+
+            $locationId = filter_var($locationFilter !== '' ? $locationFilter : null, FILTER_VALIDATE_INT, [
+
+
+                'options' => ['min_range' => 1],
+
+
+            ]);
+
+
+            if ($locationId !== false && $locationId !== null) {
+
+
+                $where[] = 'p.location_id = :location_id';
+
+
+                $params['location_id'] = (int) $locationId;
+
+
+            }
+
+
         }
 
         $from = ' FROM projects p
@@ -398,12 +458,42 @@ final class MarketplaceRepository
             $params['company_type'] = $type;
         }
 
-        $locationId = filter_var($filters['location'] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        if ($locationId !== false && $locationId !== null) {
-            $where[] = 'c.location_id = :location_id';
-            $params['location_id'] = (int) $locationId;
+        $locationFilter = trim((string) ($filters['location'] ?? ''));
+
+
+        if (preg_match('/^country:([A-Za-z]{2})$/', $locationFilter, $locationCountry) === 1) {
+
+
+            $where[] = 'UPPER(loc.country_code) = :location_country';
+
+
+            $params['location_country'] = strtoupper((string) $locationCountry[1]);
+
+
+        } else {
+
+
+            $locationId = filter_var($locationFilter !== '' ? $locationFilter : null, FILTER_VALIDATE_INT, [
+
+
+                'options' => ['min_range' => 1],
+
+
+            ]);
+
+
+            if ($locationId !== false && $locationId !== null) {
+
+
+                $where[] = 'c.location_id = :location_id';
+
+
+                $params['location_id'] = (int) $locationId;
+
+
+            }
+
+
         }
 
         $from = ' FROM companies c LEFT JOIN locations loc ON loc.id = c.location_id';
@@ -709,6 +799,287 @@ final class MarketplaceRepository
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
+    }
+
+    /* BARAMA_POPULAR_LOCATION_CARDS_V1124 */
+    /**
+     * Homepage marquee locations. Enabled countries are always preferred.
+     * Remaining slots are filled with unique city/province-style locations
+     * from countries allowed by the current public location policy.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function popularLocationCards(int $limit = 20): array
+    {
+        $limit = max(2, min(40, $limit));
+        $pdo = Database::connection();
+
+        $mode = 'selected';
+        $modeStatement = $pdo->prepare(
+            'SELECT setting_value FROM application_settings WHERE setting_key = :key LIMIT 1'
+        );
+        $modeStatement->execute(['key' => 'locations.mode']);
+        $storedMode = strtolower(trim((string) $modeStatement->fetchColumn()));
+        if (in_array($storedMode, ['selected', 'global'], true)) {
+            $mode = $storedMode;
+        }
+
+        $countrySql = 'SELECT country_code, name, is_default, sort_order '
+            . 'FROM location_countries'
+            . ($mode === 'global' ? '' : ' WHERE enabled = 1')
+            . ' ORDER BY is_default DESC, sort_order ASC, name ASC';
+        $countries = $pdo->query($countrySql)->fetchAll(PDO::FETCH_ASSOC);
+
+        $popularLocations = $this->popularLocations(12);
+        $countryScores = [];
+        foreach ($popularLocations as $row) {
+            $code = strtoupper(trim((string) ($row['country_code'] ?? '')));
+            if (preg_match('/^[A-Z]{2}$/', $code) !== 1) {
+                continue;
+            }
+            $countryScores[$code] = ($countryScores[$code] ?? 0) + max(0, (int) ($row['inventory_count'] ?? 0));
+        }
+
+        usort($countries, static function (array $a, array $b) use ($countryScores): int {
+            $aCode = strtoupper((string) ($a['country_code'] ?? ''));
+            $bCode = strtoupper((string) ($b['country_code'] ?? ''));
+            $score = ($countryScores[$bCode] ?? 0) <=> ($countryScores[$aCode] ?? 0);
+            if ($score !== 0) {
+                return $score;
+            }
+            $default = ((int) ($b['is_default'] ?? 0)) <=> ((int) ($a['is_default'] ?? 0));
+            if ($default !== 0) {
+                return $default;
+            }
+            $sort = ((int) ($a['sort_order'] ?? 0)) <=> ((int) ($b['sort_order'] ?? 0));
+            if ($sort !== 0) {
+                return $sort;
+            }
+            return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
+
+        $items = [];
+        $seenNames = [];
+        $countryNames = [];
+        $countryOrder = [];
+
+        foreach ($countries as $country) {
+            if (count($items) >= $limit) {
+                break;
+            }
+            $code = strtoupper(trim((string) ($country['country_code'] ?? '')));
+            $name = trim((string) ($country['name'] ?? ''));
+            if (preg_match('/^[A-Z]{2}$/', $code) !== 1 || $name === '') {
+                continue;
+            }
+            $key = mb_strtolower($name, 'UTF-8');
+            if (isset($seenNames[$key])) {
+                continue;
+            }
+            $seenNames[$key] = true;
+            $countryNames[$code] = $name;
+            $countryOrder[] = $code;
+            $items[] = [
+                'kind' => 'country',
+                'name' => $name,
+                'country_code' => $code,
+                'country_name' => $name,
+                'filter_value' => 'country:' . $code,
+                'inventory_count' => (int) ($countryScores[$code] ?? 0),
+            ];
+        }
+
+        if (count($items) >= $limit) {
+            return array_slice($items, 0, $limit);
+        }
+
+        $resolvedCountry = "COALESCE(NULLIF(UPPER(loc.country_code), ''), ("
+            . "SELECT UPPER(lhr.country_code) FROM location_hierarchy_registry lhr "
+            . "WHERE lhr.location_id = loc.id ORDER BY lhr.created_location ASC, lhr.external_code ASC LIMIT 1))";
+        $policySql = $mode === 'global'
+            ? ''
+            : ' AND EXISTS (SELECT 1 FROM location_countries allowed '
+                . 'WHERE allowed.enabled = 1 AND UPPER(allowed.country_code) = ' . $resolvedCountry . ')';
+
+        $candidateSql = 'SELECT loc.id, loc.name, loc.type, loc.parent_id, loc.sort_order, '
+            . $resolvedCountry . ' AS country_code, '
+            . '(SELECT c.name FROM location_countries c WHERE UPPER(c.country_code) = '
+            . $resolvedCountry . ' LIMIT 1) AS country_name '
+            . 'FROM locations loc '
+            . "WHERE loc.status = 'active'" . $policySql . ' '
+            . "AND LOWER(COALESCE(loc.type, '')) <> 'country' "
+            . "ORDER BY CASE WHEN LOWER(COALESCE(loc.type, '')) IN "
+            . "('province','state','region','city','municipality','capital') THEN 0 ELSE 1 END ASC, "
+            . 'CASE WHEN loc.parent_id IS NULL THEN 0 ELSE 1 END ASC, loc.sort_order ASC, loc.name ASC '
+            . 'LIMIT 600';
+        $candidateRows = $pdo->query($candidateSql)->fetchAll(PDO::FETCH_ASSOC);
+
+        $byCountry = [];
+        foreach ($popularLocations as $row) {
+            $code = strtoupper(trim((string) ($row['country_code'] ?? '')));
+            $name = trim((string) ($row['name'] ?? ''));
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1 || $name === '' || preg_match('/^[A-Z]{2}$/', $code) !== 1) {
+                continue;
+            }
+            $byCountry[$code][] = [
+                'id' => $id,
+                'name' => $name,
+                'type' => (string) ($row['type'] ?? ''),
+                'country_code' => $code,
+                'country_name' => (string) ($countryNames[$code] ?? ''),
+                'inventory_count' => (int) ($row['inventory_count'] ?? 0),
+            ];
+        }
+        foreach ($candidateRows as $row) {
+            $code = strtoupper(trim((string) ($row['country_code'] ?? '')));
+            if (preg_match('/^[A-Z]{2}$/', $code) !== 1) {
+                continue;
+            }
+            $byCountry[$code][] = $row;
+            if (!isset($countryNames[$code])) {
+                $countryNames[$code] = trim((string) ($row['country_name'] ?? ''));
+            }
+        }
+
+        $appendCandidate = static function (array $row) use (&$items, &$seenNames, &$countryNames, $limit): bool {
+            if (count($items) >= $limit) {
+                return false;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            $name = trim((string) ($row['name'] ?? ''));
+            $code = strtoupper(trim((string) ($row['country_code'] ?? '')));
+            if ($id < 1 || $name === '' || preg_match('/^[A-Z]{2}$/', $code) !== 1) {
+                return false;
+            }
+            $key = mb_strtolower($name, 'UTF-8');
+            if (isset($seenNames[$key])) {
+                return false;
+            }
+            $seenNames[$key] = true;
+            $items[] = [
+                'kind' => 'locality',
+                'name' => $name,
+                'country_code' => $code,
+                'country_name' => trim((string) ($row['country_name'] ?? ($countryNames[$code] ?? ''))),
+                'filter_value' => (string) $id,
+                'inventory_count' => max(0, (int) ($row['inventory_count'] ?? 0)),
+            ];
+            return true;
+        };
+
+        // First distribute fallback localities across countries for flag/name diversity.
+        $positions = array_fill_keys($countryOrder, 0);
+        $progress = true;
+        while (count($items) < $limit && $progress) {
+            $progress = false;
+            foreach ($countryOrder as $code) {
+                $rows = $byCountry[$code] ?? [];
+                $position = (int) ($positions[$code] ?? 0);
+                while (isset($rows[$position])) {
+                    $candidate = $rows[$position];
+                    $position++;
+                    $positions[$code] = $position;
+                    if ($appendCandidate($candidate)) {
+                        $progress = true;
+                        break;
+                    }
+                }
+                if (count($items) >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        // Final deterministic fallback if a country has no distinct preferred locality.
+        if (count($items) < $limit) {
+            foreach ($candidateRows as $candidate) {
+                $appendCandidate($candidate);
+                if (count($items) >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        return array_slice($items, 0, $limit);
+    }
+
+    /* BARAMA_POPULAR_LOCATIONS_V1113 */
+    /**
+     * Homepage discovery locations ranked by live public inventory.
+     * Only active canonical locations allowed by the current country policy are returned.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function popularLocations(int $limit = 6): array
+    {
+        $limit = max(1, min(12, $limit));
+        $pdo = Database::connection();
+
+        $mode = 'selected';
+        $modeStatement = $pdo->prepare(
+            'SELECT setting_value FROM application_settings WHERE setting_key = :key LIMIT 1'
+        );
+        $modeStatement->execute(['key' => 'locations.mode']);
+        $storedMode = strtolower(trim((string) $modeStatement->fetchColumn()));
+        if (in_array($storedMode, ['selected', 'global'], true)) {
+            $mode = $storedMode;
+        }
+
+        $resolvedCountry = "COALESCE(NULLIF(UPPER(loc.country_code), ''), ("
+            . "SELECT UPPER(lhr.country_code) FROM location_hierarchy_registry lhr "
+            . "WHERE lhr.location_id = loc.id ORDER BY lhr.created_location ASC, lhr.external_code ASC LIMIT 1))";
+
+        $countryPolicy = $mode === 'global'
+            ? ''
+            : ' AND EXISTS (SELECT 1 FROM location_countries lc '
+                . 'WHERE lc.enabled = 1 AND UPPER(lc.country_code) = ' . $resolvedCountry . ')';
+
+        $sql = 'SELECT loc.id, loc.name, loc.type, ' . $resolvedCountry . ' AS country_code, '
+            . 'inv.listing_count, inv.project_count, inv.company_count, inv.inventory_count '
+            . 'FROM locations loc '
+            . 'INNER JOIN ('
+            . '  SELECT x.location_id, '
+            . '         SUM(x.listing_count) AS listing_count, '
+            . '         SUM(x.project_count) AS project_count, '
+            . '         SUM(x.company_count) AS company_count, '
+            . '         SUM(x.listing_count + x.project_count + x.company_count) AS inventory_count '
+            . '  FROM ('
+            . '    SELECT p.location_id, COUNT(*) AS listing_count, 0 AS project_count, 0 AS company_count '
+            . '    FROM listings l '
+            . '    INNER JOIN properties p ON p.id = l.property_id '
+            . '    INNER JOIN companies c ON c.id = p.company_id '
+            . '    WHERE p.location_id IS NOT NULL '
+            . '      AND l.status = "published" AND l.published_at IS NOT NULL AND l.deleted_at IS NULL '
+            . '      AND (l.expires_at IS NULL OR l.expires_at > CURRENT_TIMESTAMP) '
+            . '      AND p.status = "approved" AND p.deleted_at IS NULL '
+            . '      AND c.status = "approved" AND c.published_at IS NOT NULL AND c.deleted_at IS NULL '
+            . '    GROUP BY p.location_id '
+            . '    UNION ALL '
+            . '    SELECT p.location_id, 0, COUNT(*), 0 '
+            . '    FROM projects p '
+            . '    INNER JOIN companies c ON c.id = p.company_id '
+            . '    WHERE p.location_id IS NOT NULL '
+            . '      AND p.status = "published" AND p.published_at IS NOT NULL AND p.deleted_at IS NULL '
+            . '      AND c.status = "approved" AND c.published_at IS NOT NULL AND c.deleted_at IS NULL '
+            . '    GROUP BY p.location_id '
+            . '    UNION ALL '
+            . '    SELECT c.location_id, 0, 0, COUNT(*) '
+            . '    FROM companies c '
+            . '    WHERE c.location_id IS NOT NULL '
+            . '      AND c.status = "approved" AND c.published_at IS NOT NULL AND c.deleted_at IS NULL '
+            . '    GROUP BY c.location_id '
+            . '  ) x GROUP BY x.location_id'
+            . ') inv ON inv.location_id = loc.id '
+            . 'WHERE loc.status = "active"' . $countryPolicy . ' '
+            . 'ORDER BY inv.inventory_count DESC, loc.sort_order ASC, loc.name ASC '
+            . 'LIMIT :limit';
+
+        $statement = $pdo->prepare($sql);
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /** @return array<int,array<string,mixed>> */

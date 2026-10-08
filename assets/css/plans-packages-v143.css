@@ -1,0 +1,19 @@
+/* Barama Plans Public Grid Background Cleanup v1.4.3 */
+.barama-plans-public__grid{
+  padding:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+}
+.barama-plans-public__grid:before,
+.barama-plans-public__grid:after{
+  display:none !important;
+  content:none !important;
+}
+@media(max-width:640px){
+  .barama-plans-public__grid{
+    padding:0 !important;
+    border-radius:0 !important;
+  }
+}

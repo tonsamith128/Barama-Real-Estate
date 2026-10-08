@@ -52,7 +52,6 @@ $bundledHeroDefaults = match ($pageKind) {
 };
 
 $automaticHeroSources = $bundledHeroDefaults;
-
 $imageSrc = '';
 if ($heroEnabled && $backgroundType === 'image') {
     if (($background['image_source'] ?? '') === 'media' && !empty($background['image_media_uuid'])) {
@@ -163,7 +162,7 @@ $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
     <?php endif; ?>
 
     <?php if ($hasHeroBackground && $backgroundType !== 'color'): ?>
-        <div class="marketplace-config-hero__overlay marketplace-config-hero__overlay--<?= e((string) $overlayStrength) ?>" aria-hidden="true"></div>
+        <div class="marketplace-config-hero__overlay" data-barama-marketplace-hero-overlay="<?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>" aria-hidden="true"></div>
     <?php endif; ?>
 
     <div class="container app-container marketplace-config-hero__content">
@@ -238,15 +237,17 @@ $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
                     <?php endif; ?>
 
                     <?php if ($locationsEnabled): ?>
-                        <label>
-                            <span class="visually-hidden">Location</span>
-                            <select name="location">
-                                <option value=""><?= e($allLocationsLabel) ?></option>
-                                <?php foreach ((array) ($locations ?? []) as $location): ?>
-                                    <option value="<?= e((string) ($location['id'] ?? '')) ?>" <?= (string) ($filters['location'] ?? '') === (string) ($location['id'] ?? '') ? 'selected' : '' ?>><?= e((string) ($location['name'] ?? '')) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </label>
+                        <?php /* BARAMA_PUBLIC_LOCATION_PICKER_HERO_V112 */ ?>
+
+                        <?= \Barama\Core\View::partial('components/public-location-picker', [
+
+                            'name' => 'location',
+
+                            'value' => (string) ($filters['location'] ?? ''),
+
+                            'label' => $allLocationsLabel,
+
+                        ]) ?>
                     <?php endif; ?>
 
                     <?php if ($pageKind === 'projects' && $searchEnabled): ?>

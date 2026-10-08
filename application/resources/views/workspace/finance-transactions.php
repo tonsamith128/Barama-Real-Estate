@@ -7,8 +7,114 @@ $companies = is_array($companies ?? null) ? $companies : [];
 $subscriptions = is_array($subscriptions ?? null) ? $subscriptions : [];
 $invoices = is_array($invoices ?? null) ? $invoices : [];
 $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
+
+// Finance Transactions Pagination Standard v1.8.30.
+$transactionQ = substr(trim((string) ($_GET['transaction_q'] ?? '')), 0, 120);
+$transactionStatus = trim((string) ($_GET['transaction_status'] ?? ''));
+$allowedTransactionStatuses = ['succeeded', 'pending', 'failed'];
+
+if (
+    $transactionStatus !== ''
+    && !in_array($transactionStatus, $allowedTransactionStatuses, true)
+) {
+    $transactionStatus = '';
+}
+
+$filteredTransactions = array_values(array_filter(
+    $transactions,
+    static function (array $transaction) use ($transactionQ, $transactionStatus): bool {
+        $status = (string) ($transaction['status'] ?? 'pending');
+
+        if ($transactionStatus !== '' && $status !== $transactionStatus) {
+            return false;
+        }
+
+        if ($transactionQ === '') {
+            return true;
+        }
+
+        $amount = (string) ($transaction['amount'] ?? '');
+        $currency = (string) ($transaction['currency'] ?? '');
+
+        $haystack = strtolower(
+            (string) ($transaction['processed_at'] ?? '')
+            . ' '
+            . (string) ($transaction['company_name'] ?? '')
+            . ' '
+            . (string) ($transaction['invoice_number'] ?? '')
+            . ' '
+            . (string) ($transaction['plan_name'] ?? '')
+            . ' '
+            . (string) ($transaction['transaction_type'] ?? '')
+            . ' '
+            . $status
+            . ' '
+            . $currency
+            . ' '
+            . $amount
+            . ' '
+            . (string) ($transaction['source'] ?? '')
+            . ' '
+            . (string) ($transaction['reference'] ?? '')
+            . ' '
+            . (string) ($transaction['created_at'] ?? '')
+        );
+
+        return str_contains($haystack, strtolower($transactionQ));
+    }
+));
+
+$transactionPerPage = 10;
+$transactionTotal = count($filteredTransactions);
+$transactionPages = max(1, (int) ceil($transactionTotal / $transactionPerPage));
+$transactionPage = filter_var(
+    $_GET['transaction_page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$transactionPage = $transactionPage === false
+    ? 1
+    : min((int) $transactionPage, $transactionPages);
+
+$visibleTransactions = array_slice(
+    $filteredTransactions,
+    ($transactionPage - 1) * $transactionPerPage,
+    $transactionPerPage
+);
+
+$transactionQuery = array_filter(
+    [
+        'transaction_q' => $transactionQ,
+        'transaction_status' => $transactionStatus,
+    ],
+    static fn (string $value): bool => $value !== ''
+);
+
+$transactionPageUrl = static function (int $target) use ($transactionQuery): string {
+    return url(
+        '/dashboard/transactions?'
+        . http_build_query(
+            array_merge(
+                $transactionQuery,
+                ['transaction_page' => max(1, $target)]
+            )
+        )
+    );
+};
+
 ?>
-<section class="workspace-page">
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-transactions-pagination-v1830.css') . '?v=1830') ?>"
+>
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-transactions-focus-v1832.css') . '?v=1832') ?>"
+>
+
+<section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--transactions">
+    <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -23,7 +129,7 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
+    <div class="workspace-stat-grid finance-summary-cards">
         <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['transactions'] ?? 0))) ?></strong><small>Transactions</small></div>
         <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['succeeded_transactions'] ?? 0))) ?></strong><small>Succeeded</small></div>
         <div class="workspace-stat"><span><?= app_icon('alert') ?></span><strong><?= e(number_format((int) ($summary['pending_transactions'] ?? 0))) ?></strong><small>Pending</small></div>
@@ -102,47 +208,160 @@ $summary = is_array($ledgerSummary ?? null) ? $ledgerSummary : [];
             </div>
         </div>
 
-        <div class="workspace-table-wrap">
-            <table class="workspace-table">
+        
+        <form
+            class="finance-transactions-tools"
+            method="get"
+            action="<?= e(url('/dashboard/transactions')) ?>"
+        >
+            <label>
+                <?= app_icon('search') ?>
+                <input
+                    class="form-control"
+                    type="search"
+                    name="transaction_q"
+                    value="<?= e($transactionQ) ?>"
+                    placeholder="Search company, invoice, plan, type, source, or reference"
+                >
+            </label>
+
+            <select
+                class="form-select"
+                name="transaction_status"
+                aria-label="Transaction status"
+            >
+                <option value="">All statuses</option>
+                <?php foreach ($allowedTransactionStatuses as $statusOption): ?>
+                    <option
+                        value="<?= e($statusOption) ?>"
+                        <?= $transactionStatus === $statusOption ? 'selected' : '' ?>
+                    ><?= e(ucfirst($statusOption)) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a
+                class="btn btn-outline-secondary"
+                href="<?= e(url('/dashboard/transactions')) ?>"
+            >Reset</a>
+        </form>
+
+<div class="workspace-table-wrap">
+            <table class="workspace-table finance-transactions-focus">
                 <thead>
                     <tr>
                         <th>Processed</th>
-                        <th>Company</th>
-                        <th>Invoice</th>
-                        <th>Plan</th>
-                        <th>Type</th>
-                        <th>Status</th>
+                        <th>Account</th>
+                        <th>Context</th>
                         <th>Amount</th>
-                        <th>Source</th>
-                        <th>Reference</th>
-                        <th>Created</th>
+                        <th>State</th>
+                        <th>Trace</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($transactions === []): ?>
-                        <tr><td colspan="10"><div class="workspace-record-empty">No transactions have been recorded yet.</div></td></tr>
+                    <?php if ($visibleTransactions === []): ?>
+                        <tr><td colspan="6"><div class="workspace-record-empty">No transactions have been recorded yet.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($transactions as $transaction): ?>
+                    <?php foreach ($visibleTransactions as $transaction): ?>
                         <?php
                         $status = (string) ($transaction['status'] ?? 'pending');
                         $tone = $status === 'succeeded' ? 'approved' : ($status === 'failed' ? 'neutral' : 'pending');
                         ?>
                         <tr>
                             <td><?= e((string) $transaction['processed_at']) ?></td>
-                            <td><?= e((string) $transaction['company_name']) ?></td>
-                            <td><?= e((string) ($transaction['invoice_number'] ?? '—')) ?></td>
-                            <td><?= e((string) ($transaction['plan_name'] ?? '—')) ?></td>
-                            <td><?= e(ucfirst((string) $transaction['transaction_type'])) ?></td>
-                            <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span></td>
-                            <td><?= e((string) $transaction['currency']) ?> <?= e(number_format((float) $transaction['amount'], 2)) ?></td>
-                            <td><?= e((string) $transaction['source']) ?></td>
-                            <td><?= e((string) ($transaction['reference'] ?? '—')) ?></td>
-                            <td><?= e((string) $transaction['created_at']) ?></td>
+                            <td>
+                                <div class="finance-transactions-focus__stack">
+                                    <strong><?= e((string) $transaction['company_name']) ?></strong>
+                                    <small>Plan: <?= e((string) ($transaction['plan_name'] ?? '—')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-transactions-focus__stack">
+                                    <strong><?= e(ucfirst((string) $transaction['transaction_type'])) ?></strong>
+                                    <small>Invoice: <?= e((string) ($transaction['invoice_number'] ?? '—')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <strong class="finance-transactions-focus__money"><?= e((string) $transaction['currency']) ?> <?= e(number_format((float) $transaction['amount'], 2)) ?></strong>
+                            </td>
+                            <td>
+                                <div class="finance-transactions-focus__stack">
+                                    <span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span>
+                                    <small>Source: <?= e((string) $transaction['source']) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-transactions-focus__stack">
+                                    <strong><?= e((string) ($transaction['reference'] ?? '—')) ?></strong>
+                                    <small>Created: <?= e((string) $transaction['created_at']) ?></small>
+                                </div>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+
+        <?php if ($transactionTotal > 0): ?>
+            <div class="finance-transactions-pager">
+                <span>
+                    Page <?= $transactionPage ?> of <?= $transactionPages ?>
+                    &middot; <?= $transactionTotal ?> transaction<?= $transactionTotal === 1 ? '' : 's' ?>
+                    &middot; 10 per page
+                </span>
+
+                <?php if ($transactionPages > 1): ?>
+                    <nav aria-label="Transaction ledger pages">
+                        <?php if ($transactionPage > 1): ?>
+                            <a href="<?= e($transactionPageUrl($transactionPage - 1)) ?>">Previous</a>
+                        <?php endif; ?>
+
+                        <?php
+                        $transactionFrom = max(1, $transactionPage - 2);
+                        $transactionTo = min($transactionPages, $transactionPage + 2);
+                        ?>
+                        <?php for ($i = $transactionFrom; $i <= $transactionTo; $i++): ?>
+                            <a
+                                href="<?= e($transactionPageUrl($i)) ?>"
+                                class="<?= $i === $transactionPage ? 'is-active' : '' ?>"
+                            ><?= $i ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($transactionPage < $transactionPages): ?>
+                            <a href="<?= e($transactionPageUrl($transactionPage + 1)) ?>">Next</a>
+                        <?php endif; ?>
+                    </nav>
+
+                    <form
+                        class="finance-transactions-goto"
+                        method="get"
+                        action="<?= e(url('/dashboard/transactions')) ?>"
+                    >
+                        <?php foreach ($transactionQuery as $key => $value): ?>
+                            <input
+                                type="hidden"
+                                name="<?= e((string) $key) ?>"
+                                value="<?= e((string) $value) ?>"
+                            >
+                        <?php endforeach; ?>
+
+                        <label>
+                            <span>Go To</span>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="transaction_page"
+                                min="1"
+                                max="<?= $transactionPages ?>"
+                                value="<?= $transactionPage ?>"
+                            >
+                        </label>
+                        <button class="btn btn-outline-secondary" type="submit">Go</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
     </section>
 </section>

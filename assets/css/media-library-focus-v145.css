@@ -1,0 +1,142 @@
+/* Barama Media Library Focus Repair v1.4.5
+   Page-scoped by conditional stylesheet load: Admin > Media only. */
+.workspace-management-guide--media {
+    display: none;
+}
+
+.workspace-panel {
+    overflow: visible;
+}
+
+.workspace-table-wrap {
+    overflow-x: auto;
+}
+
+.workspace-table {
+    min-width: 860px;
+    table-layout: fixed;
+}
+
+.workspace-table th:nth-child(1),
+.workspace-table td:nth-child(1) {
+    width: 38%;
+}
+
+.workspace-table th:nth-child(2),
+.workspace-table td:nth-child(2) {
+    width: 28%;
+}
+
+.workspace-table th:nth-child(3),
+.workspace-table td:nth-child(3) {
+    width: 12%;
+}
+
+.workspace-table th:nth-child(4),
+.workspace-table td:nth-child(4) {
+    width: 16%;
+}
+
+.workspace-table th.workspace-table__actions,
+.workspace-table td.workspace-table__actions {
+    width: 64px;
+}
+
+.barama-media-focus-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.barama-media-focus-thumb {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 76px;
+    width: 76px;
+    height: 54px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 10px;
+    background: rgba(148, 163, 184, .08);
+    text-decoration: none;
+}
+
+.barama-media-focus-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.barama-media-focus-thumb__fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .68;
+}
+
+.barama-media-focus-copy,
+.barama-media-focus-context {
+    min-width: 0;
+}
+
+.barama-media-focus-copy strong,
+.barama-media-focus-context strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.barama-media-focus-copy small,
+.barama-media-focus-context small {
+    display: block;
+    margin-top: 4px;
+    overflow: hidden;
+    color: inherit;
+    font-size: 11px;
+    line-height: 1.45;
+    opacity: .66;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barama-media-focus-copy small + small,
+.barama-media-focus-context small + small {
+    margin-top: 2px;
+}
+
+.barama-media-focus-context .barama-media-focus-meta {
+    white-space: normal;
+}
+
+.workspace-table td {
+    vertical-align: middle;
+}
+
+.workspace-row-actions__trigger {
+    background: transparent;
+    box-shadow: none;
+}
+
+@media (max-width: 760px) {
+    .workspace-table {
+        min-width: 760px;
+    }
+
+    .barama-media-focus-thumb {
+        flex-basis: 64px;
+        width: 64px;
+        height: 48px;
+    }
+}

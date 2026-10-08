@@ -1,0 +1,231 @@
+/* BARAMA_ADMIN_SECURITY_CENTER_PHASE3_V127 */
+.security-center__hero-actions {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:9px;
+}
+.security-center__hero-actions form { margin:0; }
+.security-center__phase3-grid {
+    display:grid;
+    grid-template-columns:minmax(0,1.12fr) minmax(390px,.88fr);
+    gap:18px;
+    margin-bottom:18px;
+}
+.security-center__phase-badge {
+    display:inline-flex;
+    padding:5px 8px;
+    border-radius:999px;
+    color:var(--sc-accent);
+    background:color-mix(in srgb,var(--sc-accent) 12%,transparent);
+    font-size:8px;
+    font-weight:850;
+    letter-spacing:.12em;
+}
+.security-center__chart {
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:10px;
+    padding:14px;
+    border:1px solid var(--sc-border);
+    border-radius:15px;
+    background:color-mix(in srgb,var(--bs-body-bg,#091321) 90%,transparent);
+}
+.security-center__chart-day {
+    display:grid;
+    gap:9px;
+    min-width:0;
+    padding:10px;
+    border:1px solid var(--sc-border);
+    border-radius:12px;
+    background:var(--sc-panel-strong);
+}
+.security-center__chart-day>strong {
+    font-size:9px;
+    text-align:center;
+}
+.security-center__chart-day label {
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:5px;
+    align-items:center;
+    margin:0;
+}
+.security-center__chart-day label>span,
+.security-center__chart-day label>small {
+    color:var(--sc-muted);
+    font-size:7.5px;
+}
+.security-center__chart-day progress {
+    width:100%;
+    height:7px;
+    appearance:none;
+    border:0;
+    border-radius:999px;
+    overflow:hidden;
+    background:color-mix(in srgb,var(--sc-muted) 12%,transparent);
+}
+.security-center__chart-day progress::-webkit-progress-bar {
+    background:color-mix(in srgb,var(--sc-muted) 12%,transparent);
+    border-radius:999px;
+}
+.security-center__chart-day progress.is-success::-webkit-progress-value {
+    background:var(--sc-good);
+    border-radius:999px;
+}
+.security-center__chart-day progress.is-failed::-webkit-progress-value {
+    background:var(--sc-bad);
+    border-radius:999px;
+}
+.security-center__chart-day progress.is-locked::-webkit-progress-value {
+    background:var(--sc-warn);
+    border-radius:999px;
+}
+.security-center__chart-day progress.is-success::-moz-progress-bar {
+    background:var(--sc-good);
+}
+.security-center__chart-day progress.is-failed::-moz-progress-bar {
+    background:var(--sc-bad);
+}
+.security-center__chart-day progress.is-locked::-moz-progress-bar {
+    background:var(--sc-warn);
+}
+.security-center__legend {
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:10px;
+    color:var(--sc-muted);
+    font-size:9px;
+}
+.security-center__legend span {
+    display:inline-flex;
+    gap:6px;
+    align-items:center;
+}
+.security-center__legend i {
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--sc-accent);
+}
+.security-center__legend i.is-success { background:var(--sc-good); }
+.security-center__legend i.is-failed { background:var(--sc-bad); }
+.security-center__legend i.is-locked { background:var(--sc-warn); }
+.security-center__signal-strip,
+.security-center__retention {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px;
+    margin-top:13px;
+}
+.security-center__signal-strip>div,
+.security-center__retention>div {
+    padding:11px;
+    border:1px solid var(--sc-border);
+    border-radius:12px;
+    background:var(--sc-panel-strong);
+}
+.security-center__signal-strip small,
+.security-center__signal-strip strong,
+.security-center__retention small,
+.security-center__retention strong {
+    display:block;
+}
+.security-center__signal-strip small,
+.security-center__retention small {
+    color:var(--sc-muted);
+    font-size:8.5px;
+}
+.security-center__signal-strip strong,
+.security-center__retention strong {
+    margin-top:3px;
+    font-size:11px;
+}
+.security-center__policy-form {
+    display:grid;
+    gap:14px;
+}
+.security-center__toggle-row {
+    display:grid;
+    gap:8px;
+}
+.security-center__toggle-row label {
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:10px 11px;
+    border:1px solid var(--sc-border);
+    border-radius:12px;
+    background:var(--sc-panel-strong);
+}
+.security-center__toggle-row input {
+    margin-top:3px;
+    accent-color:var(--sc-accent);
+}
+.security-center__toggle-row strong,
+.security-center__toggle-row small {
+    display:block;
+}
+.security-center__toggle-row strong { font-size:10px; }
+.security-center__toggle-row small {
+    margin-top:2px;
+    color:var(--sc-muted);
+    font-size:8.5px;
+}
+.security-center__policy-grid {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+}
+.security-center__policy-grid label {
+    display:grid;
+    gap:6px;
+}
+.security-center__policy-grid span {
+    color:var(--sc-muted);
+    font-size:9px;
+    font-weight:700;
+}
+.security-center__policy-grid input {
+    width:100%;
+    height:40px;
+    padding:0 10px;
+    border:1px solid var(--sc-border);
+    border-radius:10px;
+    color:var(--bs-body-color);
+    background:color-mix(in srgb,var(--bs-body-bg,#091321) 94%,transparent);
+}
+.security-center__policy-form .btn {
+    justify-self:start;
+    border-radius:11px;
+}
+.security-center__retention {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.security-center__notice.is-success {
+    border-color:color-mix(in srgb,var(--sc-good) 45%,var(--sc-border));
+    color:var(--sc-good);
+    background:color-mix(in srgb,var(--sc-good) 8%,transparent);
+}
+@media(max-width:1180px) {
+    .security-center__phase3-grid { grid-template-columns:1fr; }
+}
+@media(max-width:780px) {
+    .security-center__hero-actions {
+        width:100%;
+        display:grid;
+        grid-template-columns:1fr;
+    }
+    .security-center__hero-actions .btn,
+    .security-center__hero-actions form { width:100%; }
+    .security-center__chart {
+        overflow-x:auto;
+        grid-template-columns:repeat(7,minmax(70px,1fr));
+    }
+    .security-center__signal-strip,
+    .security-center__retention {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .security-center__policy-grid { grid-template-columns:1fr; }
+}

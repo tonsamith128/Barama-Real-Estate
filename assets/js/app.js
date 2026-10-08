@@ -12,11 +12,9 @@
 
     const preferredTheme = () => {
         const stored = window.localStorage.getItem(storageKey);
-
-        if (stored === 'light' || stored === 'dark') {
-            return stored;
-        }
-
+        if (stored === 'light' || stored === 'dark') return stored;
+        const serverDefault = root.getAttribute('data-barama-default-theme');
+        if (serverDefault === 'light' || serverDefault === 'dark') return serverDefault;
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     };
 
@@ -143,7 +141,23 @@
 
     document.querySelectorAll('[data-workspace-form]').forEach((form) => {
         form.addEventListener('submit', async (event) => {
-            event.preventDefault();
+            // BARAMA_CHANGE_CONFIRMATION_COOPERATIVE_V120
+            // Change Confirmation owns the first protected submit in capture
+            // phase. If it prevented that submit, do not start the workspace
+            // AJAX request. Wait for its granted requestSubmit() replay.
+            if (event.defaultPrevented) {
+                return;
+            }
+
+                        // BARAMA_PAYMENT_NATIVE_POST_V128
+            // v133 owns the passcode gate. After it grants the replay, allow
+            // this marked payment form to submit natively so the server
+            // receives the confirmed POST exactly once.
+            if (form.matches('[data-payment-native-confirmed-form="1"]')) {
+                return;
+            }
+
+event.preventDefault();
 
             const submitter = event.submitter;
 
@@ -1497,141 +1511,6 @@
 
     const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
 
-    /* BARAMA_MARKETPLACE_CONFIG_SAVE_V108 */
-    document.querySelectorAll('[data-marketplace-config-form]').forEach((form) => {
-        if (form.dataset.marketplaceConfigBound === '1') {
-            return;
-        }
-
-        form.dataset.marketplaceConfigBound = '1';
-
-        const notice = form.querySelector('[data-marketplace-config-notice]');
-
-        const showNotice = (message, type = 'error') => {
-            if (!notice) return;
-            notice.hidden = false;
-            notice.classList.remove('is-success', 'is-error');
-            notice.classList.add(type === 'success' ? 'is-success' : 'is-error');
-            notice.textContent = message;
-        };
-
-        const clearNotice = () => {
-            if (!notice) return;
-            notice.hidden = true;
-            notice.classList.remove('is-success', 'is-error');
-            notice.textContent = '';
-        };
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            clearNotice();
-
-            const submitter = event.submitter;
-            const title = form.querySelector('[name="hero_title"]');
-            const description = form.querySelector('[name="hero_description"]');
-
-            if (title instanceof HTMLInputElement && title.value.trim() === '') {
-                showNotice('Hero headline is required.');
-                title.focus();
-                return;
-            }
-
-            if (description instanceof HTMLTextAreaElement && description.value.trim() === '') {
-                showNotice('Hero description is required.');
-                description.focus();
-                return;
-            }
-
-            const formData = new FormData(form);
-            const backgroundType = String(formData.get('background_type') || 'plain');
-            const imageSource = String(formData.get('image_source') || 'auto');
-
-            if (backgroundType !== 'image') {
-                formData.delete('hero_image_file');
-                formData.delete('image_url');
-                formData.delete('image_media_uuid');
-            } else if (imageSource === 'auto') {
-                formData.set('image_source', 'auto');
-                formData.delete('image_url');
-                formData.delete('image_media_uuid');
-            } else if (imageSource === 'url') {
-                formData.delete('image_media_uuid');
-            } else if (imageSource === 'media') {
-                formData.delete('image_url');
-            }
-
-            if (backgroundType !== 'slider') {
-                formData.delete('hero_slider_files[]');
-                formData.delete('slider_existing[]');
-                formData.delete('slider_remove[]');
-                formData.delete('slider_urls');
-            }
-
-            if (backgroundType !== 'video') {
-                formData.delete('hero_video_file');
-                formData.delete('video_url');
-                formData.delete('video_media_uuid');
-                formData.delete('youtube_url');
-            }
-
-            if (submitter) {
-                submitter.disabled = true;
-                submitter.setAttribute('aria-busy', 'true');
-            }
-
-            try {
-                const response = await window.fetch(form.action, {
-                    method: form.method || 'POST',
-                    body: formData,
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const responseText = await response.text();
-                let payload = null;
-
-                if (responseText.trim() !== '') {
-                    try {
-                        payload = JSON.parse(responseText);
-                    } catch (_) {
-                        payload = null;
-                    }
-                }
-
-                if (!response.ok || payload?.ok !== true) {
-                    const fallback = response.status === 419
-                        ? 'Your session token expired. Refresh this page and try again.'
-                        : 'Marketplace page configuration could not be saved.';
-                    throw new Error(payload?.message || fallback);
-                }
-
-                showNotice(
-                    payload?.data?.message || 'Marketplace page configuration saved.',
-                    'success'
-                );
-
-                window.setTimeout(() => {
-                    window.location.reload();
-                }, 450);
-            } catch (error) {
-                showNotice(
-                    error instanceof Error
-                        ? error.message
-                        : 'Marketplace page configuration could not be saved.',
-                    'error'
-                );
-            } finally {
-                if (submitter) {
-                    submitter.disabled = false;
-                    submitter.removeAttribute('aria-busy');
-                }
-            }
-        });
-    });
-
     document.querySelectorAll('[data-appearance-form]').forEach((form) => {
         if (form.dataset.appearanceFormBound === '1') {
             return;
@@ -2318,4 +2197,420 @@
     } else {
         init();
     }
+})();
+
+/* BARAMA_PROFILE_THEME_CONTROL_V100
+ * User-feedback refinement:
+ * Move the existing canonical light/dark control into the bottom of the
+ * public Profile/Account dropdown. This does NOT implement a second theme
+ * engine. The existing [data-theme-toggle] node is moved intact so its
+ * current runtime, storage and prepaint behavior remain authoritative.
+ */
+(() => {
+    'use strict';
+
+    const root = document.documentElement;
+    const RELOCATED = 'data-barama-profile-theme-relocated';
+
+    const publicHeader = () =>
+        document.querySelector('header.site-header, header [class*="site-header"]')?.closest('header')
+        || document.querySelector('header');
+
+    const canonicalToggle = () => {
+        const preferred = [
+            '.site-footer [data-theme-toggle]',
+            '.market-home [data-theme-toggle]',
+            'main [data-theme-toggle]',
+            'header [data-theme-toggle]',
+            '[data-theme-toggle]'
+        ];
+        for (const selector of preferred) {
+            const node = document.querySelector(selector);
+            if (node instanceof HTMLElement) return node;
+        }
+        return null;
+    };
+
+    const normalizedPath = (anchor) => {
+        try {
+            return new URL(anchor.href, window.location.href).pathname.replace(/\/+$/, '') || '/';
+        } catch (_) {
+            return String(anchor.getAttribute('href') || '').split('?')[0].replace(/\/+$/, '') || '/';
+        }
+    };
+
+    const findAnchor = (scope, paths) =>
+        Array.from(scope.querySelectorAll('a[href]')).find((anchor) =>
+            paths.includes(normalizedPath(anchor))
+        ) || null;
+
+    const commonAncestor = (a, b, stop) => {
+        if (!a || !b) return null;
+        let node = a.parentElement;
+        while (node && node !== stop && node !== document.body) {
+            if (node.contains(b)) return node;
+            node = node.parentElement;
+        }
+        return null;
+    };
+
+    const menuFromKnownClasses = (header) => {
+        const candidates = header.querySelectorAll(
+            '.profile-menu, .account-menu, .header-profile-menu, .header-account-menu, ' +
+            '.profile-dropdown, .account-dropdown, [data-profile-menu], [data-account-menu], ' +
+            '.dropdown-menu, [role="menu"]'
+        );
+
+        for (const menu of candidates) {
+            const login = findAnchor(menu, ['/login', '/signin']);
+            const register = findAnchor(menu, ['/register', '/signup']);
+            const account = findAnchor(menu, ['/account', '/dashboard']);
+            const logout = menu.querySelector(
+                'form[action*="/logout"], a[href*="/logout"], button[data-logout]'
+            );
+
+            if ((login && register) || (account && logout)) {
+                return menu;
+            }
+        }
+
+        return null;
+    };
+
+    const menuFromAuthLinks = (header) => {
+        const login = findAnchor(header, ['/login', '/signin']);
+        const register = findAnchor(header, ['/register', '/signup']);
+
+        if (login && register) {
+            return commonAncestor(login, register, header);
+        }
+
+        const account = findAnchor(header, ['/account', '/dashboard']);
+        const logout = header.querySelector(
+            'form[action*="/logout"], a[href*="/logout"], button[data-logout]'
+        );
+
+        if (account && logout) {
+            return commonAncestor(account, logout, header);
+        }
+
+        return null;
+    };
+
+    const findProfileMenu = () => {
+        const header = publicHeader();
+        if (!header) return null;
+        return menuFromKnownClasses(header) || menuFromAuthLinks(header);
+    };
+
+    const makeRow = (toggle) => {
+        const row = document.createElement('div');
+        row.className = 'barama-profile-theme-row';
+        row.setAttribute('data-barama-profile-theme-row', '');
+
+        const copy = document.createElement('div');
+        copy.className = 'barama-profile-theme-copy';
+        copy.innerHTML =
+            '<strong>Appearance</strong>' +
+            '<small>Light / Dark mode</small>';
+
+        toggle.classList.add('barama-profile-theme-toggle');
+        toggle.setAttribute(RELOCATED, '1');
+
+        row.append(copy, toggle);
+        return row;
+    };
+
+    const revealFallback = () => {
+        root.classList.add('barama-profile-theme-fallback');
+        root.classList.remove('barama-profile-theme-ready');
+    };
+
+    const relocate = () => {
+        if (document.querySelector('[data-barama-profile-theme-row]')) {
+            root.classList.add('barama-profile-theme-ready');
+            root.classList.remove('barama-profile-theme-fallback');
+            return true;
+        }
+
+        const toggle = canonicalToggle();
+        const menu = findProfileMenu();
+
+        if (!toggle || !menu) {
+            revealFallback();
+            return false;
+        }
+
+        const row = makeRow(toggle);
+        menu.appendChild(row);
+
+        root.classList.add('barama-profile-theme-ready');
+        root.classList.remove('barama-profile-theme-fallback');
+
+        return true;
+    };
+
+    const start = () => {
+        if (relocate()) return;
+
+        const header = publicHeader();
+        if (!header) {
+            revealFallback();
+            return;
+        }
+
+        let attempts = 0;
+        const observer = new MutationObserver(() => {
+            attempts += 1;
+            if (relocate() || attempts >= 20) {
+                observer.disconnect();
+                if (attempts >= 20 && !document.querySelector('[data-barama-profile-theme-row]')) {
+                    revealFallback();
+                }
+            }
+        });
+
+        observer.observe(header, { childList: true, subtree: true });
+
+        window.setTimeout(() => {
+            observer.disconnect();
+            if (!document.querySelector('[data-barama-profile-theme-row]')) {
+                revealFallback();
+            }
+        }, 3000);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
+    }
+})();
+
+/* BARAMA_RUNTIME_STYLE_DATA_BRIDGE_V1842 */
+(() => {
+    'use strict';
+
+    const clampNumber = (value, min, max) => {
+        const number = Number.parseFloat(String(value ?? '').trim());
+
+        if (!Number.isFinite(number)) {
+            return null;
+        }
+
+        return Math.min(max, Math.max(min, number));
+    };
+
+    const applyPercent = (element, dataKey, styleProperty) => {
+        const value = clampNumber(element.dataset[dataKey], 0, 100);
+
+        if (value === null) {
+            return;
+        }
+
+        element.style[styleProperty] = `${value}%`;
+    };
+
+    const applyCustomProperty = (
+        element,
+        dataKey,
+        propertyName,
+        normalize
+    ) => {
+        const raw = String(element.dataset[dataKey] ?? '').trim();
+
+        if (raw === '') {
+            return;
+        }
+
+        const value = normalize ? normalize(raw) : raw;
+
+        if (value === null || value === '') {
+            return;
+        }
+
+        element.style.setProperty(propertyName, value);
+    };
+
+    const normalizeInteger = (min, max) => (raw) => {
+        const value = Number.parseInt(raw, 10);
+
+        if (!Number.isFinite(value)) {
+            return null;
+        }
+
+        return String(Math.min(max, Math.max(min, value)));
+    };
+
+    const normalizeDecimal = (min, max) => (raw) => {
+        const value = clampNumber(raw, min, max);
+
+        return value === null ? null : String(value);
+    };
+
+    const normalizePercentProperty = (raw) => {
+        const value = clampNumber(raw, 0, 100);
+
+        return value === null ? null : `${value}%`;
+    };
+
+    const normalizeColor = (raw) => {
+        const value = raw.trim();
+
+        if (value === '' || value.length > 80) {
+            return null;
+        }
+
+        if (
+            window.CSS
+            && typeof window.CSS.supports === 'function'
+            && !window.CSS.supports('color', value)
+        ) {
+            return null;
+        }
+
+        return value;
+    };
+
+    const applyElement = (element) => {
+        if (!(element instanceof Element)) {
+            return;
+        }
+
+        if (element.hasAttribute('data-barama-width')) {
+            applyPercent(element, 'baramaWidth', 'width');
+        }
+
+        if (element.hasAttribute('data-barama-left')) {
+            applyPercent(element, 'baramaLeft', 'left');
+        }
+
+        if (element.hasAttribute('data-barama-marketplace-grid-columns')) {
+            applyCustomProperty(
+                element,
+                'baramaMarketplaceGridColumns',
+                '--marketplace-grid-columns',
+                normalizeInteger(1, 12)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-marketplace-hero-overlay')) {
+            applyCustomProperty(
+                element,
+                'baramaMarketplaceHeroOverlay',
+                '--marketplace-hero-overlay',
+                normalizeDecimal(0, 1)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-hero-overlay')) {
+            applyCustomProperty(
+                element,
+                'baramaHeroOverlay',
+                '--hero-overlay',
+                normalizeDecimal(0, 1)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-invoice-accent')) {
+            applyCustomProperty(
+                element,
+                'baramaInvoiceAccent',
+                '--invoice-accent',
+                normalizeColor
+            );
+        }
+
+        if (element.hasAttribute('data-barama-readiness-score')) {
+            applyCustomProperty(
+                element,
+                'baramaReadinessScore',
+                '--readiness-score',
+                normalizeInteger(0, 100)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-seo-health')) {
+            applyCustomProperty(
+                element,
+                'baramaSeoHealth',
+                '--seo-health',
+                normalizePercentProperty
+            );
+        }
+    };
+
+    const selector = [
+        '[data-barama-width]',
+        '[data-barama-left]',
+        '[data-barama-marketplace-grid-columns]',
+        '[data-barama-marketplace-hero-overlay]',
+        '[data-barama-hero-overlay]',
+        '[data-barama-invoice-accent]',
+        '[data-barama-readiness-score]',
+        '[data-barama-seo-health]',
+    ].join(',');
+
+    const applyRuntimeStyles = (root = document) => {
+        if (root instanceof Element && root.matches(selector)) {
+            applyElement(root);
+        }
+
+        if (!root.querySelectorAll) {
+            return;
+        }
+
+        root.querySelectorAll(selector).forEach(applyElement);
+    };
+
+    const start = () => {
+        applyRuntimeStyles(document);
+
+        if (typeof MutationObserver !== 'function') {
+            return;
+        }
+
+        const attributeFilter = [
+            'data-barama-width',
+            'data-barama-left',
+            'data-barama-marketplace-grid-columns',
+            'data-barama-marketplace-hero-overlay',
+            'data-barama-hero-overlay',
+            'data-barama-invoice-accent',
+            'data-barama-readiness-score',
+            'data-barama-seo-health',
+        ];
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes') {
+                    applyElement(mutation.target);
+                    return;
+                }
+
+                mutation.addedNodes.forEach((node) => {
+                    if (node instanceof Element) {
+                        applyRuntimeStyles(node);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.documentElement, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter,
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
+    }
+
+    window.BaramaRuntimeStyles = Object.freeze({
+        apply: applyRuntimeStyles,
+    });
 })();

@@ -29,7 +29,8 @@ final class CmsController
             return Response::html(
                 View::render('errors/404', [
                     'pageTitle' => 'Page not found',
-                    'metaDescription' => 'The requested page could not be found on Barama Real Estate.',
+                    'metaDescription' =>
+                        'The requested page could not be found on Barama Real Estate.',
                     'metaRobots' => 'noindex,follow',
                     'activeArea' => '',
                 ]),
@@ -42,7 +43,6 @@ final class CmsController
             301
         );
     }
-
     public function show(Request $request, string $slug): Response
     {
         $normalizedSlug = strtolower(trim($slug));

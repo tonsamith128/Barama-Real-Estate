@@ -146,6 +146,100 @@ const seriousAccessibility = async (page, label) => {
     );
 };
 
+// Compact Barama headers intentionally show inline icon navigation rather
+// than a hamburger. Validate whichever accessible interaction is visible.
+const verifyMobileNavigation = async (page, label) => {
+    const menu = page.locator('[data-site-menu-toggle]');
+
+    if (await menu.isVisible()) {
+        await menu.click();
+        assert(
+            await menu.getAttribute('aria-expanded') === 'true',
+            label + ' mobile navigation did not open.'
+        );
+        await page.keyboard.press('Escape');
+        assert(
+            await menu.getAttribute('aria-expanded') === 'false',
+            label + ' mobile navigation did not close with Escape.'
+        );
+        return;
+    }
+
+    const navigation = page.locator('.site-header [data-site-navigation]');
+    assert(
+        await navigation.isVisible(),
+        label + ' compact navigation is hidden while hamburger is unavailable.'
+    );
+
+    const links = navigation.locator('.main-nav a');
+    const count = await links.count();
+    assert(count >= 4, label + ' compact navigation has fewer than four links.');
+
+    for (let i = 0; i < 4; i++) {
+        const link = links.nth(i);
+        assert(await link.isVisible(), label + ' compact navigation link ' + i + ' is hidden.');
+        const accessibleName = (
+            (await link.getAttribute('aria-label')) || await link.textContent() || ''
+        ).trim();
+        assert(accessibleName.length > 0, label + ' compact icon link ' + i + ' has no name.');
+    }
+
+    const properties = navigation.locator('.main-nav a[href$="/properties"]').first();
+    assert(
+        await properties.isVisible(),
+        label + ' compact Properties navigation is not visible.'
+    );
+    await properties.click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        new URL(page.url()).pathname === '/properties',
+        label + ' compact Properties navigation did not navigate.'
+    );
+    await noOverflow(page, label + ' compact Properties navigation');
+};
+
+// The public theme control is intentionally relocated into the Account
+// dropdown. Use real visible interactions; never force-click hidden controls.
+const clickPublicThemeToggle = async (page, label) => {
+    const toggle = page.locator('[data-theme-toggle]').first();
+    assert(await toggle.count() === 1, label + ' theme toggle is missing.');
+
+    if (await toggle.isVisible()) {
+        await toggle.click();
+        return;
+    }
+
+    const panel = page.locator('[data-public-user-panel]').first();
+    const accountTrigger = page.locator('[data-public-user-trigger]').first();
+    const relocated = panel.locator('[data-theme-toggle]');
+
+    assert(
+        await relocated.count() === 1,
+        label + ' hidden theme toggle was not relocated into the Account dropdown.'
+    );
+    assert(
+        await accountTrigger.isVisible(),
+        label + ' Account dropdown trigger is not visible.'
+    );
+
+    await accountTrigger.click();
+    assert(
+        await accountTrigger.getAttribute('aria-expanded') === 'true',
+        label + ' Account dropdown did not expose its expanded state.'
+    );
+    assert(
+        await panel.isVisible() && await relocated.isVisible(),
+        label + ' relocated theme toggle was not visible in the opened dropdown.'
+    );
+
+    await relocated.click();
+    await page.keyboard.press('Escape');
+    assert(
+        await accountTrigger.getAttribute('aria-expanded') === 'false',
+        label + ' Account dropdown did not close with Escape.'
+    );
+};
+
 const runCrossBrowserCritical = async (browserType, browserName) => {
     const browser = await browserType.launch({ headless: true });
 
@@ -194,17 +288,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
                 });
-                const menu = page.locator('[data-site-menu-toggle]');
-                await menu.click();
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'true',
-                    browserName + ' mobile navigation did not open.'
-                );
-                await page.keyboard.press('Escape');
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'false',
-                    browserName + ' mobile navigation did not close with Escape.'
-                );
+                await verifyMobileNavigation(page, browserName);
             } else {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
@@ -213,7 +297,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                     localStorage.setItem('barama-theme', 'light');
                 });
                 await page.reload({ waitUntil: 'networkidle' });
-                await page.locator('[data-theme-toggle]').click();
+                await clickPublicThemeToggle(page, browserName);
 
                 assert(
                     await page.locator('html').getAttribute('data-bs-theme')
@@ -243,7 +327,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                     browserName + ' administrator login did not complete.'
                 );
 
-                for (const path of ['/account', '/developer', '/dashboard']) {
+                for (const path of ['/account', '/developer', '/dashboard', '/dashboard/settings/mail']) {
                     const response = await page.goto(installedBase + path, {
                         waitUntil: 'networkidle',
                     });
@@ -348,17 +432,7 @@ try {
 
         if (viewport.name === 'mobile') {
             await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
-            const menu = page.locator('[data-site-menu-toggle]');
-            await menu.click();
-            assert(
-                await menu.getAttribute('aria-expanded') === 'true',
-                'Mobile navigation did not expose expanded state.'
-            );
-            await page.keyboard.press('Escape');
-            assert(
-                await menu.getAttribute('aria-expanded') === 'false',
-                'Mobile navigation did not close with Escape.'
-            );
+            await verifyMobileNavigation(page, 'Chromium');
         }
 
         await context.close();
@@ -461,6 +535,275 @@ try {
         });
     }
 
+    // Mail Setup is a customer-facing administrator configuration surface.
+    // Exercise the exact package, not just isolated repository unit tests.
+    const mailSetupResponse = await page.goto(
+        installedBase + '/dashboard/settings/mail',
+        { waitUntil: 'networkidle' }
+    );
+    assert(
+        mailSetupResponse && mailSetupResponse.ok(),
+        'Authenticated administrator Mail Setup is unavailable.'
+    );
+    await seriousAccessibility(page, 'admin mail setup');
+    assert(
+        await page.locator('select[name="mail_driver"]').count() === 1,
+        'Mail Setup delivery method selector is missing.'
+    );
+    await page.locator('select[name="mail_driver"]').selectOption('smtp');
+    await page.locator('input[name="mail_from_name"]').fill('Browser Test Mailer');
+    await page.locator('input[name="mail_from_address"]').fill('noreply@example.test');
+    await page.locator('input[name="mail_host"]').fill('smtp.example.test');
+    await page.locator('input[name="mail_port"]').fill('587');
+    await page.locator('select[name="mail_encryption"]').selectOption('tls');
+    await page.locator('input[name="mail_username"]').fill('browser.qa.private@gmail.com');
+    const qaMailPassword = 'Browser-QA-Encrypted-SMTP-Only-123!';
+    await page.locator('input[name="mail_password"]').fill(qaMailPassword);
+    await page.locator('button[type="submit"]').filter({ hasText: 'Save Mail Setup' }).click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        page.url().includes('/dashboard/settings/mail')
+            && page.url().includes('saved=1'),
+        'Admin Mail Setup did not persist and redirect successfully.'
+    );
+    const mailHtml = await page.content();
+    assert(
+        !mailHtml.includes(qaMailPassword),
+        'Saved SMTP secret was exposed in the returned HTML.'
+    );
+    assert(
+        await page.locator('input[name="mail_password"]').inputValue() === '',
+        'Saved SMTP password must remain masked/empty in the editor.'
+    );
+    assert(
+        await page.locator('input[name="mail_host"]').inputValue() === 'smtp.example.test',
+        'Saved SMTP host was not persisted.'
+    );
+    assert(
+        await page.locator('input[name="mail_username"]').inputValue() === '••••@gmail.com'
+            && !mailHtml.includes('browser.qa.private@gmail.com'),
+        'Saved Gmail SMTP username was not privacy masked.'
+    );
+    await page.locator('button[type="submit"]').filter({ hasText: 'Save Mail Setup' }).click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        page.url().includes('saved=1'),
+        'Unchanged masked Gmail SMTP identity did not save successfully.'
+    );
+    assert(
+        await page.locator('input[name="mail_username"]').inputValue() === '••••@gmail.com',
+        'Saved Gmail SMTP identity was altered by masked edit.'
+    );
+    // Custom test recipients are no longer tied to the administrator login,
+    // which may intentionally use a non-deliverable demo identity. Do not
+    // submit this form during QA; it can dispatch a real external email.
+    const testRecipient = page.locator('input[name="mail_test_recipient"]');
+    assert(
+        await testRecipient.count() === 1
+            && await testRecipient.getAttribute('type') === 'email'
+            && await testRecipient.getAttribute('required') !== null,
+        'Mail Setup must require a dedicated validated custom test recipient.'
+    );
+    assert(
+        (await testRecipient.inputValue()) === '',
+        'Custom test recipient must never be populated from the demo administrator address.'
+    );
+    await testRecipient.fill('test.recipient@example.org');
+    assert(
+        await testRecipient.evaluate((input) => input.checkValidity()),
+        'Valid custom test recipient was not accepted in the form.'
+    );
+    await testRecipient.fill('not-a-real-email');
+    assert(
+        !(await testRecipient.evaluate((input) => input.checkValidity())),
+        'Invalid custom test recipient passed browser validation.'
+    );
+    await testRecipient.fill('');
+
+    await page.screenshot({
+        path: artifacts + '/admin-mail-settings-desktop.png',
+        fullPage: true,
+    });
+    console.log('[PASS] Exact customer Mail Setup: administrator save, reload and password redaction.');
+    // Test recipient field must remain readable in both stored themes.
+    // The native browser can apply unwanted dark color-scheme input styles.
+    const recipientTheme = await page.evaluate(() => {
+        const root = document.documentElement;
+        const field = document.querySelector('input[name="mail_test_recipient"]');
+        const button = document.querySelector('.barama-mail-settings__test-form button[type="submit"]');
+        const original = root.getAttribute('data-bs-theme');
+        const values = [];
+        for (const theme of ['light', 'dark']) {
+            root.setAttribute('data-bs-theme', theme);
+            values.push({
+                theme,
+                fieldBackground: getComputedStyle(field).backgroundColor,
+                fieldText: getComputedStyle(field).color,
+                buttonBackground: getComputedStyle(button).backgroundColor,
+                buttonText: getComputedStyle(button).color,
+            });
+        }
+        root.setAttribute('data-bs-theme', original || 'light');
+        return values;
+    });
+    assert(
+        recipientTheme[0].fieldBackground === 'rgb(255, 255, 255)'
+            && recipientTheme[1].fieldBackground !== recipientTheme[0].fieldBackground,
+        'Test recipient field light/dark background treatment is incorrect.'
+    );
+    assert(
+        recipientTheme.every((v) =>
+            v.buttonBackground === 'rgb(25, 93, 244)' && v.buttonText === 'rgb(255, 255, 255)'
+        ),
+        'Send test email button must have the blue background in both themes.'
+    );
+    console.log('[PASS] Mail Setup custom test field and blue button light/dark contrast.');
+
+    const footerEditor = await page.goto(
+        installedBase + '/dashboard/footer',
+        { waitUntil: 'networkidle' }
+    );
+    assert(footerEditor && footerEditor.ok(), 'Dedicated Footer editor is unavailable.');
+    await seriousAccessibility(page, 'admin footer editor');
+    assert(
+        await page.locator('input[name="compliance_heading"]').inputValue() === 'Compliance',
+        'Default Compliance heading missing from Footer editor.'
+    );
+    // Exercise dynamic footer menu editing through real browser controls:
+    // add Brand link, rename Marketplace, remove a saved item, and reorder
+    // Compliance without breaking canonical policy destinations.
+    await page.locator('input[name="brand_heading"]').fill('Our Marketplace');
+    const brandList = page.locator('[data-footer-list="brand"]');
+    await page.locator('[data-footer-add="brand"]').click();
+    assert(await brandList.locator('[data-footer-item]').count() === 1, 'Brand item was not added.');
+    await brandList.locator('[data-footer-item]').last().locator('[data-footer-label]').fill('Our Story');
+    await brandList.locator('[data-footer-item]').last().locator('[data-footer-url]').fill('/about');
+
+    const marketList = page.locator('[data-footer-list="marketplace"]');
+    const originalMarketLinks = await marketList.locator('[data-footer-label]').evaluateAll(elements => elements.map(input => input.value));
+    assert(originalMarketLinks.length >= 2, 'Expected at least two existing Marketplace items for reorder test.');
+    const removedLabel = originalMarketLinks[0];
+    await marketList.locator('[data-footer-item]').first().locator('[data-footer-remove]').click();
+    await page.locator('[data-footer-add="marketplace"]').click();
+    await marketList.locator('[data-footer-item]').last().locator('[data-footer-label]').fill('Custom Destination');
+    await marketList.locator('[data-footer-item]').last().locator('[data-footer-url]').fill('/projects');
+    await marketList.locator('[data-footer-item]').last().locator('[data-footer-up]').click();
+    assert(
+        (await marketList.locator('[data-footer-label]').evaluateAll(elements => elements.map(input => input.value))).includes('Custom Destination'),
+        'Marketplace Add/Reorder did not retain custom link.'
+    );
+    await page.locator('input[name="marketplace_heading"]').fill('Discover');
+
+    const complianceList = page.locator('[data-footer-list="compliance"]');
+    const complianceCount = await complianceList.locator('[data-footer-item]').count();
+    assert(complianceCount === 3, 'Canonical policy links must import as three editable menu rows.');
+    await complianceList.locator('[data-footer-item]').last().locator('[data-footer-up]').click();
+    await complianceList.locator('[data-footer-item]').nth(1).locator('[data-footer-up]').click();
+    assert(
+        await complianceList.locator('[data-footer-label]').first().inputValue() === 'Terms',
+        'Footer item Move Up did not reorder compliance links.'
+    );
+
+    await page.locator('input[name="copyright"]').fill('Copyright {year} | Barama Real Estate QA');
+    await page.locator('input[name="social_facebook"]').fill('https://www.facebook.com/barama-test');
+    const [footerSaveResponse] = await Promise.all([
+        page.waitForResponse((r) =>
+            r.url().includes('/dashboard/footer')
+                && r.request().method() === 'POST'
+        ),
+        page.locator('button[type="submit"]').filter({ hasText: 'Save Footer' }).click(),
+    ]);
+    const footerSaveResult = await footerSaveResponse.json();
+    assert(
+        footerSaveResponse.ok() && footerSaveResult?.ok === true,
+        'Footer editor did not return a successful workspace JSON response.'
+    );
+    // The existing workspace form handler reloads after saving; a fresh GET
+    // proves data persisted rather than merely remaining in the input DOM.
+    await page.waitForTimeout(550);
+    await page.goto(installedBase + '/dashboard/footer', { waitUntil: 'networkidle' });
+    assert(
+        await page.locator('input[name="copyright"]').inputValue()
+            === 'Copyright {year} | Barama Real Estate QA',
+        'Footer copyright content was not saved to application settings.'
+    );
+    assert(
+        await page.locator('[data-footer-list="marketplace"] [data-footer-label]').evaluateAll(elements => elements.map(input => input.value))
+            .then(labels => labels.includes('Custom Destination') && !labels.includes(removedLabel)),
+        'Footer menu addition/deletion was not persisted after a fresh GET.'
+    );
+    assert(
+        await page.locator('[data-footer-list="compliance"] [data-footer-label]').first().inputValue() === 'Terms',
+        'Footer menu order was not persisted after a fresh GET.'
+    );
+    await page.screenshot({
+        path: artifacts + '/admin-footer-editor-desktop.png',
+        fullPage: true,
+    });
+    await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
+    assert(
+        await page.locator('.site-footer__grid').locator(':scope > *').count() === 4,
+        'Public Footer must keep exactly four columns.'
+    );
+    assert(
+        await page.locator('.site-footer').getByRole('navigation', { name: 'Compliance links' })
+            .getByRole('link', { name: 'Policy Center' }).count() === 1,
+        'Compliance Policy Center link is missing.'
+    );
+    assert(
+        await page.locator('.site-footer__brand-links a').filter({ hasText: 'Our Story' }).count() === 1,
+        'Brand menu link was not rendered on the public site.'
+    );
+    const publicMarket = page.locator('.site-footer')
+        .getByRole('navigation', { name: 'Discover links' });
+    assert(
+        await publicMarket.getByRole('link', { name: 'Custom Destination' }).count() === 1,
+        'Custom public Marketplace link is missing.'
+    );
+    assert(
+        await publicMarket.getByRole('link', { name: removedLabel, exact: true }).count() === 0,
+        'Deleted footer menu link was unexpectedly restored.'
+    );
+    const publicPolicyOrder = await page.locator('.site-footer')
+        .getByRole('navigation', { name: 'Compliance links' })
+        .locator('a').allTextContents();
+    assert(publicPolicyOrder[0].trim() === 'Terms', 'Reordered policy link did not become first in public footer.');
+    assert(
+        await page.locator('.site-footer a[href$="/policies?=privacy-policy"]').count() === 1
+            && await page.locator('.site-footer a[href$="/policies?=terms-of-service"]').count() === 1,
+        'Policy Center Compliance links do not follow canonical policy URL format.'
+    );
+    assert(
+        await page.locator('.site-footer__meta').innerText().then((s) =>
+            s.includes('Copyright') && s.includes('Barama Real Estate QA')),
+        'Configured copyright was not reflected in the public footer.'
+    );
+    assert(
+        await page.locator('.site-footer__social a[aria-label="Facebook"]').count() === 1,
+        'Configured social icon link is missing.'
+    );
+    await page.screenshot({
+        path: artifacts + '/public-footer-customized-desktop.png',
+        fullPage: true,
+    });
+    console.log('[PASS] Admin Footer save and public 4-column Compliance/copyright/social parity.');
+
+
+    const queueResponse = await page.goto(
+        installedBase + '/dashboard/mail-queue',
+        { waitUntil: 'networkidle' }
+    );
+    assert(queueResponse && queueResponse.ok(), 'Mail Queue history is unavailable.');
+    assert(
+        await page.locator('input[name="per_page"]').inputValue() === '10',
+        'Mail Queue does not enforce the ten-row pagination contract.'
+    );
+    await seriousAccessibility(page, 'admin mail queue');
+    await page.screenshot({
+        path: artifacts + '/admin-mail-queue-desktop.png',
+        fullPage: true,
+    });
+
     await page.goto(installedBase + '/dashboard', { waitUntil: 'networkidle' });
     await page.setViewportSize({ width: 390, height: 844 });
     const workspaceMenu = page.locator('[data-workspace-open]');
@@ -494,7 +837,7 @@ try {
         fullPage: true,
     });
 
-    await page.locator('[data-theme-toggle]').click();
+    await clickPublicThemeToggle(page, 'Chromium installed homepage');
     assert(
         await page.locator('html').getAttribute('data-bs-theme') === 'dark',
         'Installed theme toggle did not activate dark mode.'

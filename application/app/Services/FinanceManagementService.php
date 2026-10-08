@@ -374,6 +374,7 @@ final class FinanceManagementService
         $current = (string) $subscription['status'];
 
         $transitions = [
+            'pending' => ['active', 'cancelled'],
             'active' => ['paused', 'cancelled', 'expired'],
             'paused' => ['active', 'cancelled', 'expired'],
             'cancelled' => [],
@@ -743,6 +744,80 @@ final class FinanceManagementService
         );
 
         return $id;
+    }
+
+    /* BARAMA_PAYMENT_PROVIDERS_PREMIUM_V100 */
+    /** @param array<string,mixed> $input */
+    public function updatePaymentProvider(int $id, array $input): void
+    {
+        $actor = $this->administrator();
+        $repository = new FinanceRepository();
+        $provider = $repository->paymentProvider($id);
+
+        if ($provider === null) {
+            throw new InvalidArgumentException('Payment provider was not found.');
+        }
+
+        if ((string) ($provider['status'] ?? '') === 'archived') {
+            throw new DomainException('Archived payment providers are read-only.');
+        }
+
+        $name = trim((string) ($input['name'] ?? ''));
+        $environment = strtolower(trim((string) ($input['environment'] ?? 'sandbox')));
+        $token = trim((string) ($input['webhook_token'] ?? ''));
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 160) {
+            throw new InvalidArgumentException(
+                'Provider name must contain between 2 and 160 characters.'
+            );
+        }
+
+        if (!in_array($environment, ['sandbox', 'live'], true)) {
+            throw new InvalidArgumentException('Choose sandbox or live environment.');
+        }
+
+        if (
+            (string) ($provider['status'] ?? '') === 'active'
+            && $environment !== (string) ($provider['environment'] ?? '')
+        ) {
+            throw new DomainException(
+                'Turn the provider OFF before changing its environment.'
+            );
+        }
+
+        $tokenHash = null;
+        if ($token !== '') {
+            if (mb_strlen($token) < 32 || mb_strlen($token) > 191) {
+                throw new InvalidArgumentException(
+                    'Webhook token must contain between 32 and 191 characters.'
+                );
+            }
+
+            $tokenHash = password_hash($token, PASSWORD_DEFAULT);
+            if (!is_string($tokenHash) || $tokenHash === '') {
+                throw new DomainException('Webhook token hashing failed.');
+            }
+        }
+
+        $repository->updatePaymentProvider($id, [
+            'name' => $name,
+            'environment' => $environment,
+            'webhook_token_hash' => $tokenHash,
+            'actor_id' => (int) $actor['id'],
+        ]);
+
+        (new SecurityAuditService())->record(
+            'admin.billing_payment_provider_updated',
+            (int) $actor['id'],
+            null,
+            [
+                'payment_provider_id' => $id,
+                'code' => (string) ($provider['code'] ?? ''),
+                'environment_from' => (string) ($provider['environment'] ?? ''),
+                'environment_to' => $environment,
+                'webhook_token_rotated' => $tokenHash !== null,
+            ]
+        );
     }
 
     public function setPaymentProviderStatus(int $id, string $status): void

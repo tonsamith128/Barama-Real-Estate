@@ -102,6 +102,39 @@ final class DomainWorkflowService
                     'A property linked to a project cannot be approved until that project is approved.'
                 );
             }
+
+            $propertyReadiness = (new PropertyReadinessService())->evaluatePropertyId($entityId);
+            if (empty($propertyReadiness['approval_ready'])) {
+                $messages = [];
+                foreach ((array) ($propertyReadiness['missing'] ?? []) as $check) {
+                    $message = trim((string) ($check['message'] ?? ''));
+                    if ($message !== '') {
+                        $messages[] = $message;
+                    }
+                }
+
+                throw new DomainException(
+                    'Property readiness is incomplete. ' . implode(' ', array_slice($messages, 0, 6))
+                );
+            }
+        }
+
+        if (!$isAdmin && $resource === 'property' && $toStatus === 'pending') {
+            $submissionReadiness = (new PropertyReadinessService())->evaluatePropertyId($entityId);
+            if (empty($submissionReadiness['approval_ready'])) {
+                $messages = [];
+                foreach ((array) ($submissionReadiness['missing'] ?? []) as $check) {
+                    $message = trim((string) ($check['message'] ?? ''));
+                    if ($message !== '') {
+                        $messages[] = $message;
+                    }
+                }
+
+                throw new DomainException(
+                    'Property submission is blocked until readiness reaches 100%. '
+                    . implode(' ', array_slice($messages, 0, 6))
+                );
+            }
         }
 
         if (!$isAdmin) {
@@ -199,7 +232,7 @@ final class DomainWorkflowService
 
             if ($resource === 'company' && $toStatus === 'approved') {
                 $companyMembers = $pdo->prepare(
-                    'SELECT u.email
+                    'SELECT u.id, u.email
                      FROM company_members cm
                      INNER JOIN users u ON u.id = cm.user_id
                      WHERE cm.company_id = :company_id
@@ -209,9 +242,15 @@ final class DomainWorkflowService
                 );
                 $companyMembers->execute(['company_id' => $entityId]);
 
-                foreach ($companyMembers->fetchAll(\PDO::FETCH_COLUMN) as $ownerEmail) {
-                    if (is_string($ownerEmail) && filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
+                foreach ($companyMembers->fetchAll(\PDO::FETCH_ASSOC) as $owner) {
+                    $ownerEmail = is_array($owner) ? (string) ($owner['email'] ?? '') : '';
+                    if (filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
                         (new NotificationService())->notifyAddress($ownerEmail, [
+                            'template_key' => 'company_approved',
+                            'user_id' => (int) ($owner['id'] ?? 0),
+                            'variables' => [
+                                'action_url' => url('/developer'),
+                            ],
                             'subject' => 'Company approved · Barama Real Estate',
                             'html' => '<p><strong>Your company has been approved.</strong></p>'
                                 . '<p>Company / Vendor Workspace access is now active for your account.</p>'
@@ -255,6 +294,13 @@ final class DomainWorkflowService
                         (new NotificationService())->notifyAddress(
                             (string) $inquiry['contact_email'],
                             [
+                                'template_key' => 'inquiry_' . $toStatus,
+                                'variables' => [
+                                    'title' => (string) $notificationData['title'],
+                                    'message' => $message,
+                                    'action_url' => url('/account/inquiries'),
+                                    'recipient_name' => (string) ($inquiry['contact_name'] ?? ''),
+                                ],
                                 'subject' => $subject,
                                 'html' => '<p><strong>' . e((string) $notificationData['title'])
                                     . '</strong></p><p>' . e($message) . '</p>',

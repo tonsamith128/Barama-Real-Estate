@@ -32,7 +32,7 @@
             <h2>System requirements</h2>
             <ul>
                 <li>PHP 8.2 or newer</li>
-                <li>MySQL 8.0+ or MariaDB 10.6+</li>
+                <li>MySQL 8.0+ or MariaDB 10.6+, with CREATE, DROP and TRIGGER privileges for the email audit history check. The database account also needs standard migration DDL and data privileges.</li>
                 <li>PDO and PDO MySQL</li>
                 <li>JSON, Mbstring, Ctype, Session, OpenSSL, Fileinfo, and cURL extensions</li>
                 <li>Writable Barama application runtime directories</li>
@@ -54,6 +54,7 @@
                 <li>Review <strong>System Health / Finish</strong> and open the website.</li>
             </ol>
             <p>The customer-facing installer always contains exactly five visible steps. Permissions checks remain inside Requirements. Requirements are shown in a clean status table, and the header language control shows flag + language options for English, Khmer, and Chinese.</p>
+            <p><strong>Database compatibility:</strong> Step 3 briefly creates and deletes an isolated test table and two triggers to verify your host supports append-only email audit history. Some shared-hosting databases restrict TRIGGER privileges or binary-log trigger creation. Ask your host to enable the necessary privileges and, if required, the server-managed <code>log_bin_trust_function_creators</code> setting. Installation stops safely rather than disabling audit protection. No customer-facing server setting is modified automatically.</p>
             <p><strong>Existing Database</strong> uses database credentials already created by your hosting provider. <strong>Create Database</strong> asks for database-server administrative access, creates a dedicated database and application user, verifies the new connection, and does not store the administrative credentials.</p>
         </section>
 
@@ -74,10 +75,21 @@
             <p>Access is permission controlled. Public registration does not grant company/vendor or administrator permissions automatically.</p>
         </section>
 
+        <section id="footer">
+            <h2>Footer and Footer Bottom</h2>
+            <p>Go to <strong>Admin Control Center &rarr; Content &amp; Discovery &rarr; Footer</strong> at <code>/dashboard/footer</code>. Only administrators with page-management permission can save footer content.</p>
+            <p>The public footer preserves four columns. Each column heading is editable. Column 1 preserves the brand logo and editable description; the brand heading and optional links are customizable. Column 2 initially imports existing public Navigation links. Column 3 initially contains Policy Center, Privacy and Terms with <code>/policies</code>, <code>/policies?=privacy-policy</code> and <code>/policies?=terms-of-service</code>. Column 4 initially contains Documentation, Contact Support and System Health. All labels, menu links and ordering are subsequently independent of the main Navigation editor.</p>
+            <p>For each footer column, use <strong>+ Add item</strong> to create links; edit each label and its site-relative path (starting with <code>/</code>) or external HTTPS URL; use <strong>↑ Up</strong> or <strong>↓ Down</strong> to reorganize menu items; and use <strong>Remove</strong> to delete a link. Maximum 15 menu items per column. Empty lists are permitted and stay empty after saving. Changes are saved only when <strong>Save Footer</strong> is clicked, and are reflected in the public footer while preserving the four-column structure.</p>
+            <p>The Footer Bottom editor controls copyright text (use <code>{year}</code> to render the current year) and optional HTTPS social icons. Empty social URLs hide those icons; the existing theme toggle is preserved. Colors, spacing, divider and surface styles remain under <strong>Appearance &rarr; Footer</strong>, so the two configuration areas do not duplicate functionality.</p>
+            <p>Footer content uses the existing <code>application_settings</code> database table and does not require a new migration. Public output escapes custom labels and validates social URLs. Save changes before refreshing the public website.</p>
+        </section>
+
         <section id="email">
             <h2>Email delivery</h2>
             <p>Email delivery is intentionally kept out of the installer. Barama starts with PHP mail using the administrator email and website name.</p>
-            <p>If SMTP is required, configure it later from the application settings after installation.</p>
+            <p>After signing in as an administrator, open <strong>Settings &rarr; Mail Setup</strong> at <code>/dashboard/settings/mail</code>. Select PHP Mail or SMTP, then enter the From address and name. For SMTP, configure the host, port, STARTTLS/SSL, username and password.</p>
+            <p>Save the configuration first, then select <strong>Send test email</strong>. Enter a separate valid <strong>Test recipient email</strong> address you control; it does not need to match the administrator login (public demo accounts may use non-deliverable addresses). Tests submit through the saved transport directly, not through the outbox. A successful transport handoff does not guarantee inbox delivery: check the recipient inbox, Spam and mail logs if the message does not arrive. For safety, test delivery is limited to 3 attempts per hour and 10 per day across the installation. Public demo operators can disable outgoing test emails with <code>MAIL_TEST_DISABLED=true</code> in the protected environment. SMTP credentials are encrypted at rest with the installation APP_KEY and are never displayed again; leave the password field empty to retain credentials for the same host/account.</p>
+            <p>SMTP with authenticated encryption is recommended for reliable transactional delivery. Switching back to PHP Mail clears the saved SMTP credentials. Mail Setup does not require a new install or modification of the installer runtime environment.</p>
         </section>
 
         <section id="jobs">
