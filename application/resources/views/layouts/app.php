@@ -96,6 +96,16 @@ if (!$isWorkspacePage) {
 $publicNavigation = (!$isStandaloneAuthPage && !$isWorkspacePage)
     ? (new \Barama\Repositories\SiteContentRepository())->navigation()
     : [];
+
+// Content-only footer settings remain separate from Appearance's footer style.
+$footerContent = \Barama\Repositories\FooterContentRepository::defaults();
+if (!$isWorkspacePage && !$isStandaloneAuthPage) {
+    try {
+        $footerContent = (new \Barama\Repositories\FooterContentRepository())->get();
+    } catch (\Throwable $exception) {
+        error_log('[Barama Footer] Unable to read footer configuration.');
+    }
+}
 $workspaceHeaderUserName = trim((string) ($headerUser['name'] ?? ''));
 $workspaceHeaderUserName = $workspaceHeaderUserName !== '' ? $workspaceHeaderUserName : t('My account');
 $workspaceHeaderUserEmail = trim((string) ($headerUser['email'] ?? ''));
@@ -208,6 +218,7 @@ $appJsVersion = is_file($appJsFile)
         rel="stylesheet"
     >
     <link href="<?= e(asset('css/app.css') . '?v=' . rawurlencode($appCssVersion)) ?>" rel="stylesheet">
+    <link href="<?= e(asset('css/footer-management-v100.css') . '?v=100') ?>" rel="stylesheet">
     <?php if ($isWorkspacePage): ?>
         <link href="<?= e(asset('css/workspace-sidebar-scroll-v115.css') . '?v=115') ?>" rel="stylesheet">
         <?php if ($changeConfirmationRequired): ?>
@@ -566,11 +577,11 @@ $appJsVersion = is_file($appJsFile)
                             height="220"
                         >
                     </a>
-                    <p><?= e(t('Property marketplace, developer discovery, and secure real estate management in one focused platform.')) ?></p>
+                    <p><?= e(t((string) ($footerContent['brand_description'] ?? ''))) ?></p>
                 </div>
 
                 <nav aria-label="<?= e(t('Marketplace links')) ?>">
-                    <strong><?= e(t('Marketplace')) ?></strong>
+                    <strong><?= e(t((string) ($footerContent['marketplace_heading'] ?? 'Marketplace'))) ?></strong>
                     <?php foreach ($publicNavigation as $navigationItem): ?>
                         <?php if ((string) ($navigationItem['path'] ?? '/') === '/'): ?>
                             <?php continue; ?>
@@ -581,21 +592,15 @@ $appJsVersion = is_file($appJsFile)
                     <?php endforeach; ?>
                 </nav>
 
-                <nav aria-label="<?= e(t('Account links')) ?>">
-                    <strong><?= e(t('Accounts')) ?></strong>
-                    <?php if ($isAuthenticated): ?>
-                        <?php if (auth_workspace_can('account')): ?><a href="<?= e(url('/account')) ?>"><?= e(t('My Account')) ?></a><?php endif; ?>
-                        <?php if (auth_workspace_can('developer')): ?><a href="<?= e(url('/developer')) ?>"><?= e(t('Company / Vendor')) ?></a><?php endif; ?>
-                        <?php if (auth_workspace_can('dashboard')): ?><a href="<?= e(url('/dashboard')) ?>"><?= e(t('Dashboard')) ?></a><?php endif; ?>
-                    <?php else: ?>
-                        <a href="<?= e(url('/login')) ?>"><?= e(t('Sign in')) ?></a>
-                        <a href="<?= e(url('/register')) ?>"><?= e(t('Create account')) ?></a>
-                        <a href="<?= e(url('/forgot-password')) ?>"><?= e(t('Password recovery')) ?></a>
-                    <?php endif; ?>
+                <nav aria-label="<?= e(t('Compliance links')) ?>">
+                    <strong><?= e(t((string) ($footerContent['compliance_heading'] ?? 'Compliance'))) ?></strong>
+                    <a href="<?= e(url('/policies')) ?>"><?= e(t((string) ($footerContent['policy_label'] ?? 'Policy Center'))) ?></a>
+                    <a href="<?= e(url('/policies') . '?=privacy-policy') ?>"><?= e(t((string) ($footerContent['privacy_label'] ?? 'Privacy'))) ?></a>
+                    <a href="<?= e(url('/policies') . '?=terms-of-service') ?>"><?= e(t((string) ($footerContent['terms_label'] ?? 'Terms'))) ?></a>
                 </nav>
 
                 <nav aria-label="<?= e(t('Help links')) ?>">
-                    <strong><?= e(t('Help')) ?></strong>
+                    <strong><?= e(t((string) ($footerContent['help_heading'] ?? 'Help'))) ?></strong>
                     <a href="<?= e((string) config('app.documentation_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Documentation')) ?></a>
                     <a href="<?= e((string) config('app.support_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Contact Support')) ?></a>
                     <a href="<?= e(url('/health')) ?>"><?= e(t('System Health')) ?></a>
@@ -605,15 +610,27 @@ $appJsVersion = is_file($appJsFile)
 
             <div class="site-footer__bottom">
                 <div class="site-footer__meta">
-                    <span>© <span data-current-year></span> Barama Real Estate · Version <?= e(APP_VERSION) ?></span>
-                    <span><?= e(t('Built by Ton Samith')) ?></span>
+                    <span><?= e(str_replace('{year}', date('Y'), (string) ($footerContent['copyright'] ?? 'Copyright {year} | Barama Real Estate'))) ?></span>
                 </div>
 
                 <div class="site-footer__utility">
-                    <nav class="site-footer__legal" aria-label="<?= e(t('Legal links')) ?>">
-                        <a href="<?= e(url('/pages/privacy')) ?>"><?= e(t('Privacy')) ?></a>
-                        <a href="<?= e(url('/pages/terms')) ?>"><?= e(t('Terms')) ?></a>
-                        <a href="<?= e(url('/pages/disclaimer')) ?>"><?= e(t('Disclaimer')) ?></a>
+                    <?php
+                    $footerSocialNetworks = [
+                        'facebook' => ['label' => 'Facebook', 'glyph' => 'f'],
+                        'instagram' => ['label' => 'Instagram', 'glyph' => '◎'],
+                        'youtube' => ['label' => 'YouTube', 'glyph' => '▶'],
+                        'tiktok' => ['label' => 'TikTok', 'glyph' => '♪'],
+                        'x' => ['label' => 'X', 'glyph' => '𝕏'],
+                        'linkedin' => ['label' => 'LinkedIn', 'glyph' => 'in'],
+                    ];
+                    $footerSocialLinks = is_array($footerContent['social'] ?? null) ? $footerContent['social'] : [];
+                    ?>
+                    <nav class="site-footer__social" aria-label="<?= e(t((string) ($footerContent['social_heading'] ?? 'Follow us'))) ?>">
+                        <?php foreach ($footerSocialNetworks as $platform => $details): ?>
+                            <?php $socialHref = trim((string) ($footerSocialLinks[$platform] ?? '')); ?>
+                            <?php if ($socialHref === '' || !str_starts_with($socialHref, 'https://')) { continue; } ?>
+                            <a href="<?= e($socialHref) ?>" target="_blank" rel="noopener noreferrer" class="site-footer__social-link" aria-label="<?= e($details['label']) ?>" title="<?= e($details['label']) ?>"><span aria-hidden="true"><?= e($details['glyph']) ?></span></a>
+                        <?php endforeach; ?>
                     </nav>
 
                     <button
