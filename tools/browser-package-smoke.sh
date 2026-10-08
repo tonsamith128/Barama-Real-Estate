@@ -556,7 +556,7 @@ try {
     await page.locator('input[name="mail_host"]').fill('smtp.example.test');
     await page.locator('input[name="mail_port"]').fill('587');
     await page.locator('select[name="mail_encryption"]').selectOption('tls');
-    await page.locator('input[name="mail_username"]').fill('browser@example.test');
+    await page.locator('input[name="mail_username"]').fill('browser.qa.private@gmail.com');
     const qaMailPassword = 'Browser-QA-Encrypted-SMTP-Only-123!';
     await page.locator('input[name="mail_password"]').fill(qaMailPassword);
     await page.locator('button[type="submit"]').filter({ hasText: 'Save Mail Setup' }).click();
@@ -579,11 +579,41 @@ try {
         await page.locator('input[name="mail_host"]').inputValue() === 'smtp.example.test',
         'Saved SMTP host was not persisted.'
     );
+    assert(
+        await page.locator('input[name="mail_username"]').inputValue() === '••••@gmail.com'
+            && !mailHtml.includes('browser.qa.private@gmail.com'),
+        'Saved Gmail SMTP username was not privacy masked.'
+    );
+    await page.locator('button[type="submit"]').filter({ hasText: 'Save Mail Setup' }).click();
+    await page.waitForLoadState('networkidle');
+    assert(
+        page.url().includes('saved=1'),
+        'Unchanged masked Gmail SMTP identity did not save successfully.'
+    );
+    assert(
+        await page.locator('input[name="mail_username"]').inputValue() === '••••@gmail.com',
+        'Saved Gmail SMTP identity was altered by masked edit.'
+    );
     await page.screenshot({
         path: artifacts + '/admin-mail-settings-desktop.png',
         fullPage: true,
     });
     console.log('[PASS] Exact customer Mail Setup: administrator save, reload and password redaction.');
+
+    const queueResponse = await page.goto(
+        installedBase + '/dashboard/mail-queue',
+        { waitUntil: 'networkidle' }
+    );
+    assert(queueResponse && queueResponse.ok(), 'Mail Queue history is unavailable.');
+    assert(
+        await page.locator('input[name="per_page"]').inputValue() === '10',
+        'Mail Queue does not enforce the ten-row pagination contract.'
+    );
+    await seriousAccessibility(page, 'admin mail queue');
+    await page.screenshot({
+        path: artifacts + '/admin-mail-queue-desktop.png',
+        fullPage: true,
+    });
 
     await page.goto(installedBase + '/dashboard', { waitUntil: 'networkidle' });
     await page.setViewportSize({ width: 390, height: 844 });
