@@ -14,6 +14,7 @@ use Barama\Repositories\WorkspaceSettingsRepository;
 use Barama\Repositories\GlobalLocationRepository;
 use Barama\Services\AccountSettingsService;
 use Barama\Services\AdminSettingsService;
+use Barama\Services\MailSettingsService;
 use Barama\Services\GlobalLocationManagementService;
 use Barama\Services\CloudStorageService;
 use Barama\Services\SecurityAuditService;
@@ -27,7 +28,7 @@ use RuntimeException;
 final class WorkspaceSettingsController
 {
     /* BARAMA_GLOBAL_LOCATIONS_V101 */
-    private const SECTIONS = ['basic', 'profile', 'privacy', 'security', 'storage', 'cloud-storage',
+    private const SECTIONS = ['basic', 'profile', 'privacy', 'security', 'storage', 'cloud-storage', 'mail',
         'locations',
     ];
 
@@ -71,7 +72,7 @@ final class WorkspaceSettingsController
         $section = strtolower(trim($section));
         if (
             !in_array($section, self::SECTIONS, true)
-            || (in_array($section, ['storage', 'cloud-storage'], true) && $workspace !== 'dashboard')
+            || (in_array($section, ['storage', 'cloud-storage', 'mail'], true) && $workspace !== 'dashboard')
         ) {
             return Response::html(View::render('errors/404', ['pageTitle' => 'Page not found']), 404);
         }
@@ -153,6 +154,15 @@ final class WorkspaceSettingsController
             }
         }
 
+        if ($section === 'mail' && $workspace === 'dashboard') {
+            try {
+                $data['mailSettings'] = (new MailSettingsService())->viewModel();
+            } catch (RuntimeException $exception) {
+                $data['mailSettings'] = [];
+                $data['error'] = 'Encrypted Mail Setup could not be loaded. Review your APP_KEY and stored mail configuration.';
+            }
+        }
+
         if ($section === 'cloud-storage') {
             try {
                 $data['cloudStorage'] = (new CloudStorageService())->viewModel();
@@ -174,7 +184,7 @@ final class WorkspaceSettingsController
         $section = strtolower(trim($section));
         if (
             !in_array($section, self::SECTIONS, true)
-            || (in_array($section, ['storage', 'cloud-storage'], true) && $workspace !== 'dashboard')
+            || (in_array($section, ['storage', 'cloud-storage', 'mail'], true) && $workspace !== 'dashboard')
         ) {
             return Response::html(View::render('errors/404', ['pageTitle' => 'Page not found']), 404);
         }
@@ -190,6 +200,21 @@ final class WorkspaceSettingsController
         $securityModal = '';
 
         try {
+            if ($section === 'mail' && $workspace === 'dashboard') {
+                $action = strtolower(trim((string) ($request->input('mail_action', ''))));
+                $mail = new MailSettingsService();
+                if ($action === 'save') {
+                    $mail->save($request->all());
+                    $message = 'Mail Setup saved securely. Send a test email to confirm delivery.';
+                } elseif ($action === 'test') {
+                    $mail->sendTest();
+                    $message = 'Test email sent to your administrator email address.';
+                } else {
+                    throw new InvalidArgumentException('Select a supported mail action.');
+                }
+                return Response::redirect(url($target . '?saved=1&message=' . rawurlencode($message)));
+            }
+
             if ($section === 'cloud-storage') {
                 $cloudService = new CloudStorageService();
                 $input = $request->all();
@@ -614,10 +639,11 @@ final class WorkspaceSettingsController
                 'storage' => 'Inspect application storage health, control Admin-managed Hero and site-media upload limits, and clean temporary files safely.',
                 'locations' => 'Control which countries are available and govern the global real-estate location hierarchy.',
                 'cloud-storage' => 'Configure encrypted Amazon S3 and Cloudflare R2 storage for Barama media.',
+                'mail' => 'Configure secure PHP Mail or SMTP delivery for all Barama notifications.',
             ],
         ];
         return [
-            'title' => $section === 'cloud-storage' ? 'Cloud Storage' : ucfirst($section) . ' Settings',
+            'title' => $section === 'cloud-storage' ? 'Cloud Storage' : ($section === 'mail' ? 'Mail Setup' : ucfirst($section) . ' Settings'),
             'description' => $descriptions[$workspace][$section],
             'workspace_label' => $workspaceLabel,
             'base' => $base,
@@ -685,6 +711,7 @@ final class WorkspaceSettingsController
                 ['label' => 'Storage', 'path' => '/dashboard/settings/storage', 'icon' => 'image'],
                 ['label' => 'Locations', 'path' => '/dashboard/settings/locations', 'icon' => 'map'],
                 ['label' => 'Cloud Storage', 'path' => '/dashboard/settings/cloud-storage', 'icon' => 'layers'],
+                ['label' => 'Mail Setup', 'path' => '/dashboard/settings/mail', 'icon' => 'mail'],
             ];
         }
 
