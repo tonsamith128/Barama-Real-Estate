@@ -55,6 +55,39 @@ Examples:
 
 This keeps the route table canonical and avoids maintaining duplicate root/subdirectory routes.
 
+## Database privileges and append-only email audit history
+
+Barama requires MySQL 8.0+ or MariaDB 10.6+, with an account that can
+create the database tables, indexes, and the **two append-only audit triggers**
+on `email_outbox_events`. The account must support `CREATE`, `DROP` and
+`TRIGGER` permissions during the installer compatibility check; normal
+application schema migrations also require the usual table/column DDL and
+DML privileges.
+
+On MySQL installations with binary logging enabled, the host may additionally
+require `log_bin_trust_function_creators=ON` (configured **by the provider**),
+or an appropriately privileged database account. Barama never attempts
+`SET GLOBAL` on a customer database.
+
+**Restricted shared-hosting users without trigger capability are not yet a
+supported installation target.** To preserve database-level append-only audit
+integrity, Barama fails closed instead of silently disabling the triggers.
+Installer Step 3 tests compatibility against a uniquely named disposable
+table and its UPDATE/DELETE triggers, then drops the table. This is a real
+DDL capability test, not an unreliable interpretation of `SHOW GRANTS`.
+If the test fails, choose a capable hosting database or ask the provider to
+enable the required privilege/server setting before installing.
+
+Migration 0026 also performs the check **before** creating the audit history
+table when its triggers are not already installed, so upgrades can fail
+early without leaving a partially created history schema. Existing installations
+with both audit triggers present retain their established protection.
+
+Release QA exercises an isolated restricted MySQL user (expected rejection
+and no leftover schema objects) and then grants TRIGGER privileges (expected
+success). Testing on MySQL CI is not a substitute for a real MariaDB/shared-host
+installation; record those checks separately.
+
 ## Release boundary
 
 Automated container QA is a pre-release compatibility gate, not a substitute for the final live hosting test.
