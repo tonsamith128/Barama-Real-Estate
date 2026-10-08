@@ -566,6 +566,20 @@ $appJsVersion = is_file($appJsFile)
     <?php if (!$isStandaloneAuthPage && !$isWorkspacePage): ?>
     <footer class="site-footer">
         <div class="container app-container">
+            <?php
+            $editableFooterLinks = is_array($footerContent['links'] ?? null) ? $footerContent['links'] : [];
+            $footerHeadings = [
+                'marketplace' => (string) ($footerContent['marketplace_heading'] ?? 'Marketplace'),
+                'compliance' => (string) ($footerContent['compliance_heading'] ?? 'Compliance'),
+                'help' => (string) ($footerContent['help_heading'] ?? 'Help'),
+            ];
+            $footerItemHref = static function (string $href): string {
+                if (!\Barama\Services\FooterContentService::validLink($href)) {
+                    return '';
+                }
+                return str_starts_with($href, '/') ? url($href) : $href;
+            };
+            ?>
             <div class="site-footer__grid">
                 <div class="site-footer__brand">
                     <a class="brand brand--image" href="<?= e(url('/')) ?>" aria-label="<?= e(t('Barama Real Estate home')) ?>">
@@ -577,35 +591,36 @@ $appJsVersion = is_file($appJsFile)
                             height="220"
                         >
                     </a>
+                    <strong class="site-footer__brand-heading"><?= e(t((string) ($footerContent['brand_heading'] ?? 'Barama Real Estate'))) ?></strong>
                     <p><?= e(t((string) ($footerContent['brand_description'] ?? ''))) ?></p>
+                    <?php $brandLinks = (array) ($editableFooterLinks['brand'] ?? []); ?>
+                    <?php if ($brandLinks !== []): ?>
+                        <nav class="site-footer__brand-links" aria-label="<?= e(t('Brand links')) ?>">
+                            <?php foreach ($brandLinks as $link): ?>
+                                <?php
+                                $href = $footerItemHref((string) ($link['url'] ?? ''));
+                                if ($href === '') { continue; }
+                                $external = str_starts_with($href, 'https://');
+                                ?>
+                                <a href="<?= e($href) ?>" <?= $external ? 'target="_blank" rel="noopener noreferrer"' : '' ?>><?= e(t((string) ($link['label'] ?? 'Link'))) ?></a>
+                            <?php endforeach; ?>
+                        </nav>
+                    <?php endif; ?>
                 </div>
 
-                <nav aria-label="<?= e(t('Marketplace links')) ?>">
-                    <strong><?= e(t((string) ($footerContent['marketplace_heading'] ?? 'Marketplace'))) ?></strong>
-                    <?php foreach ($publicNavigation as $navigationItem): ?>
-                        <?php if ((string) ($navigationItem['path'] ?? '/') === '/'): ?>
-                            <?php continue; ?>
-                        <?php endif; ?>
-                        <a href="<?= e(url((string) ($navigationItem['path'] ?? '/'))) ?>">
-                            <?= e(t((string) ($navigationItem['label'] ?? 'Link'))) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </nav>
-
-                <nav aria-label="<?= e(t('Compliance links')) ?>">
-                    <strong><?= e(t((string) ($footerContent['compliance_heading'] ?? 'Compliance'))) ?></strong>
-                    <a href="<?= e(url('/policies')) ?>"><?= e(t((string) ($footerContent['policy_label'] ?? 'Policy Center'))) ?></a>
-                    <a href="<?= e(url('/policies') . '?=privacy-policy') ?>"><?= e(t((string) ($footerContent['privacy_label'] ?? 'Privacy'))) ?></a>
-                    <a href="<?= e(url('/policies') . '?=terms-of-service') ?>"><?= e(t((string) ($footerContent['terms_label'] ?? 'Terms'))) ?></a>
-                </nav>
-
-                <nav aria-label="<?= e(t('Help links')) ?>">
-                    <strong><?= e(t((string) ($footerContent['help_heading'] ?? 'Help'))) ?></strong>
-                    <a href="<?= e((string) config('app.documentation_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Documentation')) ?></a>
-                    <a href="<?= e((string) config('app.support_url')) ?>" target="_blank" rel="noopener noreferrer"><?= e(t('Contact Support')) ?></a>
-                    <a href="<?= e(url('/health')) ?>"><?= e(t('System Health')) ?></a>
-                </nav>
-
+                <?php foreach ($footerHeadings as $columnId => $heading): ?>
+                    <nav aria-label="<?= e(t($heading . ' links')) ?>">
+                        <strong><?= e(t($heading)) ?></strong>
+                        <?php foreach ((array) ($editableFooterLinks[$columnId] ?? []) as $link): ?>
+                            <?php
+                            $href = $footerItemHref((string) ($link['url'] ?? ''));
+                            if ($href === '') { continue; }
+                            $external = str_starts_with($href, 'https://');
+                            ?>
+                            <a href="<?= e($href) ?>" <?= $external ? 'target="_blank" rel="noopener noreferrer"' : '' ?>><?= e(t((string) ($link['label'] ?? 'Link'))) ?></a>
+                        <?php endforeach; ?>
+                    </nav>
+                <?php endforeach; ?>
             </div>
 
             <div class="site-footer__bottom">
