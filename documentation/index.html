@@ -77,7 +77,7 @@
 
         <section id="email">
             <h2>Email delivery</h2>
-            <p>Email delivery is intentionally kept out of the installer. Barama starts with PHP Mail using the administrator email and website name.</p>
+            <p>Email delivery is intentionally kept out of the installer. Barama starts with PHP mail using the administrator email and website name.</p>
             <p>After signing in as an administrator, open <strong>Settings &rarr; Mail Setup</strong> at <code>/dashboard/settings/mail</code>. Select PHP Mail or SMTP, then enter the From address and name. For SMTP, configure the host, port, STARTTLS/SSL, username and password.</p>
             <p>Save the configuration first, then select <strong>Send test email</strong>. A test is delivered only to the signed-in administrator's email address. Check Mail Queue &amp; Logs and your hosting provider if transport fails. SMTP credentials are encrypted at rest with the installation APP_KEY and are never displayed again; leave the password field empty to retain credentials for the same host/account.</p>
             <p>SMTP with authenticated encryption is recommended for reliable transactional delivery. Switching back to PHP Mail clears the saved SMTP credentials. Mail Setup does not require a new install or modification of the installer runtime environment.</p>
