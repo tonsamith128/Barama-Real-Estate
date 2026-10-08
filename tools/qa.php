@@ -396,6 +396,7 @@ $approvedJsFiles = [
     'assets/js/account-security-premium-v1129r3.js',
     'assets/js/account-security-premium-v1129r4.js',
     'assets/js/account-settings-full-v1130.js',
+    'assets/js/admin-footer-links-v100.js',
     'assets/js/admin-email-template-builder-v137.js',
     'assets/js/admin-email-template-builder-v139.js',
     'assets/js/admin-email-template-builder-v140.js',
