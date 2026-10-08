@@ -490,23 +490,45 @@ if (!extension_loaded('curl')) {
             ? $pass('Updater indexing protection')
             : $fail('Updater indexing protection');
 
-        $health = $request($baseUrl . '/health');
+        // The public /health route is a human-facing status page.
+        // Machine monitors must use /health.json, which intentionally reveals
+        // only { "status": "ok" } (or "degraded" with HTTP 503).
+        $statusPage = $request($baseUrl . '/health');
+        if (
+            $statusPage['error'] === ''
+            && $statusPage['status'] === 200
+            && $headerContains($statusPage, 'Content-Type', 'text/html')
+            && $headerContains($statusPage, 'Cache-Control', 'no-store')
+            && $headerContains($statusPage, 'X-Robots-Tag', 'noindex')
+            && str_contains($statusPage['body'], 'data-system-health')
+        ) {
+            $pass('Public system status page', '/health serves protected HTML status content.');
+        } else {
+            $fail('Public system status page', '/health must return non-cacheable, non-indexable HTML status content.');
+        }
+
+        $health = $request($baseUrl . '/health.json');
         $healthPayload = json_decode($health['body'], true);
         $healthKeys = is_array($healthPayload) ? array_keys($healthPayload) : [];
         sort($healthKeys);
-        $expectedHealthKeys = ['application', 'status', 'version'];
-        sort($expectedHealthKeys);
 
         if (
-            $health['status'] === 200
+            $health['error'] === ''
+            && $health['status'] === 200
+            && $headerContains($health, 'Content-Type', 'application/json')
+            && $headerContains($health, 'Cache-Control', 'no-store')
+            && $headerContains($health, 'X-Robots-Tag', 'noindex')
             && is_array($healthPayload)
-            && ($healthPayload['status'] ?? '') === 'ok'
-            && ($healthPayload['version'] ?? '') === $version
-            && $healthKeys === $expectedHealthKeys
+            && $healthKeys === ['status']
+            && ($healthPayload['status'] ?? null) === 'ok'
         ) {
-            $pass('Application health', '/health reports OK with matching version and no extra fields.');
+            $pass('Application health', '/health.json reports operational status without internal metadata.');
         } else {
-            $fail('Application health', '/health did not return the expected minimal OK payload.');
+            $fail(
+                'Application health',
+                '/health.json did not return HTTP 200 with the protected minimal operational status; '
+                . 'HTTP status ' . $health['status'] . '.'
+            );
         }
     }
 
