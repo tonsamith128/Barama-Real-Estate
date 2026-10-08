@@ -38,6 +38,9 @@ Foundation QA must include:
 - PHP syntax and repository structure
 - localization contract
 - MySQL migrations and clean replay
+- restricted-hosting database trigger probe: fails without TRIGGER privilege before
+  migration 0026 DDL, succeeds on a capable account, and leaves no disposable
+  schema objects (does not qualify a real shared hosting provider by itself)
 - domain/account/security/notification smoke tests
 - SMTP contract
 - License Manager deterministic contract, including temporary-vs-permanent failure classification
