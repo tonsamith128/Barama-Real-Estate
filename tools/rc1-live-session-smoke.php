@@ -4,6 +4,23 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $tool = $root . '/tools/rc1-live-session.php';
+
+// Keep the acceptance-session smoke bound to the real preflight asset contract.
+$assetSmoke = $root . '/tools/live-preflight-asset-smoke.php';
+$assetLines = [];
+$assetCode = 1;
+exec(
+    escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($assetSmoke) . ' 2>&1',
+    $assetLines,
+    $assetCode
+);
+foreach ($assetLines as $line) {
+    echo $line . PHP_EOL;
+}
+if ($assetCode !== 0) {
+    fwrite(STDERR, "[FAIL] Exact-asset preflight contract smoke failed.\n");
+    exit(1);
+}
 $version = trim((string) @file_get_contents($root . '/VERSION'));
 $temp = sys_get_temp_dir()
     . '/barama-live-session-smoke-'
