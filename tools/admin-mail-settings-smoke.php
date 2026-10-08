@@ -142,16 +142,53 @@ try {
     );
     echo "[PASS] Stored credentials are bound to installation APP_KEY.\n";
 
-    // UI security assertions: no rendered password values or test-recipient controls.
+    $recipient = MailSettingsService::validateTestRecipient('real.receiver@example.org');
+    $assert($recipient === 'real.receiver@example.org', 'Custom test recipient validation failed.');
+    foreach ([
+        '', 'not-an-email', 'first@example.org,other@example.org',
+        "test@example.org\r\nBCC: stranger@example.org",
+        str_repeat('a', 192) . '@example.org',
+    ] as $bad) {
+        $expectFailure(
+            static fn () => MailSettingsService::validateTestRecipient($bad),
+            'An invalid or unsafe custom test recipient was accepted.'
+        );
+    }
+    echo "[PASS] Custom recipient independent of demo admin login, with injection checks.\n";
+
     $view = (string) file_get_contents(dirname(__DIR__) . '/application/resources/views/workspace/settings-mail.php');
     $assert(
         str_contains($view, 'type="password" value=""')
         && !str_contains($view, "['password']")
-        && !str_contains($view, 'name="recipient"'),
-        'Mail Setup must never echo saved credentials or accept arbitrary test recipients.'
+        && str_contains($view, 'name="mail_test_recipient" type="email"')
+        && str_contains($view, 'required aria-describedby="mail-test-limits"'),
+        'Mail Setup must mask credentials and require a real custom test recipient.'
     );
-    $assert(str_contains($view, 'csrf_field()'), 'Mail Setup forms must have CSRF fields.');
-    echo "[PASS] View avoids password disclosure and requires CSRF.\n";
+    $assert(substr_count($view, 'csrf_field()') >= 2, 'Save and test forms must have CSRF protection.');
+    echo "[PASS] View masks credentials and requires CSRF for custom test recipient.\n";
+
+    $quotaPath = sys_get_temp_dir() . '/barama-mail-test-quota-' . bin2hex(random_bytes(8)) . '/quota.json';
+    $limiter = new \Barama\Services\MailTestLimiter($quotaPath);
+    $t = 1700000000;
+    $limiter->consume($t);
+    $limiter->consume($t + 1);
+    $limiter->consume($t + 2);
+    $expectFailure(
+        static fn () => $limiter->consume($t + 3),
+        'Custom email tests must be capped at 3 per hour.'
+    );
+    for ($n = 1; $n <= 7; $n++) {
+        $limiter->consume($t + $n * 3601);
+    }
+    $expectFailure(
+        static fn () => $limiter->consume($t + 7 * 3601 + 10),
+        'Custom email tests must be capped at 10 per day.'
+    );
+    $limiter->consume($t + 86401);
+    $assert((fileperms($quotaPath) & 0777) === 0600, 'Test quota file must be private.');
+    @unlink($quotaPath);
+    @rmdir(dirname($quotaPath));
+    echo "[PASS] Install-wide test recipient quota: 3 per hour, 10 per day, fail-closed.\n";
 
     echo "ADMIN_MAIL_SETTINGS_QA=PASS\n";
 } catch (Throwable $exception) {
