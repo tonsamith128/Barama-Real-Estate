@@ -728,7 +728,7 @@ try {
         'Footer copyright content was not saved to application settings.'
     );
     assert(
-        await page.locator('[data-footer-list="marketplace"] [data-footer-label]').allInputValues()
+        await page.locator('[data-footer-list="marketplace"] [data-footer-label]').evaluateAll(elements => elements.map(input => input.value))
             .then(labels => labels.includes('Custom Destination') && !labels.includes(removedLabel)),
         'Footer menu addition/deletion was not persisted after a fresh GET.'
     );
