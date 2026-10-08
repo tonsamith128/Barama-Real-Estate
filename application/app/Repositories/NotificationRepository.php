@@ -342,7 +342,7 @@ final class NotificationRepository
     public function adminOutboxPage(
         array $filters,
         int $page = 1,
-        int $perPage = 25
+        int $perPage = 10
     ): array {
         $where = [];
         $params = [];
@@ -391,7 +391,9 @@ final class NotificationRepository
         $count->execute();
         $total = (int) $count->fetchColumn();
 
-        $perPage = in_array($perPage, [25, 50, 100], true) ? $perPage : 25;
+        // Clamp at repository boundary as well; callers may not bypass the
+        // ten-row Mail Queue display contract.
+        $perPage = 10;
         $pages = max(1, (int) ceil($total / $perPage));
         $page = max(1, min($page, $pages));
         $offset = ($page - 1) * $perPage;
