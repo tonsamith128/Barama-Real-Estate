@@ -34,16 +34,40 @@ final class FooterController
 
     public function update(Request $request): Response
     {
+        $ajax = strtolower(trim((string) $request->header('X-Requested-With', '')))
+            === 'xmlhttprequest'
+            || str_contains(strtolower((string) $request->header('Accept', '')), 'application/json');
+
         try {
             (new FooterContentService())->update($request->all());
+
+            if ($ajax) {
+                return Response::json([
+                    'ok' => true,
+                    'data' => ['message' => 'Footer content saved successfully.'],
+                ]);
+            }
+
             return Response::redirect(url('/dashboard/footer?saved=1'));
         } catch (InvalidArgumentException|DomainException $exception) {
+            if ($ajax) {
+                return Response::json([
+                    'ok' => false,
+                    'message' => $exception->getMessage(),
+                ], $exception instanceof DomainException ? 403 : 422);
+            }
             return Response::redirect(
                 url('/dashboard/footer?error=' . rawurlencode($exception->getMessage()))
             );
         } catch (Throwable $exception) {
             error_log('[Barama Footer] ' . $exception::class);
-            return Response::redirect(url('/dashboard/footer?error=Unable%20to%20save%20footer%20settings'));
+            $message = 'Unable to save footer settings. Please retry.';
+            if ($ajax) {
+                return Response::json(['ok' => false, 'message' => $message], 500);
+            }
+            return Response::redirect(
+                url('/dashboard/footer?error=' . rawurlencode($message))
+            );
         }
     }
 }
