@@ -124,6 +124,21 @@ final class MailSettingsService
             (string) ($existing['from_address'] ?? ''),
             (string) ($existing['from_name'] ?? 'Barama Real Estate')
         );
+        if ($validated['driver'] === 'smtp'
+            && $validated['username'] !== ''
+            && $validated['encryption'] === 'none') {
+            throw new InvalidArgumentException(
+                'Authenticated SMTP requires STARTTLS or SSL/TLS encryption.'
+            );
+        }
+        if ($validated['driver'] === 'smtp'
+            && $validated['username'] === ''
+            && $validated['password'] !== '') {
+            throw new InvalidArgumentException(
+                'Enter an SMTP username or leave the SMTP password blank.'
+            );
+        }
+
         return $validated;
     }
 
