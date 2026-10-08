@@ -167,5 +167,4 @@ final class FooterContentService
             && is_string($parts['host'] ?? null)
             && !isset($parts['user']) && !isset($parts['pass']);
     }
-    }
 }
