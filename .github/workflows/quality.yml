@@ -86,6 +86,9 @@ jobs:
           echo "[PASS] Ephemeral CI MySQL trigger prerequisite enabled.\n";
           PHP
 
+      - name: Validate restricted and supported MySQL trigger privileges
+        run: php tools/trigger-compatibility-smoke.php
+
       - name: Run database migrations
         run: php tools/migrate.php
 
