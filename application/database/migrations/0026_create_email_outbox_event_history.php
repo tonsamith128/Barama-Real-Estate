@@ -3,6 +3,24 @@
 declare(strict_types=1);
 
 return static function (PDO $pdo): void {
+    // MySQL/MariaDB DDL commits implicitly. Fail before CREATE TABLE when
+    // customer hosting cannot preserve the required DB-level immutability.
+    // Already-installed triggers need no additional privilege test on replay.
+    $existingTriggers = $pdo->query(<<<'SQL'
+SELECT COUNT(DISTINCT trigger_name)
+FROM information_schema.triggers
+WHERE trigger_schema = DATABASE()
+  AND event_object_table = 'email_outbox_events'
+  AND trigger_name IN (
+      'email_outbox_events_no_update',
+      'email_outbox_events_no_delete'
+  )
+SQL)->fetchColumn();
+
+    if ((int) $existingTriggers !== 2) {
+        \\Barama\\Support\\TriggerCapabilityProbe::assertSupported($pdo);
+    }
+
     $pdo->exec(<<<'SQL'
 CREATE TABLE IF NOT EXISTS email_outbox_events (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
