@@ -35,6 +35,7 @@ final class FooterContentService
     {
         $defaults = FooterContentRepository::defaults();
         $maxima = [
+            'brand_heading' => 60,
             'brand_description' => 400,
             'marketplace_heading' => 60,
             'compliance_heading' => 60,
@@ -92,6 +93,75 @@ final class FooterContentService
         }
         $config['social'] = $social;
 
+        $old = (new FooterContentRepository())->get();
+        if (!array_key_exists('footer_links_submitted', $input)) {
+            // An older form in an already-open browser must not silently
+            // erase previously saved links while upgrading from CI485.
+            $config['links'] = $old['links'];
+            return $config;
+        }
+
+        $submitted = $input['footer_links'] ?? [];
+        if (!is_array($submitted)) {
+            throw new InvalidArgumentException('Footer link list is invalid.');
+        }
+        foreach (array_keys($submitted) as $key) {
+            if (!in_array($key, ['brand', 'marketplace', 'compliance', 'help'], true)) {
+                throw new InvalidArgumentException('Unknown footer column.');
+            }
+        }
+
+        $links = [];
+        foreach (['brand', 'marketplace', 'compliance', 'help'] as $column) {
+            $entries = $submitted[$column] ?? [];
+            if (!is_array($entries) || count($entries) > 15) {
+                throw new InvalidArgumentException(
+                    'Footer ' . $column . ' supports a maximum of 15 menu items.'
+                );
+            }
+            $links[$column] = [];
+            foreach ($entries as $entry) {
+                if (!is_array($entry) || !is_string($entry['label'] ?? null)
+                    || !is_string($entry['url'] ?? null)) {
+                    throw new InvalidArgumentException('Footer menu item must contain a label and URL.');
+                }
+                $label = trim($entry['label']);
+                $href = $entry['url'];
+                if ($label === '' || mb_strlen($label) > 80
+                    || preg_match('/[\x00-\x1f\x7f]/', $label) === 1) {
+                    throw new InvalidArgumentException('Footer menu label must be 1–80 characters.');
+                }
+                if (!self::validLink($href)) {
+                    throw new InvalidArgumentException(
+                        'Footer link must be a safe site path (starting /) or an HTTPS URL.'
+                    );
+                }
+                $links[$column][] = ['label' => $label, 'url' => $href];
+            }
+        }
+        $config['links'] = $links;
         return $config;
+    }
+
+    public static function validLink(string $url): bool
+    {
+        if ($url === '' || strlen($url) > 500 || str_contains($url, '\\')
+            || preg_match('/[\x00-\x20\x7f]/', $url) === 1) {
+            return false;
+        }
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            // Preserve canonical Policy Center query fragments (?=slug).
+            // Relative URLs must stay rooted at the installation.
+            return !str_contains($url, '..') && !str_contains($url, '#');
+        }
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return false;
+        }
+        $parts = parse_url($url);
+        return is_array($parts)
+            && strtolower((string) ($parts['scheme'] ?? '')) === 'https'
+            && is_string($parts['host'] ?? null)
+            && !isset($parts['user']) && !isset($parts['pass']);
+    }
     }
 }
