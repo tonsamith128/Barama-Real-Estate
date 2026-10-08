@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Barama\Services;
 
 use Barama\Core\Installation;
+use Barama\Repositories\MailSettingsRepository;
 use Barama\Support\IdGenerator;
 use Barama\Support\Locale;
 use Barama\Support\MigrationCatalog;
@@ -839,21 +840,32 @@ SQL);
             'Production configuration is stored securely.'
         );
 
+        // Post-install Mail Setup overrides the original installer defaults.
+        // Never describe a corrupted encrypted override as a healthy fallback.
+        $mailOverride = [];
+        if (Installation::isInstalled()) {
+            try {
+                $mailOverride = (new MailSettingsRepository())->get();
+            } catch (Throwable) {
+                $mailOverride = ['driver' => 'invalid'];
+            }
+        }
+
         $mailDriver = strtolower(trim((string) (
-            $runtime['MAIL_DRIVER'] ?? ''
+            $mailOverride['driver'] ?? $runtime['MAIL_DRIVER'] ?? ''
         )));
         $mailHealthy = in_array($mailDriver, ['smtp', 'mail'], true)
             && filter_var(
-                (string) ($runtime['MAIL_FROM_ADDRESS'] ?? ''),
+                (string) ($mailOverride['from_address'] ?? $runtime['MAIL_FROM_ADDRESS'] ?? ''),
                 FILTER_VALIDATE_EMAIL
             ) !== false;
 
         if ($mailDriver === 'smtp') {
             $mailHealthy = $mailHealthy
-                && trim((string) ($runtime['MAIL_HOST'] ?? '')) !== ''
-                && (int) ($runtime['MAIL_PORT'] ?? 0) >= 1
+                && trim((string) ($mailOverride['host'] ?? $runtime['MAIL_HOST'] ?? '')) !== ''
+                && (int) ($mailOverride['port'] ?? $runtime['MAIL_PORT'] ?? 0) >= 1
                 && in_array(
-                    strtolower((string) ($runtime['MAIL_ENCRYPTION'] ?? '')),
+                    strtolower((string) ($mailOverride['encryption'] ?? $runtime['MAIL_ENCRYPTION'] ?? '')),
                     ['tls', 'ssl', 'none'],
                     true
                 );
