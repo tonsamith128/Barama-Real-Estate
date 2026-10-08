@@ -14,8 +14,9 @@ declare(strict_types=1);
  * Add --json for a machine-readable, non-secret report.
  */
 
-$options = getopt('', ['root:', 'url:', 'phase::', 'json', 'allow-http']);
+$options = getopt('', ['root:', 'url:', 'phase::', 'package::', 'json', 'allow-http']);
 $root = rtrim(trim((string) ($options['root'] ?? '')), DIRECTORY_SEPARATOR);
+$packagePath = trim((string) ($options['package'] ?? ''));
 $baseUrl = rtrim(trim((string) ($options['url'] ?? '')), '/');
 $phase = strtolower(trim((string) ($options['phase'] ?? 'preinstall')));
 $jsonOutput = array_key_exists('json', $options);
@@ -23,7 +24,7 @@ $testMode = getenv('BARAMA_LIVE_PREFLIGHT_TEST_MODE') === '1';
 $allowHttp = $testMode && array_key_exists('allow-http', $options);
 
 if ($root === '' || $baseUrl === '') {
-    fwrite(STDERR, "Usage: php tools/live-server-preflight.php --root=/absolute/package/root --url=https://example.com [--phase=preinstall|installed] [--json]\n");
+    fwrite(STDERR, "Usage: php tools/live-server-preflight.php --root=/absolute/package/root --url=https://example.com [--phase=preinstall|installed] [--package=/exact/customer.zip] [--json]\n");
     exit(2);
 }
 
@@ -123,16 +124,123 @@ $version !== ''
     ? $pass('Package version', $version)
     : $fail('Package version', 'VERSION is empty or unreadable.');
 
-$css = glob($root . '/assets/css/*.css') ?: [];
-$js = glob($root . '/assets/js/*.js') ?: [];
+// Exact asset parity must be checked against the cryptographically bound
+// candidate, not an obsolete assumption that only app.css and app.js exist.
+if ($packagePath === '') {
+    $warn(
+        'Exact customer asset binding',
+        'Pass --package to verify the approved CSS/JS inventory and source files.'
+    );
+} elseif (!is_file($packagePath) || !is_readable($packagePath)) {
+    $fail('Exact customer asset binding', 'Customer package is missing or unreadable.');
+} elseif (!class_exists(ZipArchive::class)) {
+    $fail('Exact customer asset binding', 'ZipArchive extension is required.');
+} else {
+    $archive = new ZipArchive();
+    $opened = $archive->open($packagePath);
 
-count($css) === 1 && basename((string) ($css[0] ?? '')) === 'app.css'
-    ? $pass('Canonical stylesheet', 'assets/css/app.css only.')
-    : $fail('Canonical stylesheet', 'First-party stylesheet layout is not canonical.');
+    if ($opened !== true) {
+        $fail('Exact customer asset binding', 'Customer package could not be opened.');
+    } else {
+        $expectedAssets = [];
+        $archiveInvalid = false;
 
-count($js) === 1 && basename((string) ($js[0] ?? '')) === 'app.js'
-    ? $pass('Canonical JavaScript', 'assets/js/app.js only.')
-    : $fail('Canonical JavaScript', 'First-party JavaScript layout is not canonical.');
+        for ($i = 0; $i < $archive->numFiles; $i++) {
+            $name = $archive->getNameIndex($i);
+            if (!is_string($name) || !preg_match('~^assets/.+\\.(?:css|js)$~D', $name)) {
+                continue;
+            }
+
+            if (str_contains($name, '..') || str_contains($name, '\\') || isset($expectedAssets[$name])) {
+                $archiveInvalid = true;
+                break;
+            }
+
+            $contents = $archive->getFromIndex($i);
+            if (!is_string($contents)) {
+                $archiveInvalid = true;
+                break;
+            }
+            $expectedAssets[$name] = hash('sha256', $contents);
+        }
+
+        if ($archiveInvalid || !isset($expectedAssets['assets/css/app.css'], $expectedAssets['assets/js/app.js'])) {
+            $fail('Exact customer asset binding', 'Candidate has invalid or missing canonical asset members.');
+        } else {
+            $actualAssets = [];
+            $assetRoot = $root . '/assets';
+
+            if (is_dir($assetRoot)) {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($assetRoot, FilesystemIterator::SKIP_DOTS)
+                );
+                foreach ($iterator as $asset) {
+                    if (!$asset->isFile() && !$asset->isLink()) {
+                        continue;
+                    }
+                    $relative = 'assets/' . str_replace(
+                        DIRECTORY_SEPARATOR,
+                        '/',
+                        substr($asset->getPathname(), strlen($assetRoot) + 1)
+                    );
+                    if (preg_match('~\\.(?:css|js)$~D', $relative)) {
+                        $actualAssets[$relative] = $asset->getPathname();
+                    }
+                }
+            }
+
+            $missing = array_diff_key($expectedAssets, $actualAssets);
+            $extra = array_diff_key($actualAssets, $expectedAssets);
+            $drift = 0;
+            foreach (array_intersect_key($actualAssets, $expectedAssets) as $relative => $path) {
+                if (is_link($path) || !is_readable($path)) {
+                    $drift++;
+                    continue;
+                }
+                $hash = hash_file('sha256', $path);
+                if (!is_string($hash) || !hash_equals($expectedAssets[$relative], $hash)) {
+                    $drift++;
+                }
+            }
+
+            if ($missing === [] && $extra === [] && $drift === 0) {
+                $cssCount = count(array_filter(array_keys($expectedAssets), static fn (string $name): bool => str_ends_with($name, '.css')));
+                $jsCount = count($expectedAssets) - $cssCount;
+                $pass('Exact customer asset binding', $cssCount . ' CSS and ' . $jsCount . ' JS assets match the bound ZIP.');
+            } else {
+                $fail(
+                    'Exact customer asset binding',
+                    count($missing) . ' missing, ' . count($extra) . ' unexpected, '
+                    . $drift . ' changed or unreadable CSS/JS asset(s).'
+                );
+            }
+        }
+
+        // A valid asset set alone must not approve an earlier installed PHP
+        // security handler or migration under the same VERSION string.
+        foreach ([
+            'index.php',
+            'application/app/Http/Middleware/ChangeConfirmationMiddleware.php',
+            'application/database/migrations/0026_create_email_outbox_event_history.php',
+        ] as $relative) {
+            $candidate = $archive->getFromName($relative);
+            $live = $root . '/' . $relative;
+
+            if (!is_string($candidate) || !is_file($live) || !is_readable($live)) {
+                $fail('Candidate critical source parity', $relative . ' is missing or unreadable.');
+                continue;
+            }
+
+            $actualHash = hash_file('sha256', $live);
+            if (is_string($actualHash) && hash_equals(hash('sha256', $candidate), $actualHash)) {
+                $pass('Candidate critical source parity', $relative . ' matches the bound ZIP.');
+            } else {
+                $fail('Candidate critical source parity', $relative . ' differs from the bound ZIP.');
+            }
+        }
+        $archive->close();
+    }
+}
 
 foreach ([
     'application/storage',
