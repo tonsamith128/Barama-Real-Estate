@@ -228,6 +228,7 @@ try {
     'assets/css/finance-taxes-pagination-v186.css',
     'assets/css/finance-transactions-focus-v1832.css',
     'assets/css/finance-transactions-pagination-v1830.css',
+    'assets/css/footer-management-v100.css',
     'assets/css/frontend-back-to-top-v102.css',
     'assets/css/global-location-cascade-v110.css',
     'assets/css/hero-search-v1117.css',
