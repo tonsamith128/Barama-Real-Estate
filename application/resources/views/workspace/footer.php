@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 $footer = is_array($footerSettings ?? null) ? $footerSettings : \Barama\Repositories\FooterContentRepository::defaults();
 $social = is_array($footer['social'] ?? null) ? $footer['social'] : [];
+$columnLabels = [
+    'brand' => ['number' => '01', 'name' => 'Brand', 'heading_field' => 'brand_heading'],
+    'marketplace' => ['number' => '02', 'name' => 'Marketplace', 'heading_field' => 'marketplace_heading'],
+    'compliance' => ['number' => '03', 'name' => 'Compliance', 'heading_field' => 'compliance_heading'],
+    'help' => ['number' => '04', 'name' => 'Help', 'heading_field' => 'help_heading'],
+];
+$footerLinks = is_array($footer['links'] ?? null) ? $footer['links'] : [];
 $networks = [
     'facebook' => 'Facebook',
     'instagram' => 'Instagram',
@@ -40,41 +47,55 @@ $networks = [
                 </div>
                 <span class="barama-footer-editor__count">4 columns</span>
             </div>
-            <div class="barama-footer-editor__columns">
-                <fieldset>
-                    <legend><span>01</span> Brand</legend>
-                    <p class="barama-footer-editor__hint">Logo and layout are preserved; edit the description only.</p>
-                    <label for="footer-brand-description">Footer info</label>
-                    <textarea id="footer-brand-description" name="brand_description" rows="4" maxlength="400" required><?= e((string) $footer['brand_description']) ?></textarea>
-                </fieldset>
-                <fieldset>
-                    <legend><span>02</span> Marketplace</legend>
-                    <p class="barama-footer-editor__hint">Current public Navigation links remain intact.</p>
-                    <label for="footer-marketplace-heading">Column heading</label>
-                    <input id="footer-marketplace-heading" name="marketplace_heading" maxlength="60" value="<?= e((string) $footer['marketplace_heading']) ?>" required>
-                    <p class="barama-footer-editor__hint">Edit column links through <a href="<?= e(url('/dashboard/navigation')) ?>">Navigation</a>.</p>
-                </fieldset>
-                <fieldset>
-                    <legend><span>03</span> Compliance</legend>
-                    <p class="barama-footer-editor__hint">The policy links use Barama’s canonical Policy Center URLs.</p>
-                    <label for="footer-compliance-heading">Column heading</label>
-                    <input id="footer-compliance-heading" name="compliance_heading" maxlength="60" value="<?= e((string) $footer['compliance_heading']) ?>" required>
-                    <label for="footer-policy-label">Policy Center label</label>
-                    <input id="footer-policy-label" name="policy_label" maxlength="60" value="<?= e((string) $footer['policy_label']) ?>" required>
-                    <label for="footer-privacy-label">Privacy label</label>
-                    <input id="footer-privacy-label" name="privacy_label" maxlength="60" value="<?= e((string) $footer['privacy_label']) ?>" required>
-                    <label for="footer-terms-label">Terms label</label>
-                    <input id="footer-terms-label" name="terms_label" maxlength="60" value="<?= e((string) $footer['terms_label']) ?>" required>
-                    <p class="barama-footer-editor__hint">Links: <code>/policies</code>, <code>/policies?=privacy-policy</code>, <code>/policies?=terms-of-service</code></p>
-                </fieldset>
-                <fieldset>
-                    <legend><span>04</span> Help</legend>
-                    <p class="barama-footer-editor__hint">Documentation, Contact Support and System Health links are preserved.</p>
-                    <label for="footer-help-heading">Column heading</label>
-                    <input id="footer-help-heading" name="help_heading" maxlength="60" value="<?= e((string) $footer['help_heading']) ?>" required>
-                    <p class="barama-footer-editor__hint">Support destinations continue to use the existing application configuration.</p>
-                </fieldset>
+            <input type="hidden" name="footer_links_submitted" value="1">
+            <div class="barama-footer-editor__columns" data-footer-columns>
+                <?php foreach ($columnLabels as $column => $details): ?>
+                    <fieldset class="barama-footer-editor__column" data-footer-column="<?= e($column) ?>">
+                        <legend><span><?= e($details['number']) ?></span> <?= e($details['name']) ?></legend>
+                        <label for="footer-heading-<?= e($column) ?>">Column heading</label>
+                        <input id="footer-heading-<?= e($column) ?>"
+                               name="<?= e($details['heading_field']) ?>"
+                               maxlength="60" required
+                               value="<?= e((string) ($footer[$details['heading_field']] ?? $details['name'])) ?>">
+                        <?php if ($column === 'brand'): ?>
+                            <label for="footer-brand-description">Footer description</label>
+                            <textarea id="footer-brand-description" name="brand_description" rows="3" maxlength="400" required><?= e((string) $footer['brand_description']) ?></textarea>
+                            <p class="barama-footer-editor__hint">The brand logo and first-column layout remain unchanged.</p>
+                        <?php endif; ?>
+                        <div class="barama-footer-editor__list-head">
+                            <strong>Menu items</strong>
+                            <button type="button" class="barama-footer-editor__add" data-footer-add="<?= e($column) ?>" aria-label="Add <?= e($details['name']) ?> menu item">+ Add item</button>
+                        </div>
+                        <div class="barama-footer-editor__link-list" data-footer-list="<?= e($column) ?>">
+                            <?php foreach ((array) ($footerLinks[$column] ?? []) as $index => $link): ?>
+                                <div class="barama-footer-editor__link-row" data-footer-item>
+                                    <div class="barama-footer-editor__link-fields">
+                                        <label>Label
+                                            <input name="footer_links[<?= e($column) ?>][<?= e((string) $index) ?>][label]"
+                                                type="text" maxlength="80" required
+                                                value="<?= e((string) ($link['label'] ?? '')) ?>"
+                                                data-footer-label placeholder="Menu label">
+                                        </label>
+                                        <label>URL
+                                            <input name="footer_links[<?= e($column) ?>][<?= e((string) $index) ?>][url]"
+                                                type="text" maxlength="500" required
+                                                value="<?= e((string) ($link['url'] ?? '')) ?>"
+                                                data-footer-url placeholder="/page or https://example.com">
+                                        </label>
+                                    </div>
+                                    <div class="barama-footer-editor__item-actions" role="group" aria-label="Reorder or remove menu item">
+                                        <button type="button" data-footer-up aria-label="Move item up">↑ Up</button>
+                                        <button type="button" data-footer-down aria-label="Move item down">↓ Down</button>
+                                        <button type="button" data-footer-remove aria-label="Remove menu item">Remove</button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="barama-footer-editor__empty" data-footer-empty <?= !empty($footerLinks[$column]) ? 'hidden' : '' ?>>No menu items. Use + Add item to create one.</p>
+                    </fieldset>
+                <?php endforeach; ?>
             </div>
+            <p class="barama-footer-editor__hint">Use ↑ Up / ↓ Down to reorder links in each column; Remove to delete an item. Changes appear on the public footer after Save. Maximum 15 links per column. Internal paths beginning with / and external HTTPS URLs are supported.</p>
         </section>
 
         <section class="barama-footer-editor__section" aria-labelledby="footer-bottom-heading">
@@ -112,3 +133,5 @@ $networks = [
         </div>
     </form>
 </section>
+
+<script src="<?= e(asset('js/admin-footer-links-v100.js') . '?v=100') ?>" defer></script>
