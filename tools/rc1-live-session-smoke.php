@@ -21,6 +21,24 @@ if ($assetCode !== 0) {
     fwrite(STDERR, "[FAIL] Exact-asset preflight contract smoke failed.\n");
     exit(1);
 }
+// Verify the customer-facing HTML status route and minimal JSON machine
+// endpoint against a disposable local server before accepting live sessions.
+$healthSmoke = $root . '/tools/live-preflight-health-smoke.php';
+$healthLines = [];
+$healthCode = 1;
+exec(
+    escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($healthSmoke) . ' 2>&1',
+    $healthLines,
+    $healthCode
+);
+foreach ($healthLines as $line) {
+    echo $line . PHP_EOL;
+}
+if ($healthCode !== 0) {
+    fwrite(STDERR, "[FAIL] Health endpoint preflight contract smoke failed.\n");
+    exit(1);
+}
+
 $version = trim((string) @file_get_contents($root . '/VERSION'));
 $temp = sys_get_temp_dir()
     . '/barama-live-session-smoke-'
