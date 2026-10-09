@@ -1,0 +1,59 @@
+--- a/application/resources/views/workspace/index.php
++++ b/application/resources/views/workspace/index.php
+@@ -1123,6 +1123,10 @@
+         href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>"
+     >
+ <?php endif; ?>
++<?php if ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
++    <link rel="stylesheet" href="<?= e(asset('css/catalog-quick-actions-v117a6.css') . '?v=117a6') ?>">
++    <script src="<?= e(asset('js/catalog-quick-actions-v117a6.js') . '?v=117a6') ?>" defer></script>
++<?php endif; ?>
+ <!-- BARAMA_GLOBAL_LOCATION_CASCADE_INDEX_V110 -->
+ <link rel="stylesheet" href="<?= e(asset('css/global-location-cascade-v110.css') . '?v=110') ?>">
+ <script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
+@@ -1211,10 +1215,14 @@
+                 <span>Upload</span>
+             </a>
+         <?php elseif ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
+-            <span class="workspace-context-note">
+-                <?= app_icon('shield') ?>
+-                Canonical real-estate platform data
+-            </span>
++            <div class="workspace-header-actions barama-catalog-v117a6__header" aria-label="Catalog actions">
++                <button type="button" class="workspace-context-note workspace-context-note--create barama-catalog-v117a6__action" data-barama-catalog-open="location" aria-controls="barama-catalog-v117a6-location" aria-expanded="false">
++                    <?= app_icon('plus') ?><span>Add Location</span>
++                </button>
++                <button type="button" class="workspace-context-note workspace-context-note--create barama-catalog-v117a6__action" data-barama-catalog-open="amenity" aria-controls="barama-catalog-v117a6-amenity" aria-expanded="false">
++                    <?= app_icon('plus') ?><span>Add Amenity</span>
++                </button>
++            </div>
+         <?php elseif ($workspaceType === 'admin' && $activeSection === 'pages'): ?>
+             <a
+                 class="workspace-context-note workspace-context-note--create"
+@@ -1729,7 +1737,7 @@
+         </details>
+     <?php elseif ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
+         <div class="workspace-form-pair">
+-            <details class="workspace-create">
++            <details class="workspace-create" id="barama-catalog-v117a6-location" data-barama-catalog-details="location">
+                 <summary><?= app_icon('plus') ?><span>Add location</span></summary>
+                 <form action="<?= e(url('/dashboard/locations')) ?>" method="post" data-workspace-form class="workspace-form">
+                     <?= csrf_field() ?>
+@@ -1737,7 +1745,7 @@
+                         <label><span>Name</span><input class="form-control" name="name" required maxlength="160"></label>
+                         <label><span>Type</span>
+                             <select class="form-select" name="type" required>
+-                                <?php foreach (['country','province','state','region','district','county','department','prefecture','municipality','city','commune','neighborhood','territory','administrative_area'] as $type): ?>
++                                <?php foreach (['country','province','state','city','district','commune','neighborhood'] as $type): ?>
+                                     <option value="<?= e($type) ?>"><?= e($humanize($type)) ?></option>
+                                 <?php endforeach; ?>
+                             </select>
+@@ -1758,7 +1766,7 @@
+                     <button class="btn btn-primary" type="submit">Create location</button>
+                 </form>
+             </details>
+-            <details class="workspace-create">
++            <details class="workspace-create" id="barama-catalog-v117a6-amenity" data-barama-catalog-details="amenity">
+                 <summary><?= app_icon('plus') ?><span>Add amenity</span></summary>
+                 <form action="<?= e(url('/dashboard/amenities')) ?>" method="post" data-workspace-form class="workspace-form">
+                     <?= csrf_field() ?>
