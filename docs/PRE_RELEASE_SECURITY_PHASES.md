@@ -30,6 +30,21 @@ Canonical security setting at /dashboard/settings/security (no duplicate page).
 - Verify exact expected hostname and action. Token expiry/replay are enforced by Cloudflare Siteverify.
 - Test all listed routes, replay, timeout, invalid hostname/action and network outage, using official test keys in staging only.
 
+### R1p14 encrypted settings foundation (unwired)
+
+The draft branch now includes `application/app/Security/TurnstileSettingsStore.php`.
+It stores the Turnstile secret in private `application/storage/settings/turnstile.json`
+using AES-256-GCM. Its key is derived from the existing installation `APP_KEY`
+with HKDF-SHA256; public metadata (enabled state, site key and protected forms)
+is also authenticated. Reads reject damaged or incorrectly keyed records. The
+status method returns configuration flags and the public site key, never the
+secret. A missing config defaults to disabled.
+
+This class is **not yet wired to any admin UI or public form middleware**. No
+customer-visible switch must be offered before widget rendering, per-route
+server-side validation, and test coverage are complete. Confirm private
+storage-deny rules work for both Nginx and Apache before any deployment.
+
 ## R1p15 signed update plan
 
 Barama already has /updater/ and UpgradeService; do NOT add a second updater.
