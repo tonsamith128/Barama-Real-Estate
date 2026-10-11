@@ -83,7 +83,7 @@ final class TurnstileSettingsStore
             OPENSSL_RAW_DATA,
             $nonce,
             $tag,
-            'barama.turnstile.v1'
+            $this->associatedData($record['enabled'], $record['site_key'], $forms)
         );
         if (!is_string($secret) || $secret === '' || strlen($secret) > 1024) {
             throw new RuntimeException('Turnstile credential decryption failed.');
@@ -123,7 +123,7 @@ final class TurnstileSettingsStore
             OPENSSL_RAW_DATA,
             $nonce,
             $tag,
-            'barama.turnstile.v1',
+            $this->associatedData($enabled, $siteKey, $forms),
             16
         );
         if (!is_string($encrypted) || strlen($tag) !== 16) {
@@ -159,6 +159,17 @@ final class TurnstileSettingsStore
             throw new RuntimeException('Turnstile configuration could not be saved.');
         }
         @chmod($path, 0600);
+    }
+
+    /** @param array<int,string> $forms */
+    private function associatedData(bool $enabled, string $siteKey, array $forms): string
+    {
+        return json_encode([
+            'context' => 'barama.turnstile.v1',
+            'enabled' => $enabled,
+            'site_key' => $siteKey,
+            'forms' => $forms,
+        ], JSON_THROW_ON_ERROR);
     }
 
     private function storagePath(): string
