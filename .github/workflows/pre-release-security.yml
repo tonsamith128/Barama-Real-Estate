@@ -7,6 +7,8 @@ on:
       - 'application/app/Security/TurnstileSettingsStore.php'
       - 'application/app/Services/SignedUpdateManifest.php'
       - 'tests/pre_release_security_smoke.php'
+      - 'tests/turnstile_middleware_smoke.php'
+      - 'application/app/Http/Middleware/TurnstileMiddleware.php'
       - '.github/workflows/pre-release-security.yml'
   push:
     branches:
@@ -36,5 +38,9 @@ jobs:
           php -l application/app/Security/TurnstileSettingsStore.php
           php -l application/app/Services/SignedUpdateManifest.php
           php -l tests/pre_release_security_smoke.php
+          php -l tests/turnstile_middleware_smoke.php
+          php -l application/app/Http/Middleware/TurnstileMiddleware.php
       - name: Run offline security smoke
-        run: php tests/pre_release_security_smoke.php
+        run: |
+          php tests/pre_release_security_smoke.php
+          php tests/turnstile_middleware_smoke.php
