@@ -1,0 +1,38 @@
+name: Pre-release security primitives
+
+on:
+  pull_request:
+    paths:
+      - 'application/app/Security/TurnstileVerifier.php'
+      - 'application/app/Services/SignedUpdateManifest.php'
+      - 'tests/pre_release_security_smoke.php'
+      - '.github/workflows/pre-release-security.yml'
+  push:
+    branches:
+      - 'feature/pre-codecanyon-turnstile-signed-updates-r1p13'
+
+permissions:
+  contents: read
+
+jobs:
+  security-primitives:
+    name: PHP safety smoke
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: openssl, curl
+          coverage: none
+      - name: PHP lint
+        run: |
+          php -l application/app/Security/TurnstileVerifier.php
+          php -l application/app/Services/SignedUpdateManifest.php
+          php -l tests/pre_release_security_smoke.php
+      - name: Run offline security smoke
+        run: php tests/pre_release_security_smoke.php
