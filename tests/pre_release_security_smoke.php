@@ -28,6 +28,23 @@ demand(!$turnstile->verify('secret', str_repeat('a', 2049), 'example.com', 'logi
 demand(!$turnstile->verify('secret', 'token', 'not/a/hostname', 'login'), 'turnstile_invalid_host_rejected');
 demand(!$turnstile->verify('secret', 'token', 'example.com', 'invalid action'), 'turnstile_invalid_action_rejected');
 
+demand(TurnstileVerifier::acceptsResult([
+    'success' => true, 'hostname' => 'baramarealestate.tonsamith.com',
+    'action' => 'login'
+], 'baramarealestate.tonsamith.com', 'login'), 'turnstile_valid_result_accepted');
+demand(!TurnstileVerifier::acceptsResult([
+    'success' => false, 'hostname' => 'baramarealestate.tonsamith.com',
+    'action' => 'login'
+], 'baramarealestate.tonsamith.com', 'login'), 'turnstile_false_success_rejected');
+demand(!TurnstileVerifier::acceptsResult([
+    'success' => true, 'hostname' => 'attacker.example.com',
+    'action' => 'login'
+], 'baramarealestate.tonsamith.com', 'login'), 'turnstile_wrong_hostname_rejected');
+demand(!TurnstileVerifier::acceptsResult([
+    'success' => true, 'hostname' => 'baramarealestate.tonsamith.com',
+    'action' => 'register'
+], 'baramarealestate.tonsamith.com', 'login'), 'turnstile_wrong_action_rejected');
+
 $key = openssl_pkey_new(['private_key_bits' => 3072, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
 demand($key !== false, 'openssl_private_test_key_generated');
 $public = openssl_pkey_get_details($key)['key'] ?? '';
