@@ -40,3 +40,15 @@ The v1.1.3 kit contains `publisher/IMPLEMENTATION-CONTRACT.md` and optional `pub
 After successful local QA, operator must run `--check` on exact live v1.1.2, then `--install` only if preflight passes. Preserve actual rollback ID. Verify centered UI light/dark and real publisher result; verified status may remain unavailable pending separate server-side License Manager investigation.
 
 Draft only. No production deployment from GitHub.
+
+
+## v1.1.3a portable QA correction — 2026-10-11
+
+- Original v1.1.3 was **not installed**: aaPanel test 06 failed because Node.js was absent. The guarded bash command stopped before live preflight/install.
+- Corrected full ZIP: `Barama-License-Center-and-Domain-Workflow-v1.1.3a.zip`.
+- ZIP SHA-256: `4acd1b3458b85c8a6651cef19835f9f551e4a5b91b9f03a716a8d7883708d801`.
+- **31/31 tests PASS** on build host and 31/31 PASS after a fresh ZIP extraction with `BARAMA_QA_SIMULATE_NO_NODE=1`.
+- Node.js `--check` validated the exact bundled payload JS during release build; SHA-256 `b38352cb415f9e7d2760293cfda31a74ea2be764e873a71dbfcb437044e7e993` is independently pinned in portable QA. aaPanel without Node checks that immutable pin; it **does not execute a JS parser on the target server**. Tampered JS is rejected.
+- Compared to original v1.1.3, only `tests.py`, `README.md` and generated `SHA256SUMS.txt` differ. **All five application payloads, source fixtures, publisher utilities and `installer.py` are byte-identical**.
+- Command order: verify ZIP checksum, extract, check internal SHA256 manifest, run portable tests, run `installer.py --check`, then `--install` only on preflight PASS. Production acceptance still pending.
+- No need to install Node.js on the PHP aaPanel host, and no rollback was necessary following the original test failure.
