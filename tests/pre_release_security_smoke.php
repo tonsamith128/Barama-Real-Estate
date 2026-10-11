@@ -90,4 +90,55 @@ demand($verifier->verifyPackage($path, $sha, $bytes), 'package_checksum_accepted
 demand(!$verifier->verifyPackage($path, str_repeat('0', 64), $bytes), 'bad_checksum_rejected');
 demand(!$verifier->verifyPackage($path, $sha, $bytes + 1), 'bad_size_rejected');
 unlink($path);
+
+require dirname(__DIR__) . '/application/app/Security/TurnstileSettingsStore.php';
+
+$testRoot = sys_get_temp_dir() . '/barama-turnstile-' . bin2hex(random_bytes(8));
+demand(mkdir($testRoot, 0700), 'turnstile_test_private_directory');
+$testConfig = $testRoot . '/turnstile.json';
+$key = base64_encode(random_bytes(32));
+$store = new \Barama\Security\TurnstileSettingsStore($testConfig, $key);
+
+demand($store->status()['enabled'] === false, 'turnstile_defaults_disabled');
+demand($store->status()['configured'] === false, 'turnstile_defaults_unconfigured');
+
+$testSecret = '0x0_Offline_Secret_For_Encrypted_Testing';
+$testSiteKey = '0x4AAAA_Test_Site_Key';
+$store->save(false, $testSiteKey, $testSecret, ['login', 'register']);
+
+demand($store->status()['configured'] === true, 'turnstile_encrypted_settings_configured');
+demand($store->status()['enabled'] === false, 'turnstile_settings_remain_disabled');
+demand($store->read()['secret'] === $testSecret, 'turnstile_secret_decryption');
+demand(
+    !str_contains((string) file_get_contents($testConfig), $testSecret),
+    'turnstile_plaintext_never_stored'
+);
+
+$originalSettings = (string) file_get_contents($testConfig);
+$tamperedSettings = str_replace('"enabled":false', '"enabled":true', $originalSettings);
+demand($tamperedSettings !== $originalSettings, 'turnstile_tamper_fixture_constructed');
+file_put_contents($testConfig, $tamperedSettings);
+
+$tamperRejected = false;
+try {
+    $store->read();
+} catch (\RuntimeException) {
+    $tamperRejected = true;
+}
+demand($tamperRejected, 'turnstile_authenticated_metadata_tamper_rejected');
+file_put_contents($testConfig, $originalSettings);
+
+$wrongKeyRejected = false;
+try {
+    (new \Barama\Security\TurnstileSettingsStore(
+        $testConfig, base64_encode(random_bytes(32))
+    ))->read();
+} catch (\RuntimeException) {
+    $wrongKeyRejected = true;
+}
+demand($wrongKeyRejected, 'turnstile_wrong_encryption_key_rejected');
+
+@unlink($testConfig);
+@rmdir($testRoot);
+
 echo 'PRE_RELEASE_SECURITY_SMOKE=PASS' . PHP_EOL;
