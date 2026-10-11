@@ -82,12 +82,20 @@ final class TurnstileVerifier
             return false;
         }
 
-        return is_array($result)
-            && ($result['success'] ?? false) === true
+        return is_array($result) && self::acceptsResult($result, $hostname, $action);
+    }
+    /**
+     * Pure, offline-testable decision for Siteverify JSON. The challenge token
+     * is not accepted unless the remote server returned this payload.
+     */
+    public static function acceptsResult(array $result, string $hostname, string $action): bool
+    {
+        return ($result['success'] ?? false) === true
             && isset($result['hostname'], $result['action'])
             && is_string($result['hostname'])
             && is_string($result['action'])
             && hash_equals($hostname, strtolower(rtrim($result['hostname'], '.')))
             && hash_equals($action, $result['action']);
     }
+
 }
