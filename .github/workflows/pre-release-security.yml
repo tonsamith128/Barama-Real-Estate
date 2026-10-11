@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'application/app/Security/TurnstileVerifier.php'
+      - 'application/app/Security/TurnstileSettingsStore.php'
       - 'application/app/Services/SignedUpdateManifest.php'
       - 'tests/pre_release_security_smoke.php'
       - '.github/workflows/pre-release-security.yml'
@@ -32,6 +33,7 @@ jobs:
       - name: PHP lint
         run: |
           php -l application/app/Security/TurnstileVerifier.php
+          php -l application/app/Security/TurnstileSettingsStore.php
           php -l application/app/Services/SignedUpdateManifest.php
           php -l tests/pre_release_security_smoke.php
       - name: Run offline security smoke
