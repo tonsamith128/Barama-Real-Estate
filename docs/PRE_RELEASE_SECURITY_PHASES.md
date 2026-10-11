@@ -45,6 +45,33 @@ customer-visible switch must be offered before widget rendering, per-route
 server-side validation, and test coverage are complete. Confirm private
 storage-deny rules work for both Nginx and Apache before any deployment.
 
+### R1p14 route enforcement foundation (NOT ACTIVATED)
+
+A reusable `TurnstileMiddleware` is now present on this draft branch,
+with a dedicated offline test `tests/turnstile_middleware_smoke.php`.
+It is deliberately **not attached to any route** until all corresponding
+widget pages, scripts, CSP allowances, contact/inquiry form payloads, and
+administrative save controls are complete and end-to-end tested.
+
+The middleware reads the encrypted Turnstile settings, skips only when
+explicitly disabled or an unselected form, rejects missing and oversized
+challenge responses, derives the expected hostname from trusted configured
+`app.url` rather than request Host headers, requires the correct form action,
+and returns a generic error on Siteverify failure. If encrypted settings are
+unreadable, it denies processing rather than permitting unverified requests.
+
+**Sandbox acceptance evidence (2026-10-11):** the separate loopback-only
+Cloudflare public-testing-keys kit v1.0.1 passed 11 local offline tests and
+Siteverify success, rejection and simulated duplicate-token rejection on
+aaPanel PHP 8.5.8. A Mac SSH-tunnel browser session displayed success and
+rejection; the supplied replay browser screenshot did not show a post-submit
+result. These are controlled testing scenarios, **not proof of production bot
+protection or replay-defense behavior with real keys**.
+
+Do not provide an Enable switch or distribute production installer until
+route widgets/CSP, admin-only credential update, actual Siteverify with
+production keys on staging and rollback all pass.
+
 ## R1p15 signed update plan
 
 Barama already has /updater/ and UpgradeService; do NOT add a second updater.
