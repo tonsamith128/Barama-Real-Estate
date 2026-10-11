@@ -51,8 +51,9 @@ final class TurnstileVerifier
             return false;
         }
 
-        try {
-            curl_setopt_array($ch, [
+        // PHP 8+ CurlHandle objects release resources when no longer referenced.
+        // curl_close() is deprecated in PHP 8.5.
+        curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => http_build_query($data, '', '&', PHP_QUERY_RFC3986),
                 CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'],
@@ -65,12 +66,10 @@ final class TurnstileVerifier
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_SSL_VERIFYHOST => 2,
                 CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
-            ]);
-            $body = curl_exec($ch);
-            $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        } finally {
-            curl_close($ch);
-        }
+        ]);
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        unset($ch);
 
         if (!is_string($body) || strlen($body) > 8192 || $code !== 200) {
             return false;
