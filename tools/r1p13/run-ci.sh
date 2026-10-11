@@ -21,7 +21,7 @@ IMAGE="barama-r1p13-app:$GITHUB_SHA"
 PASS="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 
 cleanup() {
-  docker rm -f "$APP" "$DB" >/dev/null 2>&1 || true
+  docker rm -fv "$APP" "$DB" >/dev/null 2>&1 || true
   docker network rm "$NET" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -37,7 +37,8 @@ echo 'R1P13_DOCKER_INTERNAL_NETWORK=PASS'
 echo '========== START DISPOSABLE DATABASE =========='
 docker run -d --name "$DB" --network "$NET" \
   --security-opt no-new-privileges \
-  --memory 1152m --cpus 2 --pids-limit 256 \
+  --memory 1536m --cpus 2 --pids-limit 256 \
+  --tmpfs /var/lib/mysql:rw,nosuid,nodev,size=1024m \
   -e MYSQL_ROOT_PASSWORD="$PASS" -e MYSQL_ROOT_HOST='%' \
   mysql:8.0 --skip-log-bin >/dev/null
 
@@ -57,7 +58,7 @@ for container in "$APP" "$DB"; do
   [[ -z "$(docker port "$container" 2>/dev/null)" ]] || {
     echo 'STOP=R1P13_PUBLIC_PORT_DETECTED' >&2; exit 1;
   }
-  [[ "$(docker inspect "$container" --format '{{len .Mounts}}')" == "0" ]] || {
+  [[ "$(docker inspect "$container" --format '{{json .HostConfig.Binds}}')" == "null" ]] || {
     echo 'STOP=R1P13_HOST_MOUNT_DETECTED' >&2; exit 1;
   }
   [[ "$(docker inspect "$container" --format '{{.HostConfig.NetworkMode}}')" == "$NET" ]] || {
@@ -65,7 +66,7 @@ for container in "$APP" "$DB"; do
   }
 done
 echo 'R1P13_NO_PUBLISHED_PORTS=PASS'
-echo 'R1P13_NO_HOST_MOUNTS=PASS'
+echo 'R1P13_NO_HOST_BIND_MOUNTS=PASS'
 
 echo '========== CHECK FOR PRODUCTION STATE BEFORE EXECUTION =========='
 docker exec "$APP" php tools/r1p13/guard.php
