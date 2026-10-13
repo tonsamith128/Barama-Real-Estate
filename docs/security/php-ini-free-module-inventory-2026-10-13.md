@@ -656,3 +656,58 @@ bash run-on-aapanel.sh --check
 Expected diagnostic markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EXAMINED_ENTRYPOINT_INCLUDES=4`, `PRIVATE_ONLY_ROUTE_SIGNATURES=76`, `BARAMA_BOOTSTRAP_BOUNDARY_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`. If any identity check fails, STOP; no fallback, re-pinning, source editing or bypass.
 
 This diagnostic is **not** source-reconciliation acceptance. Real Barama disconnected bootstrap and genuine signed-update install/rollback remain NOT TESTED. CodeCanyon FINAL **ON HOLD**.
+
+
+## 2026-10-13 — v1.0.14 aaPanel include boundary / route precedence diagnostic accepted
+
+User-provided transcript verified ZIP `7fcb5b1fe917f4187741988606d293fa0fb16d6a40ea2b6e9b3a2e89f8427274`, 138/138 offline tests PASS, private tree SHA-256 unchanged:
+`900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+**Actual observations:**
+- `EXAMINED_ENTRYPOINT_INCLUDES=4`. TWO new/other lexical `include/require` expressions appear **BEFORE_INSTALLATION_GUARD**, expression IDs `080cedfd5cb5f1ae` and `36dbd8704972f94b`. Neither had flagged dynamic or URI/stream indicators. Their target files and side effects were **not** resolved, opened or evaluated.
+- Known runtime include appears before the version guard; known application bootstrap include appears after it.
+- All 76 private-only route signatures remain. Potential new-before-shared template-overlap pairs: **GET 12** affecting **4** shared GET signatures, and **POST 2** affecting **2** shared POST signatures. The script reported zero old-before-new overlapping pairs.
+- No PHP AST, handler/middleware access control, include target verification, bootstrap execution, SQL, network or production writes.
+- `BARAMA_BOOTSTRAP_BOUNDARY_TRIAGE=PASS` accepts diagnostic completion **only**. `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD` remain in force.
+- Possible route shadowing is a static first-match template intersection, **not** an observed authentication or routing failure.
+
+## v1.0.15 — pinned static early-include target classification and route impact (next)
+
+Package `Barama-Early-Include-Route-Impact-aaPanel-v1.0.15.zip`
+
+**External ZIP SHA-256:** `5d8f2a032afc6ec091b0fce696db4e423af2c0ea077ea71135192b32bc767ef3`
+
+Size **56,778 bytes**; 19 internal package files. Build-local and fresh-extraction **159/159 offline tests PASS**, internal SHA256SUMS PASS, shell/Python syntax PASS, unapproved `--probe` rejected.
+
+Package scope:
+- Revalidates exact root-owned private `/root/barama-private-v2-http-source-overlay/source`, its pinned source fingerprint and all previously accepted gate identities. Does not use any fallback webroot.
+- Performs a **bounded lexical** classification of the two early unknown include/require expressions. A simple `__DIR__ . '/static/path.php'` may be categorized by relative nonstate folder and emits only a truncated path hash; traversal, sensitive and excluded paths are NOT opened. Dynamic/unrecognized forms report `UNRESOLVED_EXPRESSION_NOT_OPENED`. **No included target file is opened and no PHP is executed.**
+- Adds a pinned SHA256 manifest mapping the 167 *publicly known GitHub* route digests to broad `PUBLIC/ACCOUNT/DEVELOPER/DASHBOARD` categories (raw reference route paths are not included). Reports the **14** already identified possible earlier-new/later-shared route overlap pairs by method, reference category, truncated hashes and static template coverage (`NEW_COVERS_SHARED_TEMPLATE`, `SHARED_COVERS_NEW_TEMPLATE`, `EQUIVALENT_TEMPLATE_LANGUAGE`, or `PARTIAL_TEMPLATE_OVERLAP`). **Private route paths and source contents are not printed.**
+- This is NOT a real PHP AST/control-flow, include side effect or middleware review. It does not authorize application bootstrap, touch runtime secrets/storage, PHP INI, production webroot, SQL, remote network, updater or signer.
+
+aaPanel command after uploading the ZIP to `/root`:
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Early-Include-Route-Impact-aaPanel-v1.0.15.zip"
+SHA="5d8f2a032afc6ec091b0fce696db4e423af2c0ea077ea71135192b32bc767ef3"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Early-Include-Route-Impact-aaPanel-v1.0.15
+bash run-on-aapanel.sh --check
+```
+
+Expected completion:
+```ini
+PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS
+EARLY_ENTRYPOINT_INCLUDE_COUNT=2
+INCLUDE_TARGET_FILES_OPENED=0
+ROUTE_PRECEDENCE_STATIC_COLLISION_PAIRS=14
+BARAMA_EARLY_INCLUDE_ROUTE_IMPACT_TRIAGE=PASS
+DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED
+CODECANYON_FINAL=ON_HOLD
+```
+
+**Live v1.0.15 aaPanel result: NOT YET TESTED.** The remaining release path requires a targeted review of the real include targets, route handler/middleware access control, strictly confined disconnected application bootstrap, and actual signed-update install/rollback. Production changes are not authorized; CodeCanyon FINAL ON HOLD.
