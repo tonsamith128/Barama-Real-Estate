@@ -1089,3 +1089,18 @@ CODECANYON_FINAL=ON_HOLD
 ```
 
 Next after acceptance: design/review an isolated **copy-based** PHP runtime harness with empty non-production state, no secrets/network, mapped temp session directory/logging and policy against production impact; only then request explicit permission for actual isolated PHP execution. Signed update installation and rollback still not tested.
+
+
+## 2026-10-13 — v1.0.22 live aaPanel STOP (not accepted)
+
+The user executed `Barama-Prebootstrap-Execution-Boundary-aaPanel-v1.0.22.zip`, outer SHA-256 `e1619d11226539ed6460c51d23d004b1fab9b8ebab520d9cb87acb50659d0f58` PASS; internal SHA256SUMS PASS; unit test summary `Ran 79 tests`, `OK (skipped=1)`, i.e. 78 passed, 1 intentional skip due actual aaPanel source present.
+
+Full previously accepted 629-file nonstate staging tree and 243 routes remain unchanged, `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`; optional candidates absent: `OPTIONAL_PREINSTALL_SUPPORT_CANDIDATES_ABSENT=3`.
+
+**Actual last line:** `STOP: PINNED_PREBOOTSTRAP_BOUNDARY_V122_FAILED` immediately after optional candidate status. `PREBOOTSTRAP_REFERENCE_BLOBS_MATCHED`, `BARAMA_PREBOOTSTRAP_BOUNDARY_AUDIT=PASS` and the execution-boundary marker list were **NOT** emitted. The v1.0.22 gate caught and redacted the underlying exception. Therefore the **v1.0.22 boundary audit FAIL/STOP** (while its test suite and source integrity pass); no PHP, SQL, network, production/staging writes occurred.
+
+Source code review of v1.0.22 gate reveals that after printing `OPTIONAL_PREINSTALL_SUPPORT_CANDIDATES_ABSENT=3`, it reads nine fixed PHP source files, checks each against a pinned Git blob, then tests literal code-marker strings. Independent connected GitHub check confirmed all eight GitHub-reference marker sets exist exactly at the pinned commit, so the next likely investigation is distinguishing source/blob mismatches on one of the additional files, local trust errors, or the private `index.php` marker set. Do **not** assume a particular failed marker from a generic STOP.
+
+**Safe next action:** use the previously verified v1.0.22 kit and a separate nonmutating Python diagnostic to call its `check_source_integrity()` and `read_root_owned()` and `inspect_patterns()` for each of exactly the nine allowlisted files; report `FILE_READ_OR_PIN=FAIL` versus `MARKERS=MISSING_LABELS`, printing only hardcoded labels and **no private code or secret paths**. This is diagnostic-only; never relax the pinned blob checks or turn a STOP into PASS. Once the specific file or marker is identified, fix the test's false assumption or reconcile actual private code in a new immutable artifact.
+
+**Release:** v1.0.22 **NOT ACCEPTED**, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
