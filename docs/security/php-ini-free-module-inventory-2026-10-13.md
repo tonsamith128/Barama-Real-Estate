@@ -406,3 +406,44 @@ bash run-on-aapanel.sh --check
 ```
 
 Next gate on PASS: separate content provenance/hash reconciliation and side-effect review to design a confined disconnected application probe. Barama execution is NOT YET AUTHORIZED. Signed-update installation/rollback remain NOT TESTED. **CodeCanyon FINAL ON HOLD.**
+
+
+## 2026-10-13 — v1.0.9 nested bootstrap static gate accepted on aaPanel
+
+User-provided execution output verifies:
+- ZIP integrity PASS; **25/25** offline tests PASS.
+- `ACCEPTED_PRIVATE_SOURCE_OVERLAY=FOUND_AND_PRIVATE`; `AUTHORITATIVE_SOURCE_SUBDIRECTORY=source`.
+- `SOURCE_VERSION=0.9.22-dev`; `NONSTATE_SOURCE_FILES=629`; `NONSTATE_PHP_FILES=340`; `NONSTATE_DIRECTORIES=40`; `STATIC_ROUTE_DECLARATIONS=243`.
+- `STATIC_BOOTSTRAP_FILES_REVIEWED=10`, `KNOWN_BOOTSTRAP_SIDE_EFFECTS=SESSION_START,CONFIG_REQUIRE,ERROR_HANDLER_LOG`.
+- `RUNTIME_STATE_METADATA=NOT_INSPECTED`, `RUNTIME_STATE_VALUES=NOT_READ`, `CUSTOMER_DB_AND_SECRETS=NOT_ACCESSED`, `STAGING_APPLICATION_EXECUTION=NOT_PERFORMED`.
+- `BARAMA_NESTED_BOOTSTRAP_STATIC_PREFLIGHT=PASS`.
+- Reconciliation: v1.0.8 counted 630 entries at the overlay wrapper level; v1.0.9 counted 629 within nested `source/`. This aligns counts in scope, **not a byte-identity proof**.
+
+## v1.0.10 — read-only private nonstate source fingerprint + ten GitHub blob comparison (NEXT)
+
+Package: `Barama-Private-Source-Provenance-Gate-aaPanel-v1.0.10.zip`
+ZIP SHA-256: `e9965cb7550c58924d0fae84f3780754e7038e599f7bf739a1da54fdef26e8d1`
+Size: 14,916 bytes.
+
+The gate only uses `--check`. It re-runs v1.0.9 structural checks, then hashes the **nonstate** files in exact private `/root/barama-private-v2-http-source-overlay/source` using bounded `openat`/directory FDs, `O_NOFOLLOW`, owner/mode/type checks, no hard links, and mid-read consistency checks. No source file contents or complete filenames are exported. It explicitly skips hidden files, `storage`, private, secrets, licenses, backups, cache, logs and other excluded trees without opening them. No PHP execution or network operation.
+
+Outputs: `NONSTATE_TREE_SHA256`, counts, byte totals, and Git *blob* content-ID comparison of the same **ten** nonsecret bootstrap files previously reviewed by v1.0.9 against pinned repository `tonsamith128/Barama-Real-Estate` commit `fc617c12790f7075ccfd0e418a1bba3443450941`. Git blob SHA-1 is used solely for Git content identity; SHA-256 is used for the full nonstate source fingerprint. It reports `TEN_FILES_MATCH` or `TEN_FILES_DIVERGE_REVIEW_REQUIRED` without hiding mismatches. Either result remains **partial provenance**, not proof of complete tree equality with GitHub or the previous private 629-file accepted source manifest (no prior tree digest available).
+
+Build-local QA: 46/46 tests PASS; Python + shell syntax PASS; fresh extracted internal SHA256SUMS PASS; invalid opt-in mode rejected. **Live aaPanel execution NOT TESTED.**
+
+aaPanel:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Private-Source-Provenance-Gate-aaPanel-v1.0.10.zip"
+SHA="e9965cb7550c58924d0fae84f3780754e7038e599f7bf739a1da54fdef26e8d1"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Private-Source-Provenance-Gate-aaPanel-v1.0.10
+bash run-on-aapanel.sh --check
+```
+
+Successful capture marker: `BARAMA_NONSTATE_SOURCE_INTEGRITY_CAPTURE=PASS`. Always inspect `BARAMA_BOOTSTRAP_REFERENCE_RESULT`; `BARAMA_SOURCE_PROVENANCE=PARTIAL_NOT_FINAL` is the intended limit.
+
+No production webroot, INI, firewall, application PHP runtime, database, license, signing identity, genuine updater install, or rollback is accessed or executed. CodeCanyon FINAL **ON HOLD**.
