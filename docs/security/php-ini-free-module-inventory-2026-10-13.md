@@ -950,3 +950,25 @@ CODECANYON_FINAL=ON_HOLD
 ```
 
 Next action on acceptance: source-of-truth identification and human-reviewed code/guard examination, then independently staged immutable source repair if authorized. Never move to actual PHP startup or signed updater tests until dependency integrity and side-effect safety are established.
+
+
+## 2026-10-13 — v1.0.20 aaPanel accepted; source-of-truth check establishes release blocker
+
+User-provided aaPanel transcript of the already verified `Barama-Preinstall-Missing-Support-Readiness-aaPanel-v1.0.20.zip` (`03a9be921ee12c92d57e9ac0367082116d088b4804f5d6b83e3aa0be10452b25`):
+- All 268/268 offline checks PASS, internal hashes PASS, private source `0.9.22-dev` full nonstate tree SHA-256 remains exactly `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Both extra `require_once` occurrences precede the installation guard and were classified `NESTED_LEXICAL_REVIEW_REQUIRED`. Their true PHP control-flow semantics, execution conditions and target side effects **NOT VERIFIED**.
+- Both lexical static candidates share the same absent `application/support` parent directory: `COMMON_MISSING_PARENT_ID=2e6468a2936671ce`, `STATIC_CANDIDATE_PATHS_WITH_MISSING_PARENT=2`, `SHARED_MISSING_PARENT_CONFIRMED=YES`.
+- First include additionally has an unresolved function-dependent nested prior assignment.
+- `BARAMA_PREINSTALL_SUPPORT_READINESS_DIAGNOSTIC=PASS`, but the actionable gate remains `BARAMA_DISCONNECTED_BOOTSTRAP_READINESS=BLOCKED_MISSING_SHARED_SOURCE_SUBTREE` and `CODECANYON_FINAL=ON_HOLD`.
+- No include target read, no PHP app, SQL, network, updater or production/staging writes.
+
+**Independent connected GitHub repository tree check, 2026-10-13:**
+- Repo `tonsamith128/Barama-Real-Estate` is private; default branch `main`.
+- Direct GitHub tree API for `main` returned commit/tree sha `fc617c12790f7075ccfd0e418a1bba3443450941`, `truncated=false`, **388** entries.
+- `application/support/` paths: **0**; `application/app/Support/` paths: **8**. Paths are NOT interchangeable on case-sensitive Linux.
+- `main:index.php` blob `cd6bf66e76e22ac9d0496ce1fd23aca354abcca8` differs from pinned private `index.php` blob `9435eba90c2229729b5d8c59232c617d8ec9450f`; current `main` is still the original 2-includes version, whereas private entry point has 4.
+- `main:application/routes/web.php` blob `236468ff78a8f67b1662fc9df6d9e54cba90ff6c`; private retains all 167 reference route signatures plus 76 private-only signatures. The private source must NOT be overwritten with older GitHub main as a shortcut.
+
+**Release-engineering conclusion:** There is an unreviewed source-version split: private new index pre-install includes reference possible nonstate PHP under a subtree absent both from pinned overlay and authoritative GitHub main. Nested lexical placement does NOT prove they execute on every request; metadata missing alone does NOT justify creating missing files. Resolve with a scoped code-level diff of pinned private entry point against GitHub, review early conditional guards and actual include assignments, then choose an explicit remediation (remove accidental includes or add vetted source files via controlled source-of-truth and **new** fingerprint). Approval must be based on actual code review, not more repetitive metadata probes.
+
+**Do not:** create a missing directory/placeholder, copy production files, run PHP application, use an alternate webroot, re-pin to suppress red flags, alter main/production branches, or enable signed update/rollback before source and runtime acceptance. All production code unchanged by these audits; **CodeCanyon FINAL remains ON HOLD**.
