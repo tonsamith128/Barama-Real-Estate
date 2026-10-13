@@ -501,3 +501,52 @@ Expected diagnostic completion marker: `BARAMA_BOOTSTRAP_DIVERGENCE_TRIAGE=PASS`
 If fingerprint or trust controls do not match, STOP without weakening confinement or copying code.
 
 **CodeCanyon FINAL: ON HOLD.** Confined disconnected bootstrap, genuine signed-update install and rollback are NOT TESTED.
+
+
+## 2026-10-13 — v1.0.11 aaPanel static divergence triage accepted
+
+User-provided transcript:
+- Verified ZIP SHA-256 `c8c349df964b661f0647d2dbfd466852ec650b5f98cd1645eb939c6fed80f001`; 69/69 local offline tests PASS on aaPanel.
+- Revalidated private tree fingerprint `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Exactly three known divergences against GitHub pinned commit `fc617c12790f7075ccfd0e418a1bba3443450941`:
+  - `index.php`: 3,376 private bytes / 2,344 reference, 115 / 89 lines; private Git blob `9435eba90c2229729b5d8c59232c617d8ec9450f`.
+  - `application/routes/web.php`: 48,478 / 30,721 bytes, 1,130 / 753 lines; private Git blob `bf6aec013015b4d116f2b4dbaaaae37be9f029b7`.
+  - `application/app/Support/helpers.php`: 19,197 / 19,181 bytes, 508 / 509 lines; private Git blob `00d1f03cb773097caa2fa023864a81ae5c80c61a`.
+- Static route declaration counts: private 243 (94 GET, 149 POST), GitHub 167 (57 GET, 110 POST), net count +76. **Not proof of precisely 76 added routes.**
+- All 23 fixed GitHub helper names remain present; all seven static entrypoint markers were present in their reference order.
+- `BARAMA_BOOTSTRAP_DIVERGENCE_TRIAGE=PASS`, `BARAMA_SOURCE_PROVENANCE=PARTIAL_RECONCILIATION_REQUIRED`.
+- No application execution, SQL, network, production writes, or signed update performed. No source content emitted.
+
+## v1.0.12 — Read-only, pinned three-file lexical risk comparison (NEXT)
+
+Artifact: `Barama-Bootstrap-Semantic-Risk-Gate-aaPanel-v1.0.12.zip`
+
+ZIP SHA-256: `42cb681424ca95fb79884043da7a43baec1a2014aebf9438413a3f9c88c70f67`
+
+Size: 25,729 bytes.
+
+Contents: carries unchanged v1.0.9-v1.0.11 static verification modules, a new `bin/semantic_risk_gate.py`, four test suites, an internal SHA256SUMS.txt and `run-on-aapanel.sh --check` only. All 90/90 offline tests PASS; Python/shell syntax PASS; internal manifest and fresh extraction PASS; rejects `--probe`.
+
+This gate validates the **exact** pinned 629-file tree fingerprint and three bootstrap-divergence identities before reading approved source bytes. The three selected private, non-secret files are opened with previous O_NOFOLLOW + root-mode and stable-stat checks. The report compares aggregate lexical indicators to counters fetched from the exact GitHub commit `fc617c1`: include/require, eval/process calls, session, header, file I/O, PDO/curl/stream, request/server globals, env function calls, function definitions and routes. It also reports literal route declaration/duplicate/unclassified counts, **not route paths**, and alerts to increased lexical counts for potentially effectful operations.
+
+These are **lexical/regex counts**, not PHP AST validation, not semantic equivalence, not comprehensive exploit review and not a route-by-route diff. Strings and comments can affect counts. A zero risk-counter delta is not approval to run an application. Output **always** includes `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`.
+
+No production webroot, services, PHP INI, private storage, customer database, network, signing identity, updater install, or rollback affected.
+
+### aaPanel execution
+Upload ZIP to `/root`, then:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Bootstrap-Semantic-Risk-Gate-aaPanel-v1.0.12.zip"
+SHA="42cb681424ca95fb79884043da7a43baec1a2014aebf9438413a3f9c88c70f67"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Bootstrap-Semantic-Risk-Gate-aaPanel-v1.0.12
+bash run-on-aapanel.sh --check
+```
+
+Required diagnostic completion: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `BARAMA_BOOTSTRAP_LEXICAL_RISK_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`.
+
+**v1.0.12 live aaPanel execution NOT TESTED.** CodeCanyon FINAL remains ON HOLD; true source-level reconciliation, confined disconnected bootstrap, genuine signed-update installation and rollback still pending.
