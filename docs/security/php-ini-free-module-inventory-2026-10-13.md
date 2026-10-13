@@ -1395,3 +1395,27 @@ Expected broad markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `O
 ## 2026-10-13 v1.0.28 aaPanel acceptance
 
 ZIP outer and inner checksums passed. 172 tests ran, 171 passed, 1 skipped. Exact 629-file source SHA256 remains 900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687. The one non-CSRF-declared route of 17 routes outside the automatic rule is verified as POST /payments/webhooks/{provider}, with PaymentWebhookController::receive. Target controller exists (metadata-only); no implementation file contents were opened, no PHP application executed, no production/source writes. Webhook signatures, replay handling, idempotency, middleware behavior and pre-dispatch service remain untested. The next source-content review needs explicit owner approval limited to the webhook controller, change-confirmation middleware, and exact service imported by Router. CodeCanyon FINAL ON HOLD.
+
+ 
+## 2026-10-13 v1.0.29 — owner-authorized implementation static review package ready
+
+User explicitly authorized starting bounded read-only review of precisely three private source implementations following v1.0.28 accepted metadata: PaymentWebhookController.php, ChangeConfirmationMiddleware.php and the exact pre-dispatch service derived from the fully pinned private Router import. The package reads those three root-owned no-follow regular files after full pinned 629-file source integrity check; additionally uses only the previously approved Router/routes source. Excludes customer state, credentials, network, SQL and PHP execution; no production writes.
+
+ZIP: `Barama-Three-Class-Static-Security-Review-aaPanel-v1.0.29.zip`, **SHA256 `07a6046319c9869e78784b84ced92e472bd8ffa3995b1d522e430ce54471ae87`**, 63,207 bytes, 25 internal SHA256SUMS entries. 193/193 offline tests PASS in both local and independent clean extract; internal checksums PASS; zip integrity PASS; bash syntax PASS; unsupported probe exits 2, missing pinned aaPanel source exits 1. User-side execution NOT YET TESTED.
+
+The gate emits hashes/byte counts and conservative lexical flags without printing PHP source code, PHP literal values or comments. It reports only static method/class existence and code-feature indicators; webhook signature validation, replay/idempotency, CSRF/authorization, and pre-dispatch fail-open/closed effects remain **NOT PROVEN**, regardless of individual markers. Router source drift and v1.0.22 bootstrap boundary acceptance remain open; CodeCanyon FINAL ON HOLD.
+
+Server command after ZIP upload:
+```bash
+bash <<'BASH'
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Three-Class-Static-Security-Review-aaPanel-v1.0.29.zip"
+SHA="07a6046319c9869e78784b84ced92e472bd8ffa3995b1d522e430ce54471ae87"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Three-Class-Static-Security-Review-aaPanel-v1.0.29
+bash run-on-aapanel.sh --check
+BASH
+```
