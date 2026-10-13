@@ -1,0 +1,113 @@
+name: Complete Barama Staging Customer ZIP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/images/**'
+      - 'assets/img/**'
+      - 'assets/js/vendor/**'
+      - 'application/resources/data/**'
+      - 'application/support/**'
+      - 'application/bin/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  complete-staging-package:
+    name: Verify and package complete customer source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip, pdo_mysql, curl, mbstring, fileinfo
+          coverage: none
+      - name: Enforce version and all 21 verified supporting files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(tr -d '\r\n' < VERSION)" = "0.9.22-dev"
+          python3 - <<'PY'
+          from pathlib import Path
+          from runpy import run_path
+          import hashlib
+          expected = run_path('tools/restore-package-support-files-20261014.py')['APPROVED']
+          assert len(expected) == 21
+          for name, checksum in expected.items():
+              path = Path(name)
+              assert path.is_file(), 'Missing supporting file: ' + name
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == checksum, 'Wrong content: ' + name
+          print('[PASS] All 21 missing production assets/support files restored and hashed')
+          PY
+      - name: Build versioned customer package
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          php tools/build-package.php
+          (cd build && sha256sum -c Barama-Real-Estate-0.9.22-dev.zip.sha256)
+          unzip -tq build/Barama-Real-Estate-0.9.22-dev.zip
+      - name: Verify exact contents of ZIP and exclude private runtime state
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from runpy import run_path
+          from zipfile import ZipFile
+          import hashlib
+          expected = run_path('tools/restore-package-support-files-20261014.py')['APPROVED']
+          package = Path('build/Barama-Real-Estate-0.9.22-dev.zip')
+          assert package.is_file()
+          required = {
+              'index.php', 'installer/index.php', 'updater/index.php',
+              'application/app/Services/InstallerService.php',
+              'application/app/Http/Controllers/SystemCenterController.php',
+              'application/app/Services/Updates/TrustedReleaseFeed.php',
+              'application/app/Services/Updates/SignedReleaseInspector.php',
+              'application/app/Services/Updates/PrivateArtifactHttpClientV2.php',
+              'application/app/Services/Updates/PrivateArtifactReceiverV2.php',
+              'application/resources/views/layouts/app.php',
+              'application/resources/views/auth/reset-password.php',
+              'assets/css/app.css', 'assets/js/app.js',
+              'assets/css/auth-premium-v117a33.css',
+              'assets/css/reset-password-a43r1.css',
+          }
+          allowed_storage = {
+              'application/storage/cache/.gitignore',
+              'application/storage/logs/.gitignore',
+              'application/storage/uploads/.gitignore',
+              'application/storage/uploads/.htaccess',
+          }
+          with ZipFile(package) as z:
+              assert z.testzip() is None
+              names = {i.filename for i in z.infolist() if not i.is_dir()}
+              assert required <= names, 'Missing core installer, auth or V2 updater components'
+              assert set(expected) <= names, 'Missing restored supporting files in customer ZIP'
+              for name, sha in expected.items():
+                  assert hashlib.sha256(z.read(name)).hexdigest() == sha, 'Unexpected packaged content: ' + name
+              migrations = [n for n in names if n.startswith('application/database/migrations/')
+                            and n.endswith('.php')]
+              assert len(migrations) == 30, 'Expected the full 30-file migration catalog'
+              for name in names:
+                  assert not name.startswith(('.git/', '.github/', 'docs/'))
+                  assert not (name == '.env' or name.startswith('.env.'))
+                  if name.startswith('application/storage/'):
+                      assert name in allowed_storage, 'Runtime file in customer package: ' + name
+              print('[PASS] ZIP contains 21 restored supporting files, core/auth/V2 updater, 30 migrations')
+              print('[PASS] No runtime installation state, secrets or development-only data')
+              print('COMPLETE_CUSTOMER_ZIP_BYTES=' + str(package.stat().st_size))
+              print('COMPLETE_CUSTOMER_ZIP_SHA256=' + hashlib.sha256(package.read_bytes()).hexdigest())
+          PY
+      - name: Upload complete versioned staging package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Barama-Real-Estate-v0.9.22-dev-COMPLETE-Staging-Customer
+          path: |
+            build/Barama-Real-Estate-0.9.22-dev.zip
+            build/Barama-Real-Estate-0.9.22-dev.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
