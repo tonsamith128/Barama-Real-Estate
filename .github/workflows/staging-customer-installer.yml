@@ -1,0 +1,86 @@
+name: Barama Staging Customer Installer ZIP
+
+on:
+  push:
+    branches:
+      - artifact/staging-installer-v0922-20261014
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build full staging customer ZIP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out synchronized Barama source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP with ZipArchive
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip, pdo_mysql, mbstring, curl, openssl, fileinfo
+          coverage: none
+
+      - name: Verify staging source version
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(tr -d '\r\n' < VERSION)" = "0.9.22-dev"
+          test -f assets/images/branding/barama-logo-header.png
+          test -f tools/installer-asset-contract.php
+
+      - name: Build customer installer ZIP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          php tools/build-package.php
+          (cd build && sha256sum -c Barama-Real-Estate-0.9.22-dev.zip.sha256)
+          unzip -tq build/Barama-Real-Estate-0.9.22-dev.zip
+
+      - name: Verify installer, newer auth pages, migrations and V2 updater
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ZIP=build/Barama-Real-Estate-0.9.22-dev.zip
+          unzip -Z -1 "$ZIP" > build/customer-files.txt
+          for file in \
+            index.php \
+            installer/index.php \
+            updater/index.php \
+            application/app/Services/InstallerService.php \
+            application/app/Http/Controllers/AuthController.php \
+            application/app/Http/Controllers/SystemCenterController.php \
+            application/app/Services/Updates/TrustedReleaseFeed.php \
+            application/app/Services/Updates/SignedReleaseInspector.php \
+            application/app/Services/Updates/PrivateArtifactHttpClientV2.php \
+            application/app/Services/Updates/PrivateArtifactReceiverV2.php \
+            application/resources/views/layouts/app.php \
+            application/resources/views/auth/reset-password.php \
+            assets/css/app.css \
+            assets/js/app.js \
+            assets/css/auth-premium-v117a33.css \
+            assets/css/reset-password-a43r1.css \
+            assets/images/branding/barama-logo-header.png \
+            application/database/migrations/0031_add_account_profile_details.php
+          do
+            grep -Fxq "$file" build/customer-files.txt || { echo "MISSING: $file"; exit 1; }
+          done
+          test "$(grep -Ec '^application/database/migrations/[0-9]{4}_[^/]+\.php$' build/customer-files.txt)" -eq 30
+          if grep -Eq '^(\.env($|\.)|\.git/|\.github/|docs/|application/storage/(app|cache|logs|uploads)/[^/]+)' build/customer-files.txt; then
+            echo 'ERROR: Unsafe/development/runtime data in customer ZIP.'
+            exit 1
+          fi
+          echo '[PASS] Installer, auth, 30 migrations, V2 updater and safety inventory'
+
+      - name: Publish downloadable GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Barama-Real-Estate-v0.9.22-dev-Staging-Customer
+          path: |
+            build/Barama-Real-Estate-0.9.22-dev.zip
+            build/Barama-Real-Estate-0.9.22-dev.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
