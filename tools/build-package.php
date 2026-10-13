@@ -3,6 +3,15 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
+require_once __DIR__ . '/installer-asset-contract.php';
+
+$installerSource = @file_get_contents(
+    $root . '/application/app/Services/InstallerService.php'
+);
+if (!is_string($installerSource)) {
+    throw new RuntimeException('InstallerService source is missing.');
+}
+baramaAssertInstallerCanonicalAssets($installerSource);
 $version = trim((string) file_get_contents($root . '/VERSION'));
 
 if ($version === '' || !class_exists(ZipArchive::class)) {
