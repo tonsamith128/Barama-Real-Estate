@@ -1256,3 +1256,49 @@ BASH
 Expected broad markers only: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTES_PRIVATE_SHA256_REVALIDATED=PASS`, `SENSITIVE_PREFIX_COUNT=3`, class metadata statuses (must come from real aaPanel), `BARAMA_ROUTER_GUARD_COVERAGE=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
 
 After accepted results, review class implementation content **only with explicit scoped source-read authorization**, especially ChangeConfirmationMiddleware fail-open/CSRF behavior and imported pre-dispatch service silent Throwable catch. Never repin the old Router to make v1.0.22 pass. All production unchanged.
+
+
+## 2026-10-13 — v1.0.25 Router POST prefix coverage accepted on aaPanel
+
+Verified user-provided full transcript of `Barama-Router-Guard-Coverage-aaPanel-v1.0.25.zip`, checksum `e374fa3810f197d09ba6ae0a2cd4bd41e8be7ab94eed34359d74e94cdc3524f3` PASS; all internal checksums PASS; **120 tests run, 119 passed and 1 expected host-only skip**. `BARAMA_ROUTER_GUARD_COVERAGE=PASS`. Pinned 629-file nonstate source SHA256 remains `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+The 243 statically declared route signatures comprise **149 POST** and **94 GET**. Three private path prefixes (represented only by hashes) yielded:
+- Prefix 1 `89347bb23a645278`: 87 POST, 46 GET.
+- Prefix 2 `a72acafa1e8718f9`: 23 POST, 12 GET.
+- Prefix 3 `441bb226c5de8e21`: 22 POST, 7 GET.
+- Total **132 POST and 65 GET prefix-match records**, **not unique route coverage**. A route may match multiple prefixes; thus unique matched POST is ≤ 132, leaving **at least 17 POST routes outside this particular new automatic ChangeConfirmationMiddleware rule**. This does not imply missing CSRF/auth or other middleware on those routes.
+- `ROUTER_POST_MIDDLEWARE_APPEND_SYNTAX=CONFIRMED_LEXICAL`.
+- `CHANGE_CONFIRMATION_MIDDLEWARE_FILE=PRESENT_TRUSTED_METADATA_ONLY`.
+- `PREDISPATCH_SERVICE_FILE=PRESENT_TRUSTED_METADATA_ONLY`. Pre-dispatch Response short circuit and Throwable catch lexical existence confirmed. Neither class content was opened; neither behavior is secure merely because the files exist.
+- `PHP_AST_ROUTING_AND_AUTHORIZATION=NOT_TESTED`, `NO_RUNTIME_ROUTE_COVERAGE_PROOF=YES`, `PHP_SQL_NETWORK_AND_UPDATER=NOT_EXECUTED`, `SOURCE_AND_PRODUCTION_WRITES=NONE`.
+- `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+## v1.0.26 — Exact unique static prefix coverage and uncovered POST route hashes (NEXT)
+
+Archive: `Barama-Router-Unique-Guard-Coverage-aaPanel-v1.0.26.zip`
+
+**ZIP SHA256 `d5df20d56693458f3c76349ce8ef0523bfbaf26992e76312c7e8bf75c48a8067`**, 46,777 bytes.
+
+- Extends the fully pinned v1.0.25 gate, preserving exact private 629-file fingerprint, Router SHA256 `126d7ab2e12a90dd61c2006f4ae441d628d298043aba7f5c09d19e022fe7396e`, routes SHA256 `44ed9f7bb7e5ae23613d06fc2fa0fb9dec4f24b373bd715efbb93838d3c4d007`. No new private file content scope.
+- Reads only the **two previously approved** private PHP files `application/app/Core/Router.php` and `application/routes/web.php` via the already audited bounded descriptor nofollow routines. Does NOT read the two new middleware/service class contents; all class handling remains prior optional metadata.
+- Computes **unique POST/GET route coverage** for the three Router path prefixes; counts double-covered/triple-covered paths and uncovered POST routes. Prints only numeric counts and hashed per-route IDs/family IDs and path-depth/parameter-count shapes (never the actual private route strings, prefixes, function names, customer data or PHP code).
+- Ensures route-count conservation (149 POST + 94 GET = 243), matched/unmatched unique sums, per-prefix sum consistency and exact pinned source fingerprints. No judgment that any uncovered POST has inadequate CSRF/auth; no runtime coverage.
+- Independent fresh ZIP extraction and internal **19 checksum entries PASS**, archive integrity PASS, shell syntax PASS, **138/138 offline tests PASS**. `--probe` returns 2; absent exact private source returns fail-closed 1.
+- **v1.0.26 aaPanel NOT YET TESTED**; no PHP interpreter, SQL/network, signing/updater, production or private source changes.
+
+After ZIP upload to `/root`:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Router-Unique-Guard-Coverage-aaPanel-v1.0.26.zip"
+SHA="d5df20d56693458f3c76349ce8ef0523bfbaf26992e76312c7e8bf75c48a8067"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Router-Unique-Guard-Coverage-aaPanel-v1.0.26
+bash run-on-aapanel.sh --check
+```
+
+Expected: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTES_PRIVATE_SHA256_REVALIDATED=PASS`, count outputs `POST_UNIQUE_PREFIX_MATCHES`, `POST_PREFIX_OVERLAP_ROUTES`, `POST_NO_PREFIX_MATCH_COUNT`, `BARAMA_ROUTER_UNIQUE_GUARD_COVERAGE=PASS`, and holds `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+**Next release-engineering action**: review business purpose, authorization/CSRF strategy of unmatched POST route families; separately obtain explicit authorization to examine the two newly detected class implementations, especially whether predispatch catch is fail-open, prior to any actual PHP startup or code revision. No source writes or GitHub main changes authorized by the audit. 
