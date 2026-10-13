@@ -12,6 +12,7 @@ use Barama\Services\CompanyOnboardingService;
 use Barama\Services\CustomerEngagementService;
 use Barama\Services\MembershipService;
 use Barama\Services\NotificationService;
+use Barama\Services\ProfileAvatarService;
 use DomainException;
 use InvalidArgumentException;
 
@@ -19,8 +20,30 @@ final class AccountManagementController
 {
     public function updateProfile(Request $request): Response
     {
-        return $this->execute(function () use ($request): array {
-            (new AccountSettingsService())->updateProfile($this->userId(), $request->all());
+        return $this->execute($request, function () use ($request): array {
+            $action = trim((string) $request->input('profile_action', 'details'));
+            $userId = $this->userId();
+
+            if ($action === 'avatar_upload') {
+                $files = $request->files();
+                $avatar = $files['avatar'] ?? null;
+                if (!is_array($avatar)) {
+                    throw new InvalidArgumentException('Choose a profile image to upload.');
+                }
+                (new ProfileAvatarService())->replace($userId, $avatar);
+                return ['message' => 'Profile image updated.'];
+            }
+
+            if ($action === 'avatar_remove') {
+                (new ProfileAvatarService())->remove($userId);
+                return ['message' => 'Profile image removed.'];
+            }
+
+            if ($action !== 'details') {
+                throw new InvalidArgumentException('Unknown profile action.');
+            }
+
+            (new AccountSettingsService())->updateProfile($userId, $request->all());
             return ['message' => 'Profile updated.'];
         }, '/account/profile');
     }

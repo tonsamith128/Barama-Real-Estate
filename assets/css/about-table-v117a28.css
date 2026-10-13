@@ -1,0 +1,111 @@
+/* Barama About A28 — scoped to /dashboard/about only.
+   Preserve all 5 data columns and all 7 Configure buttons.
+   The content container, not the device viewport, drives the card layout. */
+.barama-about-admin-a24 {min-width:0;max-width:100%;box-sizing:border-box}
+.barama-about-admin-a24 .content-config-table-wrap {
+  box-sizing:border-box;
+  display:block;
+  width:100%;max-width:100%;min-width:0;
+  margin-inline:0;
+  overflow:visible;
+  container-name:barama-about-table;
+  container-type:inline-size;
+}
+.barama-about-admin-a24 .content-config-table {
+  box-sizing:border-box;
+  display:table;
+  table-layout:fixed !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  margin:0;
+}
+.barama-about-admin-a24 .content-config-table th,
+.barama-about-admin-a24 .content-config-table td {
+  box-sizing:border-box;
+  min-width:0 !important;
+  max-width:100%;
+  padding:.85rem .58rem;
+  vertical-align:middle;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  white-space:normal;
+}
+.barama-about-admin-a24 .content-config-table th:nth-child(1),
+.barama-about-admin-a24 .content-config-table td:nth-child(1){width:31%}
+.barama-about-admin-a24 .content-config-table th:nth-child(2),
+.barama-about-admin-a24 .content-config-table td:nth-child(2){width:25%}
+.barama-about-admin-a24 .content-config-table th:nth-child(3),
+.barama-about-admin-a24 .content-config-table td:nth-child(3){width:9%;text-align:center}
+.barama-about-admin-a24 .content-config-table th:nth-child(4),
+.barama-about-admin-a24 .content-config-table td:nth-child(4){width:14%}
+.barama-about-admin-a24 .content-config-table th:nth-child(5),
+.barama-about-admin-a24 .content-config-table td:nth-child(5){width:21%;text-align:right}
+.barama-about-admin-a24 .content-config-table th:nth-child(5){white-space:nowrap}
+.barama-about-admin-a24 .content-config-feature {min-width:0;max-width:100%;display:flex;align-items:flex-start;gap:.55rem}
+.barama-about-admin-a24 .content-config-feature > span:last-child {min-width:0;flex:1 1 auto}
+.barama-about-admin-a24 .content-config-feature strong,
+.barama-about-admin-a24 .content-config-feature small {max-width:100%;overflow-wrap:anywhere}
+.barama-about-admin-a24 .content-config-summary{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere;white-space:normal}
+.barama-about-admin-a24 .content-config-table td:nth-child(4) form {min-width:0;max-width:100%}
+.barama-about-admin-a24 .content-config-table td:nth-child(4) .premium-switch {min-width:0;max-width:100%;display:inline-flex;align-items:center;gap:.3rem}
+.barama-about-admin-a24 .content-config-table td:nth-child(4) .premium-switch b {font-size:.7rem}
+.barama-about-admin-a24 .content-config-table td.content-config-table__action .content-config-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.38rem;
+  padding:.58rem .55rem;
+  box-sizing:border-box;
+  max-width:100%;
+  min-width:0;
+  white-space:nowrap;
+  font-size:.82rem;
+  line-height:1.25;
+}
+.barama-about-admin-a24 .content-config-table__action .content-config-button svg {flex-shrink:0}
+.barama-about-admin-a24 .content-config-table__action .content-config-button span{white-space:nowrap}
+.barama-about-admin-a24 .content-config-table__action .content-config-button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+/* Content-width fallback for Chromium versions supporting CSS container queries. */
+@container barama-about-table (max-width:760px) {
+  .barama-about-admin-a24 .content-config-table {display:block;min-width:0;width:100%}
+  .barama-about-admin-a24 .content-config-table thead{display:none}
+  .barama-about-admin-a24 .content-config-table tbody{display:grid;gap:.85rem;min-width:0}
+  .barama-about-admin-a24 .content-config-table tbody tr{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;gap:.75rem 1rem;
+    padding:1rem;
+    background:#fff;border:1px solid #dce5f2;border-radius:15px;
+    box-shadow:0 8px 26px rgba(33,57,93,.035);
+    min-width:0;
+  }
+  .barama-about-admin-a24 .content-config-table tbody tr td{
+    display:block;box-sizing:border-box;width:auto!important;
+    max-width:100%;min-width:0;padding:0;text-align:left!important;
+    border:0;background:none;
+  }
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(1){grid-column:1/-1}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(2){grid-column:1/-1}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(3){grid-column:1}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(4){grid-column:2}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(5){grid-column:1/-1}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(n+2)::before{
+    display:block;margin-bottom:.35rem;
+    color:#65758e;font-size:.69rem;font-weight:750;letter-spacing:.075em;text-transform:uppercase;
+  }
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(2)::before{content:'Current configuration'}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(3)::before{content:'Position'}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(4)::before{content:'Status'}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(5)::before{content:'Action'}
+  .barama-about-admin-a24 .content-config-table tbody tr td:nth-child(5) .content-config-button{
+    width:100%;min-height:42px;justify-content:center;
+  }
+  .barama-about-admin-a24 .content-config-feature{align-items:center}
+  .barama-about-admin-a24 .content-config-feature small{line-height:1.45}
+}
+/* Narrow-device fallback even without container-query support. */
+@media(max-width:720px) {
+ .barama-about-admin-a24 .content-config-table-wrap{width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+ .barama-about-admin-a24 .content-config-table{width:100%!important;min-width:0!important}
+}
+@media(prefers-reduced-motion:reduce){.barama-about-admin-a24 .content-config-table__action .content-config-button{transition:none}}

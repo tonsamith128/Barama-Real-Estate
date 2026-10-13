@@ -2,197 +2,182 @@
 
 declare(strict_types=1);
 
+use Barama\Services\EmailTemplateCatalog;
+use Barama\Services\EmailTemplateManagementService;
+
 $templates = is_array($emailTemplates ?? null) ? $emailTemplates : [];
 $summary = is_array($emailTemplateSummary ?? null) ? $emailTemplateSummary : [];
-$supportedKeys = is_array($supportedTemplateKeys ?? null)
-    ? $supportedTemplateKeys
-    : [];
+$catalog = EmailTemplateCatalog::definitions();
+$templatesByKey = [];
+$customTemplates = [];
 
-$variables = [
-    '{{title}}',
-    '{{message}}',
-    '{{action_url}}',
-    '{{recipient_name}}',
-    '{{app_name}}',
-    '{{app_url}}',
-];
+foreach ($templates as $template) {
+    $key = strtolower(trim((string) ($template['template_key'] ?? '')));
+    if ($key === '') {
+        continue;
+    }
+
+    $templatesByKey[$key] = $template;
+
+    if (EmailTemplateCatalog::get($key) === null && EmailTemplateManagementService::isCustomKey($key)) {
+        $customTemplates[] = $template;
+    }
+}
+
+$groups = [];
+foreach ($catalog as $definition) {
+    $group = (string) ($definition['group'] ?? 'Other');
+    $groups[$group] = true;
+}
+if ($customTemplates !== []) {
+    $groups['Custom'] = true;
+}
+
+$totalRows = count($catalog) + count($customTemplates);
+$statusTone = static fn (string $status): string => match ($status) {
+    'active' => 'active',
+    'inactive' => 'inactive',
+    'archived' => 'archived',
+    default => 'fallback',
+};
 ?>
-<section class="workspace-page">
-    <div class="workspace-page__header">
+<link rel="stylesheet" href="<?= e(asset('css/admin-email-templates-v142.css') . '?v=142') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/email-templates-theme-v117a41r3.css') . '?v=117a41r3') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/email-templates-premium-table-v117a41r5.css') . '?v=117a41r5') ?>">
+
+<section class="workspace-page email-template-manager" data-email-template-manager data-email-template-version="142">
+    <div class="workspace-page__header email-template-manager__hero">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
             <h1>Email Templates</h1>
-            <p>Customize notification-generated email content without changing the durable outbox, SMTP transport, or security-token mail flows.</p>
+            <p>Manage Barama system emails and reusable custom templates from one catalog. Configure opens the full Email Template Builder with multilingual variants, preview, revisions and lifecycle controls.</p>
         </div>
-        <span class="workspace-context-note">
-            <?= app_icon('mail') ?>
-            Queue-time rendering · immutable delivery snapshot
-        </span>
+        <a class="email-template-create-new" href="<?= e(url('/dashboard/email-templates/create')) ?>">
+            <?= app_icon('edit') ?>
+            <span>Create New</span>
+        </a>
     </div>
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
-        <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['total'] ?? 0))) ?></strong><small>Total templates</small></div>
-        <div class="workspace-stat"><span><?= app_icon('edit') ?></span><strong><?= e(number_format((int) ($summary['inactive'] ?? 0))) ?></strong><small>Inactive</small></div>
-        <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['active'] ?? 0))) ?></strong><small>Active</small></div>
-        <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['archived'] ?? 0))) ?></strong><small>Archived</small></div>
+    <div class="email-template-metrics" aria-label="Email template summary">
+        <article><span><?= app_icon('layers') ?></span><div><strong><?= e(number_format((int) ($summary['total'] ?? 0))) ?></strong><small>Configured templates</small></div></article>
+        <article><span><?= app_icon('check') ?></span><div><strong><?= e(number_format((int) ($summary['active'] ?? 0))) ?></strong><small>Active</small></div></article>
+        <article><span><?= app_icon('edit') ?></span><div><strong><?= e(number_format((int) ($summary['inactive'] ?? 0))) ?></strong><small>Inactive</small></div></article>
+        <article><span><?= app_icon('layers') ?></span><div><strong><?= e(number_format((int) ($summary['archived'] ?? 0))) ?></strong><small>Archived</small></div></article>
     </div>
 
-    <section class="workspace-table-section">
-        <div class="workspace-table-head">
+    <section class="email-template-panel">
+        <header class="email-template-panel__head">
             <div>
-                <h2>Create notification email template</h2>
-                <p>Templates start inactive. Activate only after reviewing the subject, HTML, and plain-text versions.</p>
+                <h2>Email catalog</h2>
+                <p>The 17 governed system email types keep their original safe fallback. Custom templates are standalone reusable templates and always start inactive.</p>
             </div>
-        </div>
+            <span class="email-template-panel__count"><span data-email-template-visible-count><?= e((string) $totalRows) ?></span> of <?= e((string) $totalRows) ?> shown</span>
+        </header>
 
-        <form action="<?= e(url('/dashboard/email-templates')) ?>" method="post" data-workspace-form class="workspace-form-grid">
-            <?= csrf_field() ?>
-
+        <div class="email-template-panel__toolbar">
             <label>
-                <span>Notification type</span>
-                <select name="template_key" required>
-                    <option value="">Choose notification type</option>
-                    <?php foreach ($supportedKeys as $key => $label): ?>
-                        <option value="<?= e((string) $key) ?>"><?= e((string) $label) ?> · <?= e((string) $key) ?></option>
+                <?= app_icon('search') ?>
+                <input type="search" placeholder="Search email templates" data-email-template-search aria-label="Search email templates">
+            </label>
+            <label>
+                <select data-email-template-group-filter aria-label="Filter email templates by category">
+                    <option value="">All categories</option>
+                    <?php foreach (array_keys($groups) as $group): ?>
+                        <option value="<?= e($group) ?>"><?= e($group) ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
-
-            <label>
-                <span>Template name</span>
-                <input type="text" name="name" maxlength="160" required placeholder="Viewing confirmed email">
-            </label>
-
-            <label class="workspace-form-grid__wide">
-                <span>Description</span>
-                <input type="text" name="description" maxlength="2000" placeholder="Optional internal purpose or editing note">
-            </label>
-
-            <label class="workspace-form-grid__wide">
-                <span>Subject template</span>
-                <input type="text" name="subject_template" maxlength="255" required placeholder="{{title}} · {{app_name}}">
-            </label>
-
-            <label class="workspace-form-grid__wide">
-                <span>HTML template</span>
-                <textarea name="html_template" rows="8" maxlength="20000" required placeholder="<p>Hello {{recipient_name}},</p><p>{{message}}</p><p><a href=&quot;{{action_url}}&quot;>Open in {{app_name}}</a></p>"></textarea>
-            </label>
-
-            <label class="workspace-form-grid__wide">
-                <span>Plain-text template</span>
-                <textarea name="text_template" rows="6" maxlength="10000" required placeholder="Hello {{recipient_name}},&#10;&#10;{{message}}&#10;&#10;Open: {{action_url}}"></textarea>
-            </label>
-
-            <div class="workspace-form-grid__wide">
-                <small>Available variables: <?= e(implode(', ', $variables)) ?>. Unknown variables are rejected.</small>
-            </div>
-
-            <div class="workspace-form-grid__wide">
-                <button class="button button--primary" type="submit">Create inactive template</button>
-            </div>
-        </form>
-    </section>
-
-    <section class="workspace-table-section">
-        <div class="workspace-table-head">
-            <div>
-                <h2>Template lifecycle</h2>
-                <p>Only active templates override the normal notification-generated fallback email. Rich explicit emails such as Saved Search digests are not replaced.</p>
-            </div>
         </div>
 
-        <div class="workspace-table-wrap">
-            <table class="workspace-table">
+        <div class="email-template-table-wrap">
+            <table class="email-template-table">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Notification type</th>
+                        <th>Email</th>
+                        <th>Category</th>
                         <th>Status</th>
+                        <th>Delivery source</th>
                         <th>Subject</th>
                         <th>Updated</th>
-                        <th>Updated by</th>
-                        <th aria-label="Actions"></th>
+                        <th class="email-template-table__actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($templates === []): ?>
-                        <tr><td colspan="7"><div class="workspace-record-empty">No email templates have been created yet.</div></td></tr>
-                    <?php endif; ?>
-
-                    <?php foreach ($templates as $template): ?>
+                    <?php foreach ($catalog as $key => $definition): ?>
                         <?php
-                        $status = (string) $template['status'];
-                        $tone = $status === 'active'
-                            ? 'approved'
-                            : ($status === 'inactive' ? 'pending' : 'neutral');
+                        $template = $templatesByKey[$key] ?? null;
+                        $status = is_array($template) ? (string) ($template['status'] ?? 'inactive') : 'fallback';
+                        $tone = $statusTone($status);
+                        $label = (string) ($definition['label'] ?? $key);
+                        $group = (string) ($definition['group'] ?? 'Other');
+                        $description = (string) ($definition['description'] ?? '');
+                        $searchText = $label . ' ' . $key . ' ' . $group . ' ' . $description;
                         ?>
-                        <tr>
+                        <tr class="email-template-row" data-email-template-row data-group="<?= e($group) ?>" data-search="<?= e($searchText) ?>">
                             <td>
-                                <strong><?= e((string) $template['name']) ?></strong>
-                                <small><?= e((string) ($template['description'] ?? '')) ?></small>
+                                <div class="email-template-identity">
+                                    <span class="email-template-identity__icon"><?= app_icon(!empty($definition['security_sensitive']) ? 'shield' : 'mail') ?></span>
+                                    <span><strong><?= e($label) ?></strong></span>
+                                </div>
                             </td>
+                            <td><span class="email-template-category"><?= e($group) ?></span></td>
+                            <td><span class="email-template-status email-template-status--<?= e($tone) ?>"><span aria-hidden="true"></span><?= e($status === 'fallback' ? 'System fallback' : ucfirst($status)) ?></span></td>
                             <td>
-                                <strong><?= e((string) ($supportedKeys[$template['template_key']] ?? $template['template_key'])) ?></strong>
-                                <small><?= e((string) $template['template_key']) ?></small>
+                                <?php if (is_array($template)): ?>
+                                    <strong class="email-template-source"><?= e((string) ($template['name'] ?? $label)) ?></strong>
+                                    <small class="email-template-source-note">Custom override</small>
+                                <?php else: ?>
+                                    <strong class="email-template-source">Barama default</strong>
+                                    <small class="email-template-source-note">No custom override</small>
+                                <?php endif; ?>
                             </td>
-                            <td><span class="status-badge status-badge--<?= e($tone) ?>"><?= e(ucfirst($status)) ?></span></td>
-                            <td><?= e((string) $template['subject_template']) ?></td>
-                            <td><?= e((string) $template['updated_at']) ?></td>
-                            <td><?= e((string) ($template['updated_by_name'] ?? 'System')) ?></td>
-                            <td>
-                                <details class="workspace-row-actions">
-                                    <summary aria-label="Template actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>
-                                    <div class="workspace-row-actions__menu">
-                                        <?php if ($status === 'inactive'): ?>
-                                            <form action="<?= e(url('/dashboard/email-templates/' . (int) $template['id'] . '/status')) ?>" method="post" data-workspace-form>
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="status" value="active">
-                                                <button class="table-action table-action--primary" type="submit">Activate</button>
-                                            </form>
-
-                                            <details>
-                                                <summary class="table-action">Edit template</summary>
-                                                <form action="<?= e(url('/dashboard/email-templates/' . (int) $template['id'])) ?>" method="post" data-workspace-form class="workspace-inline-form">
-                                                    <?= csrf_field() ?>
-                                                    <select name="template_key" required>
-                                                        <?php foreach ($supportedKeys as $key => $label): ?>
-                                                            <option value="<?= e((string) $key) ?>" <?= (string) $template['template_key'] === (string) $key ? 'selected' : '' ?>>
-                                                                <?= e((string) $label) ?>
-                                                            </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                    <input type="text" name="name" maxlength="160" value="<?= e((string) $template['name']) ?>" required>
-                                                    <input type="text" name="description" maxlength="2000" value="<?= e((string) ($template['description'] ?? '')) ?>">
-                                                    <input type="text" name="subject_template" maxlength="255" value="<?= e((string) $template['subject_template']) ?>" required>
-                                                    <textarea name="html_template" rows="8" maxlength="20000" required><?= e((string) $template['html_template']) ?></textarea>
-                                                    <textarea name="text_template" rows="6" maxlength="10000" required><?= e((string) $template['text_template']) ?></textarea>
-                                                    <button class="table-action table-action--primary" type="submit">Save changes</button>
-                                                </form>
-                                            </details>
-
-                                            <form action="<?= e(url('/dashboard/email-templates/' . (int) $template['id'] . '/status')) ?>" method="post" data-workspace-form>
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="status" value="archived">
-                                                <button class="table-action" type="submit">Archive</button>
-                                            </form>
-                                        <?php elseif ($status === 'active'): ?>
-                                            <form action="<?= e(url('/dashboard/email-templates/' . (int) $template['id'] . '/status')) ?>" method="post" data-workspace-form>
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="status" value="inactive">
-                                                <button class="table-action" type="submit">Deactivate</button>
-                                            </form>
-                                        <?php else: ?>
-                                            <span class="table-action-placeholder">Archived · no further changes</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </details>
+                            <td class="email-template-subject"><?= e(is_array($template) ? (string) ($template['subject_template'] ?? '') : (string) (($definition['defaults']['subject'] ?? 'System-generated subject'))) ?></td>
+                            <td class="email-template-updated">
+                                <?php if (is_array($template)): ?><strong><?= e((string) ($template['updated_at'] ?? '')) ?></strong><small><?= e((string) ($template['updated_by_name'] ?? 'System')) ?></small><?php else: ?><span>—</span><?php endif; ?>
                             </td>
+                            <td class="email-template-table__actions"><a class="email-template-configure email-template-configure--link" href="<?= e(url('/dashboard/email-templates/' . rawurlencode($key) . '/builder')) ?>">Configure</a></td>
                         </tr>
                     <?php endforeach; ?>
+
+                    <?php foreach ($customTemplates as $template): ?>
+                        <?php
+                        $key = strtolower(trim((string) ($template['template_key'] ?? '')));
+                        $status = (string) ($template['status'] ?? 'inactive');
+                        $tone = $statusTone($status);
+                        $label = trim((string) ($template['name'] ?? 'Custom email template'));
+                        $description = trim((string) ($template['description'] ?? 'Standalone reusable custom email template.'));
+                        $searchText = $label . ' ' . $key . ' Custom ' . $description;
+                        ?>
+                        <tr class="email-template-row email-template-row--custom" data-email-template-row data-group="Custom" data-search="<?= e($searchText) ?>">
+                            <td>
+                                <div class="email-template-identity">
+                                    <span class="email-template-identity__icon email-template-identity__icon--custom"><?= app_icon('mail') ?></span>
+                                    <span><strong><?= e($label !== '' ? $label : 'Custom email template') ?></strong></span>
+                                </div>
+                            </td>
+                            <td><span class="email-template-category email-template-category--custom">Custom</span></td>
+                            <td><span class="email-template-status email-template-status--<?= e($tone) ?>"><span aria-hidden="true"></span><?= e(ucfirst($status)) ?></span></td>
+                            <td><strong class="email-template-source">Standalone template</strong><small class="email-template-source-note">Reusable custom content</small></td>
+                            <td class="email-template-subject"><?= e((string) ($template['subject_template'] ?? '')) ?></td>
+                            <td class="email-template-updated"><strong><?= e((string) ($template['updated_at'] ?? '')) ?></strong><small><?= e((string) ($template['updated_by_name'] ?? 'System')) ?></small></td>
+                            <td class="email-template-table__actions"><a class="email-template-configure email-template-configure--link" href="<?= e(url('/dashboard/email-templates/' . rawurlencode($key) . '/builder')) ?>">Configure</a></td>
+                        </tr>
+                    <?php endforeach; ?>
+
+                    <tr data-email-template-filter-empty hidden>
+                        <td colspan="7"><div class="email-template-empty-filter">No email templates match the current search or category.</div></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
+
+        <footer class="email-template-panel__foot">
+            <span><?= app_icon('check') ?></span>
+            <p><strong>Safe lifecycle:</strong> new overrides and custom templates start inactive. Active templates must be deactivated before editing. The 17 governed email types continue to use Barama's original fallback whenever no active override exists.</p>
+        </footer>
     </section>
 </section>
+
+<script src="<?= e(asset('js/admin-email-templates-v142.js') . '?v=142') ?>" defer></script>

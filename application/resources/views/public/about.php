@@ -15,7 +15,9 @@ $linkHref = static function (string $value): string {
     return str_starts_with($value, '/') ? url($value) : $value;
 };
 ?>
-<main class="builtin-public-page builtin-about-page">
+<main class="builtin-public-page builtin-about-page barama-about-a24 barama-about-a25">
+    <link rel="stylesheet" href="<?= e(asset('css/about-premium-v117a24.css')) ?>?v=117a24" media="all">
+    <link rel="stylesheet" href="<?= e(asset('css/about-visual-v117a25.css')) ?>?v=117a25" media="all">
     <?php if (!empty($hero['enabled'])): ?>
         <section class="builtin-hero">
             <div class="container app-container">
@@ -24,7 +26,7 @@ $linkHref = static function (string $value): string {
                         <span class="eyebrow"><?= e((string) ($hero['eyebrow'] ?? 'About Barama')) ?></span>
                         <h1><?= e((string) ($hero['title'] ?? 'About Us')) ?></h1>
                         <p><?= e((string) ($hero['description'] ?? '')) ?></p>
-                        <div class="builtin-hero__actions">
+                        <div class="builtin-hero__actions barama-about-a24__actions">
                             <a class="btn btn-primary" href="<?= e(url('/properties')) ?>"><?= app_icon('search') ?><span>Browse properties</span></a>
                             <a class="btn btn-outline-secondary" href="<?= e(url('/contact')) ?>"><?= app_icon('mail') ?><span>Contact us</span></a>
                         </div>
@@ -34,10 +36,23 @@ $linkHref = static function (string $value): string {
                             <img src="<?= e((string) $hero['image_url']) ?>" alt="<?= e((string) ($hero['title'] ?? 'About Barama')) ?>" loading="eager">
                         </div>
                     <?php else: ?>
-                        <div class="builtin-hero__visual" aria-hidden="true">
-                            <span><?= app_icon('building') ?></span>
-                            <span><?= app_icon('home') ?></span>
-                            <span><?= app_icon('layers') ?></span>
+                        <div class="barama-about-a25__hero-art" aria-hidden="true">
+                            <div class="barama-about-a25__hero-orbit"></div>
+                            <div class="barama-about-a25__hero-building">
+                                <svg viewBox="0 0 310 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M35 270V100L151 42L266 100V270" fill="#E6EEFF" stroke="#759AF3" stroke-width="3" stroke-linejoin="round"/>
+                                    <path d="M72 270V119L151 79L230 119V270" fill="#F8FAFF" stroke="#98B4F7" stroke-width="2"/>
+                                    <path d="M151 79V270" stroke="#B5C8F6" stroke-width="2"/>
+                                    <path d="M92 138H127V175H92ZM174 138H209V175H174ZM92 191H127V228H92ZM174 191H209V228H174Z" fill="#D5E3FF" stroke="#94B2F4" stroke-width="2"/>
+                                    <path d="M136 270V227H166V270" fill="#94B5FF" stroke="#5F8DEC" stroke-width="2"/>
+                                    <path d="M15 271H291" stroke="#739AF0" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="barama-about-a25__hero-types">
+                                <div class="barama-about-a25__hero-type"><?= app_icon('home') ?><span>Properties</span></div>
+                                <div class="barama-about-a25__hero-type"><?= app_icon('layers') ?><span>Projects</span></div>
+                                <div class="barama-about-a25__hero-type"><?= app_icon('building') ?><span>Companies</span></div>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -61,7 +76,21 @@ $linkHref = static function (string $value): string {
                         <?php if (trim((string) ($section['image_url'] ?? '')) !== ''): ?>
                             <img src="<?= e((string) $section['image_url']) ?>" alt="<?= e((string) ($section['title'] ?? 'Our story')) ?>" loading="lazy">
                         <?php else: ?>
-                            <div class="builtin-placeholder-mark"><?= app_icon('building') ?><strong>Barama Real Estate</strong><span>Structured property discovery</span></div>
+                            <div class="barama-about-a25__story-art" aria-hidden="true">
+                                <div class="barama-about-a25__story-skyline">
+                                    <svg viewBox="0 0 510 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M10 196H500" stroke="#A0BAED" stroke-width="2"/>
+                                        <path d="M56 196V91H137V196M154 196V42H258V196M278 196V106H363V196M379 196V71H460V196" fill="#E0EAFF" stroke="#7F9FEB" stroke-width="2.5" stroke-linejoin="round"/>
+                                        <path d="M175 67H193M216 67H235M175 93H193M216 93H235M175 119H193M216 119H235M175 145H193M216 145H235M80 118H113M80 147H113M302 132H335M302 161H335M401 98H438M401 127H438M401 156H438" stroke="#83A5EF" stroke-width="5" stroke-linecap="round"/>
+                                        <path d="M194 196V167H219V196" fill="#93B4FA" stroke="#638CF0" stroke-width="2"/>
+                                        <path d="M154 42L206 12L258 42" stroke="#648CE9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="barama-about-a25__story-caption">
+                                    <span class="barama-about-a25__story-caption-icon"><?= app_icon('building') ?></span>
+                                    <div><strong>Barama Real Estate</strong><span>Explore properties, projects and companies in one place</span></div>
+                                </div>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -89,7 +118,7 @@ $linkHref = static function (string $value): string {
             </section>
         <?php elseif ($sectionKey === 'values'): ?>
             <?php $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
-            <section class="builtin-section">
+            <section class="builtin-section barama-about-a25__values">
                 <div class="container app-container">
                     <div class="builtin-section__head">
                         <span class="eyebrow"><?= e((string) ($section['eyebrow'] ?? 'Our values')) ?></span>
@@ -149,7 +178,7 @@ $linkHref = static function (string $value): string {
                 </div>
             </section>
         <?php elseif ($sectionKey === 'cta'): ?>
-            <section class="builtin-section">
+            <section class="builtin-section barama-about-a25__cta">
                 <div class="container app-container">
                     <div class="builtin-cta">
                         <div>

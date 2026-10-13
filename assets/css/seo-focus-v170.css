@@ -1,0 +1,42 @@
+/* Barama SEO Table Focus v1.7.0 */
+.workspace-seo-record,
+.workspace-seo-coverage,
+.workspace-seo-governance {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+.workspace-seo-record__meta,
+.workspace-seo-coverage__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.48rem;
+}
+.workspace-seo-record__meta span,
+.workspace-seo-coverage__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.workspace-seo-record__meta span + span::before,
+.workspace-seo-coverage__meta span + span::before {
+    content: "•";
+    margin-right: 0.48rem;
+    opacity: 0.48;
+}
+.workspace-seo-record__path {
+    overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+    .workspace-seo-record__meta,
+    .workspace-seo-coverage__meta {
+        display: grid;
+        gap: 0.2rem;
+    }
+    .workspace-seo-record__meta span + span::before,
+    .workspace-seo-coverage__meta span + span::before {
+        content: none;
+        margin: 0;
+    }
+}

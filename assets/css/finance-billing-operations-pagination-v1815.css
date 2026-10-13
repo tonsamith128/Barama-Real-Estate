@@ -1,0 +1,38 @@
+/* Barama Finance Billing Operations Pagination Standard v1.8.15 */
+
+.finance-billing-ops-pager {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.finance-billing-ops-pager nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.finance-billing-ops-pager nav a {
+    text-decoration: none;
+}
+
+.finance-billing-ops-goto {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.finance-billing-ops-goto label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.finance-billing-ops-goto input {
+    width: 78px;
+}

@@ -24,6 +24,8 @@ $statusCssVersion = is_file($statusCssFile)
 $statusThemeVersion = is_file($statusThemeFile)
     ? (string) (filemtime($statusThemeFile) ?: 1126)
     : '1126';
+$websiteIdentity = [];
+try { $websiteIdentity = (new \Barama\Repositories\WebsiteIdentityRepository())->get(); } catch (\Throwable) { $websiteIdentity = []; }
 ?>
 <!doctype html>
 <html lang="<?= e(app_locale()) ?>" data-bs-theme="light">
@@ -32,9 +34,9 @@ $statusThemeVersion = is_file($statusThemeFile)
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <script src="<?= e(asset('js/system-health-theme-v1126.js') . '?v=' . rawurlencode($statusThemeVersion)) ?>"></script>
-    <link rel="icon" href="<?= e(asset('images/branding/favicon-32x32.png')) ?>" sizes="32x32" type="image/png">
-    <link rel="shortcut icon" href="<?= e(url('/favicon.ico')) ?>">
-    <link rel="apple-touch-icon" href="<?= e(asset('images/branding/apple-touch-icon.png')) ?>">
+    <link rel="icon" href="<?= e(asset((string)($websiteIdentity['favicon_32'] ?? 'images/branding/favicon-32x32.png'))) ?>" sizes="32x32" type="image/png">
+    <link rel="shortcut icon" href="<?= e(asset((string)($websiteIdentity['favicon_32'] ?? 'images/branding/favicon-32x32.png'))) ?>" type="image/png">
+    <link rel="apple-touch-icon" href="<?= e(asset((string)($websiteIdentity['apple_icon'] ?? 'images/branding/apple-touch-icon.png'))) ?>">
     <title><?= e($seoTitle) ?></title>
     <meta name="description" content="<?= e($seoDescription) ?>">
     <meta name="robots" content="<?= e($seoRobots) ?>">
@@ -47,7 +49,7 @@ $statusThemeVersion = is_file($statusThemeFile)
         <div class="system-status-container system-status-header__inner">
             <a class="system-status-brand" href="<?= e(url('/')) ?>" aria-label="<?= e(t('Barama Real Estate home')) ?>">
                 <img
-                    src="<?= e(asset('images/branding/barama-logo-header.png')) ?>"
+                    src="<?= e(asset((string)($websiteIdentity['light_logo'] ?? 'images/branding/barama-logo-header.png'))) ?>"
                     alt="<?= e(t('Barama Real Estate')) ?>"
                     width="960"
                     height="220"

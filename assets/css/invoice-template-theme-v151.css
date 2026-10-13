@@ -1,0 +1,205 @@
+/*
+ * Barama Invoice Template Theme Repair v1.5.1
+ * Scope: Invoice Template modal on /dashboard/invoices.
+ * Printable invoice preview intentionally remains paper-white.
+ */
+
+.invoice-template-modal {
+    --it-surface: var(--panel, var(--surface, #101b2b));
+    --it-surface-soft: var(--panel-soft, var(--surface-soft, #142236));
+    --it-field: var(--input-bg, var(--field-bg, #132135));
+    --it-text: var(--text-primary, var(--text, #eef4ff));
+    --it-muted: var(--text-secondary, var(--muted, #9eabc0));
+    --it-border: var(--border-color, var(--border, #2a3a51));
+    --it-accent: var(--primary, var(--accent, #5f8cff));
+    --it-accent-soft: color-mix(in srgb, var(--it-accent) 16%, transparent);
+    color: var(--it-text) !important;
+    color-scheme: dark;
+}
+
+html[data-theme="light"] .invoice-template-modal,
+body[data-theme="light"] .invoice-template-modal,
+html[data-color-scheme="light"] .invoice-template-modal,
+body[data-color-scheme="light"] .invoice-template-modal,
+html[data-bs-theme="light"] .invoice-template-modal,
+body[data-bs-theme="light"] .invoice-template-modal,
+html.light .invoice-template-modal,
+body.light .invoice-template-modal,
+html.light-mode .invoice-template-modal,
+body.light-mode .invoice-template-modal,
+.theme-light .invoice-template-modal {
+    --it-surface: var(--panel, var(--surface, #ffffff));
+    --it-surface-soft: var(--panel-soft, var(--surface-soft, #f5f7fb));
+    --it-field: var(--input-bg, var(--field-bg, #ffffff));
+    --it-text: var(--text-primary, var(--text, #172033));
+    --it-muted: var(--text-secondary, var(--muted, #667085));
+    --it-border: var(--border-color, var(--border, #d6dce7));
+    --it-accent: var(--primary, var(--accent, #3f6ff3));
+    color-scheme: light;
+}
+
+html[data-theme="dark"] .invoice-template-modal,
+body[data-theme="dark"] .invoice-template-modal,
+html[data-color-scheme="dark"] .invoice-template-modal,
+body[data-color-scheme="dark"] .invoice-template-modal,
+html[data-bs-theme="dark"] .invoice-template-modal,
+body[data-bs-theme="dark"] .invoice-template-modal,
+html.dark .invoice-template-modal,
+body.dark .invoice-template-modal,
+html.dark-mode .invoice-template-modal,
+body.dark-mode .invoice-template-modal,
+.theme-dark .invoice-template-modal {
+    --it-surface: var(--panel, var(--surface, #101b2b));
+    --it-surface-soft: var(--panel-soft, var(--surface-soft, #142236));
+    --it-field: var(--input-bg, var(--field-bg, #132135));
+    --it-text: var(--text-primary, var(--text, #eef4ff));
+    --it-muted: var(--text-secondary, var(--muted, #9eabc0));
+    --it-border: var(--border-color, var(--border, #2a3a51));
+    --it-accent: var(--primary, var(--accent, #6f98ff));
+    color-scheme: dark;
+}
+
+.invoice-template-modal__dialog {
+    background: var(--it-surface) !important;
+    color: var(--it-text) !important;
+    border-color: var(--it-border) !important;
+}
+
+.invoice-template-modal__header,
+.invoice-template-modal__footer,
+.invoice-template-form,
+.invoice-template-preview-toolbar {
+    color: var(--it-text) !important;
+}
+
+.invoice-template-modal__header,
+.invoice-template-modal__footer,
+.invoice-template-form,
+.invoice-template-subsection,
+.invoice-template-token-panel {
+    border-color: var(--it-border) !important;
+}
+
+.invoice-template-modal__header h2,
+.invoice-template-modal__header h3,
+.invoice-template-form label,
+.invoice-template-form label > span,
+.invoice-template-subsection h3,
+.invoice-template-token-panel h3 {
+    color: var(--it-text) !important;
+}
+
+.invoice-template-modal__header > div > span,
+.invoice-template-preview-toolbar button {
+    color: var(--it-accent) !important;
+}
+
+.invoice-template-modal__header p,
+.invoice-template-form small,
+.invoice-template-token-panel p {
+    color: var(--it-muted) !important;
+}
+
+.invoice-template-icon-button {
+    color: var(--it-text) !important;
+    border-color: var(--it-border) !important;
+    background: transparent !important;
+}
+
+.invoice-template-icon-button:hover {
+    background: var(--it-surface-soft) !important;
+}
+
+.invoice-template-tabs button {
+    color: var(--it-muted) !important;
+    border-color: var(--it-border) !important;
+    background: transparent !important;
+}
+
+.invoice-template-tabs button:hover {
+    color: var(--it-text) !important;
+    background: var(--it-surface-soft) !important;
+}
+
+.invoice-template-tabs button.is-active {
+    color: var(--it-text) !important;
+    border-color: var(--it-accent) !important;
+    background: var(--it-accent-soft) !important;
+}
+
+.invoice-template-form input:not([type="checkbox"]):not([type="color"]),
+.invoice-template-form select,
+.invoice-template-form textarea {
+    color: var(--it-text) !important;
+    background: var(--it-field) !important;
+    border-color: var(--it-border) !important;
+    caret-color: var(--it-text) !important;
+}
+
+.invoice-template-form input::placeholder,
+.invoice-template-form textarea::placeholder {
+    color: var(--it-muted) !important;
+    opacity: .78;
+}
+
+.invoice-template-form input:focus,
+.invoice-template-form select:focus,
+.invoice-template-form textarea:focus {
+    border-color: var(--it-accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--it-accent) 18%, transparent) !important;
+}
+
+.invoice-template-form input[type="checkbox"] {
+    accent-color: var(--it-accent);
+}
+
+.invoice-template-color code {
+    color: var(--it-text) !important;
+}
+
+.invoice-template-token-panel button {
+    color: var(--it-text) !important;
+    border-color: var(--it-border) !important;
+    background: var(--it-surface-soft) !important;
+}
+
+.invoice-template-token-panel button:hover {
+    border-color: var(--it-accent) !important;
+    background: var(--it-accent-soft) !important;
+}
+
+.invoice-template-preview-shell {
+    background: var(--it-surface-soft) !important;
+    color: var(--it-text) !important;
+}
+
+.invoice-template-modal__footer .btn-outline-secondary {
+    color: var(--it-text) !important;
+    border-color: var(--it-border) !important;
+    background: transparent !important;
+}
+
+.invoice-template-modal__footer .btn-outline-secondary:hover {
+    color: var(--it-text) !important;
+    background: var(--it-surface-soft) !important;
+    border-color: var(--it-accent) !important;
+}
+
+.invoice-template-modal__footer .btn-primary {
+    color: #ffffff !important;
+    background: var(--it-accent) !important;
+    border-color: var(--it-accent) !important;
+}
+
+.invoice-template-toast {
+    background: var(--it-surface) !important;
+    color: var(--it-text) !important;
+    border-color: var(--it-border) !important;
+}
+
+/* Printable document stays white regardless of dashboard theme. */
+.invoice-template-preview {
+    background: #ffffff !important;
+    color: #202735 !important;
+    color-scheme: light !important;
+}

@@ -1,0 +1,29 @@
+/* Barama v1.0.17-A7: scoped administrator provider choice and transient address lookup. */
+.barama-location-provider-v117a7{margin:22px 0;padding:24px;border:1px solid var(--barama-border,#dce4ef);border-radius:22px;background:var(--barama-card,#fff);box-shadow:0 12px 32px rgba(23,40,77,.04)}
+.barama-location-provider-v117a7__head h3{margin:7px 0;font-size:1.28rem;font-weight:800}
+.barama-location-provider-v117a7__head p{color:var(--barama-muted,#65758c);margin:0 0 16px;line-height:1.6}
+.barama-location-provider-v117a7__options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.barama-location-provider-v117a7__options>.btn{justify-self:start;grid-column:1/-1}
+.barama-location-provider-v117a7__choice{display:flex;position:relative;gap:14px;align-items:flex-start;min-height:125px;padding:18px;border:1px solid var(--barama-border,#dce4ef);border-radius:16px;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease}
+.barama-location-provider-v117a7__choice:has(input:checked){border:2px solid #1d63ff;background:rgba(29,99,255,.035);box-shadow:0 0 0 3px rgba(29,99,255,.065)}
+.barama-location-provider-v117a7__choice:has(input:focus-visible){outline:3px solid #1d63ff;outline-offset:2px}
+.barama-location-provider-v117a7__choice:has(input:disabled){opacity:.65;cursor:not-allowed}
+.barama-location-provider-v117a7__choice input{position:absolute;right:17px;top:17px;accent-color:#1d63ff;width:18px;height:18px}
+.barama-location-provider-v117a7__icon{display:inline-grid;place-items:center;flex:none;width:49px;height:49px;border-radius:14px;background:rgba(29,99,255,.09);color:#1d63ff}
+.barama-location-provider-v117a7__icon svg{width:23px;height:23px}
+.barama-location-provider-v117a7__choice strong{display:block;padding-right:22px;font-size:1rem;font-weight:800}
+.barama-location-provider-v117a7__choice small{display:block;margin-top:6px;color:var(--barama-muted,#65758c);line-height:1.5}
+.barama-location-provider-v117a7__credentials{display:grid;gap:14px;margin-top:20px;padding-top:20px;border-top:1px solid var(--barama-border,#dce4ef)}
+.barama-location-provider-v117a7__credentials p{margin:5px 0;color:var(--barama-muted,#65758c)}
+.barama-location-provider-v117a7__credentials small{color:var(--barama-muted,#65758c)}
+.barama-location-provider-v117a7__token{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.barama-location-provider-v117a7__token label{flex:1 1 260px;display:grid;gap:8px;min-width:220px}
+.barama-location-provider-v117a7__token input{width:100%;min-height:43px;border:1px solid var(--barama-border,#dce4ef);border-radius:10px;padding:0 12px;background:var(--barama-card,#fff);color:inherit;box-sizing:border-box}
+.barama-location-provider-v117a7__search{display:flex;flex-wrap:wrap;gap:9px;align-items:end;border:1px solid var(--barama-border,#dce4ef);border-radius:12px;padding:14px;margin:12px 0}
+.barama-location-provider-v117a7__search>label{flex:1 1 190px;display:grid;gap:7px}
+.barama-location-provider-v117a7__search>small,.barama-location-provider-v117a7__results{flex-basis:100%}
+.barama-location-provider-v117a7__results{display:grid;gap:5px}
+.barama-location-provider-v117a7__results>button{display:block;width:100%;text-align:left;border:1px solid var(--barama-border,#dce4ef);border-radius:9px;background:var(--barama-card,#fff);color:inherit;padding:9px 12px;cursor:pointer;line-height:1.5}
+.barama-location-provider-v117a7__results>button:hover,.barama-location-provider-v117a7__results>button:focus-visible{border-color:#1d63ff}
+@media(max-width:720px){.barama-location-provider-v117a7{padding:16px}.barama-location-provider-v117a7__options{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.barama-location-provider-v117a7__choice{transition:none}}

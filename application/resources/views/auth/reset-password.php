@@ -1,21 +1,16 @@
-<section class="auth-premium">
-    <div class="container app-container">
-        <div class="auth-premium__grid">
-            <aside class="auth-story">
-                <span class="eyebrow">Set a new password</span>
-                <h1>Secure your account with a fresh password.</h1>
-                <p>Reset tokens are one-time, time-limited credentials. Your new password replaces the previous credential immediately after a successful reset.</p>
-
-                <div class="auth-story__features">
-                    <article><span><?= app_icon('shield') ?></span><div><strong>Protected token</strong><small>The reset token is stored only as a one-way hash.</small></div></article>
-                    <article><span><?= app_icon('lock') ?></span><div><strong>Strong password</strong><small>Use at least 12 characters or generate one securely.</small></div></article>
-                    <article><span><?= app_icon('check') ?></span><div><strong>Immediate update</strong><small>Return to sign in after the reset succeeds.</small></div></article>
+<section class="auth-premium auth-premium--standalone auth-premium--a43r1">
+    <!-- BARAMA_RESET_PASSWORD_A43R1 -->
+    <link rel="stylesheet" href="<?= e(asset('css/reset-password-a43r1.css') . '?v=117a43r2') ?>">
+    <div class="container app-container auth-standalone__container">
+        <div class="auth-premium__grid auth-premium__grid--standalone">
+<div class="auth-panel">
+                <div class="a43r1-brand">
+                    <a href="<?= e(url('/')) ?>" aria-label="<?= e(t('Back to home')) ?>">
+                        <img src="<?= e(asset('images/branding/barama-logo-header.png')) ?>" alt="<?= e(t('Barama Real Estate')) ?>" width="2172" height="724">
+                    </a>
                 </div>
-            </aside>
-
-            <div class="auth-panel">
                 <div class="auth-panel__head">
-                    <span class="auth-panel__icon"><?= app_icon('lock') ?></span>
+                    
                     <div><h2>Reset password</h2><p>Choose a new password for your account.</p></div>
                 </div>
 
@@ -29,19 +24,19 @@
                         <input type="hidden" name="email" value="<?= e($email) ?>">
 
                         <label class="auth-field" for="reset-password">
-                            <span>New password</span>
+                            <span class="a43r1-sr-only">New password</span>
                             <span class="auth-input auth-input--action">
                                 <span class="auth-input__icon"><?= app_icon('lock') ?></span>
-                                <input class="form-control" id="reset-password" name="password" type="password" autocomplete="new-password" minlength="12" required data-auth-password data-auth-password-primary>
+                                <input class="form-control" id="reset-password" name="password" type="password" placeholder="New password" autocomplete="new-password" minlength="12" required data-auth-password data-auth-password-primary>
                                 <button class="auth-input__generate" type="button" data-auth-generate-password>Generate</button>
                             </span>
                         </label>
 
                         <label class="auth-field" for="reset-confirmation">
-                            <span>Confirm new password</span>
+                            <span class="a43r1-sr-only">Confirm new password</span>
                             <span class="auth-input">
                                 <span class="auth-input__icon"><?= app_icon('lock') ?></span>
-                                <input class="form-control" id="reset-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="12" required data-auth-password data-auth-password-confirmation>
+                                <input class="form-control" id="reset-confirmation" name="password_confirmation" type="password" placeholder="Confirm new password" autocomplete="new-password" minlength="12" required data-auth-password data-auth-password-confirmation>
                                 <button class="auth-input__action" type="button" data-auth-password-toggle aria-label="Show password"><?= app_icon('eye') ?></button>
                             </span>
                         </label>

@@ -1,0 +1,91 @@
+/* BARAMA_HOMEPAGE_AGENT_V1110 */
+/* Restore the compact pre-v1.1.6 hero height. The full-body agent floats and cannot size the hero grid. */
+.market-home__hero{
+    position:relative!important;
+    min-height:0!important;
+}
+
+.market-home__agent.market-home__agent--real.market-home__agent--fullbody{
+    position:absolute!important;
+    right:clamp(18px,3.4vw,60px)!important;
+    bottom:-118px!important;
+    top:auto!important;
+    width:clamp(410px,34vw,550px)!important;
+    height:clamp(540px,39vw,628px)!important;
+    min-width:0!important;
+    min-height:0!important;
+    max-height:calc(100% + 208px)!important;
+    margin:0!important;
+    padding:0!important;
+    display:flex!important;
+    align-items:flex-end!important;
+    justify-content:center!important;
+    overflow:visible!important;
+    pointer-events:none!important;
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    z-index:1!important;
+}
+
+.market-home__agent.market-home__agent--fullbody img{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    margin:0!important;
+    object-fit:contain!important;
+    object-position:center bottom!important;
+    filter:drop-shadow(0 22px 30px rgba(2,6,23,.30))!important;
+    transform:none!important;
+    user-select:none!important;
+    -webkit-user-drag:none!important;
+}
+
+.market-home__copy{
+    position:relative!important;
+    z-index:2!important;
+}
+.market-intent-grid{
+    position:relative!important;
+    z-index:3!important;
+}
+
+@media (max-width:1280px){
+    .market-home__agent.market-home__agent--fullbody{
+        right:8px!important;
+        width:clamp(360px,32vw,455px)!important;
+        height:clamp(490px,36vw,570px)!important;
+        max-height:calc(100% + 170px)!important;
+    }
+}
+
+@media (max-width:1080px){
+    .market-home__agent.market-home__agent--fullbody{
+        right:-2px!important;
+        width:348px!important;
+        height:505px!important;
+        max-height:calc(100% + 136px)!important;
+        opacity:.98!important;
+    }
+}
+
+@media (max-width:900px){
+    .market-home__agent.market-home__agent--fullbody{
+        right:-8px!important;
+        width:292px!important;
+        height:430px!important;
+        max-height:calc(100% + 102px)!important;
+        opacity:.92!important;
+    }
+}
+
+/* The agent must visually stand on the hero bottom edge while remaining out of layout flow. */
+/* Compact layouts prioritize the search experience; the agent must never expand the hero. */
+@media (max-width:760px){
+    .market-home__agent.market-home__agent--fullbody{
+        display:none!important;
+    }
+}

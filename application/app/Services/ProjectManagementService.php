@@ -74,7 +74,7 @@ final class ProjectManagementService
         $auth = new AuthService();
         $user = $auth->user();
 
-        if ($user === null || !$auth->can('dashboard.access')) {
+        if ($user === null || !$auth->can('dashboard.access') || !$auth->can('project.manage')) { // BARAMA_A48D1_PROJECT_SERVICE
             throw new DomainException('Administrator access is required.');
         }
 
@@ -93,7 +93,7 @@ final class ProjectManagementService
         $auth = new AuthService();
         $user = $auth->user();
 
-        if ($user === null || !$auth->can('dashboard.access')) {
+        if ($user === null || !$auth->can('dashboard.access') || !$auth->can('project.manage')) { // BARAMA_A48D1_PROJECT_SERVICE
             throw new DomainException('Administrator access is required.');
         }
 

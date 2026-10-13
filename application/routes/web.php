@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Http\Controllers\AccountController;
+use Barama\Http\Controllers\AccountAvatarController;
 use Barama\Http\Controllers\AccountManagementController;
 use Barama\Http\Controllers\AdminManagementController;
 use Barama\Http\Controllers\AppearanceController;
@@ -14,19 +15,27 @@ use Barama\Http\Controllers\AuthController;
 use Barama\Http\Controllers\CompanyController;
 use Barama\Http\Controllers\ContactMessageController;
 use Barama\Http\Controllers\CmsController;
+use Barama\Http\Controllers\LicenseSettingsController;
 use Barama\Http\Controllers\DashboardController;
 use Barama\Http\Controllers\DeveloperController;
+use Barama\Http\Controllers\DeveloperNotificationsController;
+use Barama\Http\Controllers\NotificationActionController;
 use Barama\Http\Controllers\DeveloperManagementController;
 use Barama\Http\Controllers\WorkspaceSettingsController;
+use Barama\Http\Controllers\FooterController;
 use Barama\Http\Controllers\HomeController;
 use Barama\Http\Controllers\InquiryController;
 use Barama\Http\Controllers\LocaleController;
 use Barama\Http\Controllers\MarketplaceController;
 use Barama\Http\Controllers\NewsletterController;
 use Barama\Http\Controllers\PublicMediaController;
+use Barama\Http\Controllers\RolePermissionController; // BARAMA_RBAC_ROUTE_V135
 use Barama\Http\Controllers\PaymentWebhookController;
 use Barama\Http\Controllers\SeoController;
 use Barama\Http\Controllers\SystemHealthController;
+use Barama\Http\Controllers\SystemCenterController;
+use Barama\Http\Controllers\PlanPurchaseController;
+use Barama\Http\Controllers\InvoiceTemplateController;
 use Barama\Http\Middleware\AuthMiddleware;
 use Barama\Http\Middleware\CsrfMiddleware;
 use Barama\Http\Middleware\GuestMiddleware;
@@ -35,13 +44,24 @@ use Barama\Http\Middleware\PermissionMiddleware;
 $guest = [new GuestMiddleware()];
 $guestPost = [new GuestMiddleware(), new CsrfMiddleware()];
 $csrf = [new CsrfMiddleware()];
+/* BARAMA_TURNSTILE_REAL_V110: customer-key verification, default disabled */
+$router->get('/dashboard/settings/security/turnstile',
+    [\Barama\Http\Controllers\TurnstileSettingsController::class, 'show'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->post('/dashboard/settings/security/turnstile',
+    [\Barama\Http\Controllers\TurnstileSettingsController::class, 'change'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+
 
 $router->get('/', [HomeController::class, 'index']);
+$router->get('/workspace-access', [AccountController::class, 'workspaceAccess'], [new AuthMiddleware()]);
 $router->get('/appearance.css', [AppearanceController::class, 'stylesheet']);
 $router->get('/robots.txt', [SeoController::class, 'robots']);
 $router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
 
 $router->post('/locale', [LocaleController::class, 'update'], $csrf);
+// BARAMA_NOTIFICATION_INTERACTION_V112: recipient-owned, CSRF protected open-and-read.
+$router->post('/notifications/{id}/open', [NotificationActionController::class, 'open'], [new AuthMiddleware(), new CsrfMiddleware()]);
 
 $router->get('/properties', [MarketplaceController::class, 'properties']);
 $router->get('/properties/{slug}', [MarketplaceController::class, 'property']);
@@ -49,14 +69,15 @@ $router->get('/projects', [MarketplaceController::class, 'projects']);
 $router->get('/projects/{slug}', [MarketplaceController::class, 'project']);
 $router->get('/media/{uuid}', [PublicMediaController::class, 'show']);
 
+$router->get('/plans', [PlanPurchaseController::class, 'index']);
 $router->get('/company', [CompanyController::class, 'index']);
 $router->get('/company/{slug}', [CompanyController::class, 'show']);
 $router->get('/about', [BuiltInPageController::class, 'about']);
 $router->get('/contact', [BuiltInPageController::class, 'contact']);
-$router->post('/contact/messages', [ContactMessageController::class, 'store'], $csrf);
+$router->post('/contact/messages', [ContactMessageController::class, 'store'], [new CsrfMiddleware(), new \Barama\Http\Middleware\TurnstileFormMiddleware('contact')]);
 $router->get('/pages/{slug}', [CmsController::class, 'legacy']);
 
-$router->post('/inquiries', [InquiryController::class, 'store'], $csrf);
+$router->post('/inquiries', [InquiryController::class, 'store'], [new CsrfMiddleware(), new \Barama\Http\Middleware\TurnstileFormMiddleware('inquiry')]);
 $router->post('/subscribe', [NewsletterController::class, 'store'], $csrf);
 $router->post(
     '/payments/webhooks/{provider}',
@@ -64,10 +85,12 @@ $router->post(
 );
 
 $router->get('/login', [AuthController::class, 'showLogin'], $guest);
-$router->post('/login', [AuthController::class, 'login'], $guestPost);
+$router->post('/login', [AuthController::class, 'login'], [new GuestMiddleware(), new CsrfMiddleware(), new \Barama\Http\Middleware\TurnstileFormMiddleware('login')]);
+$router->get('/mfa-challenge', [AuthController::class, 'showMfaChallenge'], $guest);
+$router->post('/mfa-challenge', [AuthController::class, 'mfaChallenge'], $guestPost);
 
 $router->get('/register', [AuthController::class, 'showRegister'], $guest);
-$router->post('/register', [AuthController::class, 'register'], $guestPost);
+$router->post('/register', [AuthController::class, 'register'], [new GuestMiddleware(), new CsrfMiddleware(), new \Barama\Http\Middleware\TurnstileFormMiddleware('register')]);
 
 $router->get(
     '/verify-email',
@@ -77,6 +100,11 @@ $router->get(
 $router->post(
     '/verify-email/resend',
     [AuthController::class, 'resendVerification'],
+    [new AuthMiddleware(), new CsrfMiddleware()]
+);
+$router->post(
+    '/verify-email/change',
+    [AuthController::class, 'changeVerificationEmail'],
     [new AuthMiddleware(), new CsrfMiddleware()]
 );
 $router->get(
@@ -91,7 +119,7 @@ $router->post(
 );
 
 $router->get('/forgot-password', [AuthController::class, 'showForgotPassword'], $guest);
-$router->post('/forgot-password', [AuthController::class, 'sendResetLink'], $guestPost);
+$router->post('/forgot-password', [AuthController::class, 'sendResetLink'], [new GuestMiddleware(), new CsrfMiddleware(), new \Barama\Http\Middleware\TurnstileFormMiddleware('forgot_password')]);
 
 $router->get('/reset-password/{token}', [AuthController::class, 'showResetPassword'], $guest);
 $router->post('/reset-password/{token}', [AuthController::class, 'resetPassword'], $guestPost);
@@ -99,6 +127,12 @@ $router->post('/reset-password/{token}', [AuthController::class, 'resetPassword'
 $router->post(
     '/logout',
     [AuthController::class, 'logout'],
+    [new AuthMiddleware(), new CsrfMiddleware()]
+);
+
+$router->post(
+    '/security/change-confirmation',
+    [WorkspaceSettingsController::class, 'authorizeChange'],
     [new AuthMiddleware(), new CsrfMiddleware()]
 );
 
@@ -217,9 +251,22 @@ $router->post(
     [AccountManagementController::class, 'updateNotificationPreferences'],
     [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]
 );
+$router->get(
+    '/account/avatar/{uuid}',
+    [AccountAvatarController::class, 'show'],
+    // Owner-only resolution is enforced by AccountAvatarController; all signed-in workspaces may view their own avatar.
+    [new AuthMiddleware()]
+);
+
 $router->get('/account/settings', [WorkspaceSettingsController::class, 'accountIndex'], [new AuthMiddleware(), new PermissionMiddleware('account.access')]);
 $router->get('/account/settings/{section}', [WorkspaceSettingsController::class, 'account'], [new AuthMiddleware(), new PermissionMiddleware('account.access')]);
 $router->post('/account/settings/{section}', [WorkspaceSettingsController::class, 'saveAccount'], [new AuthMiddleware(), new PermissionMiddleware('account.access'), new CsrfMiddleware()]);
+
+$router->get(
+    '/account/developer/apply',
+    [AccountController::class, 'applyDeveloper'],
+    [new AuthMiddleware(), new PermissionMiddleware('account.access')]
+);
 
 $router->get(
     '/account/{section}',
@@ -245,6 +292,32 @@ $router->get(
 $router->get('/developer/settings', [WorkspaceSettingsController::class, 'developerIndex'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
 $router->get('/developer/settings/{section}', [WorkspaceSettingsController::class, 'developer'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
 $router->post('/developer/settings/{section}', [WorkspaceSettingsController::class, 'saveDeveloper'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]);
+
+$router->get(
+    '/developer/plan-purchase/{id}',
+    [PlanPurchaseController::class, 'purchase'],
+    [new AuthMiddleware(), new PermissionMiddleware('developer.access')]
+);
+$router->post(
+    '/developer/plan-purchase/{id}',
+    [PlanPurchaseController::class, 'submit'],
+    [
+        new AuthMiddleware(),
+        new PermissionMiddleware('developer.access'),
+        new CsrfMiddleware()
+    ]
+);
+
+// BARAMA_DEVELOPER_NOTIFICATIONS_V111: user-owned inbox, before dynamic /developer/{section}.
+$router->get('/developer/notifications', [DeveloperNotificationsController::class, 'index'], [new AuthMiddleware(), new PermissionMiddleware('developer.access')]);
+$router->post('/developer/notifications/read-all', [DeveloperNotificationsController::class, 'readAll'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]);
+$router->post('/developer/notifications/{id}/read', [DeveloperNotificationsController::class, 'read'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new CsrfMiddleware()]);
+
+// BARAMA_DEVELOPER_DEDICATED_CREATE_V109: authorized full-page creation routes.
+$router->get('/developer/company/new', [DeveloperController::class, 'newCompany'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new PermissionMiddleware('company.manage')]);
+$router->get('/developer/projects/new', [DeveloperController::class, 'newProject'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new PermissionMiddleware('project.manage')]);
+$router->get('/developer/properties/new', [DeveloperController::class, 'newProperty'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new PermissionMiddleware('property.manage')]);
+$router->get('/developer/listings/new', [DeveloperController::class, 'newListing'], [new AuthMiddleware(), new PermissionMiddleware('developer.access'), new PermissionMiddleware('listing.manage')]);
 
 $router->get(
     '/developer/{section}',
@@ -433,6 +506,29 @@ $router->post(
     [AdminManagementController::class, 'createPaymentProvider'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
+/* BARAMA_PAYMENT_PROVIDERS_PREMIUM_V100 */
+$router->post(
+    '/dashboard/payment-providers/{id}',
+    [AdminManagementController::class, 'updatePaymentProvider'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+/* BARAMA_PAYMENT_METHODS_V120 */
+$router->post(
+    '/dashboard/payment-methods',
+    [AdminManagementController::class, 'createManualPaymentMethod'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+/* BARAMA_PAYMENT_METHODS_V110 */
+$router->post(
+    '/dashboard/payment-methods/{id}/status',
+    [AdminManagementController::class, 'updatePaymentMethodStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/payment-methods/{id}/configure',
+    [AdminManagementController::class, 'configurePaymentMethod'],
+    [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
+);
 $router->post(
     '/dashboard/payment-providers/{id}/status',
     [AdminManagementController::class, 'updatePaymentProviderStatus'],
@@ -453,6 +549,25 @@ $router->post(
     [AdminManagementController::class, 'ignoreBillingWebhook'],
     [new AuthMiddleware(), new PermissionMiddleware('billing.manage'), new CsrfMiddleware()]
 );
+$router->post(
+    '/dashboard/invoices/template',
+    [InvoiceTemplateController::class, 'save'],
+    [
+        new AuthMiddleware(),
+        new PermissionMiddleware('billing.manage'),
+        new CsrfMiddleware()
+    ]
+);
+$router->post(
+    '/dashboard/invoices/template/reset',
+    [InvoiceTemplateController::class, 'reset'],
+    [
+        new AuthMiddleware(),
+        new PermissionMiddleware('billing.manage'),
+        new CsrfMiddleware()
+    ]
+);
+
 $router->get(
     '/dashboard/invoices',
     [DashboardController::class, 'invoices'],
@@ -488,6 +603,41 @@ $router->get(
     [DashboardController::class, 'emailTemplates'],
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
 );
+$router->get(
+    '/dashboard/email-templates/create',
+    [DashboardController::class, 'createEmailTemplateBuilder'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+); // BARAMA_EMAIL_TEMPLATE_CREATE_ROUTE_V142
+$router->get(
+    '/dashboard/email-templates/media-library',
+    [AdminManagementController::class, 'emailTemplateMediaLibrary'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new PermissionMiddleware('media.manage')]
+); // BARAMA_EMAIL_TEMPLATE_MEDIA_LIBRARY_ROUTE_V143
+$router->get(
+    '/dashboard/email-templates/{key}/builder',
+    [DashboardController::class, 'emailTemplateBuilder'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+); // BARAMA_EMAIL_TEMPLATE_BUILDER_ROUTE_V137
+$router->post(
+    '/dashboard/email-templates/{key}/test',
+    [AdminManagementController::class, 'testEmailTemplate'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+); // BARAMA_EMAIL_TEMPLATE_TEST_ROUTE_V139
+$router->post(
+    '/dashboard/email-templates/{key}/variants/{locale}',
+    [AdminManagementController::class, 'saveEmailTemplateVariant'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+); // BARAMA_EMAIL_TEMPLATE_LOCALIZATION_ROUTES_V140
+$router->post(
+    '/dashboard/email-templates/{key}/variants/{locale}/status',
+    [AdminManagementController::class, 'updateEmailTemplateVariantStatus'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/email-templates/{key}/revisions/{revisionId}/restore',
+    [AdminManagementController::class, 'restoreEmailTemplateRevision'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
 $router->post(
     '/dashboard/email-templates',
     [AdminManagementController::class, 'createEmailTemplate'],
@@ -503,6 +653,12 @@ $router->post(
     [AdminManagementController::class, 'updateEmailTemplateStatus'],
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
 );
+/* BARAMA_MAIL_ANALYTICS_V150 */
+$router->get(
+    '/dashboard/mail-analytics',
+    [DashboardController::class, 'mailAnalytics'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+);
 $router->get(
     '/dashboard/mail-queue',
     [DashboardController::class, 'mailQueue'],
@@ -516,6 +672,17 @@ $router->post(
 $router->post(
     '/dashboard/mail-queue/{id}/cancel',
     [AdminManagementController::class, 'cancelMail'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
+);
+/* BARAMA_MAIL_QUEUE_OPERATIONS_V120 */
+$router->get(
+    '/dashboard/mail-queue/{id}/details',
+    [AdminManagementController::class, 'mailQueueDetail'],
+    [new AuthMiddleware(), new PermissionMiddleware('communication.manage')]
+);
+$router->post(
+    '/dashboard/mail-queue/bulk',
+    [AdminManagementController::class, 'bulkMail'],
     [new AuthMiddleware(), new PermissionMiddleware('communication.manage'), new CsrfMiddleware()]
 );
 $router->get(
@@ -570,6 +737,17 @@ $router->get(
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
 );
 $router->get(
+    '/dashboard/footer',
+    [FooterController::class, 'index'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/footer',
+    [FooterController::class, 'update'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+
+$router->get(
     '/dashboard/navigation',
     [DashboardController::class, 'navigationManager'],
     [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
@@ -610,9 +788,165 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
 );
 
+$router->get(
+    '/dashboard/roles-permissions',
+    [DashboardController::class, 'rolesPermissions'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->post(
+    '/dashboard/roles-permissions/{role}',
+    [RolePermissionController::class, 'update'],
+    [new AuthMiddleware(), new PermissionMiddleware('roles.manage'), new CsrfMiddleware()]
+); // BARAMA_RBAC_ROUTES_V135
+
+/* BARAMA_GLOBAL_LOCATION_OPTIONS_ROUTE_V110 */
+$router->get(
+    '/location-options',
+    [\Barama\Http\Controllers\LocationOptionsController::class, 'index']
+);
+
+/* BARAMA_LOCATION_PROVIDER_V117A7: authenticated temporary Mapbox search. */
+$router->get(
+    '/location-provider/suggest',
+    [\Barama\Http\Controllers\LocationProviderController::class, 'suggest'],
+    [new AuthMiddleware()]
+);
+
+/* BARAMA_GLOBAL_LOCATIONS_ROUTES_V101 */
+$router->get(
+    '/dashboard/settings/locations',
+    [WorkspaceSettingsController::class, 'dashboardLocations'],
+    [new AuthMiddleware(), new PermissionMiddleware('location.manage')]
+);
+$router->post(
+    '/dashboard/settings/locations',
+    [WorkspaceSettingsController::class, 'saveDashboardLocations'],
+    [new AuthMiddleware(), new PermissionMiddleware('location.manage'), new CsrfMiddleware()]
+);
+
 $router->get('/dashboard/settings', [WorkspaceSettingsController::class, 'dashboardIndex'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->get('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'dashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->post('/dashboard/settings/{section}', [WorkspaceSettingsController::class, 'saveDashboard'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+
+
+// BARAMA_POLICY_CENTER_V102
+$router->get(
+    '/policies',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'index']
+);
+$router->get(
+    '/dashboard/policies',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'adminIndex'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->get(
+    '/dashboard/policies/create',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'create'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->get(
+    '/dashboard/policies/edit',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'edit'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/policies/create',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'store'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/policies/update',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'update'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/policies/delete',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'delete'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/policies/duplicate',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'duplicate'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+
+// BARAMA_POLICY_CATEGORIES_V106
+$router->get(
+    '/dashboard/policies/categories',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'categories'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+$router->post(
+    '/dashboard/policies/categories/create',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'categoryStore'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/policies/categories/update',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'categoryUpdate'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/policies/categories/delete',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'categoryDelete'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/policies/categories/merge',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'categoryMerge'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage'), new CsrfMiddleware()]
+);
+// /BARAMA_POLICY_CATEGORIES_V106
+
+
+// BARAMA_POLICY_FEEDBACK_V1022
+$router->post(
+    '/policies/feedback',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'feedback'],
+    [new \Barama\Http\Middleware\CsrfMiddleware()]
+);
+// /BARAMA_POLICY_FEEDBACK_V1022
+
+
+// BARAMA_POLICY_FEEDBACK_ANALYTICS_V1023
+$router->get(
+    '/dashboard/policies/feedback',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'feedbackAnalytics'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+// /BARAMA_POLICY_FEEDBACK_ANALYTICS_V1023
+
+
+// BARAMA_POLICY_FEEDBACK_DETAIL_V1024
+$router->get(
+    '/dashboard/policies/feedback/detail',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'feedbackAnalyticsDetail'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+// /BARAMA_POLICY_FEEDBACK_DETAIL_V1024
+
+
+// BARAMA_POLICY_FEEDBACK_REVIEW_V1025
+$router->get(
+    '/dashboard/policies/feedback/review',
+    [\Barama\Http\Controllers\PolicyCenterController::class, 'feedbackReviewQueue'],
+    [new AuthMiddleware(), new PermissionMiddleware('page.manage')]
+);
+// /BARAMA_POLICY_FEEDBACK_REVIEW_V1025
+
+// /BARAMA_POLICY_CENTER_V102
+
+/* Customer-side license settings: protected by admin and CSRF middleware. */
+$router->get(
+    '/dashboard/license',
+    [LicenseSettingsController::class, 'index'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->post(
+    '/dashboard/license/actions',
+    [LicenseSettingsController::class, 'action'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
 
 $router->get(
     '/dashboard/{section}',
@@ -629,6 +963,18 @@ $router->post(
     [AdminManagementController::class, 'createAmenity'],
     [new AuthMiddleware(), new PermissionMiddleware('amenity.manage'), new CsrfMiddleware()]
 );
+// BARAMA_CATALOG_LOCATION_EDIT_V117A9: admin-only, source-preserving edit endpoints.
+$router->get(
+    '/dashboard/locations/{id}/edit',
+    [DashboardController::class, 'editCatalogLocation'],
+    [new AuthMiddleware(), new PermissionMiddleware('location.manage')]
+);
+$router->post(
+    '/dashboard/locations/{id}',
+    [\Barama\Http\Controllers\CatalogLocationEditController::class, 'save'],
+    [new AuthMiddleware(), new PermissionMiddleware('location.manage'), new CsrfMiddleware()]
+);
+
 $router->post(
     '/dashboard/locations/{id}/status',
     [AdminManagementController::class, 'updateLocationStatus'],
@@ -677,33 +1023,33 @@ $router->post(
 $router->post(
     '/dashboard/companies/{id}',
     [AdminManagementController::class, 'updateCompany'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('company.manage') /* BARAMA_A48D1_COMPANY_GUARD */, new CsrfMiddleware()]
 );
 $router->post(
     '/dashboard/companies/{id}/delete',
     [AdminManagementController::class, 'deleteCompany'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('company.manage') /* BARAMA_A48D1_COMPANY_GUARD */, new CsrfMiddleware()]
 );
 $router->post(
     '/dashboard/projects/{id}',
     [AdminManagementController::class, 'updateProject'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('project.manage') /* BARAMA_A48D1_PROJECT_GUARD */, new CsrfMiddleware()]
 );
 $router->post(
     '/dashboard/projects/{id}/delete',
     [AdminManagementController::class, 'deleteProject'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('project.manage') /* BARAMA_A48D1_PROJECT_GUARD */, new CsrfMiddleware()]
 );
 
 $router->post(
     '/dashboard/properties/{id}',
     [AdminManagementController::class, 'updateProperty'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('property.manage') /* BARAMA_A48D1_PROPERTY_GUARD */, new CsrfMiddleware()]
 );
 $router->post(
     '/dashboard/properties/{id}/delete',
     [AdminManagementController::class, 'deleteProperty'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('property.manage') /* BARAMA_A48D1_PROPERTY_GUARD */, new CsrfMiddleware()]
 );
 
 $router->post(
@@ -717,6 +1063,22 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 
+$router->get(
+    '/dashboard/users/new',
+    [DashboardController::class, 'newUser'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]
+);
+$router->post(
+    '/dashboard/users/create',
+    [AdminManagementController::class, 'createCustomer'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+$router->post(
+    '/dashboard/users/{id}/verify',
+    [AdminManagementController::class, 'verifyUserEmail'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
 $router->post(
     '/dashboard/users/{id}/status',
     [AdminManagementController::class, 'updateUserStatus'],
@@ -725,7 +1087,7 @@ $router->post(
 $router->post(
     '/dashboard/users/{id}/administrator',
     [AdminManagementController::class, 'setAdministrator'],
-    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+    [new AuthMiddleware(), new PermissionMiddleware('roles.manage') /* BARAMA_A45_ROLE_MANAGEMENT_ROUTE */, new CsrfMiddleware()]
 );
 
 $router->post(
@@ -735,10 +1097,25 @@ $router->post(
 );
 
 $router->post(
+    '/dashboard/users/{id}/company-access/downgrade',
+    [AdminManagementController::class, 'downgradeCompanyAccount'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
+);
+
+$router->post(
     '/dashboard/users/{id}/sessions/revoke',
     [AdminManagementController::class, 'revokeUserSessions'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
+
+/* BARAMA_SYSTEM_CENTER_V100_ADMIN_ROUTES */
+$router->get('/dashboard/system/about', [SystemCenterController::class, 'about'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->get('/dashboard/system/updates', [SystemCenterController::class, 'updates'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->get('/dashboard/system/health', [SystemCenterController::class, 'health'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->get('/dashboard/system/auto-updater', [SystemCenterController::class, 'autoUpdater'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+$router->post('/dashboard/system/auto-updater/check-license', [SystemCenterController::class, 'validatePublisherLicense'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->post('/dashboard/system/auto-updater/inspect-staged-release', [SystemCenterController::class, 'inspectStagedRelease'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->post('/dashboard/system/auto-updater/check-updates', [SystemCenterController::class, 'checkUpdateEntitlement'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 
 /* BARAMA_PUBLIC_SYSTEM_STATUS_V1126 */
 $router->get('/health', [SystemHealthController::class, 'index']);

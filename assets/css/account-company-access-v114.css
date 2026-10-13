@@ -1,0 +1,164 @@
+/* Barama v1.0.14 — Customer company access only. No other page selectors. */
+.account-page--company-v114 {width:min(100%,1500px);min-width:0;box-sizing:border-box}
+.account-page--company-v114 .account-page__head {align-items:center}
+.account-page--company-v114 .barama-company-v114__header-action {
+ display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:45px;
+ padding:.65rem 1rem;border:1px solid var(--barama-primary);border-radius:13px;
+ color:#fff;background:#165dff;box-shadow:0 5px 15px rgba(22,93,255,.16);
+ font-size:.82rem;font-weight:750;text-decoration:none;white-space:nowrap;flex:0 0 auto;
+ transition:background .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+.account-page--company-v114 .barama-company-v114__header-action svg {width:17px;height:17px;flex:none}
+.account-page--company-v114 .barama-company-v114__header-action:hover {background:#0f4bd4;color:#fff;box-shadow:0 8px 18px rgba(22,93,255,.22);transform:translateY(-1px)}
+.account-page--company-v114 .barama-company-v114__header-action:focus-visible,
+.account-page--company-v114 .barama-company-v114__row-action:focus-visible {outline:3px solid var(--barama-primary);outline-offset:2px}
+.account-page--company-v114 .barama-company-v114 {display:grid;gap:1rem;min-width:0;width:100%}
+.account-page--company-v114 .barama-company-v114__panel {
+ border:1px solid var(--barama-border);border-radius:18px;background:var(--barama-surface);
+ box-shadow:0 10px 30px rgba(27,41,71,.025);min-width:0;overflow:hidden
+}
+.account-page--company-v114 .barama-company-v114__panel-head {
+ display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.15rem 1.2rem;
+ border-bottom:1px solid var(--barama-border);
+}
+.account-page--company-v114 .barama-company-v114__panel-head h2 {margin:0;color:var(--barama-text);font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.account-page--company-v114 .barama-company-v114__panel-head p {margin:.3rem 0 0;font-size:.75rem;line-height:1.5;color:var(--barama-muted)}
+.account-page--company-v114 .barama-company-v114__count {
+ flex:none;display:inline-flex;align-items:center;border:1px solid var(--barama-border);border-radius:999px;
+ background:var(--barama-surface-soft);color:var(--barama-muted);padding:.34rem .65rem;
+ font-weight:750;font-size:.71rem;white-space:nowrap
+}
+.account-page--company-v114 .barama-company-v114__scroll {width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+.account-page--company-v114 .barama-company-v114__table {width:100%;border-collapse:collapse;border-spacing:0;table-layout:auto;text-align:left;min-width:790px}
+.account-page--company-v114 .barama-company-v114__table thead {background:var(--barama-surface-soft)}
+.account-page--company-v114 .barama-company-v114__table th {
+ padding:.78rem 1rem;white-space:nowrap;color:var(--barama-muted);font-size:.66rem;
+ font-weight:800;letter-spacing:.085em;text-transform:uppercase;border-bottom:1px solid var(--barama-border);
+}
+.account-page--company-v114 .barama-company-v114__table td {
+ padding:.95rem 1rem;vertical-align:middle;color:var(--barama-text);font-size:.76rem;
+ line-height:1.5;border-bottom:1px solid var(--barama-border)
+}
+.account-page--company-v114 .barama-company-v114__table tbody tr:last-child td {border-bottom:0}
+.account-page--company-v114 .barama-company-v114__table tbody tr:not(.barama-company-v114__empty):hover {background:color-mix(in srgb,var(--barama-primary) 3%,var(--barama-surface))}
+.account-page--company-v114 .barama-company-v114__table td strong {display:block;font-weight:800;font-size:.8rem;line-height:1.4}
+.account-page--company-v114 .barama-company-v114__table td small {display:block;margin-top:.16rem;color:var(--barama-muted);font-size:.68rem;line-height:1.45;overflow-wrap:anywhere}
+.account-page--company-v114 .barama-company-v114__metrics {display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.account-page--company-v114 .barama-company-v114__metrics span {border:1px solid var(--barama-border);border-radius:8px;background:var(--barama-surface-soft);padding:.18rem .45rem;white-space:nowrap;color:var(--barama-muted);font-size:.67rem}
+.account-page--company-v114 .barama-company-v114__metrics b {color:var(--barama-text);font-weight:800}
+.account-page--company-v114 .barama-company-v114__state {display:inline-flex;align-items:center;gap:.35rem;border-radius:999px;padding:.3rem .55rem;font-weight:750;font-size:.7rem;white-space:nowrap;background:var(--barama-surface-soft);color:var(--barama-muted)}
+.account-page--company-v114 .barama-company-v114__state::before {content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.account-page--company-v114 .barama-company-v114__state--approved {background:color-mix(in srgb,var(--barama-success) 10%,var(--barama-surface));color:var(--barama-success)}
+.account-page--company-v114 .barama-company-v114__state--pending {background:color-mix(in srgb,#e3a325 13%,var(--barama-surface));color:#a26b02}
+.account-page--company-v114 .barama-company-v114__state--rejected,.account-page--company-v114 .barama-company-v114__state--suspended {background:color-mix(in srgb,#d14b4b 11%,var(--barama-surface));color:#c04c4c}
+.account-page--company-v114 .barama-company-v114__muted {color:var(--barama-muted);font-size:.71rem}
+.account-page--company-v114 .barama-company-v114__row-action {display:inline-flex;justify-content:center;align-items:center;gap:.45rem;border:1px solid color-mix(in srgb,var(--barama-primary) 33%,var(--barama-border));border-radius:10px;background:color-mix(in srgb,var(--barama-primary) 6%,var(--barama-surface));color:var(--barama-primary);font-size:.71rem;font-weight:800;text-decoration:none;padding:.46rem .7rem;cursor:pointer;white-space:nowrap;line-height:1.25}
+.account-page--company-v114 .barama-company-v114__row-action:hover {background:color-mix(in srgb,var(--barama-primary) 12%,var(--barama-surface));color:var(--barama-primary)}
+.account-page--company-v114 .barama-company-v114__empty td {padding:2rem 1rem;text-align:center}
+.account-page--company-v114 .barama-company-v114__empty td>span {display:grid;place-items:center;margin:0 auto .65rem;border:1px solid var(--barama-border);border-radius:12px;width:42px;height:42px;color:var(--barama-primary)}
+.account-page--company-v114 .barama-company-v114__empty svg {height:20px;width:20px}
+.account-page--company-v114 .barama-company-v114__empty small {margin-top:.4rem}
+.account-page--company-v114 .barama-company-v114__notice {display:flex;align-items:center;gap:.6rem;color:var(--barama-muted);border:1px solid var(--barama-border);border-radius:12px;background:var(--barama-surface);padding:.75rem 1rem;font-size:.75rem}
+.account-page--company-v114 .barama-company-v114__notice svg {width:18px;height:18px;color:var(--barama-primary)}
+.account-page--company-v114 .barama-company-v114__panel--request .account-company-form {margin:0;border:0;padding:1.1rem 1.2rem}
+.account-page--company-v114 .barama-company-v114__panel--request .account-form__grid {min-width:0}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__header-action {color:#fff;background:#165dff}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__state--pending {color:#f4bc58}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__state--rejected,
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__state--suspended {color:#ff9898}
+@media(max-width:850px){
+ .account-page--company-v114 .barama-company-v114__table {min-width:0}
+ .account-page--company-v114 .barama-company-v114__table thead {display:none}
+ .account-page--company-v114 .barama-company-v114__table,.account-page--company-v114 .barama-company-v114__table tbody {display:block}
+ .account-page--company-v114 .barama-company-v114__table tr {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;padding:1rem;border-bottom:1px solid var(--barama-border)}
+ .account-page--company-v114 .barama-company-v114__table tr:last-child {border-bottom:0}
+ .account-page--company-v114 .barama-company-v114__table td {min-width:0;display:flex;align-items:flex-start;flex-direction:column;gap:.25rem;padding:.4rem .5rem;border:0}
+ .account-page--company-v114 .barama-company-v114__table td::before {content:attr(data-label);color:var(--barama-muted);font-size:.63rem;letter-spacing:.055em;text-transform:uppercase;font-weight:800}
+ .account-page--company-v114 .barama-company-v114__table td:first-child {grid-column:1/-1}
+ .account-page--company-v114 .barama-company-v114__table td:last-child {grid-column:1/-1}
+ .account-page--company-v114 .barama-company-v114__table td[colspan] {grid-column:1/-1;align-items:center}
+ .account-page--company-v114 .barama-company-v114__table td[colspan]::before {display:none}
+}
+@media(max-width:540px){
+ .account-page--company-v114 .account-page__head {flex-direction:column;align-items:stretch}
+ .account-page--company-v114 .account-page__identity {min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+ .account-page--company-v114 .barama-company-v114__header-action {align-self:stretch}
+ .account-page--company-v114 .barama-company-v114__panel-head {align-items:flex-start;flex-direction:column}
+ .account-page--company-v114 .barama-company-v114__table tr {grid-template-columns:minmax(0,1fr)}
+ .account-page--company-v114 .barama-company-v114__table td {grid-column:1/-1}
+ .account-page--company-v114 .barama-company-v114__panel--request .account-company-form {padding:.9rem}
+}
+@media(prefers-reduced-motion:reduce){.account-page--company-v114 .barama-company-v114__header-action{transition:none}}
+
+
+/* v1.0.17-A3 — scoped, functional Company Access upgrade panel only. */
+.account-page--company-v114 .barama-company-v117a3__upgrade{
+ position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;
+ padding:clamp(1.25rem,3.5vw,2.4rem);border-radius:20px;
+ border:1px solid color-mix(in srgb,var(--barama-primary) 14%,var(--barama-border));
+ background:linear-gradient(126deg,var(--barama-surface) 8%,color-mix(in srgb,var(--barama-primary) 6%,var(--barama-surface)) 100%);
+ box-shadow:0 11px 32px rgba(28,54,104,.07);color:var(--barama-text);
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade::after{
+ content:"";position:absolute;z-index:-1;right:-140px;top:-180px;width:510px;height:510px;
+ border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,#a8cbff 35%,transparent),transparent 68%);pointer-events:none;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-main{
+ display:grid;grid-template-columns:minmax(0,1.2fr) minmax(240px,.8fr);align-items:center;gap:1.25rem;min-width:0;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-copy{min-width:0;max-width:570px}
+.account-page--company-v114 .barama-company-v117a3__eyebrow{
+ display:block;margin-bottom:.7rem;color:var(--barama-primary);font-size:.7rem;font-weight:850;letter-spacing:.13em;text-transform:uppercase;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-copy h2{
+ margin:0;color:var(--barama-text);font-size:clamp(1.5rem,2.55vw,2.15rem);line-height:1.16;letter-spacing:-.045em;font-weight:850;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-copy p{
+ max-width:510px;margin:.9rem 0 1.4rem;color:var(--barama-muted);font-size:.9rem;line-height:1.7;
+}
+.account-page--company-v114 .barama-company-v117a3__apply{
+ display:inline-flex;justify-content:center;align-items:center;gap:.8rem;min-height:46px;max-width:100%;
+ box-sizing:border-box;padding:.78rem 1.3rem;border-radius:12px;border:1px solid #165dff;
+ background:#165dff;box-shadow:0 9px 19px rgba(22,93,255,.16);color:#fff;text-decoration:none;
+ font-weight:750;font-size:.81rem;line-height:1.3;transition:background .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.account-page--company-v114 .barama-company-v117a3__apply:hover{color:#fff;background:#0f4bd4;box-shadow:0 12px 24px rgba(22,93,255,.22);transform:translateY(-1px)}
+.account-page--company-v114 .barama-company-v117a3__apply:focus-visible{outline:3px solid var(--barama-primary);outline-offset:3px}
+.account-page--company-v114 .barama-company-v117a3__apply svg{flex-shrink:0}
+.account-page--company-v114 .barama-company-v117a3__upgrade-art{display:grid;place-items:center;max-height:270px;min-width:0;pointer-events:none}
+.account-page--company-v114 .barama-company-v117a3__upgrade-art svg{display:block;width:min(100%,430px);height:auto;filter:drop-shadow(0 12px 13px rgba(73,118,200,.07))}
+.account-page--company-v114 .barama-company-v117a3__benefits{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;list-style:none;padding:0;margin:1.4rem 0 0;min-width:0;
+}
+.account-page--company-v114 .barama-company-v117a3__benefits li{
+ display:flex;gap:.75rem;align-items:center;min-width:0;padding:.72rem .8rem;border-radius:13px;
+ border:1px solid var(--barama-border);background:color-mix(in srgb,var(--barama-surface) 90%,transparent);
+}
+.account-page--company-v114 .barama-company-v117a3__benefit-icon{
+ display:grid;place-items:center;width:37px;height:37px;flex:0 0 37px;border-radius:10px;
+ background:color-mix(in srgb,var(--barama-primary) 9%,var(--barama-surface));color:var(--barama-primary);
+}
+.account-page--company-v114 .barama-company-v117a3__benefit-icon svg{width:19px;height:19px}
+.account-page--company-v114 .barama-company-v117a3__benefits li span:last-child{min-width:0}
+.account-page--company-v114 .barama-company-v117a3__benefits strong{display:block;font-size:.74rem;font-weight:800;color:var(--barama-text);line-height:1.35}
+.account-page--company-v114 .barama-company-v117a3__benefits small{display:block;font-size:.67rem;color:var(--barama-muted);line-height:1.35;margin-top:.18rem}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v117a3__upgrade::after{opacity:.24}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v117a3__upgrade-art{opacity:.87}
+@media(max-width:900px){
+ .account-page--company-v114 .barama-company-v117a3__upgrade-main{grid-template-columns:minmax(0,1fr) minmax(170px,.62fr);gap:.5rem}
+ .account-page--company-v114 .barama-company-v117a3__benefits{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .account-page--company-v114 .barama-company-v117a3__benefits li{padding:.65rem;gap:.48rem}
+}
+@media(max-width:700px){
+ .account-page--company-v114 .barama-company-v117a3__upgrade-main{grid-template-columns:1fr;gap:0}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-copy{max-width:none}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-art{max-height:170px;margin:.25rem auto 0;overflow:hidden}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-art svg{max-width:290px}
+ .account-page--company-v114 .barama-company-v117a3__benefits{grid-template-columns:1fr;margin-top:1rem}
+}
+@media(max-width:420px){
+ .account-page--company-v114 .barama-company-v117a3__upgrade{padding:1.15rem;border-radius:16px}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-copy h2{font-size:1.45rem}
+ .account-page--company-v114 .barama-company-v117a3__apply{width:100%;padding:.76rem .65rem;font-size:.74rem}
+}
+@media(prefers-reduced-motion:reduce){.account-page--company-v114 .barama-company-v117a3__apply{transition:none}}

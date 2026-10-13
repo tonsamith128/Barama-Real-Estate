@@ -1,0 +1,30 @@
+/* BARAMA v1.0.9 - Developer portfolio dedicated create pages. Scoped rules only. */
+.workspace-page .developer-create-header-button{color:var(--barama-primary);font-size:.83rem;font-weight:800;text-decoration:none;border-color:color-mix(in srgb,var(--barama-primary) 27%,var(--barama-border));background:var(--barama-surface);min-height:43px;padding:.63rem 1.05rem}
+.workspace-page .developer-create-header-button svg{color:currentColor;width:17px;height:17px}
+.workspace-page .developer-create-header-button:hover,.workspace-page .developer-create-header-button:focus-visible{background:color-mix(in srgb,var(--barama-primary) 9%,var(--barama-surface));border-color:var(--barama-primary);outline-offset:3px}
+.developer-create-page{min-width:0}
+.developer-create-page__header{align-items:center;flex-wrap:wrap}
+.developer-create-page__shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:1.1rem;align-items:start}
+.developer-create-page__card,.developer-create-page__help{min-width:0;border:1px solid var(--barama-border);border-radius:18px;background:var(--barama-surface)}
+.developer-create-page__card{overflow:hidden}
+.developer-create-page__intro{display:flex;align-items:center;gap:1rem;border-bottom:1px solid var(--barama-border);padding:1.2rem 1.35rem}
+.developer-create-page__step{display:grid;place-items:center;width:45px;height:45px;flex:none;border-radius:14px;background:color-mix(in srgb,var(--barama-primary) 10%,var(--barama-surface));color:var(--barama-primary);font-weight:800}
+.developer-create-page__intro h2{font-size:1.05rem;margin:0;color:var(--barama-text);font-weight:800}
+.developer-create-page__intro p{font-size:.81rem;color:var(--barama-muted);margin:.3rem 0 0}
+.developer-create-page .workspace-form{padding:1.35rem;min-width:0}
+.developer-create-page .workspace-form__grid>*{min-width:0}
+.developer-create-page .workspace-form__grid select,.developer-create-page .workspace-form__grid input{max-width:100%;min-width:0}
+.developer-create-form__actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:.65rem;border-top:1px solid var(--barama-border);padding-top:1rem;margin-top:1.25rem}
+.developer-create-page__help{padding:1.3rem;color:var(--barama-muted)}
+.developer-create-page__help-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:13px;background:color-mix(in srgb,var(--barama-primary) 10%,var(--barama-surface));color:var(--barama-primary);margin-bottom:1.2rem}
+.developer-create-page__help strong{display:block;color:var(--barama-text);font-size:.92rem}
+.developer-create-page__help p{font-size:.83rem;line-height:1.6;margin:.65rem 0 0}
+.developer-create-page__feedback,.developer-create-page__notice{margin:1rem 1.35rem 0;padding:.85rem 1rem;border-radius:12px;border:1px solid var(--barama-border);font-size:.87rem;line-height:1.5}
+.developer-create-page__feedback.is-error{border-color:#ed9a9a;color:#9c2626;background:color-mix(in srgb,#f45e5e 10%,var(--barama-surface))}
+.developer-create-page__feedback.is-success{border-color:#8cccb2;color:#09734b;background:color-mix(in srgb,#36bf8b 10%,var(--barama-surface))}
+.developer-create-page__notice{display:flex;gap:.65rem;margin-bottom:1.35rem;color:var(--barama-muted)}
+.developer-create-page__notice svg{flex:none;color:var(--barama-primary);width:20px;height:20px}
+.developer-create-page__notice p{margin:.3rem 0;font-size:.82rem}
+.developer-create-page__notice a{font-weight:800;color:var(--barama-primary)}
+@media(max-width:980px){.developer-create-page__shell{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:650px){.developer-create-page .workspace-form__grid{grid-template-columns:minmax(0,1fr)}.developer-create-page .workspace-form__span-2{grid-column:auto}.developer-create-page__header{gap:1rem}.developer-create-page__intro,.developer-create-page .workspace-form{padding:1rem}.developer-create-form__actions>*{flex:1 1 auto}}

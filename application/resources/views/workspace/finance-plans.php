@@ -161,14 +161,26 @@ $slugs = array_map(
 ?>
 <link
     rel="stylesheet"
-    href="<?= e(asset('css/finance-plans-v139.css') . '?v=139') ?>"
+    href="<?= e(asset('css/finance-plans-v140.css') . '?v=140') ?>"
 >
 <script
     src="<?= e(asset('js/finance-plans-v139.js') . '?v=139') ?>"
     defer
 ></script>
 
+<link rel="stylesheet" href="<?= e(asset('css/plans-packages-v140.css') . '?v=141') ?>">
+
+<link rel="stylesheet" href="<?= e(asset('css/finance-plans-section-cleanup-v145.css') . '?v=145') ?>">
+
+<link rel="stylesheet" href="<?= e(asset('css/finance-plans-typography-v146.css') . '?v=146') ?>">
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-plans-focus-v180.css') . '?v=180') ?>"
+>
+
 <section class="workspace-page finance-plans" data-plans-workspace>
+    <!-- BARAMA_PLANS_VERTICAL_GLOBAL_OVERFLOW_V100 -->
     <header class="finance-plans__hero">
         <div>
             <span class="eyebrow">
@@ -238,11 +250,72 @@ $slugs = array_map(
 
         <div class="finance-plans__tier-grid">
             <?php foreach ($presets as $key => $preset): ?>
-                <?php $configured = in_array($preset['slug'], $slugs, true); ?>
+                <?php
+                /* BARAMA_EDITABLE_CONFIGURED_PRESETS_V147 */
+                $configuredPlan = null;
+                foreach ($plans as $candidatePlan) {
+                    if (strtolower((string) ($candidatePlan['slug'] ?? '')) === strtolower((string) $preset['slug'])) {
+                        $configuredPlan = $candidatePlan;
+                        break;
+                    }
+                }
+                $configured = is_array($configuredPlan);
+                $configuredStatus = $configured ? (string) ($configuredPlan['status'] ?? 'inactive') : null;
+                $editableConfigured = $configured && $configuredStatus !== 'archived';
+                $displayPlan = $configured
+                    ? array_merge($preset, [
+                        'name' => (string) ($configuredPlan['name'] ?? $preset['name']),
+                        'description' => (string) ($configuredPlan['description'] ?? $preset['description']),
+                        'billing_interval' => (string) ($configuredPlan['billing_interval'] ?? $preset['billing_interval']),
+                        'price' => (string) ($configuredPlan['price'] ?? $preset['price']),
+                        'currency' => (string) ($configuredPlan['currency'] ?? $preset['currency']),
+                        'listing_limit' => $configuredPlan['listing_limit'] ?? null,
+                        'property_limit' => $configuredPlan['property_limit'] ?? null,
+                        'project_limit' => $configuredPlan['project_limit'] ?? null,
+                        'team_member_limit' => $configuredPlan['team_member_limit'] ?? null,
+                        'featured_listing_limit' => $configuredPlan['featured_listing_limit'] ?? null,
+                        'sort_order' => (int) ($configuredPlan['sort_order'] ?? $preset['sort_order']),
+                    ])
+                    : $preset;
+                $configuredPayload = $configured
+                    ? [
+                        'id' => (int) ($configuredPlan['id'] ?? 0),
+                        'name' => (string) ($configuredPlan['name'] ?? ''),
+                        'slug' => (string) ($configuredPlan['slug'] ?? ''),
+                        'description' => (string) ($configuredPlan['description'] ?? ''),
+                        'billing_interval' => (string) ($configuredPlan['billing_interval'] ?? 'monthly'),
+                        'price' => (string) ($configuredPlan['price'] ?? '0.00'),
+                        'currency' => (string) ($configuredPlan['currency'] ?? 'USD'),
+                        'listing_limit' => $configuredPlan['listing_limit'] ?? '',
+                        'property_limit' => $configuredPlan['property_limit'] ?? '',
+                        'project_limit' => $configuredPlan['project_limit'] ?? '',
+                        'team_member_limit' => $configuredPlan['team_member_limit'] ?? '',
+                        'featured_listing_limit' => $configuredPlan['featured_listing_limit'] ?? '',
+                        'sort_order' => (int) ($configuredPlan['sort_order'] ?? 0),
+                        'status' => $configuredStatus,
+                    ]
+                    : null;
+                $currency = strtoupper((string) ($displayPlan['currency'] ?? 'USD'));
+                $currencyPrefix = match ($currency) {
+                    'USD' => '$',
+                    'EUR' => '€',
+                    'GBP' => '£',
+                    'JPY', 'CNY' => '¥',
+                    default => $currency . ' ',
+                };
+                $intervalLabel = match (strtolower((string) ($displayPlan['billing_interval'] ?? 'monthly'))) {
+                    'monthly' => '/ month',
+                    'quarterly' => '/ quarter',
+                    'yearly' => '/ year',
+                    'lifetime' => 'one time',
+                    'manual' => 'manual',
+                    default => '/ ' . strtolower((string) ($displayPlan['billing_interval'] ?? 'month')),
+                };
+                ?>
                 <article class="finance-plan-tier finance-plan-tier--<?= e($key) ?>">
                     <div class="finance-plan-tier__top">
                         <span class="finance-plan-tier__label">
-                            <?= e($preset['name']) ?>
+                            <?= e((string) $displayPlan['name']) ?>
                         </span>
                         <span
                             class="finance-plan-tier__state <?= $configured ? 'is-configured' : '' ?>"
@@ -252,43 +325,65 @@ $slugs = array_map(
                     </div>
 
                     <div class="finance-plan-tier__price">
-                        <strong>$<?= e(number_format((float) $preset['price'], 0)) ?></strong>
-                        <span>/ month</span>
+                        <strong><?= e($currencyPrefix) ?><?= e(number_format((float) $displayPlan['price'], 0)) ?></strong>
+                        <span><?= e($intervalLabel) ?></span>
                     </div>
 
-                    <p><?= e($preset['description']) ?></p>
+                    <p><?= e((string) $displayPlan['description']) ?></p>
 
                     <div class="finance-plan-tier__limits">
                         <span>
-                            <strong><?= e((string) $preset['listing_limit']) ?></strong>
+                            <strong><?= e($limit($displayPlan['listing_limit'] ?? null)) ?></strong>
                             Listings
                         </span>
                         <span>
-                            <strong><?= e((string) $preset['property_limit']) ?></strong>
+                            <strong><?= e($limit($displayPlan['property_limit'] ?? null)) ?></strong>
                             Properties
                         </span>
                         <span>
-                            <strong><?= e((string) $preset['project_limit']) ?></strong>
+                            <strong><?= e($limit($displayPlan['project_limit'] ?? null)) ?></strong>
                             Projects
                         </span>
                         <span>
-                            <strong><?= e((string) $preset['team_member_limit']) ?></strong>
+                            <strong><?= e($limit($displayPlan['team_member_limit'] ?? null)) ?></strong>
                             Team
                         </span>
                         <span>
-                            <strong><?= e((string) $preset['featured_listing_limit']) ?></strong>
+                            <strong><?= e($limit($displayPlan['featured_listing_limit'] ?? null)) ?></strong>
                             Featured
                         </span>
                     </div>
 
-                    <button
-                        class="btn <?= $configured ? 'btn-outline-secondary' : 'btn-primary' ?>"
-                        type="button"
-                        data-plan-preset="<?= e($key) ?>"
-                        <?= $configured ? 'disabled' : '' ?>
-                    >
-                        <?= $configured ? 'Already configured' : 'Create from preset' ?>
-                    </button>
+                    <?php if (!$configured): ?>
+                        <button
+                            class="btn btn-primary"
+                            type="button"
+                            data-plan-preset="<?= e($key) ?>"
+                        >
+                            Create from preset
+                        </button>
+                    <?php elseif ($editableConfigured): ?>
+                        <button
+                            class="btn btn-primary"
+                            type="button"
+                            data-plan-edit="<?= e(json_encode(
+                                $configuredPayload,
+                                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+                            )) ?>"
+                            title="Edit <?= e((string) $displayPlan['name']) ?> plan"
+                        >
+                            Edit plan
+                        </button>
+                    <?php else: ?>
+                        <button
+                            class="btn btn-outline-secondary"
+                            type="button"
+                            disabled
+                            title="Archived plans are read-only"
+                        >
+                            Archived · read-only
+                        </button>
+                    <?php endif; ?>
                 </article>
             <?php endforeach; ?>
         </div>

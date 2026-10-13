@@ -93,6 +93,14 @@ final class MembershipService
         }
 
         (new NotificationService())->notifyAddress($email, [
+            'template_key' => 'company_invitation',
+            'user_id' => $target !== null ? (int) $target['id'] : 0,
+            'variables' => [
+                'company_name' => (string) $company['name'],
+                'member_role' => ucwords(str_replace('_', ' ', $memberRole)),
+                'action_url' => url('/account/company'),
+                'expires_days' => '7',
+            ],
             'subject' => 'Company invitation · Barama Real Estate',
             'html' => '<p><strong>You have been invited to ' . e((string) $company['name']) . '</strong></p>'
                 . '<p>Sign in or create an account using this email address, then open Company Access in your account to accept the invitation.</p>'
@@ -139,12 +147,6 @@ final class MembershipService
         try {
             $pdo->beginTransaction();
 
-            $roles = new RoleRepository();
-
-            if (!$roles->userHasRole((int) $user['id'], 'developer')) {
-                $roles->assignRole((int) $user['id'], 'developer');
-            }
-
             (new CompanyMembershipWriteRepository())->upsert(
                 (int) $invitation['company_id'],
                 (int) $user['id'],
@@ -152,8 +154,12 @@ final class MembershipService
             );
 
             $repository->acceptInvitation($invitationId, (int) $user['id']);
+            (new CompanyWorkspaceAccessService())->reconcile((int) $user['id']);
             $pdo->commit();
-
+            $freshUser = (new UserRepository())->findById((int) $user['id']);
+            if ($freshUser !== null) {
+                $auth->refreshSessionVersion((int) $user['id'], (int) $freshUser['auth_version']);
+            }
             return (int) $invitation['company_id'];
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
@@ -235,7 +241,16 @@ final class MembershipService
             throw new DomainException('The company owner cannot be removed through member management.');
         }
 
-        (new CompanyMembershipWriteRepository())->deactivate($companyId, $userId);
+        $pdo = Database::connection();
+        try {
+            $pdo->beginTransaction();
+            (new CompanyMembershipWriteRepository())->deactivate($companyId, $userId);
+            (new CompanyWorkspaceAccessService())->reconcile($userId);
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            throw $exception;
+        }
     }
 
     /** @return array<string,mixed> */

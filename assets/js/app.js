@@ -12,11 +12,9 @@
 
     const preferredTheme = () => {
         const stored = window.localStorage.getItem(storageKey);
-
-        if (stored === 'light' || stored === 'dark') {
-            return stored;
-        }
-
+        if (stored === 'light' || stored === 'dark') return stored;
+        const serverDefault = root.getAttribute('data-barama-default-theme');
+        if (serverDefault === 'light' || serverDefault === 'dark') return serverDefault;
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     };
 
@@ -143,7 +141,23 @@
 
     document.querySelectorAll('[data-workspace-form]').forEach((form) => {
         form.addEventListener('submit', async (event) => {
-            event.preventDefault();
+            // BARAMA_CHANGE_CONFIRMATION_COOPERATIVE_V120
+            // Change Confirmation owns the first protected submit in capture
+            // phase. If it prevented that submit, do not start the workspace
+            // AJAX request. Wait for its granted requestSubmit() replay.
+            if (event.defaultPrevented) {
+                return;
+            }
+
+                        // BARAMA_PAYMENT_NATIVE_POST_V128
+            // v133 owns the passcode gate. After it grants the replay, allow
+            // this marked payment form to submit natively so the server
+            // receives the confirmed POST exactly once.
+            if (form.matches('[data-payment-native-confirmed-form="1"]')) {
+                return;
+            }
+
+event.preventDefault();
 
             const submitter = event.submitter;
 
@@ -185,9 +199,9 @@
 
             try {
                 const response = await window.fetch(
-                    submitter?.formAction || form.action,
+                    (submitter?.hasAttribute('formaction') ? submitter.formAction : form.action),
                     {
-                    method: submitter?.formMethod || form.method || 'POST',
+                    method: (submitter?.hasAttribute('formmethod') ? submitter.formMethod : form.method) || 'POST',
                     body: new FormData(form),
                     credentials: 'same-origin',
                     headers: {
@@ -200,7 +214,17 @@
                 const payload = await response.json().catch(() => null);
 
                 if (!response.ok || payload?.ok !== true) {
-                    throw new Error(payload?.message || 'The request could not be completed.');
+                    const isUserVerify = /\/dashboard\/users\/\d+\/verify\/?$/.test(new URL(form.action, window.location.href).pathname);
+                    let fallback = 'The request could not be completed.';
+                    if (isUserVerify) {
+                        fallback = response.status === 419 ? 'Your session token expired. Reload this page and try again.'
+                            : response.status === 428 ? 'A security change confirmation is required before verifying this user.'
+                            : response.status === 403 ? 'Permission denied. Confirm your administrator access.'
+                            : response.status === 404 ? 'The Verify endpoint was not found on the server.'
+                            : response.status === 500 ? 'The Verify action failed on the server (HTTP 500). Check the PHP error log.'
+                            : 'Verify request failed (HTTP ' + response.status + ').';
+                    }
+                    throw new Error(payload?.message || fallback);
                 }
 
                 showWorkspaceNotice(
@@ -1497,139 +1521,102 @@
 
     const dialogs = Array.from(document.querySelectorAll('[data-config-dialog]'));
 
-    /* BARAMA_MARKETPLACE_CONFIG_SAVE_V108 */
-    document.querySelectorAll('[data-marketplace-config-form]').forEach((form) => {
-        if (form.dataset.marketplaceConfigBound === '1') {
-            return;
+    /* BARAMA_APPEARANCE_FEEDBACK_V117A11
+       Display a fixed, user-dismissible status without scrolling the workspace.
+       Preserve successful AJAX feedback across the backend-confirming reload. */
+    const appearanceHost = document.querySelector('.appearance-manager');
+    const appearanceNotice = appearanceHost?.querySelector('[data-workspace-notice]') || null;
+    const feedbackKey = 'barama-appearance-feedback-v117a12';
+    let appearanceNoticeTimer = null;
+    const clearNoticeTimer = () => {
+        if (appearanceNoticeTimer !== null) {
+            window.clearTimeout(appearanceNoticeTimer);
+            appearanceNoticeTimer = null;
         }
-
-        form.dataset.marketplaceConfigBound = '1';
-
-        const notice = form.querySelector('[data-marketplace-config-notice]');
-
-        const showNotice = (message, type = 'error') => {
-            if (!notice) return;
-            notice.hidden = false;
-            notice.classList.remove('is-success', 'is-error');
-            notice.classList.add(type === 'success' ? 'is-success' : 'is-error');
-            notice.textContent = message;
-        };
-
-        const clearNotice = () => {
-            if (!notice) return;
-            notice.hidden = true;
-            notice.classList.remove('is-success', 'is-error');
-            notice.textContent = '';
-        };
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            clearNotice();
-
-            const submitter = event.submitter;
-            const title = form.querySelector('[name="hero_title"]');
-            const description = form.querySelector('[name="hero_description"]');
-
-            if (title instanceof HTMLInputElement && title.value.trim() === '') {
-                showNotice('Hero headline is required.');
-                title.focus();
-                return;
+    };
+    const hideAppearanceNotice = () => {
+        clearNoticeTimer();
+        if (appearanceNotice) appearanceNotice.hidden = true;
+    };
+    const scheduleNoticeClose = (type) => {
+        clearNoticeTimer();
+        if (!appearanceNotice || appearanceNotice.hidden) return;
+        appearanceNoticeTimer = window.setTimeout(hideAppearanceNotice, type === 'error' ? 15000 : 10000);
+    };
+    const showAppearanceNotice = (message, type = 'success') => {
+        if (!appearanceNotice) return;
+        const isError = type === 'error';
+        appearanceNotice.hidden = false;
+        appearanceNotice.classList.toggle('is-success', !isError);
+        appearanceNotice.classList.toggle('is-error', isError);
+        appearanceNotice.setAttribute('role', isError ? 'alert' : 'status');
+        appearanceNotice.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+        const icon = document.createElement('span');
+        icon.className = 'appearance-toast__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = isError ? '!' : '✓';
+        const body = document.createElement('span');
+        body.className = 'appearance-toast__message';
+        body.textContent = message;
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.className = 'appearance-toast__dismiss';
+        dismiss.setAttribute('aria-label', 'Dismiss appearance notification');
+        dismiss.textContent = '×';
+        dismiss.addEventListener('click', hideAppearanceNotice);
+        appearanceNotice.replaceChildren(icon, body, dismiss);
+        scheduleNoticeClose(type);
+    };
+    if (appearanceNotice) {
+        appearanceNotice.addEventListener('mouseenter', clearNoticeTimer);
+        appearanceNotice.addEventListener('mouseleave', () => scheduleNoticeClose(appearanceNotice.classList.contains('is-error') ? 'error' : 'success'));
+        appearanceNotice.addEventListener('focusin', clearNoticeTimer);
+        appearanceNotice.addEventListener('focusout', () => scheduleNoticeClose(appearanceNotice.classList.contains('is-error') ? 'error' : 'success'));
+        let saved = null;
+        try {
+            const serialized = window.sessionStorage.getItem(feedbackKey);
+            window.sessionStorage.removeItem(feedbackKey);
+            if (serialized) saved = JSON.parse(serialized);
+        } catch (_) { /* Private browsing may disable storage; page still works. */ }
+        if (saved && typeof saved.message === 'string' && Date.now() - Number(saved.time || 0) < 60000) {
+            const feature = typeof saved.feature === 'string' ? saved.feature : '';
+            const expected = typeof saved.enabled === 'boolean' ? saved.enabled : null;
+            const form = feature ? Array.from(document.querySelectorAll('[data-toggle-form]')).find(
+                (item) => item.action.endsWith('/' + feature + '/toggle')
+            ) : null;
+            const toggle = form?.querySelector('[data-auto-toggle]');
+            if (expected !== null && (!(toggle instanceof HTMLInputElement) || toggle.checked !== expected)) {
+                const label = feature.replace(/_/g, ' ');
+                const expectedText = expected ? 'ON' : 'OFF';
+                const actualText = toggle instanceof HTMLInputElement ? (toggle.checked ? 'ON' : 'OFF') : 'unavailable';
+                showAppearanceNotice('Could not verify ' + label + ' as ' + expectedText + '. Current server-rendered state: ' + actualText + '. Please retry or reload.', 'error');
+            } else {
+                showAppearanceNotice(saved.message, saved.type === 'error' ? 'error' : 'success');
             }
+        } else if (!appearanceNotice.hidden) {
+            const serverMessage = (appearanceNotice.textContent || '').trim();
+            if (serverMessage) showAppearanceNotice(serverMessage, appearanceNotice.classList.contains('is-error') ? 'error' : 'success');
+        }
+    }
 
-            if (description instanceof HTMLTextAreaElement && description.value.trim() === '') {
-                showNotice('Hero description is required.');
-                description.focus();
-                return;
-            }
-
-            const formData = new FormData(form);
-            const backgroundType = String(formData.get('background_type') || 'plain');
-            const imageSource = String(formData.get('image_source') || 'auto');
-
-            if (backgroundType !== 'image') {
-                formData.delete('hero_image_file');
-                formData.delete('image_url');
-                formData.delete('image_media_uuid');
-            } else if (imageSource === 'auto') {
-                formData.set('image_source', 'auto');
-                formData.delete('image_url');
-                formData.delete('image_media_uuid');
-            } else if (imageSource === 'url') {
-                formData.delete('image_media_uuid');
-            } else if (imageSource === 'media') {
-                formData.delete('image_url');
-            }
-
-            if (backgroundType !== 'slider') {
-                formData.delete('hero_slider_files[]');
-                formData.delete('slider_existing[]');
-                formData.delete('slider_remove[]');
-                formData.delete('slider_urls');
-            }
-
-            if (backgroundType !== 'video') {
-                formData.delete('hero_video_file');
-                formData.delete('video_url');
-                formData.delete('video_media_uuid');
-                formData.delete('youtube_url');
-            }
-
-            if (submitter) {
-                submitter.disabled = true;
-                submitter.setAttribute('aria-busy', 'true');
-            }
-
-            try {
-                const response = await window.fetch(form.action, {
-                    method: form.method || 'POST',
-                    body: formData,
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const responseText = await response.text();
-                let payload = null;
-
-                if (responseText.trim() !== '') {
-                    try {
-                        payload = JSON.parse(responseText);
-                    } catch (_) {
-                        payload = null;
-                    }
-                }
-
-                if (!response.ok || payload?.ok !== true) {
-                    const fallback = response.status === 419
-                        ? 'Your session token expired. Refresh this page and try again.'
-                        : 'Marketplace page configuration could not be saved.';
-                    throw new Error(payload?.message || fallback);
-                }
-
-                showNotice(
-                    payload?.data?.message || 'Marketplace page configuration saved.',
-                    'success'
-                );
-
-                window.setTimeout(() => {
-                    window.location.reload();
-                }, 450);
-            } catch (error) {
-                showNotice(
-                    error instanceof Error
-                        ? error.message
-                        : 'Marketplace page configuration could not be saved.',
-                    'error'
-                );
-            } finally {
-                if (submitter) {
-                    submitter.disabled = false;
-                    submitter.removeAttribute('aria-busy');
-                }
-            }
-        });
+    // BARAMA_APPEARANCE_PASSCODE_CANCEL_RECOVERY_V117A13
+    // Restore the last confirmed state when the security dialog is cancelled.
+    // The security handler emits this event ONLY on cancellation, never when
+    // it closes the dialog to replay an approved protected request.
+    document.addEventListener('barama:change-confirmation-cancelled', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.matches('[data-appearance-form][data-toggle-form]')) return;
+        if (form.dataset.appearanceSaving === '1') return;
+        const toggle = form.querySelector('[data-auto-toggle]');
+        const hidden = form.querySelector('[data-toggle-value]');
+        if (!(toggle instanceof HTMLInputElement) || !(hidden instanceof HTMLInputElement)) return;
+        const confirmed = toggle.dataset.appearanceConfirmed === '1';
+        toggle.checked = confirmed;
+        toggle.disabled = false;
+        hidden.value = confirmed ? '1' : '0';
+        const label = form.querySelector('.premium-switch b');
+        if (label) label.textContent = confirmed ? 'ON' : 'OFF';
+        delete form.dataset.appearanceRequested;
     });
 
     document.querySelectorAll('[data-appearance-form]').forEach((form) => {
@@ -1640,10 +1627,30 @@
         form.dataset.appearanceFormBound = '1';
 
         form.addEventListener('submit', async (event) => {
+            // BARAMA_APPEARANCE_SECURITY_REPLAY_V117A13
+            // The change-confirmation capture listener prevents the first submit.
+            // Never send an unapproved AJAX request; wait for its one-time grant
+            // and requestSubmit() replay before making the single real save.
+            if (event.defaultPrevented) return;
             event.preventDefault();
+            if (form.dataset.appearanceSaving === '1') return;
+            form.dataset.appearanceSaving = '1';
 
             const submitter = event.submitter;
             const dialog = form.closest('[data-config-dialog]');
+            const toggle = form.querySelector('[data-auto-toggle]');
+            const name = form.closest('tr')?.querySelector('.content-config-feature strong')?.textContent?.trim() || 'Appearance';
+            const feature = form.hasAttribute('data-toggle-form')
+                ? form.action.split('/').slice(-2, -1)[0] : '';
+            /* BARAMA_APPEARANCE_TOGGLE_REQUEST_CONFIRM_V117A12 */
+            // Use the explicit state captured by the switch change event, not a stale DOM value.
+            const explicitValue = form.dataset.appearanceRequested;
+            const enabled = toggle instanceof HTMLInputElement
+                ? (explicitValue === '0' || explicitValue === '1' ? explicitValue === '1' : toggle.checked)
+                : null;
+            const previousEnabled = toggle instanceof HTMLInputElement
+                ? toggle.dataset.appearanceConfirmed === '1' : null;
+            if (toggle instanceof HTMLInputElement) toggle.disabled = true;
 
             const dialogNotice = (() => {
                 if (!(dialog instanceof HTMLDialogElement)) {
@@ -1692,6 +1699,8 @@
                 submitter?.classList.contains('table-action--danger')
                 && !window.confirm('Reset frontend appearance to Barama defaults?')
             ) {
+                form.dataset.appearanceSaving = '0';
+                if (toggle instanceof HTMLInputElement) toggle.disabled = false;
                 return;
             }
 
@@ -1708,11 +1717,16 @@
             }
 
             try {
+                const body = new FormData(form);
+                if (feature && enabled !== null) {
+                    // The unchecked checkbox has no name; always send the definitive 0/1 value.
+                    body.set('enabled', enabled ? '1' : '0');
+                }
                 const response = await window.fetch(
-                    submitter?.formAction || form.action,
+                    (submitter?.hasAttribute('formaction') ? submitter.formAction : form.action),
                     {
-                        method: submitter?.formMethod || form.method || 'POST',
-                        body: new FormData(form),
+                        method: (submitter?.hasAttribute('formmethod') ? submitter.formMethod : form.method) || 'POST',
+                        body,
                         credentials: 'same-origin',
                         headers: {
                             'Accept': 'application/json',
@@ -1740,23 +1754,31 @@
                     throw new Error(payload?.message || fallback);
                 }
 
+                // Success is not based on HTTP 200 alone: verify the backend's persisted state.
+                if (feature && enabled !== null && (
+                    payload?.data?.feature !== feature
+                    || typeof payload?.data?.enabled !== 'boolean'
+                    || payload.data.enabled !== enabled
+                )) {
+                    throw new Error('The server did not confirm ' + feature.replace(/_/g, ' ') + ' as ' + (enabled ? 'ON' : 'OFF') + '. No success was recorded. Refresh the page and verify the saved setting.');
+                }
                 if (dialog instanceof HTMLDialogElement && dialog.open) {
                     dialog.close();
                 }
 
-                const workspaceNotice = document.querySelector('[data-workspace-notice]');
-                if (workspaceNotice) {
-                    workspaceNotice.hidden = false;
-                    workspaceNotice.classList.remove('is-success', 'is-error');
-                    workspaceNotice.classList.add('is-success');
-                    workspaceNotice.textContent = payload?.data?.message
-                        || 'Appearance changes saved successfully.';
-                    workspaceNotice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-
-                window.setTimeout(() => {
-                    window.location.reload();
-                }, 350);
+                const message = feature && enabled !== null
+                    ? name + ' ' + (enabled ? 'enabled' : 'disabled') + '. Saved successfully. Refresh the public frontend to review the effect.'
+                    : (payload?.data?.message || 'Appearance changes saved successfully.');
+                if (toggle instanceof HTMLInputElement) toggle.dataset.appearanceConfirmed = enabled ? '1' : '0';
+                showAppearanceNotice(message, 'success');
+                let feedbackStored = false;
+                try {
+                    window.sessionStorage.setItem(feedbackKey, JSON.stringify({
+                        message, type: 'success', feature, enabled, time: Date.now()
+                    }));
+                    feedbackStored = true;
+                } catch (_) { /* Fallback keeps the toast visible before reloading. */ }
+                window.setTimeout(() => window.location.reload(), feedbackStored ? 300 : 6000);
             } catch (error) {
                 showDialogNotice(
                     error instanceof Error
@@ -1765,18 +1787,18 @@
                     'error'
                 );
 
-                if (!(dialog instanceof HTMLDialogElement)) {
-                    const workspaceNotice = document.querySelector('[data-workspace-notice]');
-                    if (workspaceNotice) {
-                        workspaceNotice.hidden = false;
-                        workspaceNotice.classList.remove('is-success', 'is-error');
-                        workspaceNotice.classList.add('is-error');
-                        workspaceNotice.textContent = error instanceof Error
-                            ? error.message
-                            : 'Appearance could not be saved.';
-                    }
+                showAppearanceNotice(error instanceof Error ? error.message : 'Appearance could not be saved.', 'error');
+                if (toggle instanceof HTMLInputElement && previousEnabled !== null) {
+                    toggle.checked = previousEnabled;
+                    const hiddenValue = form.querySelector('[data-toggle-value]');
+                    if (hiddenValue instanceof HTMLInputElement) hiddenValue.value = previousEnabled ? '1' : '0';
+                    const stateLabel = form.querySelector('.premium-switch b');
+                    if (stateLabel) stateLabel.textContent = previousEnabled ? 'ON' : 'OFF';
                 }
             } finally {
+                delete form.dataset.appearanceRequested;
+                form.dataset.appearanceSaving = '0';
+                if (toggle instanceof HTMLInputElement) toggle.disabled = false;
                 if (submitter) {
                     submitter.disabled = false;
                     submitter.removeAttribute('aria-busy');
@@ -1826,11 +1848,18 @@
             return;
         }
 
+        input.dataset.appearanceConfirmed = input.checked ? '1' : '0';
         input.addEventListener('change', () => {
-            value.value = input.checked ? '1' : '0';
+            if (form.dataset.appearanceSaving === '1') return;
+            // State transitions are based on the last confirmed server rendering.
+            const requested = input.dataset.appearanceConfirmed !== '1';
+            input.checked = requested;
+            const target = requested ? '1' : '0';
+            form.dataset.appearanceRequested = target;
+            value.value = target;
 
             if (label) {
-                label.textContent = input.checked ? 'ON' : 'OFF';
+                label.textContent = requested ? 'ON' : 'OFF';
             }
 
             if (typeof form.requestSubmit === 'function') {
@@ -2318,4 +2347,420 @@
     } else {
         init();
     }
+})();
+
+/* BARAMA_PROFILE_THEME_CONTROL_V100
+ * User-feedback refinement:
+ * Move the existing canonical light/dark control into the bottom of the
+ * public Profile/Account dropdown. This does NOT implement a second theme
+ * engine. The existing [data-theme-toggle] node is moved intact so its
+ * current runtime, storage and prepaint behavior remain authoritative.
+ */
+(() => {
+    'use strict';
+
+    const root = document.documentElement;
+    const RELOCATED = 'data-barama-profile-theme-relocated';
+
+    const publicHeader = () =>
+        document.querySelector('header.site-header, header [class*="site-header"]')?.closest('header')
+        || document.querySelector('header');
+
+    const canonicalToggle = () => {
+        const preferred = [
+            '.site-footer [data-theme-toggle]',
+            '.market-home [data-theme-toggle]',
+            'main [data-theme-toggle]',
+            'header [data-theme-toggle]',
+            '[data-theme-toggle]'
+        ];
+        for (const selector of preferred) {
+            const node = document.querySelector(selector);
+            if (node instanceof HTMLElement) return node;
+        }
+        return null;
+    };
+
+    const normalizedPath = (anchor) => {
+        try {
+            return new URL(anchor.href, window.location.href).pathname.replace(/\/+$/, '') || '/';
+        } catch (_) {
+            return String(anchor.getAttribute('href') || '').split('?')[0].replace(/\/+$/, '') || '/';
+        }
+    };
+
+    const findAnchor = (scope, paths) =>
+        Array.from(scope.querySelectorAll('a[href]')).find((anchor) =>
+            paths.includes(normalizedPath(anchor))
+        ) || null;
+
+    const commonAncestor = (a, b, stop) => {
+        if (!a || !b) return null;
+        let node = a.parentElement;
+        while (node && node !== stop && node !== document.body) {
+            if (node.contains(b)) return node;
+            node = node.parentElement;
+        }
+        return null;
+    };
+
+    const menuFromKnownClasses = (header) => {
+        const candidates = header.querySelectorAll(
+            '.profile-menu, .account-menu, .header-profile-menu, .header-account-menu, ' +
+            '.profile-dropdown, .account-dropdown, [data-profile-menu], [data-account-menu], ' +
+            '.dropdown-menu, [role="menu"]'
+        );
+
+        for (const menu of candidates) {
+            const login = findAnchor(menu, ['/login', '/signin']);
+            const register = findAnchor(menu, ['/register', '/signup']);
+            const account = findAnchor(menu, ['/account', '/dashboard']);
+            const logout = menu.querySelector(
+                'form[action*="/logout"], a[href*="/logout"], button[data-logout]'
+            );
+
+            if ((login && register) || (account && logout)) {
+                return menu;
+            }
+        }
+
+        return null;
+    };
+
+    const menuFromAuthLinks = (header) => {
+        const login = findAnchor(header, ['/login', '/signin']);
+        const register = findAnchor(header, ['/register', '/signup']);
+
+        if (login && register) {
+            return commonAncestor(login, register, header);
+        }
+
+        const account = findAnchor(header, ['/account', '/dashboard']);
+        const logout = header.querySelector(
+            'form[action*="/logout"], a[href*="/logout"], button[data-logout]'
+        );
+
+        if (account && logout) {
+            return commonAncestor(account, logout, header);
+        }
+
+        return null;
+    };
+
+    const findProfileMenu = () => {
+        const header = publicHeader();
+        if (!header) return null;
+        return menuFromKnownClasses(header) || menuFromAuthLinks(header);
+    };
+
+    const makeRow = (toggle) => {
+        const row = document.createElement('div');
+        row.className = 'barama-profile-theme-row';
+        row.setAttribute('data-barama-profile-theme-row', '');
+
+        const copy = document.createElement('div');
+        copy.className = 'barama-profile-theme-copy';
+        copy.innerHTML =
+            '<strong>Appearance</strong>' +
+            '<small>Light / Dark mode</small>';
+
+        toggle.classList.add('barama-profile-theme-toggle');
+        toggle.setAttribute(RELOCATED, '1');
+
+        row.append(copy, toggle);
+        return row;
+    };
+
+    const revealFallback = () => {
+        root.classList.add('barama-profile-theme-fallback');
+        root.classList.remove('barama-profile-theme-ready');
+    };
+
+    const relocate = () => {
+        if (document.querySelector('[data-barama-profile-theme-row]')) {
+            root.classList.add('barama-profile-theme-ready');
+            root.classList.remove('barama-profile-theme-fallback');
+            return true;
+        }
+
+        const toggle = canonicalToggle();
+        const menu = findProfileMenu();
+
+        if (!toggle || !menu) {
+            revealFallback();
+            return false;
+        }
+
+        const row = makeRow(toggle);
+        menu.appendChild(row);
+
+        root.classList.add('barama-profile-theme-ready');
+        root.classList.remove('barama-profile-theme-fallback');
+
+        return true;
+    };
+
+    const start = () => {
+        if (relocate()) return;
+
+        const header = publicHeader();
+        if (!header) {
+            revealFallback();
+            return;
+        }
+
+        let attempts = 0;
+        const observer = new MutationObserver(() => {
+            attempts += 1;
+            if (relocate() || attempts >= 20) {
+                observer.disconnect();
+                if (attempts >= 20 && !document.querySelector('[data-barama-profile-theme-row]')) {
+                    revealFallback();
+                }
+            }
+        });
+
+        observer.observe(header, { childList: true, subtree: true });
+
+        window.setTimeout(() => {
+            observer.disconnect();
+            if (!document.querySelector('[data-barama-profile-theme-row]')) {
+                revealFallback();
+            }
+        }, 3000);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
+    }
+})();
+
+/* BARAMA_RUNTIME_STYLE_DATA_BRIDGE_V1842 */
+(() => {
+    'use strict';
+
+    const clampNumber = (value, min, max) => {
+        const number = Number.parseFloat(String(value ?? '').trim());
+
+        if (!Number.isFinite(number)) {
+            return null;
+        }
+
+        return Math.min(max, Math.max(min, number));
+    };
+
+    const applyPercent = (element, dataKey, styleProperty) => {
+        const value = clampNumber(element.dataset[dataKey], 0, 100);
+
+        if (value === null) {
+            return;
+        }
+
+        element.style[styleProperty] = `${value}%`;
+    };
+
+    const applyCustomProperty = (
+        element,
+        dataKey,
+        propertyName,
+        normalize
+    ) => {
+        const raw = String(element.dataset[dataKey] ?? '').trim();
+
+        if (raw === '') {
+            return;
+        }
+
+        const value = normalize ? normalize(raw) : raw;
+
+        if (value === null || value === '') {
+            return;
+        }
+
+        element.style.setProperty(propertyName, value);
+    };
+
+    const normalizeInteger = (min, max) => (raw) => {
+        const value = Number.parseInt(raw, 10);
+
+        if (!Number.isFinite(value)) {
+            return null;
+        }
+
+        return String(Math.min(max, Math.max(min, value)));
+    };
+
+    const normalizeDecimal = (min, max) => (raw) => {
+        const value = clampNumber(raw, min, max);
+
+        return value === null ? null : String(value);
+    };
+
+    const normalizePercentProperty = (raw) => {
+        const value = clampNumber(raw, 0, 100);
+
+        return value === null ? null : `${value}%`;
+    };
+
+    const normalizeColor = (raw) => {
+        const value = raw.trim();
+
+        if (value === '' || value.length > 80) {
+            return null;
+        }
+
+        if (
+            window.CSS
+            && typeof window.CSS.supports === 'function'
+            && !window.CSS.supports('color', value)
+        ) {
+            return null;
+        }
+
+        return value;
+    };
+
+    const applyElement = (element) => {
+        if (!(element instanceof Element)) {
+            return;
+        }
+
+        if (element.hasAttribute('data-barama-width')) {
+            applyPercent(element, 'baramaWidth', 'width');
+        }
+
+        if (element.hasAttribute('data-barama-left')) {
+            applyPercent(element, 'baramaLeft', 'left');
+        }
+
+        if (element.hasAttribute('data-barama-marketplace-grid-columns')) {
+            applyCustomProperty(
+                element,
+                'baramaMarketplaceGridColumns',
+                '--marketplace-grid-columns',
+                normalizeInteger(1, 12)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-marketplace-hero-overlay')) {
+            applyCustomProperty(
+                element,
+                'baramaMarketplaceHeroOverlay',
+                '--marketplace-hero-overlay',
+                normalizeDecimal(0, 1)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-hero-overlay')) {
+            applyCustomProperty(
+                element,
+                'baramaHeroOverlay',
+                '--hero-overlay',
+                normalizeDecimal(0, 1)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-invoice-accent')) {
+            applyCustomProperty(
+                element,
+                'baramaInvoiceAccent',
+                '--invoice-accent',
+                normalizeColor
+            );
+        }
+
+        if (element.hasAttribute('data-barama-readiness-score')) {
+            applyCustomProperty(
+                element,
+                'baramaReadinessScore',
+                '--readiness-score',
+                normalizeInteger(0, 100)
+            );
+        }
+
+        if (element.hasAttribute('data-barama-seo-health')) {
+            applyCustomProperty(
+                element,
+                'baramaSeoHealth',
+                '--seo-health',
+                normalizePercentProperty
+            );
+        }
+    };
+
+    const selector = [
+        '[data-barama-width]',
+        '[data-barama-left]',
+        '[data-barama-marketplace-grid-columns]',
+        '[data-barama-marketplace-hero-overlay]',
+        '[data-barama-hero-overlay]',
+        '[data-barama-invoice-accent]',
+        '[data-barama-readiness-score]',
+        '[data-barama-seo-health]',
+    ].join(',');
+
+    const applyRuntimeStyles = (root = document) => {
+        if (root instanceof Element && root.matches(selector)) {
+            applyElement(root);
+        }
+
+        if (!root.querySelectorAll) {
+            return;
+        }
+
+        root.querySelectorAll(selector).forEach(applyElement);
+    };
+
+    const start = () => {
+        applyRuntimeStyles(document);
+
+        if (typeof MutationObserver !== 'function') {
+            return;
+        }
+
+        const attributeFilter = [
+            'data-barama-width',
+            'data-barama-left',
+            'data-barama-marketplace-grid-columns',
+            'data-barama-marketplace-hero-overlay',
+            'data-barama-hero-overlay',
+            'data-barama-invoice-accent',
+            'data-barama-readiness-score',
+            'data-barama-seo-health',
+        ];
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes') {
+                    applyElement(mutation.target);
+                    return;
+                }
+
+                mutation.addedNodes.forEach((node) => {
+                    if (node instanceof Element) {
+                        applyRuntimeStyles(node);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.documentElement, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter,
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
+    }
+
+    window.BaramaRuntimeStyles = Object.freeze({
+        apply: applyRuntimeStyles,
+    });
 })();

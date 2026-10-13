@@ -33,7 +33,7 @@ final class CompanyOnboardingService
             throw new DomainException('Verify your email address before requesting company access.');
         }
 
-        if ($auth->can('developer.access')) {
+        if ($auth->canAccessWorkspace('developer')) {
             throw new DomainException(
                 'Your account already has company workspace access. Create companies from the Company / Vendor workspace.'
             );
@@ -51,6 +51,19 @@ final class CompanyOnboardingService
 
         $name = DomainInput::requiredString($input, 'name', 180, 2);
         $companyType = DomainInput::requiredString($input, 'company_type', 40);
+        $applicationKind = strtolower(trim((string) ($input['application_kind'] ?? '')));
+        if ($applicationKind !== '' && !in_array($applicationKind, ['developer', 'company'], true)) {
+            throw new InvalidArgumentException('Select Developer or Company application.');
+        }
+        if ($applicationKind !== '' && (string) ($input['accept_business_terms'] ?? '') !== '1') {
+            throw new InvalidArgumentException('Confirm the account upgrade and review policy before submitting.');
+        }
+        if ($applicationKind === 'developer' && $companyType !== 'developer') {
+            throw new InvalidArgumentException('Developer applications must select Developer company type.');
+        }
+        if ($applicationKind === 'company' && $companyType === 'developer') {
+            throw new InvalidArgumentException('Select an agency, property company or owner account type.');
+        }
 
         if (!in_array($companyType, DomainRules::COMPANY_TYPES, true)) {
             throw new InvalidArgumentException('Invalid company type.');

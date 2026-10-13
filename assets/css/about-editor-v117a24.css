@@ -1,0 +1,15 @@
+/* Dashboard A24, strictly About-specific */
+.barama-about-admin-a24 .workspace-page__header{padding-bottom:1.1rem}
+.barama-about-admin-a24__notice{display:flex;gap:.65rem;align-items:center;border:1px solid #bfd5fb;border-radius:14px;background:#f1f6ff;padding:1rem 1.25rem;margin:1.1rem 0;color:#284570;font-size:.9rem}
+.barama-about-admin-a24__notice svg{flex-shrink:0;color:#2563eb}
+.barama-about-admin-a24__shortcuts{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.3rem 0 1.55rem}
+.barama-about-admin-a24__shortcuts button{display:inline-flex;align-items:center;gap:.5rem;background:#fff;border:1px solid #dce4f1;border-radius:13px;padding:.7rem .95rem;color:#263b61;font-size:.86rem;font-weight:700;cursor:pointer}
+.barama-about-admin-a24__shortcuts button:hover,.barama-about-admin-a24__shortcuts button:focus-visible{background:#eff5ff;border-color:#8fb1ff;outline-offset:2px}
+.barama-about-admin-a24__items{display:grid;gap:1rem;margin-top:1rem}
+.barama-about-admin-a24__item{border:1px solid #dce5f2;border-radius:15px;padding:1.1rem;background:#f8faff;display:grid;gap:.8rem}
+.barama-about-admin-a24__item label{display:grid;gap:.25rem}
+.barama-about-admin-a24__item-head{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap}
+.barama-about-admin-a24__item-head>div{display:flex;gap:.35rem;flex-wrap:wrap}
+.barama-about-admin-a24__item-head button{min-height:32px;padding:.28rem .7rem;border-radius:8px}
+.barama-about-admin-a24__add{margin-top:1rem;border-radius:10px}
+@media(max-width:640px){.barama-about-admin-a24__shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.barama-about-admin-a24__item-head{align-items:flex-start}}

@@ -16,6 +16,27 @@ final class MigrationCatalog
         '0011_create_workspace_preferences.php' => [
             '0010_create_workspace_preferences.php',
         ],
+        '0025_create_email_template_localization_history.php' => [
+            '0023_create_email_template_localization_history.php',
+        ],
+        '0026_create_email_outbox_event_history.php' => [
+            '0024_create_email_outbox_event_history.php',
+        ],
+        '0027_create_billing_payment_methods.php' => [
+            '0025_create_billing_payment_methods.php',
+        ],
+        '0028_create_global_location_governance.php' => [
+            '0026_create_global_location_governance.php',
+        ],
+        '0029_create_global_location_hierarchy.php' => [
+            '0027_create_global_location_hierarchy.php',
+        ],
+        '0030_update_homepage_hero_copy.php' => [
+            '0028_update_homepage_hero_copy.php',
+        ],
+        '0031_add_account_profile_details.php' => [
+            '0029_add_account_profile_details.php',
+        ],
     ];
 
     /** @return array<int,string> */

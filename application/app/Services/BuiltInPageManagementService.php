@@ -139,7 +139,9 @@ final class BuiltInPageManagementService
             'eyebrow' => $this->text($input['eyebrow'] ?? $current['eyebrow'] ?? '', 80, $label . ' hero eyebrow'),
             'title' => $title,
             'description' => $description,
-            'image_url' => $this->optionalExternalUrl($input['image_url'] ?? $current['image_url'] ?? '', $label . ' hero image URL'),
+            'image_url' => $page === 'contact'
+                ? $this->contactHeroImageUrl($input['image_url'] ?? $current['image_url'] ?? '')
+                : $this->optionalExternalUrl($input['image_url'] ?? $current['image_url'] ?? '', $label . ' hero image URL'),
         ];
     }
 
@@ -170,43 +172,45 @@ final class BuiltInPageManagementService
 
         if ($section === 'values') {
             return $base + [
-                'items' => $this->textCards($input['items'] ?? null, $current['items'] ?? null, 4, 'Value', 110, 360),
+                'items' => $this->textCards(array_key_exists('items_present', $input) ? ($input['items'] ?? []) : null, $current['items'] ?? null, 12, 'Value', 110, 360),
             ];
         }
 
-        if ($section === 'stats') {
-            $rows = is_array($input['items'] ?? null)
-                ? $input['items']
-                : (is_array($current['items'] ?? null) ? $current['items'] : []);
-            $items = [];
-
-            for ($index = 0; $index < 4; $index++) {
-                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
-                $items[] = [
-                    'value' => $this->text($row['value'] ?? '', 30, 'Stat value'),
-                    'label' => $this->text($row['label'] ?? '', 100, 'Stat label'),
-                ];
+        if ($section === 'stats' || $section === 'team') {
+            $rows = array_key_exists('items_present', $input)
+                ? ($input['items'] ?? [])
+                : ($input['items'] ?? $current['items'] ?? []);
+            if (!is_array($rows)) {
+                throw new InvalidArgumentException('Invalid About items.');
             }
-
-            return $base + ['items' => $items];
-        }
-
-        if ($section === 'team') {
-            $rows = is_array($input['items'] ?? null)
-                ? $input['items']
-                : (is_array($current['items'] ?? null) ? $current['items'] : []);
-            $items = [];
-
-            for ($index = 0; $index < 4; $index++) {
-                $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
-                $items[] = [
-                    'name' => $this->text($row['name'] ?? '', 120, 'Team member name'),
-                    'role' => $this->text($row['role'] ?? '', 120, 'Team member role'),
-                    'bio' => $this->text($row['bio'] ?? '', 500, 'Team member bio'),
-                    'image_url' => $this->optionalExternalUrl($row['image_url'] ?? '', 'Team member image URL'),
-                ];
+            $limit = $section === 'stats' ? 8 : 8;
+            if (count($rows) > $limit) {
+                throw new InvalidArgumentException('Too many About items.');
             }
-
+            $items = [];
+            foreach (array_values($rows) as $row) {
+                if (!is_array($row)) {
+                    throw new InvalidArgumentException('Invalid About item.');
+                }
+                if ($section === 'stats') {
+                    $item = [
+                        'value' => $this->text($row['value'] ?? '', 30, 'Stat value'),
+                        'label' => $this->text($row['label'] ?? '', 100, 'Stat label'),
+                    ];
+                } else {
+                    $item = [
+                        'name' => $this->text($row['name'] ?? '', 120, 'Team member name'),
+                        'role' => $this->text($row['role'] ?? '', 120, 'Team member role'),
+                        'bio' => $this->text($row['bio'] ?? '', 500, 'Team member bio'),
+                        'image_url' => $this->optionalExternalUrl($row['image_url'] ?? '', 'Team member image URL'),
+                    ];
+                }
+                if (implode('', $item) !== '') {
+                    $items[] = $item;
+                }
+            }
+            // A26: no padding with synthetic blank profiles. The repository
+            // now preserves saved About lists exactly, including empty lists.
             return $base + ['items' => $items];
         }
 
@@ -347,19 +351,25 @@ final class BuiltInPageManagementService
     /** @return array<int,array{title:string,description:string}> */
     private function textCards(mixed $input, mixed $current, int $count, string $label, int $titleMax, int $descriptionMax): array
     {
-        $rows = is_array($input)
-            ? $input
-            : (is_array($current) ? $current : []);
+        $rows = is_array($input) ? $input : (is_array($current) ? $current : []);
+        if (count($rows) > $count) {
+            throw new InvalidArgumentException('Too many ' . $label . ' items.');
+        }
         $items = [];
-
-        for ($index = 0; $index < $count; $index++) {
-            $row = is_array($rows[$index] ?? null) ? $rows[$index] : [];
-            $items[] = [
+        foreach (array_values($rows) as $row) {
+            if (!is_array($row)) {
+                throw new InvalidArgumentException('Invalid ' . $label . ' item.');
+            }
+            $item = [
                 'title' => $this->text($row['title'] ?? '', $titleMax, $label . ' title'),
                 'description' => $this->text($row['description'] ?? '', $descriptionMax, $label . ' description'),
             ];
+            if ($item['title'] !== '' || $item['description'] !== '') {
+                $items[] = $item;
+            }
         }
-
+        // A26: keep intentional deletion/reordering; the repository preserves
+        // empty and shortened About lists instead of restoring default entries.
         return $items;
     }
 
@@ -439,6 +449,19 @@ final class BuiltInPageManagementService
         }
 
         return $this->optionalExternalUrl($value, 'Link URL');
+    }
+
+    /** Accept only generated local Contact Hero media paths or ordinary HTTP(S) URLs. */
+    private function contactHeroImageUrl(mixed $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return ''; // Use bundled default photograph.
+        }
+        if (preg_match('~^/assets/images/contact/custom/[a-f0-9]{32}\.(?:jpg|png|webp)$~D', $value) === 1) {
+            return $value;
+        }
+        return $this->optionalExternalUrl($value, 'Contact hero image URL');
     }
 
     private function optionalExternalUrl(mixed $value, string $label): string

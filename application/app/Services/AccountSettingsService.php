@@ -7,6 +7,7 @@ namespace Barama\Services;
 use Barama\Core\Database;
 use Barama\Core\Session;
 use Barama\Repositories\AccountSettingsRepository;
+use Barama\Repositories\SecurityAuditRepository;
 use Barama\Security\PasswordPolicy;
 use Barama\Support\Locale;
 use Barama\Repositories\UserRepository;
@@ -22,6 +23,8 @@ final class AccountSettingsService
     {
         $name = trim((string) ($input['name'] ?? ''));
         $phone = trim((string) ($input['phone'] ?? ''));
+        $dateOfBirth = trim((string) ($input['date_of_birth'] ?? ''));
+        $address = trim((string) ($input['address'] ?? ''));
         $timezone = trim((string) ($input['timezone'] ?? 'UTC'));
         $language = Locale::normalize((string) ($input['preferred_language'] ?? Locale::current()));
 
@@ -31,6 +34,25 @@ final class AccountSettingsService
 
         if (mb_strlen($phone) > 60) {
             throw new InvalidArgumentException('Phone number is too long.');
+        }
+
+        if ($dateOfBirth !== '') {
+            if (
+                preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateOfBirth) !== 1
+                || !checkdate(
+                    (int) substr($dateOfBirth, 5, 2),
+                    (int) substr($dateOfBirth, 8, 2),
+                    (int) substr($dateOfBirth, 0, 4)
+                )
+                || $dateOfBirth < '1900-01-01'
+                || $dateOfBirth > date('Y-m-d')
+            ) {
+                throw new InvalidArgumentException('Select a valid date of birth.');
+            }
+        }
+
+        if (mb_strlen($address) > 500) {
+            throw new InvalidArgumentException('Address must be 500 characters or fewer.');
         }
 
         if (!in_array($timezone, timezone_identifiers_list(), true)) {
@@ -45,6 +67,8 @@ final class AccountSettingsService
             $userId,
             $name,
             $phone !== '' ? $phone : null,
+            $dateOfBirth !== '' ? $dateOfBirth : null,
+            $address !== '' ? $address : null,
             $timezone,
             $language
         );
@@ -73,6 +97,79 @@ final class AccountSettingsService
         (new AccountSettingsRepository())->clearRecentViews($userId);
     }
 
+    public function signOutOtherSessions(int $userId): void
+    {
+        $newVersion = (new UserRepository())->incrementAuthVersion($userId);
+
+        (new AuthService())->refreshSessionVersion(
+            $userId,
+            $newVersion
+        );
+
+        (new SecurityAuditService())->record(
+            'account.other_sessions_revoked',
+            $userId,
+            $userId
+        );
+    }
+
+    /** @return array<string,int> */
+    public function currentSessionInfo(): array
+    {
+        return (new AuthService())->currentSessionInfo();
+    }
+
+    /** @return array<int,array<string,string>> */
+    public function recentSecurityActivity(
+        int $userId,
+        int $limit = 8
+    ): array {
+        $events = (new SecurityAuditRepository())->recentForUser(
+            $userId,
+            $limit
+        );
+
+        $labels = [
+            'auth.login_success' => 'Successful sign-in',
+            'auth.login_failed' => 'Failed sign-in attempt',
+            'auth.login_locked' => 'Sign-in temporarily locked',
+            'auth.logout' => 'Signed out',
+            'account.password_changed' => 'Password changed',
+            'account.email_change_requested' =>
+                'Email change requested',
+            'account.email_changed' => 'Email address changed',
+            'account.other_sessions_revoked' =>
+                'Other sessions signed out',
+            'account.deactivated' => 'Account deactivated',
+            'admin.storage_settings_updated' =>
+                'Storage policy updated',
+            'admin.storage_write_test' =>
+                'Storage write test completed',
+            'admin.storage_temp_cleanup' =>
+                'Temporary storage cleaned',
+        ];
+
+        return array_map(
+            static function (array $event) use ($labels): array {
+                $type = (string) ($event['event_type'] ?? '');
+
+                return [
+                    'type' => $type,
+                    'label' => $labels[$type]
+                        ?? ucwords(
+                            str_replace(
+                                ['.', '_', '-'],
+                                ' ',
+                                $type
+                            )
+                        ),
+                    'created_at' =>
+                        (string) ($event['created_at'] ?? ''),
+                ];
+            },
+            $events
+        );
+    }
     /** @param array<string,mixed> $input */
     public function changePassword(int $userId, array $input): void
     {
@@ -136,6 +233,24 @@ final class AccountSettingsService
             throw new InvalidArgumentException('That email address is already in use.');
         }
 
+        // Per-account quota enforced in the database, not only the browser session.
+        // Time windows use MySQL's own clock to avoid time zone inconsistencies.
+        $pdo = Database::connection();
+        $limits = $pdo->prepare(
+            'SELECT
+                SUM(created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 90 SECOND)) AS recent_requests,
+                SUM(created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY)) AS daily_requests
+             FROM email_change_tokens WHERE user_id = :user_id'
+        );
+        $limits->execute(['user_id' => $userId]);
+        $usage = $limits->fetch(\PDO::FETCH_ASSOC) ?: [];
+        if ((int) ($usage['recent_requests'] ?? 0) > 0) {
+            throw new DomainException('Please wait 90 seconds before requesting another email change.');
+        }
+        if ((int) ($usage['daily_requests'] ?? 0) >= 6) {
+            throw new DomainException('Email change request limit reached. Try again tomorrow.');
+        }
+
         $token = bin2hex(random_bytes(32));
         $repository = new AccountSettingsRepository();
         $repository->createEmailChangeToken(
@@ -148,6 +263,14 @@ final class AccountSettingsService
         $confirmationUrl = url('/account/email-change/' . rawurlencode($token));
 
         (new NotificationService())->notifyAddress($newEmail, [
+            'template_key' => 'account_email_change_confirmation',
+            'user_id' => (int) ($user['id'] ?? 0), // BARAMA_EMAIL_CHANGE_LOCALE_V140
+            'variables' => [
+                'recipient_name' => (string) ($user['name'] ?? ''),
+                'new_email' => $newEmail,
+                'action_url' => $confirmationUrl,
+                'expires_minutes' => '60',
+            ],
             'subject' => 'Confirm your Barama email address',
             'html' => '<p><strong>Confirm your new email address</strong></p>'
                 . '<p>Open the secure confirmation page while signed in to your Barama account.</p>'

@@ -10,6 +10,9 @@ final class MailService
 {
     private ?string $lastError = null;
 
+    /** @var array<string,mixed>|null */
+    private ?array $resolvedSettings = null;
+
     /** @param array<string,mixed> $overrides */
     public function __construct(
         private readonly array $overrides = []
@@ -20,7 +23,11 @@ final class MailService
     {
         $this->lastError = null;
 
-        $fromAddress = trim((string) $this->setting('from_address', ''));
+        try {
+            $fromAddress = trim((string) $this->setting('from_address', ''));
+        } catch (RuntimeException $exception) {
+            return $this->fail('Mail configuration could not be loaded securely.', $to);
+        }
         $fromName = trim((string) $this->setting('from_name', 'Barama Real Estate'));
 
         if (
@@ -303,9 +310,15 @@ final class MailService
 
     private function setting(string $key, mixed $default = null): mixed
     {
-        return array_key_exists($key, $this->overrides)
-            ? $this->overrides[$key]
-            : config('mail.' . $key, $default);
+        if (array_key_exists($key, $this->overrides)) {
+            return $this->overrides[$key];
+        }
+
+        if ($this->resolvedSettings === null) {
+            $this->resolvedSettings = (new MailSettingsService())->effectiveConfig();
+        }
+
+        return $this->resolvedSettings[$key] ?? $default;
     }
 
     private function fail(string $reason, string $to): bool

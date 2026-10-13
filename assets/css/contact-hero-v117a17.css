@@ -1,0 +1,148 @@
+/* Barama A18 — blended full-surface Contact Hero; all text remains editable in Admin. */
+.builtin-contact-page .builtin-contact-hero-v117a18 {
+  isolation:isolate;position:relative;overflow:hidden;
+  min-height:clamp(360px,34vw,515px);padding:clamp(3rem,5.2vw,5.1rem) 0;
+  display:flex;align-items:center;
+  background:linear-gradient(114deg,#f6f9ff 0%,#e7effe 57%,#cfdef6 100%);
+  border-bottom:1px solid #d8e3f1;
+}
+/* The entire Hero receives an atmospheric photographic backdrop. The installed
+   default photograph remains the final fallback for unavailable custom URLs. */
+.builtin-contact-page .builtin-contact-hero-v117a18__ambient {
+  position:absolute;z-index:0;inset:-34px;pointer-events:none;
+  background-image:var(--barama-contact-photo),url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a18');
+  background-size:cover;background-position:center 33%;background-repeat:no-repeat;
+  filter:blur(24px) saturate(.9);opacity:.29;transform:scale(1.07);
+}
+/* A real photograph blended into the right side, not a card/panel or an <img>
+   box. This removes native broken-image placeholders even on HTTP failures. */
+.builtin-contact-page .builtin-contact-hero-v117a18__subject {
+  position:absolute;z-index:1;right:0;top:0;bottom:0;width:min(51%,850px);
+  pointer-events:none;
+  background-image:var(--barama-contact-photo),url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a18');
+  background-repeat:no-repeat;background-size:cover;background-position:center 12%;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.28) 10%,#000 35%);
+  mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.28) 10%,#000 35%);
+}
+/* An uploaded landscape background is displayed edge-to-edge. The fallback
+   is still present under the first source if the custom URL is unavailable. */
+.builtin-contact-page .builtin-contact-hero-v117a18.has-custom-contact-hero .builtin-contact-hero-v117a18__subject {
+  inset:0;width:100%;background-position:center center;
+  -webkit-mask-image:none;mask-image:none;
+}
+.builtin-contact-page .builtin-contact-hero-v117a18::after {
+  content:'';position:absolute;z-index:2;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(247,250,255,.98) 0%,rgba(247,250,255,.96) 27%,rgba(247,250,255,.82) 44%,rgba(247,250,255,.38) 61%,rgba(247,250,255,.03) 83%);
+}
+.builtin-contact-page .builtin-contact-hero-v117a18__container {z-index:3;position:relative;width:100%;}
+.builtin-contact-page .builtin-contact-hero-v117a18__copy {max-width:min(60%,690px);}
+.builtin-contact-page .builtin-contact-hero-v117a18__copy .eyebrow {color:#165dff;font-weight:800;letter-spacing:.13em;}
+.builtin-contact-page .builtin-contact-hero-v117a18__copy h1 {
+  color:#182238;font-size:clamp(2.25rem,3.4vw,3.45rem)!important;line-height:1.11!important;
+  letter-spacing:-.047em;max-width:700px;
+}
+.builtin-contact-page .builtin-contact-hero-v117a18__copy>p {
+  max-width:610px;color:#556780;font-size:clamp(1rem,1.25vw,1.17rem);line-height:1.68;margin-top:1rem;
+}
+@media(max-width:991.98px) {
+ .builtin-contact-page .builtin-contact-hero-v117a18__copy {max-width:67%;}
+ .builtin-contact-page .builtin-contact-hero-v117a18__subject {width:60%;}
+ .builtin-contact-page .builtin-contact-hero-v117a18.has-custom-contact-hero .builtin-contact-hero-v117a18__subject {width:100%;}
+ .builtin-contact-page .builtin-contact-hero-v117a18::after {background:linear-gradient(90deg,rgba(247,250,255,.99) 0%,rgba(247,250,255,.96) 35%,rgba(247,250,255,.55) 72%,rgba(247,250,255,.11) 100%);}
+}
+@media(max-width:650px) {
+ .builtin-contact-page .builtin-contact-hero-v117a18 {min-height:475px;padding:2.65rem 0 13rem;align-items:flex-start;}
+ .builtin-contact-page .builtin-contact-hero-v117a18__copy {max-width:100%;}
+ .builtin-contact-page .builtin-contact-hero-v117a18__copy h1 {font-size:clamp(2.1rem,8.3vw,2.95rem)!important;}
+ .builtin-contact-page .builtin-contact-hero-v117a18__subject {width:68%;height:62%;top:auto;right:0;bottom:0;background-position:center 13%;}
+ .builtin-contact-page .builtin-contact-hero-v117a18.has-custom-contact-hero .builtin-contact-hero-v117a18__subject {width:100%;height:100%;}
+ .builtin-contact-page .builtin-contact-hero-v117a18::after {background:linear-gradient(180deg,rgba(247,250,255,1) 0%,rgba(247,250,255,.99) 34%,rgba(247,250,255,.58) 67%,rgba(247,250,255,.02) 100%);}
+}
+@media(prefers-reduced-motion:reduce) {.builtin-contact-page .builtin-contact-hero-v117a18__ambient {transition:none;}}
+
+
+/* A19 — cache-busted visibility rescue.
+   CSS var() needs an IN-VAR fallback: `var(--photo),url(default)` is invalid
+   when --photo is unavailable; the second background is NOT a fallback.
+   Keep a real default background even if inline-style CSP disables the CMS var.
+   Preserve custom Admin photo as the first image when allowed.
+*/
+.builtin-contact-hero-v117a19 {
+  position:relative!important; isolation:isolate!important; overflow:hidden!important;
+  display:flex!important;align-items:center;min-height:clamp(360px,34vw,515px);
+  background-color:#e8f0fc!important;
+  background-image:
+    linear-gradient(90deg,rgba(247,250,255,.98) 0%,rgba(247,250,255,.95) 28%,rgba(247,250,255,.76) 44%,rgba(247,250,255,.28) 63%,rgba(247,250,255,0) 84%),
+    var(--barama-contact-photo, url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a19')),
+    url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a19')!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+  background-position:center, center 22%, center 22%!important;
+}
+/* Remove the oversized default CSS circle, which currently crosses Hero copy. */
+.builtin-contact-hero-v117a19::before {content:none!important;display:none!important;}
+/* The old ::after overlay can obscure the photo; gradient is on the Hero now. */
+.builtin-contact-hero-v117a19::after {content:none!important;display:none!important;}
+.builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__ambient {display:none!important;}
+.builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__subject {
+  display:block!important;visibility:visible!important;opacity:1!important;
+  position:absolute!important;z-index:1!important;
+  top:0!important;right:0!important;bottom:0!important;left:auto!important;
+  width:min(51%,850px)!important;height:auto!important;pointer-events:none;
+  background-image:
+    var(--barama-contact-photo, url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a19')),
+    url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a19')!important;
+  background-repeat:no-repeat!important;background-size:cover!important;
+  background-position:center 13%!important;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.35) 10%,#000 36%)!important;
+  mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.35) 10%,#000 36%)!important;
+}
+.builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__container {
+  position:relative!important;z-index:3!important;width:100%!important;
+}
+.builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__copy {max-width:min(60%,690px);}
+.builtin-contact-hero-v117a19.has-custom-contact-hero .builtin-contact-hero-v117a18__subject {
+  width:100%!important;-webkit-mask-image:none!important;mask-image:none!important;
+  background-position:center center!important;
+}
+@media(max-width:991.98px) {
+  .builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__copy {max-width:67%;}
+  .builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__subject {width:60%!important;}
+  .builtin-contact-hero-v117a19.has-custom-contact-hero .builtin-contact-hero-v117a18__subject {width:100%!important;}
+}
+@media(max-width:650px) {
+  .builtin-contact-hero-v117a19 {min-height:475px!important;padding:2.65rem 0 13rem!important;align-items:flex-start!important;
+    background-image:
+      linear-gradient(180deg,rgba(247,250,255,.99) 0%,rgba(247,250,255,.93) 29%,rgba(247,250,255,.45) 55%,rgba(247,250,255,0) 87%),
+      var(--barama-contact-photo, url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a19')),
+      url('/assets/images/contact/agent-asian-default-v117a17.webp?v=117a19')!important;
+    background-position:center,center 27%,center 27%!important;
+  }
+  .builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__copy {max-width:100%;}
+  .builtin-contact-hero-v117a19 .builtin-contact-hero-v117a18__subject {
+    width:70%!important;height:63%!important;top:auto!important;bottom:0!important;
+  }
+  .builtin-contact-hero-v117a19.has-custom-contact-hero .builtin-contact-hero-v117a18__subject {
+    width:100%!important;height:100%!important;
+  }
+}
+
+/* Native HTML image is the primary visible photo: works even under CSP rules
+   blocking inline style attributes, and keeps admin-uploaded image editable. */
+.builtin-contact-hero-v117a19 .builtin-contact-hero-v117a19__photo {
+  display:block!important;width:100%!important;height:100%!important;
+  position:relative!important;object-fit:cover!important;object-position:center 13%!important;
+  visibility:visible!important;opacity:1!important;pointer-events:none;
+  color:transparent;font-size:0;
+}
+/* Readability gradient is above the image but below the Admin-controlled copy. */
+.builtin-contact-hero-v117a19::after {
+  content:''!important;display:block!important;position:absolute!important;
+  inset:0!important;z-index:2!important;pointer-events:none!important;
+  background:linear-gradient(90deg,rgba(247,250,255,.97) 0%,rgba(247,250,255,.9) 29%,rgba(247,250,255,.55) 48%,rgba(247,250,255,.06) 76%,rgba(247,250,255,0) 100%)!important;
+}
+@media(max-width:650px) {
+  .builtin-contact-hero-v117a19::after {
+    background:linear-gradient(180deg,rgba(247,250,255,.98) 0%,rgba(247,250,255,.9) 32%,rgba(247,250,255,.4) 63%,rgba(247,250,255,.01) 100%)!important;
+  }
+}

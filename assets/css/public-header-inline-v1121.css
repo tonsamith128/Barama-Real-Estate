@@ -1,0 +1,123 @@
+/* BARAMA_PUBLIC_HEADER_INLINE_V1121 */
+/* Desktop >=1200px intentionally inherits the accepted icon + label header. */
+
+@media (max-width: 1199.98px) {
+    /* v1.1.21 hard-stop: compact main navigation is icon-only regardless of wrapper depth. */
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a,
+    .site-header .main-nav a *,
+    .site-header.is-menu-open .main-nav a * {
+        font-size: 0 !important;
+        line-height: 0 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+        text-decoration-thickness: 0 !important;
+    }
+
+    /* Text nodes normalized by v1.1.21 JS are never rendered on compact screens. */
+    .site-header .main-nav .barama-nav-label-v1121,
+    .site-header.is-menu-open .main-nav .barama-nav-label-v1121 {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    /* The link itself stays a fixed icon button, preventing any leaked text from changing layout. */
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+    }
+
+    /* Preserve the existing SVG icon dimensions despite the descendant font reset. */
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+        max-width: 18px !important;
+        max-height: 18px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: 0 0 18px !important;
+        overflow: visible !important;
+        visibility: visible !important;
+    }
+
+    /* Keep nested icon wrappers compact even when the original markup combines icon + label. */
+    .site-header .main-nav a > span,
+    .site-header .main-nav a > div,
+    .site-header .main-nav a > i,
+    .site-header .main-nav a > b,
+    .site-header .main-nav a > strong,
+    .site-header.is-menu-open .main-nav a > span,
+    .site-header.is-menu-open .main-nav a > div,
+    .site-header.is-menu-open .main-nav a > i,
+    .site-header.is-menu-open .main-nav a > b,
+    .site-header.is-menu-open .main-nav a > strong {
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+    /* Preserve v1.1.20 exact visual order and prevent wrapping. */
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation,
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
+    }
+
+    .site-header .main-nav {
+        order: 1 !important;
+    }
+
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr),
+    .site-header .site-navigation > :not(.main-nav):not(hr) {
+        order: 2 !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 17px !important;
+        height: 17px !important;
+        min-width: 17px !important;
+        min-height: 17px !important;
+        max-width: 17px !important;
+        max-height: 17px !important;
+        flex-basis: 17px !important;
+    }
+}
+
+@media (max-width: 419.98px) {
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        max-width: 16px !important;
+        max-height: 16px !important;
+        flex-basis: 16px !important;
+    }
+}

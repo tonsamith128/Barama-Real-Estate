@@ -51,6 +51,13 @@ final class EmailVerificationService
         $verificationUrl = url('/verify-email/' . rawurlencode($token));
 
         (new NotificationService())->notifyAddress((string) $user['email'], [
+            'template_key' => 'auth_email_verification',
+            'user_id' => $userId,
+            'variables' => [
+                'recipient_name' => (string) ($user['name'] ?? ''),
+                'action_url' => $verificationUrl,
+                'expires_minutes' => (string) $minutes,
+            ],
             'subject' => 'Verify your Barama Real Estate email',
             'html' => '<p><strong>Verify your email address</strong></p>'
                 . '<p>Confirm this address to secure your Barama account and unlock company access.</p>'

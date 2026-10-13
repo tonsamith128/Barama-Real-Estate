@@ -50,7 +50,7 @@ $resultFilters = array_filter(array_merge([
         <?php if ($rows === []): ?>
             <div class="marketplace-empty marketplace-empty--premium"><?= app_icon('search') ?><strong>No properties match this search.</strong><span>Try removing a filter, widening the price range, or browsing all approved inventory.</span><a class="btn btn-primary btn-sm" href="<?= e(url('/properties')) ?>">View all properties</a></div>
         <?php else: ?>
-            <div class="inventory-grid marketplace-config-grid marketplace-config-grid--<?= e((string) $gridColumns) ?>"><?php foreach ($rows as $listing): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $listing]) ?><?php endforeach; ?></div>
+            <div class="inventory-grid marketplace-config-grid" data-barama-marketplace-grid-columns="<?= e((string) $gridColumns) ?>"><?php foreach ($rows as $listing): ?><?= \Barama\Core\View::partial('components/inventory-card', ['kind' => 'listing', 'item' => $listing]) ?><?php endforeach; ?></div>
         <?php endif; ?>
 
         <?php if ($pages > 1): ?>

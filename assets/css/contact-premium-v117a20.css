@@ -1,0 +1,229 @@
+/* Barama Real Estate — Contact premium redesign A20.
+ * Scoped to .barama-a20-contact; retains the complete A19 Hero stylesheet,
+ * form submission handlers, Admin section ordering and enabled flags.
+ * No outside-page selectors and no script dependencies. */
+.barama-a20-contact {
+  --a20-ink:#19243b;
+  --a20-muted:#62728b;
+  --a20-blue:#2466f5;
+  --a20-border:#dce5f1;
+  --a20-paper:#fff;
+  --a20-frost:#f5f8fd;
+  --a20-shadow:0 18px 52px rgba(30,54,93,.055);
+  color:var(--a20-ink);
+}
+.barama-a20-contact *, .barama-a20-contact *::before, .barama-a20-contact *::after {box-sizing:border-box;}
+/* Component edges are deliberate; no change to shared header or footer. */
+.barama-a20-contact .barama-a20-section {
+  position:relative;
+  padding:clamp(66px,6.6vw,112px) 0!important;
+  background:#f8faff;
+  border-bottom:1px solid var(--a20-border);
+}
+.barama-a20-contact .barama-a20-container {
+  max-width:1240px!important;
+  margin-inline:auto!important;
+  padding-inline:clamp(22px,4vw,52px)!important;
+  width:100%;
+}
+.barama-a20-contact .barama-a20-grid {display:grid;align-items:start;gap:clamp(36px,5.2vw,78px);}
+.barama-a20-contact .barama-a20-hours-grid {grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);align-items:center;}
+.barama-a20-contact .barama-a20-form-grid {grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);align-items:start;}
+.barama-a20-contact .barama-a20-faq-grid {grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);align-items:start;}
+.barama-a20-contact .barama-a20-intro {min-width:0;max-width:520px;}
+.barama-a20-contact .barama-a20-intro .eyebrow,
+.barama-a20-contact .barama-a20-panel-overline {
+  display:block;color:var(--a20-blue)!important;font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;font-size:.75rem;
+  line-height:1.45;margin-bottom:15px;
+}
+.barama-a20-contact .barama-a20-intro h2 {
+  color:var(--a20-ink)!important;font-size:clamp(2.05rem,3.05vw,3.05rem)!important;
+  letter-spacing:-.052em!important;line-height:1.14!important;
+  font-weight:800!important;margin:0 0 20px!important;
+}
+.barama-a20-contact .barama-a20-lead {
+  color:var(--a20-muted)!important;font-size:clamp(1rem,1.08vw,1.1rem)!important;
+  line-height:1.82!important;margin:0 0 30px!important;max-width:510px;
+}
+.barama-a20-contact .barama-a20-panel {
+  min-width:0;border:1px solid var(--a20-border);background:var(--a20-paper);
+  border-radius:23px;box-shadow:var(--a20-shadow);padding:clamp(22px,2.4vw,34px);
+}
+.barama-a20-contact .barama-a20-panel-top {
+  display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px;
+}
+.barama-a20-contact .barama-a20-panel-top h3,
+.barama-a20-contact .barama-a20-form-header h3 {
+  color:var(--a20-ink);font-size:1.4rem;font-weight:800;letter-spacing:-.032em;line-height:1.25;margin:0;
+}
+.barama-a20-contact .barama-a20-panel-overline {margin-bottom:5px;font-size:.66rem;letter-spacing:.11em;}
+.barama-a20-contact .barama-a20-panel-symbol {
+  flex:0 0 48px;width:48px;height:48px;border-radius:15px;
+  display:grid;place-items:center;background:#eff5ff;color:var(--a20-blue);
+}
+.barama-a20-contact .barama-a20-panel-symbol svg {width:21px;height:21px;}
+.barama-a20-contact .barama-a20-inline-note {
+  display:flex;align-items:center;gap:14px;padding:16px 18px;
+  max-width:390px;border:1px solid #dbe7f7;border-radius:16px;background:#fff;
+}
+.barama-a20-contact .barama-a20-note-icon {
+  display:grid;place-items:center;width:42px;height:42px;border-radius:12px;
+  flex:0 0 42px;color:var(--a20-blue);background:#eef4ff;
+}
+.barama-a20-contact .barama-a20-inline-note strong,
+.barama-a20-contact .barama-a20-inline-note small {display:block;line-height:1.5;overflow-wrap:anywhere;}
+.barama-a20-contact .barama-a20-inline-note strong {font-size:.86rem;color:var(--a20-ink);}
+.barama-a20-contact .barama-a20-inline-note small {font-size:.78rem;color:var(--a20-muted);margin-top:2px;}
+/* Office schedule: keep Admin-driven daily entries and timezone entirely intact. */
+.barama-a20-contact .barama-a20-hours {background:linear-gradient(138deg,#fafcff 0%,#f4f8ff 100%);}
+.barama-a20-contact .barama-a20-hours-rows {
+  max-width:none!important;width:100%!important;background:transparent!important;
+  box-shadow:none!important;border:0!important;border-radius:0!important;
+  margin:8px 0 0!important;padding:0!important;
+}
+.barama-a20-contact .barama-a20-hours-rows>div {
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:14px 2px!important;border-bottom:1px solid #e8edf5!important;
+  color:var(--a20-ink);min-height:51px;
+}
+.barama-a20-contact .barama-a20-hours-rows>div strong {font-weight:700;font-size:.92rem;}
+.barama-a20-contact .barama-a20-hours-rows>div span {text-align:right;color:#65758f;font-size:.91rem;}
+.barama-a20-contact .barama-a20-hours-rows>small {
+  display:flex;align-items:center;gap:8px;margin-top:17px!important;padding:0!important;
+  color:#62728b;font-size:.77rem;
+}
+.barama-a20-contact .barama-a20-hours-rows>small svg {width:15px;height:15px;flex:none;}
+/* The form remains the original server-rendered form with existing JS hooks. */
+.barama-a20-contact .barama-a20-message {background:#f0f5fc!important;}
+.barama-a20-contact .barama-a20-form-intro {padding-top:17px;}
+.barama-a20-contact .barama-a20-support-options {display:grid;gap:11px;margin:28px 0 20px;}
+.barama-a20-contact .barama-a20-support-option {
+  display:flex;align-items:flex-start;gap:13px;padding:15px;
+  border:1px solid #dce6f4;background:rgba(255,255,255,.73);
+  border-radius:15px;min-width:0;
+}
+.barama-a20-contact .barama-a20-support-icon {
+  color:#1d5ee7;display:grid;place-items:center;width:40px;height:40px;
+  flex:0 0 40px;border-radius:12px;background:#eaf2ff;
+}
+.barama-a20-contact .barama-a20-support-icon svg {width:19px;height:19px;}
+.barama-a20-contact .barama-a20-support-option strong {display:block;font-size:.88rem;color:var(--a20-ink);margin:1px 0 3px;}
+.barama-a20-contact .barama-a20-support-option small {display:block;font-size:.81rem;line-height:1.6;color:var(--a20-muted);}
+.barama-a20-contact .barama-a20-privacy-note {
+  display:flex;align-items:flex-start;gap:11px;font-size:.79rem;line-height:1.7;color:#64758e;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+  padding:4px 2px!important;max-width:480px;
+}
+.barama-a20-contact .barama-a20-privacy-note svg {width:17px;height:17px;flex:none;margin-top:3px;color:var(--a20-blue);}
+.barama-a20-contact .barama-a20-form-card {
+  width:100%!important;min-width:0!important;border-radius:23px!important;
+  border:1px solid var(--a20-border)!important;background:#fff!important;
+  box-shadow:var(--a20-shadow)!important;padding:clamp(22px,2.8vw,39px)!important;
+}
+.barama-a20-contact .barama-a20-form-header {margin-bottom:25px;padding-bottom:22px;border-bottom:1px solid #e7edf5;}
+.barama-a20-contact .barama-a20-form-header p {margin:7px 0 0;color:var(--a20-muted);font-size:.9rem;line-height:1.65;}
+.barama-a20-contact .barama-a20-form-card .builtin-form-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px;}
+.barama-a20-contact .barama-a20-form-card .builtin-form-grid>label {min-width:0;margin:0;display:flex;flex-direction:column;gap:7px;}
+.barama-a20-contact .barama-a20-form-card .builtin-form-grid>label.builtin-form-grid__wide {grid-column:1/-1;}
+.barama-a20-contact .barama-a20-form-card label>span:first-child {font-size:.82rem;font-weight:700;color:#40516b;}
+.barama-a20-contact .barama-a20-form-card .form-control,
+.barama-a20-contact .barama-a20-form-card .form-select {
+  border:1px solid #dce5f1!important;background:#f8faff!important;color:var(--a20-ink)!important;
+  border-radius:11px!important;min-height:46px!important;padding:11px 13px!important;
+  box-shadow:none!important;width:100%;font-size:.94rem;
+}
+.barama-a20-contact .barama-a20-form-card textarea.form-control {min-height:142px!important;resize:vertical;}
+.barama-a20-contact .barama-a20-form-card .form-control:focus,
+.barama-a20-contact .barama-a20-form-card .form-select:focus {
+  border-color:#6a9cfa!important;outline:3px solid rgba(47,110,236,.15)!important;background:#fff!important;
+}
+.barama-a20-contact .barama-a20-form-card .builtin-contact-consent {display:flex!important;flex-direction:row!important;align-items:flex-start!important;gap:10px!important;}
+.barama-a20-contact .barama-a20-form-card .builtin-contact-consent input {width:16px!important;height:16px!important;min-height:16px!important;flex:0 0 16px;margin:3px 0 0;accent-color:var(--a20-blue);}
+.barama-a20-contact .barama-a20-form-card .builtin-contact-consent span {font-size:.79rem!important;line-height:1.65;color:#61718a!important;font-weight:500!important;}
+.barama-a20-contact .barama-a20-form-card .builtin-contact-submit {
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  border-radius:11px!important;margin-top:22px;min-height:47px;padding:11px 22px!important;
+  box-shadow:0 9px 18px rgba(36,102,245,.16);font-weight:700;
+}
+.barama-a20-contact .barama-a20-form-card .builtin-contact-submit:focus-visible,
+.barama-a20-contact .barama-a20-quick-links a:focus-visible,
+.barama-a20-contact .barama-a20-faq-list summary:focus-visible {
+  outline:3px solid #81aafc;outline-offset:3px;
+}
+.barama-a20-contact .barama-a20-form-card .inquiry-card__notice:not([hidden]) {margin-top:18px;}
+/* FAQ: intro/quick navigation in the left column; compact accordion on right. */
+.barama-a20-contact .barama-a20-faq {background:#f8faff;}
+.barama-a20-contact .barama-a20-quick-links {
+  border:1px solid var(--a20-border);background:#fff;border-radius:18px;
+  padding:20px 22px;box-shadow:0 10px 30px rgba(38,55,81,.025);
+  max-width:430px;
+}
+.barama-a20-contact .barama-a20-quick-links h3 {font-size:.92rem;letter-spacing:-.015em;color:var(--a20-ink);font-weight:800;margin:0 0 10px;}
+.barama-a20-contact .barama-a20-quick-links a {
+  color:#334762;text-decoration:none;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;font-size:.88rem;font-weight:600;padding:12px 1px;border-top:1px solid #ebeff6;
+}
+.barama-a20-contact .barama-a20-quick-links a:hover {color:var(--a20-blue);}
+.barama-a20-contact .barama-a20-quick-links a>span:first-child {display:inline-flex;align-items:center;gap:11px;}
+.barama-a20-contact .barama-a20-quick-links svg {color:var(--a20-blue);width:17px;height:17px;}
+.barama-a20-contact .barama-a20-faq-head {margin:0 0 18px;padding:0 3px;}
+.barama-a20-contact .barama-a20-faq-list {max-width:none!important;width:100%!important;display:grid;gap:10px;}
+.barama-a20-contact .barama-a20-faq-list details {
+  background:#fff;border:1px solid var(--a20-border);border-radius:14px;
+  box-shadow:0 6px 22px rgba(34,53,78,.025);overflow:hidden;
+}
+.barama-a20-contact .barama-a20-faq-list details[open] {border-color:#b9cdf6;box-shadow:0 8px 24px rgba(40,87,172,.065);}
+.barama-a20-contact .barama-a20-faq-list summary {
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:18px 19px!important;color:var(--a20-ink);font-weight:700;
+  font-size:.91rem;cursor:pointer;list-style:none;
+}
+.barama-a20-contact .barama-a20-faq-list summary::-webkit-details-marker {display:none;}
+.barama-a20-contact .barama-a20-faq-list summary::marker {content:'';}
+.barama-a20-contact .barama-a20-faq-list summary span {
+  display:grid;place-items:center;width:29px;height:29px;flex:0 0 29px;
+  background:#eef4ff;border-radius:9px;color:var(--a20-blue);transition:transform .2s ease;
+}
+.barama-a20-contact .barama-a20-faq-list summary svg {width:16px;height:16px;}
+.barama-a20-contact .barama-a20-faq-list details[open] summary span {transform:rotate(45deg);}
+.barama-a20-contact .barama-a20-faq-list details p {
+  color:var(--a20-muted);line-height:1.77;font-size:.87rem;
+  padding:0 19px 19px!important;margin:0!important;
+}
+/* Optional Admin sections remain present and styled consistently if enabled. */
+.barama-a20-contact .barama-a20-optional:nth-of-type(even) {background:#f0f5fc;}
+.barama-a20-contact .barama-a20-optional .builtin-section__head {max-width:790px;margin-bottom:35px;}
+.barama-a20-contact .barama-a20-optional .builtin-section__head h2,
+.barama-a20-contact .barama-a20-optional .builtin-contact-office h2 {color:var(--a20-ink);font-size:clamp(2rem,3vw,2.85rem);letter-spacing:-.045em;}
+.barama-a20-contact .barama-a20-optional .builtin-contact-channel,
+.barama-a20-contact .barama-a20-optional .builtin-map-placeholder,
+.barama-a20-contact .barama-a20-optional .builtin-social-grid>a {background:#fff;border:1px solid var(--a20-border);border-radius:15px;box-shadow:0 8px 22px rgba(34,50,78,.03);}
+/* Mobile/tablet: no blank columns, no horizontal scroll, natural reading order. */
+@media(max-width:991.98px) {
+  .barama-a20-contact .barama-a20-grid {grid-template-columns:minmax(0,1fr)!important;gap:30px;}
+  .barama-a20-contact .barama-a20-intro {max-width:760px;}
+  .barama-a20-contact .barama-a20-inline-note,.barama-a20-contact .barama-a20-quick-links {max-width:600px;}
+  .barama-a20-contact .barama-a20-form-intro {padding-top:0;}
+  .barama-a20-contact .barama-a20-support-options {grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .barama-a20-contact .barama-a20-support-option {flex-direction:column;gap:10px;}
+}
+@media(max-width:650px) {
+  .barama-a20-contact .barama-a20-section {padding:54px 0!important;}
+  .barama-a20-contact .barama-a20-container {padding-inline:20px!important;}
+  .barama-a20-contact .barama-a20-intro h2 {font-size:clamp(1.9rem,7vw,2.55rem)!important;}
+  .barama-a20-contact .barama-a20-lead {font-size:.96rem!important;margin-bottom:22px!important;}
+  .barama-a20-contact .barama-a20-panel {border-radius:17px;padding:20px;}
+  .barama-a20-contact .barama-a20-hours-rows>div {padding-block:13px!important;}
+  .barama-a20-contact .barama-a20-support-options {grid-template-columns:minmax(0,1fr);}
+  .barama-a20-contact .barama-a20-support-option {flex-direction:row;}
+  .barama-a20-contact .barama-a20-form-card {border-radius:18px!important;padding:21px!important;}
+  .barama-a20-contact .barama-a20-form-card .builtin-form-grid {grid-template-columns:minmax(0,1fr);gap:15px;}
+  .barama-a20-contact .barama-a20-form-card .builtin-form-grid>label.builtin-form-grid__wide {grid-column:1;}
+  .barama-a20-contact .barama-a20-form-card .builtin-contact-submit {width:100%;}
+  .barama-a20-contact .barama-a20-faq-list summary {padding:15px!important;}
+  .barama-a20-contact .barama-a20-faq-head h3 {font-size:1.14rem;}
+}
+@media(prefers-reduced-motion:reduce) {
+  .barama-a20-contact .barama-a20-faq-list summary span {transition:none;}
+}

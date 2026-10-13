@@ -1,0 +1,52 @@
+/* Barama A24 — isolated About page; global public UI unchanged. */
+.builtin-about-page.barama-about-a24{--ba-ink:#18253f;--ba-muted:#64738d;--ba-blue:#225fff;--ba-border:#dce5f2; color:var(--ba-ink)}
+.barama-about-a24 .app-container{max-width:1240px;margin-inline:auto}
+.barama-about-a24 .builtin-hero{position:relative;overflow:hidden;padding:clamp(4.6rem,7vw,7.5rem) 0;min-height:590px;display:flex;align-items:center;background:radial-gradient(ellipse 56% 90% at 94% 25%,#e7efff 0%,transparent 72%),linear-gradient(135deg,#f5f8ff 0%,#fbfcff 65%,#f4f8ff 100%);border-bottom:1px solid var(--ba-border)}
+.barama-about-a24 .builtin-hero:before,.barama-about-a24 .builtin-hero:after{content:none!important;display:none!important}
+.barama-about-a24 .builtin-hero__grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(2rem,5vw,5.5rem);align-items:center}
+.barama-about-a24 .builtin-hero__copy{max-width:680px;position:relative;z-index:2}
+.barama-about-a24 .eyebrow{color:var(--ba-blue);font-weight:800;letter-spacing:.17em;font-size:.78rem}
+.barama-about-a24 .builtin-hero__copy h1{font-size:clamp(3rem,5.1vw,4.9rem);line-height:1.075;letter-spacing:-.058em;font-weight:800;max-width:690px;text-wrap:balance;margin:.95rem 0 1.35rem}
+.barama-about-a24 .builtin-hero__copy>p{font-size:clamp(1.03rem,1.25vw,1.2rem);line-height:1.8;color:var(--ba-muted);max-width:590px;margin-bottom:1.8rem}
+.barama-about-a24 .builtin-hero__actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.barama-about-a24 .builtin-hero__actions .btn,.barama-about-a24 .builtin-cta__actions .btn{border-radius:13px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:700;padding:.7rem 1.15rem}
+.barama-about-a24 .builtin-hero__visual,.barama-about-a24 .builtin-hero__media{position:relative;min-height:370px;width:100%;border:1px solid #dbe5f6;border-radius:30px;background:linear-gradient(142deg,#e6eeff 0%,#f5f8ff 58%,#fff 100%);box-shadow:0 25px 70px rgba(38,72,137,.09);overflow:hidden}
+.barama-about-a24 .builtin-hero__visual{display:flex;align-items:center;justify-content:center;gap:1.1rem}
+.barama-about-a24 .builtin-hero__visual span{display:grid;place-items:center;width:90px;height:90px;flex:0 0 90px;border-radius:25px;background:white;border:1px solid #cddcf9;color:var(--ba-blue);box-shadow:0 13px 28px rgba(32,84,185,.09);transform:rotate(-8deg)}
+.barama-about-a24 .builtin-hero__visual span:nth-child(2){transform:translateY(34px) rotate(9deg)}
+.barama-about-a24 .builtin-hero__visual span:nth-child(3){transform:translateY(-27px) rotate(-6deg)}
+.barama-about-a24 .builtin-hero__visual svg{width:35px;height:35px;max-width:45px;max-height:45px}
+.barama-about-a24 .builtin-hero__media img{width:100%;height:100%;min-height:370px;object-fit:cover}
+.barama-about-a24 .builtin-section{padding:clamp(4rem,6vw,6rem) 0}
+.barama-about-a24 .builtin-section--soft{background:#f1f5fb;border-block:1px solid #e1e9f3}
+.barama-about-a24 .builtin-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(2rem,5vw,6rem);align-items:center}
+.barama-about-a24 .builtin-section__copy h2,.barama-about-a24 .builtin-section__head h2{font-size:clamp(2rem,3.3vw,3.1rem);line-height:1.15;letter-spacing:-.045em;font-weight:800;text-wrap:balance;margin:.9rem 0 1.1rem}
+.barama-about-a24 .builtin-section__copy .builtin-prose{font-size:1.06rem;line-height:1.85;color:var(--ba-muted);max-width:625px}
+.barama-about-a24 .builtin-split__media{border-radius:27px;min-height:330px;overflow:hidden;border:1px solid var(--ba-border);background:linear-gradient(135deg,#edf3ff,#fff);display:flex;align-items:center;justify-content:center;box-shadow:0 18px 48px rgba(28,60,122,.06)}
+.barama-about-a24 .builtin-split__media img{width:100%;height:100%;max-height:490px;min-height:330px;object-fit:cover}
+.barama-about-a24 .builtin-placeholder-mark{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;color:var(--ba-ink);text-align:center;padding:3rem}
+.barama-about-a24 .builtin-placeholder-mark svg{color:var(--ba-blue);width:42px;height:42px}
+.barama-about-a24 .builtin-placeholder-mark span{color:var(--ba-muted);font-size:.95rem}
+.barama-about-a24 .builtin-section__head{margin-bottom:2rem}
+.barama-about-a24 .builtin-card-grid{display:grid;gap:1.1rem}
+.barama-about-a24 .builtin-card-grid--two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.barama-about-a24 .builtin-card-grid--four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.barama-about-a24 .builtin-info-card,.barama-about-a24 .builtin-team-card,.barama-about-a24 .builtin-stat{background:#fff;border:1px solid var(--ba-border);border-radius:22px;padding:1.55rem;min-width:0;box-shadow:0 8px 20px rgba(43,71,122,.025);transition:border-color .2s,box-shadow .2s,transform .2s}
+.barama-about-a24 .builtin-info-card:hover,.barama-about-a24 .builtin-team-card:hover{border-color:#a7bfff;box-shadow:0 14px 34px rgba(25,74,175,.09);transform:translateY(-2px)}
+.barama-about-a24 .builtin-info-card h3{font-size:1.2rem;letter-spacing:-.025em;font-weight:780;margin:.8rem 0 .55rem}
+.barama-about-a24 .builtin-info-card p{color:var(--ba-muted);font-size:.97rem;line-height:1.7;margin:0}
+.barama-about-a24 .builtin-info-card__icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;color:var(--ba-blue);background:#eaf0ff}
+.barama-about-a24 .builtin-info-card__number{display:block;font-size:.82rem;letter-spacing:.1em;color:var(--ba-blue);font-weight:800}
+.barama-about-a24 .builtin-stat-grid,.barama-about-a24 .builtin-team-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.barama-about-a24 .builtin-stat strong{font-size:1.75rem;color:var(--ba-blue)}
+.barama-about-a24 .builtin-stat span{display:block;color:var(--ba-muted);margin-top:.5rem}
+.barama-about-a24 .builtin-team-card{display:flex;flex-direction:column;gap:1rem}
+.barama-about-a24 .builtin-team-card__media{min-height:150px;overflow:hidden;border-radius:13px;background:#eff4ff;display:grid;place-items:center;color:var(--ba-blue)}
+.barama-about-a24 .builtin-team-card__media img{width:100%;height:180px;object-fit:cover}
+.barama-about-a24 .builtin-cta{border:1px solid #bfd0fb;border-radius:25px;background:linear-gradient(112deg,#e7efff,#f8faff 74%);padding:clamp(2rem,3.5vw,3.3rem);display:flex;align-items:center;justify-content:space-between;gap:2rem}
+.barama-about-a24 .builtin-cta h2{font-size:clamp(1.75rem,3vw,2.7rem);letter-spacing:-.04em;margin:.65rem 0}
+.barama-about-a24 .builtin-cta p{color:var(--ba-muted);max-width:640px;line-height:1.7}
+.barama-about-a24 .builtin-cta__actions{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;flex-shrink:0}
+@media(max-width:1020px){.barama-about-a24 .builtin-hero__grid,.barama-about-a24 .builtin-split{grid-template-columns:1fr}.barama-about-a24 .builtin-hero{min-height:0}.barama-about-a24 .builtin-hero__visual,.barama-about-a24 .builtin-hero__media{min-height:270px}.barama-about-a24 .builtin-card-grid--four,.barama-about-a24 .builtin-stat-grid,.barama-about-a24 .builtin-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.barama-about-a24 .builtin-cta{align-items:flex-start;flex-direction:column}}
+@media(max-width:640px){.barama-about-a24 .builtin-hero{padding:3.5rem 0}.barama-about-a24 .builtin-hero__copy h1{font-size:clamp(2.4rem,9vw,3.4rem)}.barama-about-a24 .builtin-hero__visual{gap:.35rem;min-height:220px}.barama-about-a24 .builtin-hero__visual span{width:65px;height:65px;flex-basis:65px;border-radius:20px}.barama-about-a24 .builtin-hero__visual svg{width:27px;height:27px}.barama-about-a24 .builtin-card-grid--two,.barama-about-a24 .builtin-card-grid--four,.barama-about-a24 .builtin-stat-grid,.barama-about-a24 .builtin-team-grid{grid-template-columns:1fr}.barama-about-a24 .builtin-split__media{min-height:250px}.barama-about-a24 .builtin-section{padding:3.4rem 0}.barama-about-a24 .builtin-cta__actions{width:100%}.barama-about-a24 .builtin-cta__actions .btn{flex:1}}
+@media(prefers-reduced-motion:reduce){.barama-about-a24 .builtin-info-card,.barama-about-a24 .builtin-team-card{transition:none;transform:none!important}}

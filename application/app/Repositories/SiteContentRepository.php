@@ -80,6 +80,23 @@ final class SiteContentRepository
             : [];
         $about = array_replace_recursive($defaults['about'], $rawAbout);
 
+        // A26: About contains ordered lists, not maps. Recursive replacement merges
+        // old default positions back into removed/reordered content. Explicitly
+        // retain the stored lists, including an intentionally empty list. Do not
+        // change the merging behavior of Contact, Homepage, or Marketplace pages.
+        $rawSections = is_array($rawAbout['sections'] ?? null) ? $rawAbout['sections'] : [];
+        foreach (['values', 'stats', 'team'] as $sectionKey) {
+            $storedSection = $rawSections[$sectionKey] ?? null;
+            if (is_array($storedSection) && array_key_exists('items', $storedSection)
+                && is_array($storedSection['items'])) {
+                $about['sections'][$sectionKey]['items'] = array_values($storedSection['items']);
+            }
+        }
+        if (array_key_exists('section_order', $rawAbout)
+            && is_array($rawAbout['section_order'])) {
+            $about['section_order'] = array_values($rawAbout['section_order']);
+        }
+
         if (!is_array($about['section_order'] ?? null)) {
             $about['section_order'] = $defaults['about']['section_order'];
         }
@@ -198,14 +215,14 @@ final class SiteContentRepository
         return [
             'homepage' => [
                 /* Legacy keys remain readable by older packages during upgrade. */
-                'hero_eyebrow' => 'Barama Real Estate',
-                'hero_title' => 'Property Discovery Simplified',
-                'hero_description' => 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.',
+                'hero_eyebrow' => 'Approved Real Estate',
+                'hero_title' => 'Property Discovery',
+                'hero_description' => 'Find approved homes, rental opportunities, and new developments.',
                 'hero' => [
                     'enabled' => true,
-                    'eyebrow' => 'Barama Real Estate',
-                    'title' => 'Property Discovery Simplified',
-                    'description' => 'Find approved homes, rental opportunities, new developments, and real estate companies without sorting through unnecessary clutter.',
+                    'eyebrow' => 'Approved Real Estate',
+                    'title' => 'Property Discovery',
+                    'description' => 'Find approved homes, rental opportunities, and new developments.',
                     'background' => [
                         'type' => 'plain',
                         'color_preset' => 'ocean',

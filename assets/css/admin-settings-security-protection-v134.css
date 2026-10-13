@@ -1,0 +1,8 @@
+/* BARAMA_ADMIN_SECURITY_PROTECTION_V134 */
+.barama-security-protection-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.barama-security-protection-summary__item{padding:14px 16px;border:1px solid var(--bs-border-color);border-radius:14px;background:color-mix(in srgb,var(--bs-body-bg) 92%,transparent)}
+.barama-security-protection-summary__item span{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--bs-secondary-color);margin-bottom:5px}
+.barama-security-protection-summary__item strong{font-size:1rem}.barama-security-protection-note{padding:12px 14px;border:1px solid color-mix(in srgb,#f5b942 36%,var(--bs-border-color));border-radius:12px;color:var(--bs-secondary-color);font-size:.84rem;line-height:1.5}
+.barama-security-protection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.barama-security-protection-grid--single{grid-template-columns:1fr}
+.barama-security-protection-check{display:flex;gap:10px;align-items:flex-start;padding:12px 0}.barama-security-protection-check input{margin-top:4px}.barama-security-protection-check strong{display:block}.barama-security-protection-check small{display:block;color:var(--bs-secondary-color);margin-top:2px;line-height:1.45}
+@media(max-width:760px){.barama-security-protection-summary,.barama-security-protection-grid{grid-template-columns:1fr}}

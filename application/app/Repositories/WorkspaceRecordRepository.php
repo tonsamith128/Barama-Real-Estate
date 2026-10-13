@@ -33,8 +33,19 @@ final class WorkspaceRecordRepository
                           LEFT JOIN locations loc ON loc.id = p.location_id
                           WHERE p.id = :id AND p.deleted_at IS NULL LIMIT 1',
             'property' => 'SELECT p.*, c.name AS company_name, c.slug AS company_slug,
+                                  c.status AS company_status,
                                   pr.name AS project_name, pr.slug AS project_slug,
-                                  loc.name AS location_name, cm.member_role AS viewer_role
+                                  pr.status AS project_status,
+                                  loc.name AS location_name, cm.member_role AS viewer_role,
+                                  (SELECT COUNT(*)
+                                   FROM listings li
+                                   WHERE li.property_id = p.id
+                                     AND li.deleted_at IS NULL) AS listings_count,
+                                  (SELECT COUNT(*)
+                                   FROM listings li
+                                   WHERE li.property_id = p.id
+                                     AND li.status = "published"
+                                     AND li.deleted_at IS NULL) AS published_listings_count
                            FROM properties p
                            INNER JOIN companies c ON c.id = p.company_id
                            INNER JOIN company_members cm

@@ -1,0 +1,231 @@
+/* Barama A31 — truly transparent, narrowly scoped marketplace Hero search UI.
+   Fixes A30 broad child selector that manufactured phantom form boxes from the
+   location-picker partial. Works only with barama-hero-glass-a31. */
+.marketplace-hero.marketplace-hero--discovery .marketplace-config-filter.barama-hero-glass-a31 {
+  box-sizing: border-box !important;
+  max-width: 100%;
+  padding: 8px 10px 7px !important;
+  background: rgba(255,255,255,.045) !important;
+  background-image: none !important;
+  border: 1px solid rgba(246,251,255,.30) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.13) !important;
+  -webkit-backdrop-filter: blur(5px) saturate(112%);
+  backdrop-filter: blur(5px) saturate(112%);
+  color: #fff !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+/* Intentionally target only actual visible search controls.
+   DO NOT target > :not(label):not(button); the picker emits hidden/internal nodes. */
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label,
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) {
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  min-width: 0 !important;
+  border-radius: 11px !important;
+  border: 1px solid rgba(250,252,255,.24) !important;
+  background: rgba(8,18,35,.19) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label {
+  padding: 0 10px !important;
+  overflow: hidden;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label > :is(input,select) {
+  box-sizing: border-box !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 3px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline-offset: -2px;
+  background: transparent !important;
+  background-image: none !important;
+  color: #f9fcff !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label > input::placeholder {
+  color: rgba(252,254,255,.83) !important;
+  opacity: 1 !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label > select option {
+  color: #14213a !important;
+  background: #fff !important;
+}
+/* The keyword-search icon is explicit, never positioned on top of its text. */
+.marketplace-hero .barama-hero-glass-a31 .discovery-filter__search > span:first-child {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  display: inline-flex !important;
+  flex: 0 0 16px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #eef5ff !important;
+  pointer-events: none;
+}
+.marketplace-hero .barama-hero-glass-a31 .discovery-filter__search > span:first-child svg {
+  width: 16px !important;
+  height: 16px !important;
+  display: block;
+}
+/* Only a direct location button is themed. Internal picker dropdowns/popups
+   and hidden form values retain native visibility and their existing JS. */
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) {
+  padding: 0 9px !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) > button {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+/* Hidden inputs and hidden picker popups NEVER become layout boxes. */
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(input[type="hidden"], [hidden],template,script) {
+  display: none !important;
+  flex: 0 0 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+/* Compact Search CTA. Does not style advanced Apply filters button. */
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > button[type="submit"] {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  flex: 0 0 126px !important;
+  width: 126px !important;
+  max-width: 126px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 14px !important;
+  background: #2563eb !important;
+  background-image: none !important;
+  color: #fff !important;
+  font-weight: 650 !important;
+  font-size: 14px !important;
+  white-space: nowrap !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  border-radius: 11px !important;
+  box-shadow: 0 4px 11px rgba(6,29,80,.12) !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > button[type="submit"] svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > button[type="submit"]:hover {
+  background: #1d55d9 !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label:focus-within {
+  border-color: rgba(255,255,255,.8) !important;
+  box-shadow: 0 0 0 2px rgba(183,216,255,.24) !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > button:focus-visible,
+.marketplace-hero .barama-hero-glass-a31 .discovery-filter__more > summary:focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: 2px !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > :is(.discovery-filter__links,.discovery-filter__more) {
+  margin-block-start: 4px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: rgba(255,255,255,.94) !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__links a,
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__more > summary,
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__more > summary small {
+  color: rgba(255,255,255,.94) !important;
+}
+.marketplace-hero .barama-hero-glass-a31 > .discovery-filter__more > summary {
+  min-height: 20px !important;
+  padding: 3px 2px !important;
+}
+/* The opened advanced filters need a legible foreground, not glass-on-glass. */
+.marketplace-hero .barama-hero-glass-a31 .discovery-filter__advanced {
+  padding: 14px !important;
+  background: rgba(249,252,255,.98) !important;
+  color: #18243b !important;
+  border-radius: 13px !important;
+  border: 1px solid rgba(210,225,247,.9) !important;
+  box-shadow: 0 12px 26px rgba(4,16,37,.16) !important;
+}
+@media (min-width: 1101px) {
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary {
+    flex-wrap: nowrap !important;
+  }
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label,
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) {
+    flex: 1 1 0 !important;
+    max-width: none !important;
+  }
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > .discovery-filter__search {
+    flex: 1.65 1 0 !important;
+  }
+}
+@media (min-width: 681px) and (max-width: 1100px) {
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label,
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) {
+    flex: 1 1 190px !important;
+  }
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > button[type="submit"] {
+    flex: 0 0 126px !important;
+  }
+}
+@media (max-width: 680px) {
+  .marketplace-hero .marketplace-config-filter.barama-hero-glass-a31 {
+    padding: 8px !important;
+    border-radius: 16px !important;
+  }
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary {
+    flex-wrap: wrap !important;
+  }
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > label,
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+  .marketplace-hero .barama-hero-glass-a31 > .discovery-filter__primary > button[type="submit"] {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 46px !important;
+    height: 46px !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .marketplace-hero .marketplace-config-filter.barama-hero-glass-a31 {
+    background: rgba(9,22,40,.82) !important;
+  }
+}

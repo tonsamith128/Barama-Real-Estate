@@ -6,8 +6,89 @@ $subscriptions = is_array($subscriptions ?? null) ? $subscriptions : [];
 $plans = is_array($plans ?? null) ? $plans : [];
 $companies = is_array($companies ?? null) ? $companies : [];
 $summary = is_array($financeSummary ?? null) ? $financeSummary : [];
+
+$q = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 80);
+$statusFilter = strtolower(trim((string) ($_GET['status'] ?? '')));
+if (!in_array($statusFilter, ['', 'active', 'paused', 'cancelled', 'expired'], true)) {
+    $statusFilter = '';
+}
+
+$filteredSubscriptions = array_values(array_filter(
+    $subscriptions,
+    static function (array $subscription) use ($q, $statusFilter): bool {
+        if (
+            $statusFilter !== ''
+            && strtolower((string) ($subscription['status'] ?? '')) !== $statusFilter
+        ) {
+            return false;
+        }
+
+        if ($q === '') {
+            return true;
+        }
+
+        $haystack = strtolower(
+            (string) ($subscription['company_name'] ?? '')
+            . ' '
+            . (string) ($subscription['plan_name'] ?? '')
+            . ' '
+            . (string) ($subscription['source'] ?? '')
+            . ' '
+            . (string) ($subscription['external_reference'] ?? '')
+        );
+
+        return str_contains($haystack, strtolower($q));
+    }
+));
+
+$perPage = 10;
+$total = count($filteredSubscriptions);
+$pages = max(1, (int) ceil($total / $perPage));
+$page = filter_var(
+    $_GET['page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$page = $page === false ? 1 : min((int) $page, $pages);
+
+$visibleSubscriptions = array_slice(
+    $filteredSubscriptions,
+    ($page - 1) * $perPage,
+    $perPage
+);
+
+$query = array_filter(
+    [
+        'q' => $q,
+        'status' => $statusFilter,
+    ],
+    static fn (string $value): bool => $value !== ''
+);
+
+$pageUrl = static function (int $target) use ($query): string {
+    return url(
+        '/dashboard/subscriptions?'
+        . http_build_query(
+            array_merge(
+                $query,
+                ['page' => max(1, $target)]
+            )
+        )
+    );
+};
 ?>
-<section class="workspace-page">
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-subscriptions-pagination-v182.css') . '?v=182') ?>"
+>
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-subscriptions-focus-v183.css') . '?v=183') ?>"
+>
+
+<section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--subscriptions" data-subscriptions-workspace>
+    <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -22,7 +103,7 @@ $summary = is_array($financeSummary ?? null) ? $financeSummary : [];
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
+    <div class="workspace-stat-grid finance-summary-cards">
         <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['active_subscriptions'] ?? 0))) ?></strong><small>Active</small></div>
         <div class="workspace-stat"><span><?= app_icon('alert') ?></span><strong><?= e(number_format((int) ($summary['paused_subscriptions'] ?? 0))) ?></strong><small>Paused</small></div>
         <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['ended_subscriptions'] ?? 0))) ?></strong><small>Ended</small></div>
@@ -73,46 +154,115 @@ $summary = is_array($financeSummary ?? null) ? $financeSummary : [];
             </div>
         </div>
 
-        <div class="workspace-table-wrap">
-            <table class="workspace-table">
+        
+        <form
+            class="finance-subscriptions__filters"
+            method="get"
+            action="<?= e(url('/dashboard/subscriptions')) ?>"
+        >
+            <label>
+                <?= app_icon('search') ?>
+                <input
+                    class="form-control"
+                    type="search"
+                    name="q"
+                    value="<?= e($q) ?>"
+                    placeholder="Search company, plan, source, or reference"
+                >
+            </label>
+
+            <select class="form-select" name="status" aria-label="Subscription status">
+                <option value="">All statuses</option>
+                <?php foreach ([
+                    'active' => 'Active',
+                    'paused' => 'Paused',
+                    'cancelled' => 'Cancelled',
+                    'expired' => 'Expired',
+                ] as $value => $label): ?>
+                    <option
+                        value="<?= e($value) ?>"
+                        <?= $statusFilter === $value ? 'selected' : '' ?>
+                    ><?= e($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a
+                class="btn btn-outline-secondary"
+                href="<?= e(url('/dashboard/subscriptions')) ?>"
+            >Reset</a>
+        </form>
+
+<div class="workspace-table-wrap">
+            <table class="workspace-table finance-subscriptions__table-focus">
                 <thead>
                     <tr>
                         <th>Company</th>
                         <th>Plan</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Starts</th>
-                        <th>Renews</th>
-                        <th>Expires</th>
-                        <th>Source</th>
-                        <th>Reference</th>
+                        <th>Lifecycle</th>
+                        <th>Billing Context</th>
                         <th>Updated</th>
                         <th aria-label="Actions"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($subscriptions === []): ?>
-                        <tr><td colspan="11"><div class="workspace-record-empty">No company subscriptions exist yet.</div></td></tr>
+                    <?php if ($visibleSubscriptions === []): ?>
+                        <tr><td colspan="6"><div class="workspace-record-empty">No company subscriptions exist yet.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($subscriptions as $subscription): ?>
+                    <?php foreach ($visibleSubscriptions as $subscription): ?>
                         <?php $status = (string) ($subscription['status'] ?? 'active'); ?>
                         <tr>
-                            <td><strong><?= e((string) $subscription['company_name']) ?></strong><small><?= e((string) $subscription['company_status']) ?></small></td>
-                            <td><?= e((string) $subscription['plan_name']) ?></td>
-                            <td><?= e((string) $subscription['currency']) ?> <?= e(number_format((float) $subscription['price'], 2)) ?></td>
-                            <td><span class="status-badge status-badge--<?= e($status === 'active' ? 'approved' : ($status === 'paused' ? 'pending' : 'neutral')) ?>"><?= e(ucfirst($status)) ?></span></td>
-                            <td><?= e((string) $subscription['starts_at']) ?></td>
-                            <td><?= e((string) ($subscription['renews_at'] ?? '—')) ?></td>
-                            <td><?= e((string) ($subscription['expires_at'] ?? '—')) ?></td>
-                            <td><?= e((string) $subscription['source']) ?></td>
-                            <td><?= e((string) ($subscription['external_reference'] ?? '—')) ?></td>
+                            <td>
+                                <div class="finance-subscriptions__company">
+                                    <strong><?= e((string) $subscription['company_name']) ?></strong>
+                                    <small><?= e((string) $subscription['company_status']) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-subscriptions__plan">
+                                    <strong><?= e((string) $subscription['plan_name']) ?></strong>
+                                    <small>
+                                        <?= e((string) $subscription['currency']) ?>
+                                        <?= e(number_format((float) $subscription['price'], 2)) ?>
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-subscriptions__lifecycle">
+                                    <span class="status-badge status-badge--<?= e($status === 'active' ? 'approved' : ($status === 'paused' ? 'pending' : 'neutral')) ?>">
+                                        <?= e(ucfirst($status)) ?>
+                                    </span>
+                                    <div class="finance-subscriptions__lifecycle-meta">
+                                        <small>Starts: <?= e((string) $subscription['starts_at']) ?></small>
+                                        <small>Renews: <?= e((string) ($subscription['renews_at'] ?? '—')) ?></small>
+                                        <small>Expires: <?= e((string) ($subscription['expires_at'] ?? '—')) ?></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-subscriptions__billing-context">
+                                    <strong><?= e((string) $subscription['source']) ?></strong>
+                                    <div class="finance-subscriptions__billing-meta">
+                                        <small>Reference: <?= e((string) ($subscription['external_reference'] ?? '—')) ?></small>
+                                    </div>
+                                </div>
+                            </td>
                             <td><?= e((string) $subscription['updated_at']) ?></td>
                             <td>
                                 <details class="workspace-row-actions">
                                     <summary aria-label="Subscription actions" title="Actions"><span aria-hidden="true">&#8942;</span></summary>
                                     <div class="workspace-row-actions__menu">
-                                        <?php if ($status === 'active'): ?>
+                                        <?php if ($status === 'pending'): ?>
+                                            <form action="<?= e(url('/dashboard/subscriptions/' . (int) $subscription['id'] . '/status')) ?>" method="post" data-workspace-form>
+                                                <?= csrf_field() ?><input type="hidden" name="status" value="active">
+                                                <button class="table-action table-action--primary" type="submit">Activate after payment</button>
+                                            </form>
+                                            <form action="<?= e(url('/dashboard/subscriptions/' . (int) $subscription['id'] . '/status')) ?>" method="post" data-workspace-form>
+                                                <?= csrf_field() ?><input type="hidden" name="status" value="cancelled">
+                                                <button class="table-action table-action--danger" type="submit">Cancel request</button>
+                                            </form>
+                                        <?php elseif ($status === 'active'): ?>
                                             <form action="<?= e(url('/dashboard/subscriptions/' . (int) $subscription['id'] . '/status')) ?>" method="post" data-workspace-form>
                                                 <?= csrf_field() ?><input type="hidden" name="status" value="paused">
                                                 <button class="table-action" type="submit">Pause</button>
@@ -141,5 +291,63 @@ $summary = is_array($financeSummary ?? null) ? $financeSummary : [];
                 </tbody>
             </table>
         </div>
+
+        <div class="finance-subscriptions__pager">
+            <span>
+                Page <?= $page ?> of <?= $pages ?>
+                · <?= $total ?> subscription<?= $total === 1 ? '' : 's' ?>
+                · 10 per page
+            </span>
+
+            <?php if ($pages > 1): ?>
+                <nav aria-label="Subscription pages">
+                    <?php if ($page > 1): ?>
+                        <a href="<?= e($pageUrl($page - 1)) ?>">Previous</a>
+                    <?php endif; ?>
+
+                    <?php
+                    $from = max(1, $page - 2);
+                    $to = min($pages, $page + 2);
+                    ?>
+                    <?php for ($i = $from; $i <= $to; $i++): ?>
+                        <a
+                            href="<?= e($pageUrl($i)) ?>"
+                            class="<?= $i === $page ? 'is-active' : '' ?>"
+                        ><?= $i ?></a>
+                    <?php endfor; ?>
+
+                    <?php if ($page < $pages): ?>
+                        <a href="<?= e($pageUrl($page + 1)) ?>">Next</a>
+                    <?php endif; ?>
+                </nav>
+            <?php endif; ?>
+
+            <form
+                class="finance-subscriptions__goto"
+                method="get"
+                action="<?= e(url('/dashboard/subscriptions')) ?>"
+            >
+                <?php foreach ($query as $key => $value): ?>
+                    <input
+                        type="hidden"
+                        name="<?= e((string) $key) ?>"
+                        value="<?= e((string) $value) ?>"
+                    >
+                <?php endforeach; ?>
+                <label>
+                    <span>Go To</span>
+                    <input
+                        class="form-control"
+                        type="number"
+                        name="page"
+                        min="1"
+                        max="<?= $pages ?>"
+                        value="<?= $page ?>"
+                    >
+                </label>
+                <button class="btn btn-outline-secondary" type="submit">Go</button>
+            </form>
+        </div>
+
     </section>
 </section>

@@ -8,7 +8,8 @@
     const dialog = form.closest('dialog');
     const submit = form.querySelector('[data-marketplace-config-submit]');
     const backgroundType = form.querySelector('[data-hero-background-type]');
-    const imageSource = form.querySelector('[data-marketplace-image-source]');
+
+    let toastTimer = null;
 
     const getToast = () => {
         let toast = document.querySelector('[data-marketplace-config-toast]');
@@ -23,7 +24,6 @@
         return toast;
     };
 
-    let toastTimer = null;
     const showToast = (message, type = 'success') => {
         const toast = getToast();
         window.clearTimeout(toastTimer);
@@ -77,13 +77,13 @@
             if (hasUpload) {
                 source = 'media';
                 data.set('image_source', 'media');
-            } else if ((source === 'url' && url === '') || (source === 'media' && mediaUuid === '')) {
+            } else if (
+                source === 'auto'
+                || (source === 'url' && url === '')
+                || (source === 'media' && mediaUuid === '')
+            ) {
                 source = 'auto';
                 data.set('image_source', 'auto');
-                data.delete('image_url');
-                data.delete('image_media_uuid');
-                data.delete('hero_image_file');
-            } else if (source === 'auto') {
                 data.delete('image_url');
                 data.delete('image_media_uuid');
                 data.delete('hero_image_file');
@@ -132,10 +132,15 @@
                 }
             });
 
-            const text = await response.text();
+            const responseText = await response.text();
             let payload = null;
-            if (text.trim() !== '') {
-                try { payload = JSON.parse(text); } catch (_) { payload = null; }
+
+            if (responseText.trim() !== '') {
+                try {
+                    payload = JSON.parse(responseText);
+                } catch (_) {
+                    payload = null;
+                }
             }
 
             if (!response.ok || payload?.ok !== true) {
@@ -150,7 +155,10 @@
             }
 
             showToast(payload?.data?.message || 'Configuration saved.', 'success');
-            window.setTimeout(() => window.location.reload(), 850);
+
+            window.setTimeout(() => {
+                window.location.reload();
+            }, 850);
         } catch (error) {
             showToast(
                 error instanceof Error ? error.message : 'Configuration could not be saved.',

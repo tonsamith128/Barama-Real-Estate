@@ -1,0 +1,44 @@
+/* Barama Contact A22: remove the residual decorative circle.
+ * Scoped to the Contact Hero only. This is intentionally a small override,
+ * loaded after A19/A20/A21 so no shared layout, form, or Admin setting changes.
+ * The Hero's ::after overlay is deliberately retained for readable text.
+ */
+main.barama-a21-contact section.builtin-contact-hero-v117a19::before {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  background: none !important;
+}
+/* The legacy circular decoration can be attached to the copy, container, or
+ * another descendant in different source revisions. This particular Hero's
+ * descendants contain only a photo, text and decorative wrappers, so their
+ * generated pseudo-elements are not required for any functional controls. */
+main.barama-a21-contact section.builtin-contact-hero-v117a19 *::before,
+main.barama-a21-contact section.builtin-contact-hero-v117a19 *::after {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+/* Preserve the existing soft text-safety gradient above the actual image;
+ * this is the only generated Hero layer that remains intentionally visible. */
+main.barama-a21-contact section.builtin-contact-hero-v117a19::after {
+  content: '' !important;
+  display: block !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2 !important;
+  background: linear-gradient(90deg,
+    rgba(248,251,255,.98) 0%, rgba(248,251,255,.93) 27%,
+    rgba(248,251,255,.69) 44%, rgba(248,251,255,.21) 65%,
+    rgba(248,251,255,0) 88%) !important;
+}
+@media (max-width: 650px) {
+  main.barama-a21-contact section.builtin-contact-hero-v117a19::after {
+    background: linear-gradient(180deg,
+      rgba(248,251,255,.99) 0%, rgba(248,251,255,.95) 35%,
+      rgba(248,251,255,.43) 65%, rgba(248,251,255,.03) 100%) !important;
+  }
+}

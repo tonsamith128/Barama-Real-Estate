@@ -1,0 +1,424 @@
+/* BARAMA_ACCOUNT_SECURITY_CANONICAL_TABLE_V1129_R5
+ * Canonical renderer: application/resources/views/workspace/settings.php
+ * Target: /account/settings/security
+ */
+.barama-security-features {
+    --barama-security-border: color-mix(in srgb, var(--bs-border-color, #d9e1ec) 92%, transparent);
+    --barama-security-surface: var(--bs-body-bg, #ffffff);
+    --barama-security-soft: color-mix(in srgb, var(--barama-primary, #2563eb) 5%, var(--bs-body-bg, #ffffff));
+    --barama-security-text: var(--bs-body-color, #172033);
+    --barama-security-muted: var(--bs-secondary-color, #667085);
+    --barama-security-primary: var(--barama-primary, #2563eb);
+    margin-top: 26px;
+}
+
+.barama-security-features__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.barama-security-features__head > div {
+    min-width: 0;
+}
+
+.barama-security-features__head h2 {
+    margin: 0 0 7px;
+    color: var(--barama-security-text);
+    font-size: clamp(1.55rem, 2vw, 2rem);
+    font-weight: 820;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+}
+
+.barama-security-features__head p {
+    max-width: 760px;
+    margin: 0;
+    color: var(--barama-security-muted);
+    font-size: .94rem;
+    line-height: 1.6;
+}
+
+.barama-security-features__head > span {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border: 1px solid color-mix(in srgb, var(--barama-security-primary) 18%, var(--barama-security-border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--barama-security-primary) 7%, var(--barama-security-surface));
+    color: var(--barama-security-primary);
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .025em;
+    white-space: nowrap;
+}
+
+.barama-security-features__head > span::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #10b981 12%, transparent);
+}
+
+.barama-security-table-wrap {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--barama-security-border);
+    border-radius: 18px;
+    background: var(--barama-security-surface);
+    box-shadow: 0 16px 42px rgba(15, 23, 42, .055);
+}
+
+.barama-security-table {
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    background: transparent;
+}
+
+.barama-security-table thead th {
+    padding: 14px 18px;
+    border: 0;
+    border-bottom: 1px solid var(--barama-security-border);
+    background: var(--barama-security-soft);
+    color: var(--barama-security-muted);
+    font-size: .72rem;
+    font-weight: 850;
+    line-height: 1.25;
+    letter-spacing: .075em;
+    text-align: left;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.barama-security-table thead th:nth-child(1) { width: 30%; }
+.barama-security-table thead th:nth-child(2) { width: 13%; }
+.barama-security-table thead th:nth-child(3) { width: 43%; }
+.barama-security-table thead th:nth-child(4) {
+    width: 14%;
+    text-align: right;
+}
+
+.barama-security-table tbody tr {
+    transition: background-color .16s ease;
+}
+
+.barama-security-table tbody tr:hover {
+    background: color-mix(in srgb, var(--barama-security-primary) 2.8%, transparent);
+}
+
+.barama-security-table tbody td {
+    padding: 17px 18px;
+    border: 0;
+    border-bottom: 1px solid var(--barama-security-border);
+    background: transparent;
+    color: var(--barama-security-text);
+    font-size: .91rem;
+    line-height: 1.55;
+    vertical-align: middle;
+}
+
+.barama-security-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.barama-security-table tbody td + td {
+    border-left: 1px solid color-mix(in srgb, var(--barama-security-border) 70%, transparent);
+}
+
+.barama-security-feature {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.barama-security-feature__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--barama-security-primary) 9%, transparent);
+    color: var(--barama-security-primary);
+}
+
+.barama-security-feature__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.barama-security-feature > span:last-child {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    padding-top: 1px;
+}
+
+.barama-security-feature strong {
+    color: var(--barama-security-text);
+    font-size: .97rem;
+    font-weight: 820;
+    line-height: 1.3;
+}
+
+.barama-security-feature small {
+    color: var(--barama-security-muted);
+    font-size: .79rem;
+    font-weight: 520;
+    line-height: 1.45;
+}
+
+.barama-security-feature-detail {
+    display: block;
+    color: var(--barama-security-muted);
+    font-size: .87rem;
+    line-height: 1.62;
+}
+
+.barama-security-status-pill {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .77rem;
+    font-weight: 820;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.barama-security-status-pill::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.barama-security-status-pill.is-good {
+    border-color: color-mix(in srgb, #10b981 26%, transparent);
+    background: color-mix(in srgb, #10b981 10%, transparent);
+    color: #059669;
+}
+
+.barama-security-status-pill.is-warn {
+    border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+    background: color-mix(in srgb, #f59e0b 11%, transparent);
+    color: #d97706;
+}
+
+.barama-security-actions {
+    text-align: right;
+}
+
+.barama-security-configure {
+    display: inline-flex;
+    min-width: 108px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 9px 14px;
+    border: 1px solid color-mix(in srgb, var(--barama-security-primary) 28%, var(--barama-security-border));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--barama-security-primary) 7%, var(--barama-security-surface));
+    color: var(--barama-security-primary);
+    box-shadow: none;
+    font: inherit;
+    font-size: .84rem;
+    font-weight: 820;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background-color .16s ease;
+}
+
+.barama-security-configure:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--barama-security-primary) 52%, var(--barama-security-border));
+    background: color-mix(in srgb, var(--barama-security-primary) 12%, var(--barama-security-surface));
+}
+
+.barama-security-configure:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--barama-security-primary) 22%, transparent);
+    outline-offset: 2px;
+}
+
+html[data-bs-theme="dark"] .barama-security-features,
+html[data-theme="dark"] .barama-security-features {
+    --barama-security-border: rgba(148, 163, 184, .18);
+    --barama-security-surface: #101a2a;
+    --barama-security-soft: #132238;
+    --barama-security-text: #edf4ff;
+    --barama-security-muted: #a8b6c9;
+}
+
+html[data-bs-theme="dark"] .barama-security-table-wrap,
+html[data-theme="dark"] .barama-security-table-wrap {
+    box-shadow: 0 18px 46px rgba(0, 0, 0, .22);
+}
+
+@media (max-width: 980px) {
+    .barama-security-features__head {
+        align-items: center;
+    }
+
+    .barama-security-table-wrap {
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .barama-security-table,
+    .barama-security-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .barama-security-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .barama-security-table tbody {
+        display: grid;
+        gap: 14px;
+    }
+
+    .barama-security-table tbody tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        overflow: hidden;
+        border: 1px solid var(--barama-security-border);
+        border-radius: 17px;
+        background: var(--barama-security-surface);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .05);
+    }
+
+    .barama-security-table tbody td {
+        display: block;
+        min-width: 0;
+        padding: 14px 16px;
+        border: 0;
+        border-bottom: 0;
+    }
+
+    .barama-security-table tbody td + td {
+        border-left: 0;
+    }
+
+    .barama-security-table tbody td[data-label="Feature"] {
+        grid-column: 1;
+    }
+
+    .barama-security-table tbody td[data-label="Status"] {
+        grid-column: 2;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .barama-security-table tbody td[data-label="Protection"],
+    .barama-security-table tbody td[data-label="Actions"] {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--barama-security-border);
+    }
+
+    .barama-security-table tbody td[data-label="Protection"]::before,
+    .barama-security-table tbody td[data-label="Actions"]::before {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--barama-security-muted);
+        font-size: .68rem;
+        font-weight: 850;
+        letter-spacing: .075em;
+        text-transform: uppercase;
+    }
+
+    .barama-security-table tbody td[data-label="Protection"]::before {
+        content: "Protection";
+    }
+
+    .barama-security-table tbody td[data-label="Actions"]::before {
+        content: "Actions";
+        text-align: left;
+    }
+
+    .barama-security-actions {
+        text-align: left;
+    }
+
+    .barama-security-configure {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 620px) {
+    .barama-security-features__head {
+        display: grid;
+        gap: 12px;
+    }
+
+    .barama-security-features__head > span {
+        justify-self: start;
+    }
+
+    .barama-security-table tbody tr {
+        grid-template-columns: 1fr;
+    }
+
+    .barama-security-table tbody td[data-label="Feature"],
+    .barama-security-table tbody td[data-label="Status"],
+    .barama-security-table tbody td[data-label="Protection"],
+    .barama-security-table tbody td[data-label="Actions"] {
+        grid-column: 1;
+    }
+
+    .barama-security-table tbody td[data-label="Status"] {
+        justify-content: flex-start;
+        border-top: 1px solid var(--barama-security-border);
+    }
+
+    .barama-security-table tbody td[data-label="Status"]::before {
+        content: "Status";
+        display: block;
+        margin-right: 10px;
+        color: var(--barama-security-muted);
+        font-size: .68rem;
+        font-weight: 850;
+        letter-spacing: .075em;
+        text-transform: uppercase;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .barama-security-table tbody tr,
+    .barama-security-configure {
+        transition: none;
+    }
+}

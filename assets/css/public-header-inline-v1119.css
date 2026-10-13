@@ -1,0 +1,187 @@
+/* BARAMA_PUBLIC_HEADER_INLINE_V1119 */
+/* Desktop (>=1200px) intentionally inherits the existing labeled navigation. */
+
+@media (max-width: 1199.98px) {
+    /* The smaller-screen header is the navigation surface: no hamburger overlay. */
+    .site-header [data-site-menu-toggle],
+    .site-header .site-menu-toggle {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        position: static !important;
+        inset: auto !important;
+        z-index: auto !important;
+        display: flex !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        flex: 0 1 auto !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: .35rem !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        pointer-events: auto !important;
+        backdrop-filter: none !important;
+    }
+
+    .site-header [data-site-navigation][hidden] {
+        display: flex !important;
+    }
+
+    .site-header [data-site-navigation]::before,
+    .site-header [data-site-navigation]::after,
+    .site-header .site-navigation::before,
+    .site-header .site-navigation::after {
+        content: none !important;
+        display: none !important;
+    }
+
+    .site-header [data-site-navigation] hr,
+    .site-header .site-navigation hr {
+        display: none !important;
+    }
+
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        display: flex !important;
+        width: auto !important;
+        min-width: 0 !important;
+        flex: 0 0 auto !important;
+        grid-template-columns: none !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: .25rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        display: grid !important;
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+        max-width: 38px !important;
+        flex: 0 0 38px !important;
+        place-items: center !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 11px !important;
+        background: transparent !important;
+        color: var(--barama-muted, #64748b) !important;
+        font-size: 0 !important;
+        line-height: 1 !important;
+        text-indent: 0 !important;
+        box-shadow: none !important;
+        white-space: nowrap !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        display: block !important;
+        width: 19px !important;
+        height: 19px !important;
+        margin: 0 !important;
+        flex: 0 0 19px !important;
+        color: currentColor !important;
+    }
+
+    .site-header .main-nav a:hover,
+    .site-header .main-nav a:focus-visible {
+        background: color-mix(in srgb, var(--barama-primary, #2563eb) 8%, transparent) !important;
+        color: var(--barama-text, #0f172a) !important;
+    }
+
+    .site-header .main-nav a.is-active,
+    .site-header .main-nav a[aria-current="page"] {
+        background: color-mix(in srgb, var(--barama-primary, #2563eb) 10%, transparent) !important;
+        color: var(--barama-text, #0f172a) !important;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--barama-primary, #2563eb) 16%, transparent) !important;
+    }
+
+    /* Flatten any utility/action row that previously lived inside the mobile panel. */
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr),
+    .site-header .site-navigation > :not(.main-nav):not(hr) {
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+    .site-header [data-site-navigation] button,
+    .site-header [data-site-navigation] > a:not(.main-nav a),
+    .site-header .site-navigation button,
+    .site-header .site-navigation > a:not(.main-nav a) {
+        flex: 0 0 auto !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        gap: .2rem !important;
+    }
+
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        gap: .12rem !important;
+    }
+
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        max-width: 34px !important;
+        flex-basis: 34px !important;
+        border-radius: 10px !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 18px !important;
+        height: 18px !important;
+        flex-basis: 18px !important;
+    }
+}
+
+@media (max-width: 419.98px) {
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        width: 31px !important;
+        height: 31px !important;
+        min-width: 31px !important;
+        min-height: 31px !important;
+        max-width: 31px !important;
+        flex-basis: 31px !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 17px !important;
+        height: 17px !important;
+        flex-basis: 17px !important;
+    }
+}

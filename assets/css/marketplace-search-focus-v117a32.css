@@ -1,0 +1,53 @@
+/* Barama A32 — ONE visible premium focus ring for the A31 marketplace Hero.
+   Scoped to /properties, /projects, /company shared search bar only.
+   Deliberately leaves advanced filters, Search CTA, Hero layout and picker
+   menu/popover styles untouched. Loaded AFTER the A31 stylesheet. */
+
+/* Input/select elements are inside a styled LABEL shell. That shell owns
+   the entire focus decoration; the inner native/editor ring is redundant. */
+.marketplace-hero.marketplace-hero--discovery
+.barama-hero-glass-a31 > .discovery-filter__primary > label > :is(input:not([type="hidden"]), select),
+.marketplace-hero.marketplace-hero--discovery
+.barama-hero-glass-a31 > .discovery-filter__primary > label > :is(input:not([type="hidden"]), select):is(:focus, :focus-visible, :active) {
+  outline: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border: 0 !important;
+  border-color: transparent !important;
+}
+
+/* One accessible, visible ring on the actual glass control container.
+   focus-within works for both keyboard focus and mouse/touch selection. */
+.marketplace-hero.marketplace-hero--discovery
+.barama-hero-glass-a31 > .discovery-filter__primary > label:focus-within,
+.marketplace-hero.marketplace-hero--discovery
+.barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])):focus-within {
+  border-color: rgba(214,233,255,.92) !important;
+  box-shadow: 0 0 0 2px rgba(60,126,255,.42) !important;
+}
+
+/* The location picker button lives INSIDE a bordered wrapper. Its own
+   outline/box shadow must not draw a second ring on focus. The wrapper above
+   remains clearly highlighted, including for keyboard-only navigation. */
+.marketplace-hero.marketplace-hero--discovery
+.barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])) > button:is(:focus, :focus-visible, :active) {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* High contrast keeps the single wrapper focus ring perceivable.
+   The blue Search submit button and More filters keyboard outline remain A31. */
+@media (forced-colors: active) {
+  .marketplace-hero.marketplace-hero--discovery
+  .barama-hero-glass-a31 > .discovery-filter__primary > label:focus-within,
+  .marketplace-hero.marketplace-hero--discovery
+  .barama-hero-glass-a31 > .discovery-filter__primary > :is(div,section):not([hidden]):has(> button:not([type="submit"])):focus-within {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}

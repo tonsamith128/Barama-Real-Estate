@@ -10,6 +10,8 @@ use Barama\Core\Session;
 use Barama\Core\View;
 use Barama\Security\PasswordPolicy;
 use Barama\Services\AuthService;
+use Barama\Services\AccountSettingsService;
+use DomainException;
 use Barama\Services\EmailVerificationService;
 use Barama\Services\PasswordResetService;
 use InvalidArgumentException;
@@ -55,11 +57,71 @@ final class AuthController
             ], 429);
         }
 
+        if ($result === 'mfa_required') {
+            return Response::redirect(url('/mfa-challenge'));
+        }
+
         if ($result !== 'success') {
             return $this->authView('auth/login', 'Sign in', [
                 'email' => $email,
                 'errors' => ['The email address or password is incorrect.'],
                 'success' => null,
+            ], 422);
+        }
+
+        if ($auth->requiresEmailVerification()) {
+            return Response::redirect(url('/verify-email'));
+        }
+
+        $intended = Session::pull('auth.intended');
+        $destination = is_string($intended)
+            && str_starts_with($intended, '/')
+            && !str_starts_with($intended, '//')
+            && $this->canAccessIntendedPath($auth, $intended)
+                ? $intended
+                : $auth->homePath();
+
+        return Response::redirect(url($destination));
+    }
+
+    public function showMfaChallenge(Request $request): Response
+    {
+        $auth = new AuthService();
+        if (!$auth->hasPendingMfaChallenge()) {
+            return Response::redirect(url('/login'));
+        }
+
+        return $this->authView('auth/mfa-challenge', 'Security verification', [
+            'errors' => [],
+        ]);
+    }
+
+    public function mfaChallenge(Request $request): Response
+    {
+        $auth = new AuthService();
+        if (!$auth->hasPendingMfaChallenge()) {
+            return Response::redirect(url('/login'));
+        }
+
+        $code = trim((string) $request->input('code', ''));
+        if ($code === '') {
+            return $this->authView('auth/mfa-challenge', 'Security verification', [
+                'errors' => ['Enter the 6-digit authenticator code or one recovery code.'],
+            ], 422);
+        }
+
+        $result = $auth->completeMfaChallenge($code, $request->ip());
+        if ($result === 'locked') {
+            return $this->authView('auth/mfa-challenge', 'Security verification', [
+                'errors' => ['Too many verification attempts. Please try again later.'],
+            ], 429);
+        }
+        if ($result === 'expired') {
+            return Response::redirect(url('/login'));
+        }
+        if ($result !== 'success') {
+            return $this->authView('auth/mfa-challenge', 'Security verification', [
+                'errors' => ['The authenticator or recovery code is invalid.'],
             ], 422);
         }
 
@@ -112,9 +174,10 @@ final class AuthController
         try {
             $auth = new AuthService();
             $userId = $auth->register($name, $email, $password);
-            (new EmailVerificationService())->send($userId, true);
+            $queued = (new EmailVerificationService())->send($userId, true);
+            Session::put('auth.email_verification_notice', $queued ? 'queued' : 'wait');
 
-            return Response::redirect(url('/verify-email?sent=1'));
+            return Response::redirect(url('/verify-email'));
         } catch (RuntimeException $exception) {
             return $this->authView('auth/register', 'Create account', [
                 'name' => $name,
@@ -138,9 +201,46 @@ final class AuthController
             'verified' => !empty($user['email_verified_at']),
             'token' => null,
             'valid' => true,
-            'sent' => $request->input('sent') === '1',
-            'errors' => [],
+            'sent' => false,
+            'verificationNotice' => Session::pull('auth.email_verification_notice', ''),
+            'emailChangeNotice' => Session::pull('auth.email_change_notice', ''),
+            'errors' => ($changeError = Session::pull('auth.email_change_error', '')) !== '' ? [$changeError] : [],
         ]);
+    }
+
+    /**
+     * Allow a signed-in, unverified customer to correct a mistyped registration email.
+     * Reuses the existing password-confirmed token flow; does NOT directly change
+     * users.email or mark the new address as verified.
+     */
+    public function changeVerificationEmail(Request $request): Response
+    {
+        $user = (new AuthService())->user();
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+        if (!empty($user['email_verified_at'])) {
+            Session::put('auth.email_change_error', 'Your email is already verified. Change it from Account Security.');
+            return Response::redirect(url('/verify-email'));
+        }
+
+        try {
+            (new AccountSettingsService())->requestEmailChange((int) $user['id'], [
+                'new_email' => (string) $request->input('new_email', ''),
+                'current_password' => (string) $request->input('current_password', ''),
+            ]);
+            Session::put('auth.email_change_notice', 'queued');
+        } catch (InvalidArgumentException|DomainException $exception) {
+            Session::put('auth.email_change_error', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            $reference = bin2hex(random_bytes(5));
+            error_log('[Barama verification email change ' . $reference . '] '
+                . $exception::class . ': ' . $exception->getMessage());
+            Session::put('auth.email_change_error',
+                'The confirmation email could not be queued. Please try again. Reference: ' . $reference);
+        }
+
+        return Response::redirect(url('/verify-email'));
     }
 
     public function showVerifyEmailToken(Request $request, string $token): Response
@@ -174,9 +274,16 @@ final class AuthController
             return Response::redirect(url('/login'));
         }
 
-        (new EmailVerificationService())->send((int) $user['id']);
-
-        return Response::redirect(url('/verify-email?sent=1'));
+        if (!empty($user['email_verified_at'])) {
+            return Response::redirect(url('/verify-email'));
+        }
+        try {
+            $queued = (new EmailVerificationService())->send((int) $user['id']);
+            Session::put('auth.email_verification_notice', $queued ? 'queued' : 'wait');
+        } catch (\Throwable) {
+            Session::put('auth.email_verification_notice', 'error');
+        }
+        return Response::redirect(url('/verify-email'));
     }
 
     public function verifyEmail(Request $request, string $token): Response

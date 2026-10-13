@@ -1,0 +1,38 @@
+/* Barama Verification Table Focus v1.7.4 */
+.workspace-verification-account,
+.workspace-verification-access,
+.workspace-verification-state,
+.workspace-verification-issue {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+.workspace-verification-account__email {
+    overflow-wrap: anywhere;
+}
+.workspace-verification-access__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.48rem;
+}
+.workspace-verification-access__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.workspace-verification-access__meta span + span::before {
+    content: "•";
+    margin-right: 0.48rem;
+    opacity: 0.48;
+}
+@media (max-width: 900px) {
+    .workspace-verification-access__meta {
+        display: grid;
+        gap: 0.2rem;
+    }
+    .workspace-verification-access__meta span + span::before {
+        content: none;
+        margin: 0;
+    }
+}

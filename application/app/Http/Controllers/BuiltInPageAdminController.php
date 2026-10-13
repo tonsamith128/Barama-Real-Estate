@@ -8,6 +8,7 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Services\BuiltInPageManagementService;
 use Barama\Services\ContactMessageService;
+use Barama\Services\ContactHeroImageService;
 use DomainException;
 use InvalidArgumentException;
 use Throwable;
@@ -17,11 +18,30 @@ final class BuiltInPageAdminController
     public function update(Request $request, string $page, string $section): Response
     {
         return $this->execute(function () use ($request, $page, $section): array {
-            (new BuiltInPageManagementService())->updateSection(
-                $page,
-                $section,
-                $request->all()
-            );
+            // Contact Hero upload is a real, validated image; the same update
+            // persists editable copy and media path atomically at form level.
+            $values = $request->all();
+            $uploaded = null;
+            $imageService = new ContactHeroImageService();
+            if ($page === 'contact' && $section === 'hero') {
+                $file = $request->files()['hero_image'] ?? null;
+                if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $uploaded = $imageService->store($file);
+                    $values['image_url'] = $uploaded;
+                }
+            }
+            try {
+                (new BuiltInPageManagementService())->updateSection(
+                    $page,
+                    $section,
+                    $values
+                );
+            } catch (\Throwable $failure) {
+                if ($uploaded !== null) {
+                    $imageService->removeNewlyUploaded($uploaded);
+                }
+                throw $failure;
+            }
 
             return [
                 'page' => $page,

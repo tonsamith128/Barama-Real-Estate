@@ -1,0 +1,66 @@
+/* Scoped Auto Updater v1.1.2 notification and progress. Inherits Barama theme. */
+.barama-sys-v103 .bsys-license-focus{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px 26px;align-items:center;padding:21px 24px;margin:0 0 20px;border:1px solid var(--bsys-stroke);border-radius:16px;background:var(--bsys-panel);box-shadow:0 3px 18px color-mix(in srgb,var(--bsys-text) 5%,transparent)}
+.barama-sys-v103 .bsys-license-eyebrow{font-size:.7rem;letter-spacing:.1em;font-weight:800;color:var(--bsys-accent);margin-bottom:8px}
+.barama-sys-v103 .bsys-license-focus h2{margin:0 0 8px;font-size:1.16rem;letter-spacing:-.01em;color:var(--bsys-text);font-weight:780}
+.barama-sys-v103 .bsys-license-focus p{margin:0;font-size:.84rem;color:var(--bsys-muted);line-height:1.55;max-width:710px}
+.barama-sys-v103 .bsys-license-last{display:flex;align-items:center;gap:9px 12px;flex-wrap:wrap;margin-top:12px}
+.barama-sys-v103 .bsys-license-last small,.barama-sys-v103 .bsys-license-action-hint{font-size:.73rem;color:var(--bsys-muted)}
+.barama-sys-v103 .bsys-license-focus-action{min-width:170px;text-align:right}
+.barama-sys-v103 .bsys-license-focus-action form{margin:0 0 8px}
+.barama-sys-v103 .bsys-license-check-button{min-width:165px;gap:9px;cursor:pointer;min-height:45px;box-shadow:0 3px 12px color-mix(in srgb,var(--bsys-accent) 12%,transparent)}
+.barama-sys-v103 .bsys-check-button-symbol{font-size:1.18rem;line-height:1;display:inline-block}
+.barama-sys-v103 .bsys-license-check-button[data-busy="1"]{cursor:progress;opacity:.8}
+.barama-sys-v103 .bsys-license-check-button[data-busy="1"] .bsys-check-button-symbol{animation:bsys-cycle .8s linear infinite}
+.barama-sys-v103 .bsys-license-progress[hidden],.barama-sys-v103 .bsys-toast[hidden]{display:none!important}
+.barama-sys-v103 .bsys-license-progress{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:13px 15px;background:var(--bsys-inset);border:1px solid var(--bsys-stroke);border-radius:11px;min-width:0}
+.barama-sys-v103 .bsys-license-spinner{display:inline-block;width:29px;height:29px;border-radius:50%;border:3px solid color-mix(in srgb,var(--bsys-accent) 19%,transparent);border-top-color:var(--bsys-accent);animation:bsys-cycle .75s linear infinite;flex:none}
+.barama-sys-v103 .bsys-license-progress-copy{display:grid;gap:3px;min-width:0}
+.barama-sys-v103 .bsys-license-progress-copy strong{font-size:.84rem;color:var(--bsys-text)}
+.barama-sys-v103 .bsys-license-progress-copy span{font-size:.76rem;color:var(--bsys-muted)}
+.barama-sys-v103 .bsys-toast-host{position:fixed;top:20px;right:22px;z-index:12000;width:min(420px,calc(100vw - 28px));pointer-events:none}
+.barama-sys-v103 .bsys-toast{pointer-events:auto;display:flex;align-items:flex-start;gap:12px;border:1px solid var(--bsys-stroke);border-left:4px solid var(--bsys-accent);background:var(--bsys-panel);color:var(--bsys-text);border-radius:13px;padding:14px 13px;box-shadow:0 12px 42px color-mix(in srgb,var(--bsys-text) 16%,transparent);animation:bsys-toast-in .2s ease-out}
+.barama-sys-v103 .bsys-toast[data-tone="success"]{border-left-color:var(--bsys-green)}
+.barama-sys-v103 .bsys-toast[data-tone="warning"]{border-left-color:#cf902f}
+.barama-sys-v103 .bsys-toast[data-tone="error"]{border-left-color:#d25353}
+.barama-sys-v103 .bsys-toast-symbol{flex:none;display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:var(--bsys-inset);font-size:1.1rem;font-weight:800;color:var(--bsys-accent)}
+.barama-sys-v103 .bsys-toast[data-tone="success"] .bsys-toast-symbol{color:var(--bsys-green)}
+.barama-sys-v103 .bsys-toast[data-tone="error"] .bsys-toast-symbol{color:#d25353}
+.barama-sys-v103 .bsys-toast-copy{min-width:0;flex:1}
+.barama-sys-v103 .bsys-toast-copy strong{font-size:.87rem;color:var(--bsys-text);display:block}
+.barama-sys-v103 .bsys-toast-copy p{font-size:.79rem;color:var(--bsys-muted);margin:4px 0 0;line-height:1.52;overflow-wrap:anywhere}
+.barama-sys-v103 .bsys-toast-close{color:var(--bsys-muted);border:0;background:transparent;font-size:1.3rem;cursor:pointer;padding:0 4px;line-height:1.2}
+.barama-sys-v103 .bsys-license-nojs{margin:0 0 14px;padding:14px;background:var(--bsys-inset);color:var(--bsys-text);border-radius:12px;border:1px solid var(--bsys-stroke)}
+@keyframes bsys-cycle{to{transform:rotate(360deg)}}
+@keyframes bsys-toast-in{from{opacity:.2;transform:translateY(-9px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:720px){.barama-sys-v103 .bsys-license-focus{grid-template-columns:1fr;padding:16px}.barama-sys-v103 .bsys-license-focus-action,.barama-sys-v103 .bsys-license-focus-action form{text-align:left}.barama-sys-v103 .bsys-toast-host{top:10px;right:14px}}
+@media(prefers-reduced-motion:reduce){.barama-sys-v103 .bsys-license-spinner,.barama-sys-v103 .bsys-license-check-button[data-busy="1"] .bsys-check-button-symbol,.barama-sys-v103 .bsys-toast{animation:none!important}}
+
+/* v1.1.3 centered License Center; colors inherit existing Barama light/dark tokens. */
+.barama-sys-v103 .bsys-license-center{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;min-height:375px;padding:36px 25px 33px;text-align:center;border-radius:18px;background:var(--bsys-panel);box-shadow:0 6px 28px color-mix(in srgb,var(--bsys-text) 5%,transparent)}
+.barama-sys-v103 .bsys-license-center h2{font-size:clamp(1.55rem,2.2vw,2.35rem);margin:0;color:var(--bsys-text)}
+.barama-sys-v103 .bsys-license-center .bsys-license-hero-detail{max-width:680px;color:var(--bsys-muted);font-size:.91rem;line-height:1.65}
+.barama-sys-v103 .bsys-license-center .bsys-license-eyebrow{font-size:.72rem;letter-spacing:.16em;margin:0}
+.barama-sys-v103 .bsys-license-emblem{width:108px;height:108px;display:grid;place-items:center;position:relative;isolation:isolate;color:var(--bsys-accent)}
+.barama-sys-v103 .bsys-license-emblem-halo{position:absolute;inset:0;border-radius:50%;border:1px solid var(--bsys-stroke);background:var(--bsys-inset);z-index:-1}
+.barama-sys-v103 .bsys-license-shield{width:62px;height:76px;filter:drop-shadow(0 3px 9px color-mix(in srgb,var(--bsys-accent) 22%,transparent))}
+.barama-sys-v103 .bsys-license-emblem-spinner{position:absolute;inset:-6px;border-radius:50%;border:4px solid transparent;border-top-color:var(--bsys-accent);border-right-color:color-mix(in srgb,var(--bsys-accent) 45%,transparent);display:none;animation:bsys-cycle .86s linear infinite}
+.barama-sys-v103 .bsys-license-center[data-checking="1"] .bsys-license-emblem-spinner{display:block}
+.barama-sys-v103 .bsys-license-center[data-verified="1"] .bsys-license-emblem{color:#b58a31}
+.barama-sys-v103 .bsys-license-center[data-verified="1"] .bsys-license-emblem-halo{border:2px solid #2ca57f;background:color-mix(in srgb,#2ca57f 11%,var(--bsys-panel));box-shadow:0 0 0 7px color-mix(in srgb,#b58a31 10%,transparent)}
+.barama-sys-v103 .bsys-license-center[data-verified="1"] .bsys-license-shield{color:#22a26e;filter:drop-shadow(0 2px 1px #b58a3144)}
+.barama-sys-v103 .bsys-license-center .bsys-license-last{justify-content:center;margin:0 0 4px;gap:8px}
+.barama-sys-v103 .bsys-license-center form{margin:2px 0 0}
+.barama-sys-v103 .bsys-license-center .bsys-license-check-button{min-height:54px;min-width:225px;justify-content:center;font-weight:750;font-size:.94rem}
+.barama-sys-v103 .bsys-license-center .bsys-license-progress{width:min(640px,100%);text-align:left;justify-content:center;margin-top:8px}
+.barama-sys-v103 .bsys-license-center .bsys-license-lifecycle{width:min(680px,100%);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:5px}
+.barama-sys-v103 .bsys-license-center .bsys-license-lifecycle[hidden]{display:none}
+.barama-sys-v103 .bsys-license-center .bsys-license-lifecycle span{font-size:.65rem;color:var(--bsys-muted);border:1px solid var(--bsys-stroke);border-radius:8px;padding:8px 4px}
+.barama-sys-v103 .bsys-license-center .bsys-license-lifecycle [data-active="1"]{color:var(--bsys-accent);border-color:var(--bsys-accent);font-weight:750;background:var(--bsys-inset)}
+.barama-sys-v103 .bsys-license-management{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.barama-sys-v103 .bsys-license-management .bsys-panel{min-width:0}
+.barama-sys-v103 .bsys-license-action-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.barama-sys-v103 .bsys-license-action-grid .bsys-note{flex-basis:100%;margin:6px 0}
+.barama-sys-v103 .bsys-license-action-status{flex-basis:100%;display:flex;align-items:center;gap:9px;justify-content:space-between}
+@media(max-width:940px){.barama-sys-v103 .bsys-license-management{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.barama-sys-v103 .bsys-license-center{min-height:330px;padding:27px 14px}.barama-sys-v103 .bsys-license-center .bsys-license-lifecycle{grid-template-columns:repeat(2,1fr)}.barama-sys-v103 .bsys-license-center .bsys-license-last{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.barama-sys-v103 .bsys-license-emblem-spinner{animation-duration:2.8s}}

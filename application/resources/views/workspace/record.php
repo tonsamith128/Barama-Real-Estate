@@ -96,6 +96,28 @@ if ($workspaceType === 'admin') {
 
 $moderationReady = $moderationBlockers === [];
 
+$propertyReadiness = null;
+if ($recordResource === 'property') {
+    $propertyReadiness = (new \Barama\Services\PropertyReadinessService())->evaluate(
+        $record,
+        is_array($media ?? null) ? $media : []
+    );
+
+    if ($workspaceType === 'admin' && $status === 'pending' && empty($propertyReadiness['approval_ready'])) {
+        foreach ((array) ($propertyReadiness['missing'] ?? []) as $readinessCheck) {
+            $readinessKey = (string) ($readinessCheck['key'] ?? '');
+            if (in_array($readinessKey, ['company_dependency', 'project_dependency'], true)) {
+                continue;
+            }
+            $message = trim((string) ($readinessCheck['message'] ?? ''));
+            if ($message !== '') {
+                $moderationBlockers[] = $message;
+            }
+        }
+        $moderationReady = $moderationBlockers === [];
+    }
+}
+
 $mediaPublic = match ($recordResource) {
     'company' => $status === 'approved',
     'project' => $status === 'published',
@@ -266,6 +288,12 @@ if ($workspaceType === 'developer') {
         }
 
         if (!$isSelf) {
+            if (!$isAdministrator && (in_array('developer', $roles, true) || in_array('company', $roles, true))) {
+                $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/company-access/downgrade')) . '" method="post" data-workspace-form data-confirm="Downgrade to Customer and deactivate all company memberships? Transfer ownership first.">'
+                    . csrf_field()
+                    . '<input type="hidden" name="confirm_downgrade" value="DOWNGRADE">'
+                    . '<button class="btn btn-sm btn-outline-danger" type="submit">Downgrade to Customer</button></form>';
+            }
             if ($status === 'active') {
                 $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/status')) . '" method="post" data-workspace-form>'
                     . csrf_field()
@@ -282,12 +310,12 @@ if ($workspaceType === 'developer') {
                     . '<button class="btn btn-sm btn-primary" type="submit">Restore</button></form>';
             }
 
-            if ($isAdministrator) {
+            if (auth_can('roles.manage') && $isAdministrator) {
                 $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/administrator')) . '" method="post" data-workspace-form>'
                     . csrf_field()
                     . '<input type="hidden" name="enabled" value="0">'
                     . '<button class="btn btn-sm btn-outline-secondary" type="submit">Remove admin</button></form>';
-            } elseif ($status === 'active' && $verified) {
+            } elseif (auth_can('roles.manage') && $status === 'active' && $verified) {
                 $actions[] = '<form action="' . e(url('/dashboard/users/' . (int) $record['id'] . '/administrator')) . '" method="post" data-workspace-form>'
                     . csrf_field()
                     . '<input type="hidden" name="enabled" value="1">'
@@ -489,6 +517,9 @@ $details = match ($recordResource) {
     default => [],
 };
 ?>
+<!-- BARAMA_GLOBAL_LOCATION_CASCADE_RECORD_V110 -->
+<link rel="stylesheet" href="<?= e(asset('css/global-location-cascade-v110.css') . '?v=110') ?>">
+<script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
 <section class="workspace-page workspace-record-page">
     <nav class="workspace-record-breadcrumb" aria-label="Breadcrumb">
         <a href="<?= e(url($sectionPath)) ?>"><?= e($humanize($activeSection)) ?></a>
@@ -513,6 +544,70 @@ $details = match ($recordResource) {
     </div>
 
     <div data-workspace-notice hidden></div>
+
+    <?php if ($workspaceType === 'admin' && $recordResource === 'user'): ?>
+        <?php
+        $a49UserId = (int) $record['id'];
+        $a49Roles = array_values(array_filter(array_map('trim', explode(',', strtolower((string) ($record['roles'] ?? ''))))));
+        $a49CanManageRoles = auth_can('roles.manage');
+        $a49Verified = !empty($record['email_verified_at']);
+        $a49Active = (string) ($record['status'] ?? '') === 'active';
+        $a49Self = $a49UserId === $currentUserId;
+        $a49Administrator = in_array('administrator', $a49Roles, true);
+        $a49Developer = in_array('developer', $a49Roles, true);
+        ?>
+        <!-- BARAMA_A49A_USER_ACCESS_PANEL_V1 -->
+        <section class="workspace-record-panel barama-a49-user-access" id="barama-user-access" aria-label="User access and security management">
+            <div class="workspace-record-panel__head"><h2>Access &amp; security management</h2><span>Existing audited role and session operations</span></div>
+            <div class="barama-a49-user-access__body">
+                <div class="barama-a49-user-access__group">
+                    <h3>Role access</h3>
+                    <p>Roles determine permissions. Company and developer access depend on verified membership; assigning a role alone cannot create a company workspace.</p>
+                    <div class="barama-a49-user-access__roles">
+                        <?php foreach ($a49Roles as $a49Role): ?><span class="barama-a49-user-access__role"><?= e(ucwords(str_replace('-', ' ', $a49Role))) ?></span><?php endforeach; ?>
+                        <?php if ($a49Roles === []): ?><span>None assigned</span><?php endif; ?>
+                    </div>
+                    <div class="barama-a49-user-access__actions">
+                        <?php if (!$a49Self && $a49CanManageRoles && $a49Active && $a49Verified): ?>
+                            <form method="post" action="<?= e(url('/dashboard/users/' . $a49UserId . '/administrator')) ?>" data-workspace-form>
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="enabled" value="<?= $a49Administrator ? '0' : '1' ?>">
+                                <button class="btn btn-sm btn-outline-secondary" type="submit"><?= $a49Administrator ? 'Remove Administrator role' : 'Grant Administrator role' ?></button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if ($a49Active && $a49Verified): ?>
+                            <form method="post" action="<?= e(url('/dashboard/users/' . $a49UserId . '/developer-access/reconcile')) ?>" data-workspace-form>
+                                <?= csrf_field() ?>
+                                <button class="btn btn-sm btn-outline-secondary" type="submit">Reconcile Developer access</button>
+                            </form>
+                        <?php endif; ?>
+                        <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('/dashboard/companies')) ?>">Manage company memberships</a>
+                    </div>
+                    <small>Administrator changes require the Super Administrator permission. Developer access is granted or removed according to active company membership. Super Administrator grants and per-user permission overrides are not available here.</small>
+                </div>
+                <div class="barama-a49-user-access__group">
+                    <h3>Account security</h3>
+                    <p><?= $a49Verified ? 'Email identity: verified.' : 'Email identity: unverified.' ?> Password changes and passkey enrollment require secure, user-controlled verification.</p>
+                    <div class="barama-a49-user-access__actions">
+                        <?php if (!$a49Self): ?>
+                            <form method="post" action="<?= e(url('/dashboard/users/' . $a49UserId . '/sessions/revoke')) ?>" data-workspace-form>
+                                <?= csrf_field() ?>
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Revoke all sessions</button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if (!$a49Verified && !$a49Self && $a49CanManageRoles): ?>
+                            <form method="post" action="<?= e(url('/dashboard/users/' . $a49UserId . '/verify')) ?>" data-workspace-form data-confirm="Confirm that this user's identity and email ownership were independently verified before proceeding.">
+                                <?= csrf_field() ?>
+                                <button class="btn btn-sm btn-outline-secondary" type="submit">Verify email manually</button>
+                            </form>
+                        <?php endif; ?>
+                        <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('/dashboard/audit')) ?>">Security audit log</a>
+                    </div>
+                    <small>Do not collect or display another user's password, reset token, passcode, recovery code, or passkey secret. MFA/passkey enforcement requires a separate enrollment and policy backend.</small>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <?php if ($workspaceType === 'admin' && $recordResource === 'media'): ?>
         <section class="workspace-record-panel">
@@ -558,8 +653,13 @@ $details = match ($recordResource) {
                 <div class="workspace-lock-note">
                     <?= app_icon('alert') ?>
                     <div>
-                        <strong>Approval is blocked by parent lifecycle state</strong>
-                        <span><?= e(implode(' ', $moderationBlockers)) ?> You can still reject the record with correction instructions.</span>
+                        <strong>Approval is blocked by readiness requirements</strong>
+                        <ul class="workspace-moderation-blockers">
+                            <?php foreach ($moderationBlockers as $moderationBlocker): ?>
+                                <li><?= e((string) $moderationBlocker) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <span>You can still reject the record with correction instructions.</span>
                     </div>
                 </div>
             <?php endif; ?>
@@ -720,6 +820,84 @@ $details = match ($recordResource) {
         </section>
     <?php endif; ?>
 
+    <?php if ($recordResource === 'property' && is_array($propertyReadiness)): ?>
+        <section class="workspace-record-panel property-readiness" aria-labelledby="property-readiness-title">
+            <div class="workspace-record-panel__head">
+                <div>
+                    <h2 id="property-readiness-title">Property readiness &amp; quality</h2>
+                    <span>Computed from canonical property data, approval dependencies, and attached media. Listing counts are context only.</span>
+                </div>
+                <span class="property-readiness__state property-readiness__state--<?= e((string) $propertyReadiness['level']) ?>">
+                    <?= e((string) $propertyReadiness['label']) ?>
+                </span>
+            </div>
+
+            <div class="property-readiness__body">
+                <div class="property-readiness__summary">
+                    <div class="property-readiness__score-row">
+                        <div class="property-readiness__score-ring" data-barama-readiness-score="<?= (int) $propertyReadiness['score'] ?>" aria-label="Readiness score <?= (int) $propertyReadiness['score'] ?> out of 100">
+                            <div class="property-readiness__score-value">
+                                <strong><?= (int) $propertyReadiness['score'] ?></strong>
+                                <small>/ 100</small>
+                            </div>
+                        </div>
+                        <div class="property-readiness__score-copy">
+                            <strong><?= !empty($propertyReadiness['approval_ready']) ? 'Approval-ready record' : 'Record needs attention' ?></strong>
+                            <span>
+                                <?= !empty($propertyReadiness['approval_ready'])
+                                    ? 'All scored readiness checks are complete.'
+                                    : count((array) $propertyReadiness['missing']) . ' scored check(s) still need attention.' ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <?php if (
+                        $workspaceType === 'developer'
+                        && in_array($status, ['draft', 'rejected'], true)
+                        && is_array($propertyReadiness['first_missing'] ?? null)
+                    ): ?>
+                        <?php $firstReadinessIssue = (array) $propertyReadiness['first_missing']; ?>
+                        <div class="property-readiness__next-action" id="property-readiness-next-action">
+                            <span aria-hidden="true"><?= app_icon('alert') ?></span>
+                            <div>
+                                <strong>Fix first: <?= e((string) ($firstReadinessIssue['label'] ?? 'Property requirement')) ?></strong>
+                                <small><?= e((string) ($firstReadinessIssue['message'] ?? 'Complete the next readiness requirement.')) ?></small>
+                            </div>
+                            <a class="btn btn-sm btn-outline-secondary" href="#workspace-record-edit">Open editor</a>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="property-readiness__context">
+                        <div>
+                            <span>Listing context</span>
+                            <strong><?= (int) ($propertyReadiness['listing']['total'] ?? 0) ?> total</strong>
+                            <small><?= (int) ($propertyReadiness['listing']['published'] ?? 0) ?> published · not scored</small>
+                        </div>
+                        <div>
+                            <span>Optional enrichment</span>
+                            <strong><?= (int) ($propertyReadiness['enrichment']['filled'] ?? 0) ?>/<?= (int) ($propertyReadiness['enrichment']['total'] ?? 0) ?></strong>
+                            <small>Bedrooms, floors, furnishing, land area, and related optional details.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="property-readiness__checklist" aria-label="Property readiness checklist">
+                    <?php foreach ((array) $propertyReadiness['checks'] as $readinessCheck): ?>
+                        <?php $readinessPassed = !empty($readinessCheck['passed']); ?>
+                        <li class="property-readiness__check <?= $readinessPassed ? 'is-pass' : 'is-missing' ?>">
+                            <span class="property-readiness__check-icon" aria-hidden="true"><?= app_icon($readinessPassed ? 'check' : 'alert') ?></span>
+                            <span class="property-readiness__check-copy">
+                                <strong><?= e((string) ($readinessCheck['label'] ?? 'Readiness check')) ?></strong>
+                                <small><?= e((string) ($readinessCheck['message'] ?? '')) ?></small>
+                            </span>
+                            <span class="property-readiness__weight"><?= (int) ($readinessCheck['weight'] ?? 0) ?> pts</span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <div class="workspace-record-layout">
         <div class="workspace-record-main">
             <section class="workspace-record-panel">
@@ -782,7 +960,12 @@ $details = match ($recordResource) {
                             <div class="workspace-form__grid">
                                 <label><span>Interest</span><select class="form-select" name="transaction_type"><option value="">Not specified</option><option value="sale" <?= ($record['transaction_type'] ?? '') === 'sale' ? 'selected' : '' ?>>For sale</option><option value="rent" <?= ($record['transaction_type'] ?? '') === 'rent' ? 'selected' : '' ?>>For rent</option></select></label>
                                 <label><span>Property type</span><select class="form-select" name="property_type"><option value="">Not specified</option><?php foreach (['apartment','condominium','house','villa','townhouse','land','office','retail','warehouse','industrial','hotel','commercial','other'] as $type): ?><option value="<?= e($type) ?>" <?= ($record['property_type'] ?? '') === $type ? 'selected' : '' ?>><?= e($humanize($type)) ?></option><?php endforeach; ?></select></label>
-                                <label><span>Preferred location</span><select class="form-select" name="preferred_location_id"><option value="">Not specified</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (int) ($record['location_id'] ?? 0) === (int) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                                <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'preferred_location_id',
+    'currentLocationId' => (int) ($record['location_id'] ?? 0),
+    'label' => 'Preferred location',
+    'spanTwo' => true,
+]) ?>
                                 <label><span>Currency</span><input class="form-control" name="currency" value="<?= e((string) ($record['currency'] ?? 'USD')) ?>" maxlength="3"></label>
                                 <label><span>Minimum budget</span><input class="form-control" type="number" min="0" step="0.01" name="budget_min"></label>
                                 <label><span>Maximum budget</span><input class="form-control" type="number" min="0" step="0.01" name="budget_max"></label>
@@ -854,7 +1037,12 @@ $details = match ($recordResource) {
                                 <label><span>Website</span><input class="form-control" name="website" value="<?= e((string) ($record['website'] ?? '')) ?>" maxlength="255"></label>
                                 <label><span>Registration number</span><input class="form-control" name="registration_number" value="<?= e((string) ($record['registration_number'] ?? '')) ?>" maxlength="120"></label>
                                 <label><span>Tax number</span><input class="form-control" name="tax_number" value="<?= e((string) ($record['tax_number'] ?? '')) ?>" maxlength="120"></label>
-                                <label><span>Location</span><select class="form-select" name="location_id"><option value="">No location</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (int) ($record['location_id'] ?? 0) === (int) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                                <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'location_id',
+    'currentLocationId' => (int) ($record['location_id'] ?? 0),
+    'label' => 'Location',
+    'spanTwo' => true,
+]) ?>
                                 <label class="workspace-form__span-2"><span>Address</span><input class="form-control" name="address_line" value="<?= e((string) ($record['address_line'] ?? '')) ?>" maxlength="255"></label>
                                 <?= \Barama\Core\View::partial('workspace/description-editor', [
                                     'value' => (string) ($record['description'] ?? ''),
@@ -874,7 +1062,12 @@ $details = match ($recordResource) {
                                 <label><span>Project name</span><input class="form-control" name="name" value="<?= e((string) $record['name']) ?>" required maxlength="191"></label>
                                 <label><span>Project type</span><select class="form-select" name="project_type"><?php foreach (['residential','commercial','mixed_use','land_development','industrial','hospitality','other'] as $type): ?><option value="<?= e($type) ?>" <?= $record['project_type'] === $type ? 'selected' : '' ?>><?= e($humanize($type)) ?></option><?php endforeach; ?></select></label>
                                 <label><span>Completion</span><select class="form-select" name="completion_status"><?php foreach (['planned','pre_launch','under_construction','completed','on_hold'] as $stage): ?><option value="<?= e($stage) ?>" <?= $record['completion_status'] === $stage ? 'selected' : '' ?>><?= e($humanize($stage)) ?></option><?php endforeach; ?></select></label>
-                                <label><span>Location</span><select class="form-select" name="location_id"><option value="">No location</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (int) ($record['location_id'] ?? 0) === (int) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                                <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'location_id',
+    'currentLocationId' => (int) ($record['location_id'] ?? 0),
+    'label' => 'Location',
+    'spanTwo' => true,
+]) ?>
                                 <label><span>Launch date</span><input class="form-control" type="date" name="launch_date" value="<?= e((string) ($record['launch_date'] ?? '')) ?>"></label>
                                 <label><span>Expected completion</span><input class="form-control" type="date" name="expected_completion_date" value="<?= e((string) ($record['expected_completion_date'] ?? '')) ?>"></label>
                                 <label class="workspace-form__span-2"><span>Address</span><input class="form-control" name="address_line" value="<?= e((string) ($record['address_line'] ?? '')) ?>" maxlength="255"></label>
@@ -896,7 +1089,12 @@ $details = match ($recordResource) {
                                 <label><span>Title</span><input class="form-control" name="title" value="<?= e((string) $record['title']) ?>" required maxlength="191"></label>
                                 <label><span>Type</span><select class="form-select" name="property_type"><?php foreach (['apartment','condominium','house','villa','townhouse','land','office','retail','warehouse','industrial','hotel','commercial','other'] as $type): ?><option value="<?= e($type) ?>" <?= $record['property_type'] === $type ? 'selected' : '' ?>><?= e($humanize($type)) ?></option><?php endforeach; ?></select></label>
                                 <label><span>Project</span><select class="form-select" name="project_id"><option value="">Standalone</option><?php foreach ($projects as $project): ?><option value="<?= e((string) $project['id']) ?>" <?= (int) ($record['project_id'] ?? 0) === (int) $project['id'] ? 'selected' : '' ?>><?= e((string) $project['name']) ?></option><?php endforeach; ?></select></label>
-                                <label><span>Location</span><select class="form-select" name="location_id"><option value="">No location</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>" <?= (int) ($record['location_id'] ?? 0) === (int) $location['id'] ? 'selected' : '' ?>><?= e((string) $location['name']) ?></option><?php endforeach; ?></select></label>
+                                <?= \Barama\Core\View::partial('workspace/location-cascade', [
+    'fieldName' => 'location_id',
+    'currentLocationId' => (int) ($record['location_id'] ?? 0),
+    'label' => 'Location',
+    'spanTwo' => true,
+]) ?>
                                 <label><span>Bedrooms</span><input class="form-control" type="number" min="0" step="0.5" name="bedrooms" value="<?= e((string) ($record['bedrooms'] ?? '')) ?>"></label>
                                 <label><span>Bathrooms</span><input class="form-control" type="number" min="0" step="0.5" name="bathrooms" value="<?= e((string) ($record['bathrooms'] ?? '')) ?>"></label>
                                 <label><span>Parking spaces</span><input class="form-control" type="number" min="0" name="parking_spaces" value="<?= e((string) ($record['parking_spaces'] ?? '')) ?>"></label>

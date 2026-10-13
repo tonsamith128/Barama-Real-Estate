@@ -22,6 +22,8 @@ final class AuthService
     private const SESSION_LOGIN_AT = 'auth.login_at';
     private const SESSION_LAST_ACTIVITY = 'auth.last_activity';
     private const SESSION_CLI_USER_ID = 'auth.cli_user_id';
+    private const SESSION_MFA_PENDING_USER_ID = 'auth.mfa_pending_user_id';
+    private const SESSION_MFA_PENDING_AT = 'auth.mfa_pending_at';
 
     private UserRepository $users;
     private RoleRepository $roles;
@@ -208,6 +210,19 @@ final class AuthService
         }
 
         $this->throttle->clear($email, $ip);
+
+        if ((new SecurityFactorService())->mfaEnabled((int) $user['id'])) {
+            $this->beginMfaChallenge((int) $user['id']);
+            (new SecurityAuditService())->record(
+                'auth.mfa_challenge_started',
+                (int) $user['id'],
+                (int) $user['id'],
+                [],
+                $ip
+            );
+            return 'mfa_required';
+        }
+
         $this->users->updateLastLogin((int) $user['id']);
         $this->loginUserId((int) $user['id']);
 
@@ -215,11 +230,84 @@ final class AuthService
             'auth.login_success',
             (int) $user['id'],
             (int) $user['id'],
-            [],
+            ['mfa' => false],
             $ip
         );
 
         return 'success';
+    }
+
+    public function hasPendingMfaChallenge(): bool
+    {
+        $userId = Session::get(self::SESSION_MFA_PENDING_USER_ID);
+        $startedAt = (int) Session::get(self::SESSION_MFA_PENDING_AT, 0);
+
+        return (is_int($userId) || ctype_digit((string) $userId))
+            && $startedAt > 0
+            && (time() - $startedAt) <= 300;
+    }
+
+    public function completeMfaChallenge(string $code, string $ip): string
+    {
+        if (!$this->hasPendingMfaChallenge()) {
+            $this->clearMfaChallenge();
+            return 'expired';
+        }
+
+        $userId = (int) Session::get(self::SESSION_MFA_PENDING_USER_ID, 0);
+        $user = $this->users->findById($userId);
+        if ($user === null || (string) $user['status'] !== 'active') {
+            $this->clearMfaChallenge();
+            return 'expired';
+        }
+
+        $throttleKey = 'mfa-user-' . $userId;
+        if ($this->throttle->isLocked($throttleKey, $ip)) {
+            return 'locked';
+        }
+
+        try {
+            $valid = (new SecurityFactorService())->verifyMfaCode(
+                $userId,
+                $code,
+                true
+            );
+        } catch (RuntimeException) {
+            $valid = false;
+        }
+
+        if (!$valid) {
+            $this->throttle->hit($throttleKey, $ip);
+            $locked = $this->throttle->isLocked($throttleKey, $ip);
+            (new SecurityAuditService())->record(
+                'auth.mfa_failed',
+                $userId,
+                $userId,
+                ['locked' => $locked],
+                $ip
+            );
+            return $locked ? 'locked' : 'invalid';
+        }
+
+        $this->throttle->clear($throttleKey, $ip);
+        $this->clearMfaChallenge();
+        $this->users->updateLastLogin($userId);
+        $this->loginUserId($userId);
+
+        (new SecurityAuditService())->record(
+            'auth.login_success',
+            $userId,
+            $userId,
+            ['mfa' => true],
+            $ip
+        );
+
+        return 'success';
+    }
+
+    public function cancelMfaChallenge(): void
+    {
+        $this->clearMfaChallenge();
     }
 
     public function logout(): void
@@ -250,15 +338,28 @@ final class AuthService
     /* BARAMA_WORKSPACE_BOUNDARY_V100 */
     public function canAccessWorkspace(string $workspace): bool
     {
-        return match ($workspace) {
-            'account' => $this->can('account.access')
-                && (!$this->hasRole('developer') || $this->hasRole('administrator')),
-            'developer' => $this->can('developer.access')
-                && ($this->hasRole('developer') || $this->hasRole('administrator')),
-            'dashboard' => $this->can('dashboard.access')
-                && $this->hasRole('administrator'),
-            default => false,
-        };
+        $user = $this->user();
+        if ($user === null) { return false; }
+        $isAdmin = $this->hasRole('administrator') || $this->hasRole('super-administrator');
+        if ($workspace === 'dashboard') {
+            return $isAdmin && $this->can('dashboard.access');
+        }
+        if ($isAdmin) {
+            return in_array($workspace, ['account', 'developer'], true);
+        }
+        $eligible = (new CompanyWorkspaceAccessService())->eligibleRoles((int) $user['id']);
+        if ($workspace === 'developer') {
+            foreach ($eligible as $role) {
+                if ($this->hasRole($role) && $this->can('developer.access')) { return true; }
+            }
+            return false;
+        }
+        if ($workspace === 'account') {
+            return $eligible === []
+                && !$this->hasRole('developer') && !$this->hasRole('company')
+                && $this->can('account.access');
+        }
+        return false; // BARAMA_EXCLUSIVE_WORKSPACE_V115
     }
 
     public function hasRole(string $roleSlug): bool
@@ -282,11 +383,11 @@ final class AuthService
             return '/verify-email';
         }
 
-        if ($this->can('dashboard.access')) {
+        if ($this->canAccessWorkspace('dashboard')) {
             return '/dashboard';
         }
 
-        if ($this->can('developer.access')) {
+        if ($this->canAccessWorkspace('developer')) {
             return '/developer';
         }
 
@@ -302,6 +403,21 @@ final class AuthService
             Session::put(self::SESSION_LAST_ACTIVITY, time());
             $this->resolvedUser = false;
         }
+    }
+
+    private function beginMfaChallenge(int $userId): void
+    {
+        Session::regenerate();
+        Csrf::regenerate();
+        Session::put(self::SESSION_MFA_PENDING_USER_ID, $userId);
+        Session::put(self::SESSION_MFA_PENDING_AT, time());
+        $this->resolvedUser = null;
+    }
+
+    private function clearMfaChallenge(): void
+    {
+        Session::forget(self::SESSION_MFA_PENDING_USER_ID);
+        Session::forget(self::SESSION_MFA_PENDING_AT);
     }
 
     private function loginUserId(int $userId): void
@@ -354,6 +470,8 @@ final class AuthService
             self::SESSION_LOGIN_AT,
             self::SESSION_LAST_ACTIVITY,
             self::SESSION_CLI_USER_ID,
+            self::SESSION_MFA_PENDING_USER_ID,
+            self::SESSION_MFA_PENDING_AT,
             'auth.intended',
         ] as $key) {
             Session::forget($key);

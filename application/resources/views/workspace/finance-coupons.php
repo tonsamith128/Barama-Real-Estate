@@ -4,8 +4,87 @@ declare(strict_types=1);
 
 $coupons = is_array($coupons ?? null) ? $coupons : [];
 $summary = is_array($couponSummary ?? null) ? $couponSummary : [];
+
+$q = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 80);
+$statusFilter = strtolower(trim((string) ($_GET['status'] ?? '')));
+if (!in_array($statusFilter, ['', 'active', 'inactive', 'archived'], true)) {
+    $statusFilter = '';
+}
+
+$filteredCoupons = array_values(array_filter(
+    $coupons,
+    static function (array $coupon) use ($q, $statusFilter): bool {
+        if (
+            $statusFilter !== ''
+            && strtolower((string) ($coupon['status'] ?? '')) !== $statusFilter
+        ) {
+            return false;
+        }
+
+        if ($q === '') {
+            return true;
+        }
+
+        $haystack = strtolower(
+            (string) ($coupon['code'] ?? '')
+            . ' '
+            . (string) ($coupon['name'] ?? '')
+            . ' '
+            . (string) ($coupon['description'] ?? '')
+        );
+
+        return str_contains($haystack, strtolower($q));
+    }
+));
+
+$perPage = 10;
+$total = count($filteredCoupons);
+$pages = max(1, (int) ceil($total / $perPage));
+$page = filter_var(
+    $_GET['page'] ?? 1,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+$page = $page === false ? 1 : min((int) $page, $pages);
+
+$visibleCoupons = array_slice(
+    $filteredCoupons,
+    ($page - 1) * $perPage,
+    $perPage
+);
+
+$query = array_filter(
+    [
+        'q' => $q,
+        'status' => $statusFilter,
+    ],
+    static fn (string $value): bool => $value !== ''
+);
+
+$pageUrl = static function (int $target) use ($query): string {
+    return url(
+        '/dashboard/coupons?'
+        . http_build_query(
+            array_merge(
+                $query,
+                ['page' => max(1, $target)]
+            )
+        )
+    );
+};
 ?>
-<section class="workspace-page">
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-coupons-pagination-v184.css') . '?v=184') ?>"
+>
+
+<link
+    rel="stylesheet"
+    href="<?= e(asset('css/finance-coupons-focus-v185.css') . '?v=185') ?>"
+>
+
+<section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--coupons" data-coupons-workspace>
+    <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -20,7 +99,7 @@ $summary = is_array($couponSummary ?? null) ? $couponSummary : [];
 
     <div data-workspace-notice hidden></div>
 
-    <div class="workspace-stat-grid">
+    <div class="workspace-stat-grid finance-summary-cards">
         <div class="workspace-stat"><span><?= app_icon('layers') ?></span><strong><?= e(number_format((int) ($summary['coupons'] ?? 0))) ?></strong><small>Coupons</small></div>
         <div class="workspace-stat"><span><?= app_icon('check') ?></span><strong><?= e(number_format((int) ($summary['active_coupons'] ?? 0))) ?></strong><small>Active</small></div>
         <div class="workspace-stat"><span><?= app_icon('building') ?></span><strong><?= e(number_format((int) ($summary['effective_redemptions'] ?? 0))) ?></strong><small>Effective redemptions</small></div>
@@ -63,27 +142,63 @@ $summary = is_array($couponSummary ?? null) ? $couponSummary : [];
             </div>
         </div>
 
-        <div class="workspace-table-wrap">
-            <table class="workspace-table">
+        
+        <form
+            class="finance-coupons__filters"
+            method="get"
+            action="<?= e(url('/dashboard/coupons')) ?>"
+        >
+            <label>
+                <?= app_icon('search') ?>
+                <input
+                    class="form-control"
+                    type="search"
+                    name="q"
+                    value="<?= e($q) ?>"
+                    placeholder="Search coupon code, name, or description"
+                >
+            </label>
+
+            <select class="form-select" name="status" aria-label="Coupon status">
+                <option value="">All statuses</option>
+                <?php foreach ([
+                    'active' => 'Active',
+                    'inactive' => 'Inactive',
+                    'archived' => 'Archived',
+                ] as $value => $label): ?>
+                    <option
+                        value="<?= e($value) ?>"
+                        <?= $statusFilter === $value ? 'selected' : '' ?>
+                    ><?= e($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a
+                class="btn btn-outline-secondary"
+                href="<?= e(url('/dashboard/coupons')) ?>"
+            >Reset</a>
+        </form>
+
+<div class="workspace-table-wrap">
+            <table class="workspace-table finance-coupons__table-focus">
                 <thead>
                     <tr>
                         <th>Coupon</th>
-                        <th>Discount</th>
-                        <th>Window</th>
-                        <th>Global limit</th>
-                        <th>Company limit</th>
-                        <th>Effective uses</th>
-                        <th>Status</th>
+                        <th>Offer</th>
+                        <th>Availability</th>
+                        <th>Usage</th>
+                        <th>State</th>
                         <th>Updated</th>
                         <th aria-label="Actions"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($coupons === []): ?>
-                        <tr><td colspan="9"><div class="workspace-record-empty">No coupons exist yet.</div></td></tr>
+                    <?php if ($visibleCoupons === []): ?>
+                        <tr><td colspan="7"><div class="workspace-record-empty">No coupons exist yet.</div></td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($coupons as $coupon): ?>
+                    <?php foreach ($visibleCoupons as $coupon): ?>
                         <?php
                         $status = (string) ($coupon['status'] ?? 'inactive');
                         $type = (string) ($coupon['discount_type'] ?? 'percent');
@@ -92,16 +207,51 @@ $summary = is_array($couponSummary ?? null) ? $couponSummary : [];
                             : (string) ($coupon['currency'] ?? '') . ' ' . number_format((float) $coupon['discount_value'], 2);
                         ?>
                         <tr>
-                            <td><strong><?= e((string) $coupon['code']) ?></strong><small><?= e((string) $coupon['name']) ?></small></td>
-                            <td><?= e($discount) ?></td>
                             <td>
-                                <small>From: <?= e((string) ($coupon['starts_at'] ?? 'Any time')) ?></small>
-                                <small>Until: <?= e((string) ($coupon['ends_at'] ?? 'No expiry')) ?></small>
+                                <div class="finance-coupons__coupon">
+                                    <strong><?= e((string) $coupon['code']) ?></strong>
+                                    <small><?= e((string) $coupon['name']) ?></small>
+                                </div>
                             </td>
-                            <td><?= $coupon['max_redemptions'] === null ? 'Unlimited' : e(number_format((int) $coupon['max_redemptions'])) ?></td>
-                            <td><?= $coupon['per_company_limit'] === null ? 'Unlimited' : e(number_format((int) $coupon['per_company_limit'])) ?></td>
-                            <td><?= e(number_format((int) ($coupon['effective_redemptions'] ?? 0))) ?></td>
-                            <td><span class="status-badge status-badge--<?= e($status === 'active' ? 'approved' : ($status === 'archived' ? 'neutral' : 'pending')) ?>"><?= e(ucfirst($status)) ?></span></td>
+                            <td>
+                                <div class="finance-coupons__offer">
+                                    <strong><?= e($discount) ?></strong>
+                                    <small><?= e(ucfirst($type)) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-coupons__availability">
+                                    <small>From: <?= e((string) ($coupon['starts_at'] ?? 'Any time')) ?></small>
+                                    <small>Until: <?= e((string) ($coupon['ends_at'] ?? 'No expiry')) ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-coupons__usage">
+                                    <small>
+                                        Global:
+                                        <?= $coupon['max_redemptions'] === null
+                                            ? 'Unlimited'
+                                            : e(number_format((int) $coupon['max_redemptions'])) ?>
+                                    </small>
+                                    <small>
+                                        Per company:
+                                        <?= $coupon['per_company_limit'] === null
+                                            ? 'Unlimited'
+                                            : e(number_format((int) $coupon['per_company_limit'])) ?>
+                                    </small>
+                                    <small>
+                                        Effective uses:
+                                        <?= e(number_format((int) ($coupon['effective_redemptions'] ?? 0))) ?>
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="finance-coupons__state">
+                                    <span class="status-badge status-badge--<?= e($status === 'active' ? 'approved' : ($status === 'archived' ? 'neutral' : 'pending')) ?>">
+                                        <?= e(ucfirst($status)) ?>
+                                    </span>
+                                </div>
+                            </td>
                             <td><?= e((string) $coupon['updated_at']) ?></td>
                             <td>
                                 <details class="workspace-row-actions">
@@ -132,5 +282,64 @@ $summary = is_array($couponSummary ?? null) ? $couponSummary : [];
                 </tbody>
             </table>
         </div>
+
+        <div class="finance-coupons__pager">
+            <span>
+                Page <?= $page ?> of <?= $pages ?>
+                · <?= $total ?> coupon<?= $total === 1 ? '' : 's' ?>
+                · 10 per page
+            </span>
+
+            <?php if ($pages > 1): ?>
+                <nav aria-label="Coupon pages">
+                    <?php if ($page > 1): ?>
+                        <a href="<?= e($pageUrl($page - 1)) ?>">Previous</a>
+                    <?php endif; ?>
+
+                    <?php
+                    $from = max(1, $page - 2);
+                    $to = min($pages, $page + 2);
+                    ?>
+                    <?php for ($i = $from; $i <= $to; $i++): ?>
+                        <a
+                            href="<?= e($pageUrl($i)) ?>"
+                            class="<?= $i === $page ? 'is-active' : '' ?>"
+                        ><?= $i ?></a>
+                    <?php endfor; ?>
+
+                    <?php if ($page < $pages): ?>
+                        <a href="<?= e($pageUrl($page + 1)) ?>">Next</a>
+                    <?php endif; ?>
+                </nav>
+            <?php endif; ?>
+
+            <form
+                class="finance-coupons__goto"
+                method="get"
+                action="<?= e(url('/dashboard/coupons')) ?>"
+            >
+                <?php foreach ($query as $key => $value): ?>
+                    <input
+                        type="hidden"
+                        name="<?= e((string) $key) ?>"
+                        value="<?= e((string) $value) ?>"
+                    >
+                <?php endforeach; ?>
+
+                <label>
+                    <span>Go To</span>
+                    <input
+                        class="form-control"
+                        type="number"
+                        name="page"
+                        min="1"
+                        max="<?= $pages ?>"
+                        value="<?= $page ?>"
+                    >
+                </label>
+                <button class="btn btn-outline-secondary" type="submit">Go</button>
+            </form>
+        </div>
+
     </section>
 </section>

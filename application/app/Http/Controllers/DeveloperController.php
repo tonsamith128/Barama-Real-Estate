@@ -58,6 +58,62 @@ final class DeveloperController
         ],
     ];
 
+    public function newCompany(Request $request): Response
+    {
+        return $this->renderCreatePage('company');
+    }
+
+    public function newProject(Request $request): Response
+    {
+        return $this->renderCreatePage('projects');
+    }
+
+    public function newProperty(Request $request): Response
+    {
+        return $this->renderCreatePage('properties');
+    }
+
+    public function newListing(Request $request): Response
+    {
+        return $this->renderCreatePage('listings');
+    }
+
+    private function renderCreatePage(string $section): Response
+    {
+        $config = [
+            'company' => ['Add company', 'Create a company profile before building its portfolio.', 'company', 'company.manage'],
+            'projects' => ['Add project', 'Create a new development project for a company you manage.', 'project', 'project.manage'],
+            'properties' => ['Add property', 'Add a canonical property record without changing the listing page.', 'property', 'property.manage'],
+            'listings' => ['Add listing', 'Create a sale or rental offer for a property you manage.', 'listing', 'listing.manage'],
+        ];
+
+        if (!isset($config[$section])) {
+            return Response::html(View::render('errors/404', ['pageTitle' => 'Page not found']), 404);
+        }
+
+        $user = auth_user();
+        if ($user === null) {
+            return Response::redirect(url('/login'));
+        }
+        // Route middleware independently enforces each resource's manage permission.
+        [$title, $description, $resource] = $config[$section];
+
+        return Response::html(View::render('workspace/developer-create', [
+            'pageTitle' => $title . ' · Company / Vendor',
+            'activeArea' => 'developer',
+            'workspaceType' => 'developer',
+            'workspaceLabel' => 'Company / Vendor Workspace',
+            'workspaceNavigation' => $this->navigation(),
+            'activeSection' => $section,
+            'createSection' => $section,
+            'createTitle' => $title,
+            'createDescription' => $description,
+            'createResource' => $resource,
+            'formOptions' => (new WorkspaceReadRepository())->developerOptions((int) $user['id']),
+            'workspacePreferences' => (new WorkspaceSettingsRepository())->get((int) $user['id'], 'developer'),
+        ]));
+    }
+
     public function index(Request $request): Response
     {
         return $this->renderSection($request, 'overview');
@@ -164,7 +220,7 @@ final class DeveloperController
         $workspacePreferences = $settingsRepository->get((int) $user['id'], 'developer');
         $rememberFilters = !empty($workspacePreferences['remember_filters']);
         $savedFilters = is_array($workspacePreferences['last_filters'] ?? null) ? $workspacePreferences['last_filters'] : [];
-        $hasFilterQuery = isset($_GET['q']) || isset($_GET['status']) || isset($_GET['type']) || isset($_GET['location']) || isset($_GET['sort']);
+        $hasFilterQuery = isset($_GET['q']) || isset($_GET['status']) || isset($_GET['type']) || isset($_GET['location']) || isset($_GET['readiness']) || isset($_GET['quality']) || isset($_GET['sort']);
 
         $search = mb_substr(trim((string) $request->input('q', $rememberFilters && !$hasFilterQuery ? ($savedFilters['q'] ?? '') : '')), 0, 80);
         $page = filter_var(
@@ -178,12 +234,50 @@ final class DeveloperController
             'status' => mb_substr(trim((string) $request->input('status', $rememberFilters && !$hasFilterQuery ? ($savedFilters['status'] ?? '') : '')), 0, 40),
             'type' => mb_substr(trim((string) $request->input('type', $rememberFilters && !$hasFilterQuery ? ($savedFilters['type'] ?? '') : '')), 0, 80),
             'location' => trim((string) $request->input('location', $rememberFilters && !$hasFilterQuery ? ($savedFilters['location'] ?? '') : '')),
+            'readiness' => mb_substr(trim((string) $request->input('readiness', $rememberFilters && !$hasFilterQuery ? ($savedFilters['readiness'] ?? '') : '')), 0, 20),
+            'quality' => mb_substr(trim((string) $request->input('quality', $rememberFilters && !$hasFilterQuery ? ($savedFilters['quality'] ?? '') : '')), 0, 40),
         ];
         $sortDefault = (string) ($workspacePreferences['default_sort'] ?? 'updated_desc');
         $sort = mb_substr(trim((string) $request->input('sort', $rememberFilters && !$hasFilterQuery ? ($savedFilters['sort'] ?? $sortDefault) : $sortDefault)), 0, 40);
         $pageSize = in_array((int) ($workspacePreferences['page_size'] ?? 20), [10, 20, 50], true) ? (int) ($workspacePreferences['page_size'] ?? 20) : 20;
+        // Listings Pagination Standard Repair v1.4.7:
+        // keep the existing workspace page-size logic intact, but standardize Listings.
+        if ($section === 'listings') {
+            $pageSize = 10;
+        }
+
+        // Projects Pagination Standard Repair v1.5.1:
+        // Projects use the same compact 10-item inventory pagination standard.
+        if ($section === 'projects') {
+            $pageSize = 10;
+        }
+
+        // Companies Pagination Standard v1.5.5:
+        // Company portfolio inventory uses the compact 10-item pagination standard.
+        if ($section === 'company') {
+            $pageSize = 10;
+        }
+
+        // Inquiries Pagination Standard v1.5.8:
+        // Customer inquiry queues use the compact 10-item pagination standard.
+        if ($section === 'inquiries') {
+            $pageSize = 10;
+        }
+
+        // Leads Pagination Standard v1.6.0:
+        // Property lead queues use the compact 10-item pagination standard.
+        if ($section === 'leads') {
+            $pageSize = 10;
+        }
+
+        // Viewings Pagination Standard v1.6.3:
+        // Viewing appointment queues use the compact 10-item pagination standard.
+        if ($section === 'viewings') {
+            $pageSize = 10;
+        }
+
         if ($rememberFilters && $hasFilterQuery) {
-            $workspacePreferences['last_filters'] = ['q'=>$search, 'status'=>$filters['status'], 'type'=>$filters['type'], 'location'=>$filters['location'], 'sort'=>$sort];
+            $workspacePreferences['last_filters'] = ['q'=>$search, 'status'=>$filters['status'], 'type'=>$filters['type'], 'location'=>$filters['location'], 'readiness'=>$filters['readiness'], 'quality'=>$filters['quality'], 'sort'=>$sort];
             $settingsRepository->save((int) $user['id'], 'developer', $workspacePreferences);
         }
 
@@ -191,6 +285,18 @@ final class DeveloperController
         $formOptions = $repository->developerOptions((int) $user['id']);
         $summary = $repository->developerSummary((int) $user['id']);
         $portfolioSummary = $repository->developerPortfolioSummary((int) $user['id'], $section);
+        $propertyQualityOperations = [];
+        if ($section === 'properties') {
+            $propertyReadinessService = new \Barama\Services\PropertyReadinessService();
+            if (strtolower(trim((string) $request->input('export', ''))) === 'readiness_csv') {
+                return Response::binary(
+                    $propertyReadinessService->csvReportForDeveloper((int) $user['id'], $filters),
+                    'text/csv; charset=UTF-8',
+                    ['Content-Disposition' => 'attachment; filename="barama-property-readiness-' . gmdate('Ymd') . '.csv"']
+                );
+            }
+            $propertyQualityOperations = $propertyReadinessService->operationalSummaryForDeveloper((int) $user['id']);
+        }
         $customerOperationsSummary = $repository->developerCustomerOperationsSummary(
             (int) $user['id'],
             $section
@@ -234,6 +340,7 @@ final class DeveloperController
             'tableSort' => $sort,
             'workspacePreferences' => $workspacePreferences,
             'filterOptions' => $this->filterOptions($section),
+            'propertyQualityOperations' => $propertyQualityOperations,
             'formOptions' => $formOptions,
         ]));
     }
@@ -306,14 +413,17 @@ final class DeveloperController
                 ['label' => 'Pending review', 'value' => $portfolio['pending'] ?? 0, 'icon' => 'clock', 'href' => '/developer/properties?status=pending'],
                 ['label' => 'Approved', 'value' => $portfolio['approved'] ?? 0, 'icon' => 'shield', 'href' => '/developer/properties?status=approved'],
                 ['label' => 'Rejected', 'value' => $portfolio['rejected'] ?? 0, 'icon' => 'alert', 'href' => '/developer/properties?status=rejected'],
+                ['label' => 'Excellent · 100%', 'value' => $portfolio['excellent'] ?? 0, 'icon' => 'check'],
+                ['label' => 'Good · 80–99%', 'value' => $portfolio['good'] ?? 0, 'icon' => 'shield'],
+                ['label' => 'Needs attention · 50–79%', 'value' => $portfolio['needs_attention'] ?? 0, 'icon' => 'alert'],
+                ['label' => 'Incomplete · below 50%', 'value' => $portfolio['incomplete'] ?? 0, 'icon' => 'alert'],
             ],
             'listings' => [
+                // Listings Summary Focus v1.4.9 - primary operational states only.
                 ['label' => 'All listings', 'value' => $portfolio['total'] ?? 0, 'icon' => 'tag', 'href' => '/developer/listings'],
                 ['label' => 'Draft', 'value' => $portfolio['draft'] ?? 0, 'icon' => 'edit', 'href' => '/developer/listings?status=draft'],
                 ['label' => 'Pending review', 'value' => $portfolio['pending'] ?? 0, 'icon' => 'clock', 'href' => '/developer/listings?status=pending'],
                 ['label' => 'Published', 'value' => $portfolio['published'] ?? 0, 'icon' => 'home', 'href' => '/developer/listings?status=published'],
-                ['label' => 'Paused', 'value' => $portfolio['paused'] ?? 0, 'icon' => 'clock', 'href' => '/developer/listings?status=paused'],
-                ['label' => 'Rejected', 'value' => $portfolio['rejected'] ?? 0, 'icon' => 'alert', 'href' => '/developer/listings?status=rejected'],
             ],
             default => [
                 ['label' => 'Companies', 'value' => $summary['companies'], 'icon' => 'building'],
@@ -356,6 +466,12 @@ final class DeveloperController
     }
 
     /** @return array<int, array{label:string,path:string,icon:string}> */
+    /** Navigation source shared with Settings; do not maintain duplicate sidebar lists. */
+    public function settingsNavigation(): array
+    {
+        return $this->navigation();
+    }
+
     private function navigation(): array
     {
         return [
@@ -374,6 +490,8 @@ final class DeveloperController
             ['label' => 'Team', 'path' => '/developer/team', 'icon' => 'users'],
             ['label' => 'Media', 'path' => '/developer/media', 'icon' => 'image'],
             ['label' => 'Billing & Plan', 'path' => '/developer/billing', 'icon' => 'layers'],
+            ['heading' => 'Communications'],
+            ['label' => 'Notifications', 'path' => '/developer/notifications', 'icon' => 'bell'],
             ['heading' => 'Settings'],
             ['label' => 'Basic', 'path' => '/developer/settings', 'icon' => 'settings'],
             ['label' => 'Profile', 'path' => '/developer/settings/profile', 'icon' => 'user'],
@@ -445,11 +563,15 @@ final class DeveloperController
                 'statuses' => DomainRules::PROPERTY_STATUSES,
                 'types' => DomainRules::PROPERTY_TYPES,
                 'location' => true,
+                'readiness' => ['ready' => 'Ready', 'attention' => 'Needs attention'],
+                'quality' => ['missing_media' => 'Missing media', 'missing_primary_media' => 'Missing primary media', 'missing_location' => 'Missing location', 'missing_description' => 'Short / missing description', 'parent_blocked' => 'Parent blocked', 'stale_draft' => 'Stale draft · 30+ days', 'stale_30_59' => 'Stale draft · 30–59 days', 'stale_60_89' => 'Stale draft · 60–89 days', 'stale_90_plus' => 'Stale draft · 90+ days'],
                 'sorts' => [
                     'updated_desc' => 'Recently updated',
                     'updated_asc' => 'Oldest updated',
                     'name_asc' => 'Title A–Z',
                     'name_desc' => 'Title Z–A',
+                    'readiness_desc' => 'Highest readiness first',
+                    'readiness_asc' => 'Most incomplete first',
                 ],
             ],
             'listings' => [
@@ -520,33 +642,31 @@ final class DeveloperController
                 'status' => 'Status',
                 'created_at' => 'Received',
             ],
+
             'viewings' => [
+                // Viewings Table Focus v1.6.4
                 'customer_name' => 'Customer',
-                'property_title' => 'Property',
-                'location_name' => 'Location',
-                'preferred_date' => 'Preferred',
-                'scheduled_for' => 'Scheduled',
-                'status' => 'Status',
+                'viewing_context' => 'Context',
+                'viewing_schedule' => 'Schedule',
+                'viewing_state' => 'State',
                 'updated_at' => 'Updated',
             ],
             'company' => [
+                // Companies Table Focus v1.5.6
                 'name' => 'Company',
                 'company_type' => 'Type',
-                'location_name' => 'Location',
-                'projects_count' => 'Projects',
-                'properties_count' => 'Properties',
-                'member_role' => 'My role',
-                'status' => 'Status',
+                'company_context' => 'Context',
+                'company_portfolio' => 'Portfolio',
+                'company_state' => 'State',
                 'updated_at' => 'Updated',
             ],
             'projects' => [
+                // Projects Table Focus v1.5.2
                 'name' => 'Project',
-                'company_name' => 'Company',
-                'location_name' => 'Location',
                 'project_type' => 'Type',
-                'properties_count' => 'Properties',
-                'completion_status' => 'Completion',
-                'status' => 'Status',
+                'project_context' => 'Context',
+                'project_inventory' => 'Inventory',
+                'project_state' => 'State',
                 'updated_at' => 'Updated',
             ],
             'properties' => [
@@ -556,28 +676,28 @@ final class DeveloperController
                 'location_name' => 'Location',
                 'property_type' => 'Type',
                 'listings_count' => 'Listings',
+                'readiness_score' => 'Readiness',
                 'status' => 'Status',
                 'updated_at' => 'Updated',
             ],
             'listings' => [
+                // Listings Table Focus v1.4.8
                 'property_title' => 'Property',
-                'company_name' => 'Company',
                 'transaction_type' => 'Offer',
                 'price' => 'Price',
-                'location_name' => 'Location',
-                'status' => 'Status',
-                'expires_at' => 'Expires',
+                'listing_context' => 'Context',
+                'listing_state' => 'State',
                 'updated_at' => 'Updated',
             ],
+
             'leads' => [
+                // Leads Table Focus v1.6.1
                 'contact_name' => 'Contact',
-                'source_property_title' => 'Property',
-                'preferred_location_name' => 'Preferred location',
-                'transaction_type' => 'Interest',
-                'budget_max' => 'Budget',
-                'assigned_user_name' => 'Assigned to',
-                'stage' => 'Stage',
-                'updated_at' => 'Updated',
+                'lead_context' => 'Context',
+                'lead_interest' => 'Interest',
+                'lead_assignment' => 'Assignment',
+                'lead_stage' => 'Stage',
+                'lead_activity' => 'Activity',
             ],
             'team' => [
                 'name' => 'Member',

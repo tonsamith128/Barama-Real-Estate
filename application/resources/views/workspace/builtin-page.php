@@ -37,9 +37,9 @@ $definitions = $isContact
         'hero' => ['label' => 'Hero', 'description' => 'Top-level About Us headline, introduction, and optional image.', 'icon' => 'home'],
         'story' => ['label' => 'Our Story', 'description' => 'Long-form company/platform introduction with optional supporting image.', 'icon' => 'building'],
         'mission_vision' => ['label' => 'Mission & Vision', 'description' => 'Two focused purpose cards describing mission and long-term vision.', 'icon' => 'eye'],
-        'values' => ['label' => 'Values', 'description' => 'Four clean cards describing the principles behind the platform.', 'icon' => 'shield'],
-        'stats' => ['label' => 'Stats', 'description' => 'Four concise marketplace or company metrics.', 'icon' => 'grid'],
-        'team' => ['label' => 'Team', 'description' => 'Up to four team profiles with role, biography, and image URL.', 'icon' => 'users'],
+        'values' => ['label' => 'Values', 'description' => 'Up to twelve reorderable cards describing the principles behind the platform.', 'icon' => 'shield'],
+        'stats' => ['label' => 'Stats', 'description' => 'Up to eight reorderable marketplace or company metrics.', 'icon' => 'grid'],
+        'team' => ['label' => 'Team', 'description' => 'Up to eight team profiles with role, biography, and image URL.', 'icon' => 'users'],
         'cta' => ['label' => 'Call to Action', 'description' => 'Closing message with primary and secondary actions.', 'icon' => 'check'],
     ];
 
@@ -56,7 +56,10 @@ foreach ($definitions as $key => $definition) {
 $messages = is_array($contactMessages ?? null) ? $contactMessages : [];
 $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSummary : [];
 ?>
-<section class="workspace-page content-config-page builtin-admin-page">
+<?php if (!$isContact): ?>
+<link rel="stylesheet" href="<?= e(asset('css/about-editor-v117a24.css')) ?>?v=117a24">
+<?php endif; ?>
+<section class="workspace-page content-config-page builtin-admin-page<?= $isContact ? '' : ' barama-about-admin-a24' ?>">
     <div class="workspace-page__header">
         <div>
             <span class="eyebrow"><?= e($workspaceLabel ?? 'Admin Control Center') ?></span>
@@ -74,6 +77,12 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
     </div>
 
     <div data-workspace-notice hidden></div>
+    <?php if (!$isContact): ?>
+    <div class="barama-about-admin-a24__notice" role="note">
+        <?= app_icon('check') ?><span><strong>Live About editor</strong> — content saves through the existing protected dashboard endpoints. Changes appear on the public About page after saving.</span>
+    </div>
+    <?php endif; ?>
+
 
     <div class="builtin-admin-summary">
         <article><span><?= app_icon('globe') ?></span><div><small>Public page</small><strong><?= !empty($pageConfig['enabled']) ? 'Enabled' : 'Disabled' ?></strong></div></article>
@@ -145,14 +154,23 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
     </dialog>
 
     <dialog class="config-dialog config-dialog--wide" id="<?= e($pageKey) ?>-hero" data-config-dialog>
-        <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/' . $pageKey . '/hero')) ?>" method="post" data-workspace-form>
+        <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/' . $pageKey . '/hero')) ?>" method="post" enctype="multipart/form-data" data-workspace-form>
             <?= csrf_field() ?>
-            <header class="config-dialog__head"><div><span class="eyebrow"><?= e($pageTitleLabel) ?> Hero</span><h2>Configure hero</h2><p>Use concise copy and an optional HTTPS image URL.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+            <header class="config-dialog__head"><div><span class="eyebrow"><?= e($pageTitleLabel) ?> Hero</span><h2>Configure hero</h2><p>All Hero text is editable here. On Contact, upload a replacement photo or use the bundled default.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
             <div class="config-dialog__body config-field-grid">
                 <label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($hero['eyebrow'] ?? '')) ?>"></label>
                 <label class="config-field-grid__wide"><span>Headline</span><input class="form-control" name="title" maxlength="180" required value="<?= e((string) ($hero['title'] ?? '')) ?>"></label>
                 <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="4" maxlength="700" required><?= e((string) ($hero['description'] ?? '')) ?></textarea></label>
-                <label class="config-field-grid__wide"><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($hero['image_url'] ?? '')) ?>" placeholder="https://example.com/about-hero.jpg"></label>
+                <?php if ($isContact): ?>
+                    <div class="config-field-grid__wide" style="display:grid;gap:.75rem">
+                        <label><span>Contact hero background image · Upload replacement</span><input class="form-control" type="file" name="hero_image" accept="image/jpeg,image/png,image/webp"></label>
+                        <small>JPG, PNG, or WebP · up to 5 MB · at least 600 × 400 pixels. Uploading a new file replaces the selected hero image when you save. No text is embedded in the default photograph.</small>
+                        <img src="<?= e(($hero['image_url'] ?? '') !== '' ? (str_starts_with((string) $hero['image_url'], '/') ? url((string) $hero['image_url']) : (string) $hero['image_url']) : asset('images/contact/agent-asian-default-v117a17.webp')) ?>" alt="Current Contact hero image" style="display:block;width:100%;max-width:260px;max-height:180px;object-fit:cover;border-radius:14px;border:1px solid #d7e1f1">
+                    </div>
+                    <label class="config-field-grid__wide"><span>Image URL (optional alternative)</span><input class="form-control" type="text" name="image_url" maxlength="1000" value="<?= e((string) ($hero['image_url'] ?? '')) ?>" placeholder="Leave blank for default Asian business agent, or enter a HTTPS URL"><small>To restore the bundled default, clear this field and save without uploading.</small></label>
+                <?php else: ?>
+                    <label class="config-field-grid__wide"><span>Image URL</span><input class="form-control" type="url" name="image_url" maxlength="1000" value="<?= e((string) ($hero['image_url'] ?? '')) ?>" placeholder="https://example.com/about-hero.jpg"></label>
+                <?php endif; ?>
             </div>
             <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save hero</button></footer>
         </form>
@@ -191,21 +209,24 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
             </form>
         </dialog>
 
-        <?php foreach (['values' => ['Values','Value',4], 'stats' => ['Stats','Stat',4]] as $key => $meta): ?>
+        <?php foreach (['values' => ['Values','Value',12], 'stats' => ['Stats','Stat',8]] as $key => $meta): ?>
             <?php $section = is_array($sections[$key] ?? null) ? $sections[$key] : []; $items = is_array($section['items'] ?? null) ? array_values($section['items']) : []; ?>
             <dialog class="config-dialog config-dialog--wide" id="about-<?= e($key) ?>" data-config-dialog>
                 <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/' . $key)) ?>" method="post" data-workspace-form><?= csrf_field() ?>
-                    <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2><?= e($meta[0]) ?></h2></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+                    <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2><?= e($meta[0]) ?></h2><p>Add, remove, or reorder items. Save to publish the new arrangement.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
                     <div class="config-dialog__body">
                         <div class="config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions[$key] ?? 99)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($section['eyebrow'] ?? '')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($section['title'] ?? '')) ?>"></label></div>
-                        <div class="homepage-repeat-grid homepage-repeat-grid--four">
-                            <?php for($i=0;$i<4;$i++): ?><?php $item=is_array($items[$i]??null)?$items[$i]:[]; ?>
-                                <section><strong><?= e($meta[1] . ' ' . ($i+1)) ?></strong>
+                        <input type="hidden" name="items_present" value="1">
+                        <div class="barama-about-admin-a24__items" data-a24-items data-max="<?= (int) $meta[2] ?>" data-kind="<?= e($key) ?>">
+                            <?php foreach ($items as $i => $item): ?>
+                                <?php if (!is_array($item) || implode('', array_map('strval', $item)) === '') continue; ?>
+                                <section class="barama-about-admin-a24__item" data-a24-item><div class="barama-about-admin-a24__item-head"><strong data-a24-item-title><?= e($meta[1]) ?> <?= (int) ($i+1) ?></strong><div><button class="btn btn-outline-secondary" type="button" data-a24-move="up" aria-label="Move up">↑</button><button class="btn btn-outline-secondary" type="button" data-a24-move="down" aria-label="Move down">↓</button><button class="btn btn-outline-secondary" type="button" data-a24-remove>Remove</button></div></div>
                                     <?php if($key==='stats'): ?><label><span>Value</span><input class="form-control" name="items[<?= $i ?>][value]" maxlength="30" value="<?= e((string) ($item['value'] ?? '')) ?>"></label><label><span>Label</span><input class="form-control" name="items[<?= $i ?>][label]" maxlength="100" value="<?= e((string) ($item['label'] ?? '')) ?>"></label>
-                                    <?php else: ?><label><span>Title</span><input class="form-control" name="items[<?= $i ?>][title]" maxlength="110" value="<?= e((string) ($item['title'] ?? '')) ?>"></label><label><span>Description</span><textarea class="form-control" name="items[<?= $i ?>][description]" rows="4" maxlength="360"><?= e((string) ($item['description'] ?? '')) ?></textarea></label><?php endif; ?>
+                                    <?php else: ?><label><span>Title</span><input class="form-control" name="items[<?= $i ?>][title]" maxlength="110" value="<?= e((string) ($item['title'] ?? '')) ?>"></label><label><span>Description</span><textarea class="form-control" name="items[<?= $i ?>][description]" rows="3" maxlength="360"><?= e((string) ($item['description'] ?? '')) ?></textarea></label><?php endif; ?>
                                 </section>
-                            <?php endfor; ?>
+                            <?php endforeach; ?>
                         </div>
+                        <button class="btn btn-outline-secondary barama-about-admin-a24__add" type="button" data-a24-add data-kind="<?= e($key) ?>">+ Add <?= e(strtolower($meta[1])) ?></button>
                     </div>
                     <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save <?= e(strtolower($meta[0])) ?></button></footer>
                 </form>
@@ -215,10 +236,17 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
         <?php $team = is_array($sections['team'] ?? null) ? $sections['team'] : []; $teamItems=is_array($team['items']??null)?array_values($team['items']):[]; ?>
         <dialog class="config-dialog config-dialog--wide" id="about-team" data-config-dialog>
             <form class="config-dialog__panel" action="<?= e(url('/dashboard/built-in-pages/about/team')) ?>" method="post" data-workspace-form><?= csrf_field() ?>
-                <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2>Team</h2><p>Leave unused team profiles blank.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
+                <header class="config-dialog__head"><div><span class="eyebrow">About Section</span><h2>Team</h2><p>Add, remove or reorder team members. Empty lists remain empty after saving.</p></div><button type="button" data-configure-close aria-label="Close"><?= app_icon('plus') ?></button></header>
                 <div class="config-dialog__body">
                     <div class="config-field-grid"><label><span>Position</span><select class="form-select" name="position"><?php for($p=1;$p<=count($order);$p++): ?><option value="<?= $p ?>" <?= ($positions['team'] ?? 99)===$p?'selected':'' ?>><?= $p ?></option><?php endfor; ?></select></label><label><span>Eyebrow</span><input class="form-control" name="eyebrow" maxlength="80" value="<?= e((string) ($team['eyebrow'] ?? '')) ?>"></label><label class="config-field-grid__wide"><span>Title</span><input class="form-control" name="title" maxlength="160" value="<?= e((string) ($team['title'] ?? '')) ?>"></label></div>
-                    <div class="homepage-repeat-grid homepage-repeat-grid--four"><?php for($i=0;$i<4;$i++): ?><?php $item=is_array($teamItems[$i]??null)?$teamItems[$i]:[]; ?><section><strong>Member <?= $i+1 ?></strong><label><span>Name</span><input class="form-control" name="items[<?= $i ?>][name]" maxlength="120" value="<?= e((string) ($item['name'] ?? '')) ?>"></label><label><span>Role</span><input class="form-control" name="items[<?= $i ?>][role]" maxlength="120" value="<?= e((string) ($item['role'] ?? '')) ?>"></label><label><span>Bio</span><textarea class="form-control" name="items[<?= $i ?>][bio]" rows="4" maxlength="500"><?= e((string) ($item['bio'] ?? '')) ?></textarea></label><label><span>Image URL</span><input class="form-control" type="url" name="items[<?= $i ?>][image_url]" maxlength="1000" value="<?= e((string) ($item['image_url'] ?? '')) ?>"></label></section><?php endfor; ?></div>
+                    <input type="hidden" name="items_present" value="1">
+                    <div class="barama-about-admin-a24__items" data-a24-items data-max="8" data-kind="team">
+                        <?php foreach ($teamItems as $i => $item): ?><?php if (!is_array($item) || trim((string)($item['name']??''))==='') continue; ?>
+                        <section class="barama-about-admin-a24__item" data-a24-item><div class="barama-about-admin-a24__item-head"><strong data-a24-item-title>Member <?= (int)($i+1) ?></strong><div><button class="btn btn-outline-secondary" type="button" data-a24-move="up" aria-label="Move up">↑</button><button class="btn btn-outline-secondary" type="button" data-a24-move="down" aria-label="Move down">↓</button><button class="btn btn-outline-secondary" type="button" data-a24-remove>Remove</button></div></div>
+                        <label><span>Name</span><input class="form-control" name="items[<?= $i ?>][name]" maxlength="120" value="<?= e((string)($item['name']??'')) ?>"></label><label><span>Role</span><input class="form-control" name="items[<?= $i ?>][role]" maxlength="120" value="<?= e((string)($item['role']??'')) ?>"></label><label><span>Bio</span><textarea class="form-control" name="items[<?= $i ?>][bio]" rows="3" maxlength="500"><?= e((string)($item['bio']??'')) ?></textarea></label><label><span>Image URL</span><input class="form-control" type="url" name="items[<?= $i ?>][image_url]" maxlength="1000" value="<?= e((string)($item['image_url']??'')) ?>"></label></section>
+                        <?php endforeach; ?>
+                    </div>
+                    <button class="btn btn-outline-secondary barama-about-admin-a24__add" type="button" data-a24-add data-kind="team">+ Add team member</button>
                 </div>
                 <footer class="config-dialog__footer"><button class="btn btn-outline-secondary" type="button" data-configure-close>Cancel</button><button class="btn btn-primary" type="submit">Save team</button></footer>
             </form>
@@ -274,3 +302,9 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
         </section>
     <?php endif; ?>
 </section>
+
+<?php if (!$isContact): ?>
+<link rel="stylesheet" href="<?= e(asset('css/about-editor-v117a26.css')) ?>?v=117a26" media="all">
+<link rel="stylesheet" href="<?= e(asset('css/about-table-v117a28.css')) ?>?v=117a28" media="all">
+<script src="<?= e(asset('js/about-editor-v117a26.js')) ?>?v=117a26" defer></script>
+<?php endif; ?>

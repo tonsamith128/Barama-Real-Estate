@@ -1,0 +1,113 @@
+/* Barama Catalog v1.0.17-A8: clean header actions and on-demand real editors.
+   Scoped to the existing v1.0.17-A6 Catalog assets; does not alter backend. */
+.barama-catalog-v117a6__header{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  justify-content:end;
+  gap:10px;
+  width:340px;
+  max-width:100%;
+  flex-wrap:nowrap!important;
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action{
+  box-sizing:border-box;
+  cursor:pointer;
+  display:inline-flex;
+  flex:initial;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  margin:0;
+  padding:10px 12px;
+  border-radius:13px;
+  white-space:nowrap;
+  font:inherit;
+  font-size:.82rem;
+  font-weight:750;
+  line-height:1.25;
+  text-align:center;
+  transition:background-color .15s ease,box-shadow .15s ease,border-color .15s ease;
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:first-child{
+  background:#165dff;
+  color:#fff;
+  border:1px solid #165dff;
+  box-shadow:0 6px 15px rgba(22,93,255,.13);
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:first-child:hover,
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:first-child[aria-expanded="true"]{
+  background:#084ce3;
+  color:#fff;
+  border-color:#084ce3;
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:last-child{
+  background:var(--barama-surface,#fff);
+  color:var(--barama-text,#17213a);
+  border:1px solid var(--barama-border,#d8dfeb);
+  box-shadow:0 3px 10px rgba(10,27,55,.03);
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:last-child:hover,
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:last-child[aria-expanded="true"]{
+  border-color:#165dff;
+  color:#165dff;
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action svg{
+  width:16px;
+  height:16px;
+  flex:none;
+}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:last-child svg{color:#165dff}
+.barama-catalog-v117a6__header .barama-catalog-v117a6__action:focus-visible{
+  outline:3px solid #165dff;
+  outline-offset:3px;
+}
+/* Enhancement attaches only when both actual PHP forms have been detected.
+   With JS disabled, original native <details> cards remain accessible. */
+.workspace-form-pair.barama-catalog-v117a8-enhanced:not(.barama-catalog-v117a8-expanded){display:none}
+.workspace-form-pair.barama-catalog-v117a8-enhanced.barama-catalog-v117a8-expanded{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+}
+.workspace-form-pair.barama-catalog-v117a8-enhanced > details[data-barama-catalog-details]:not([open]){display:none}
+.workspace-form-pair.barama-catalog-v117a8-enhanced > details[data-barama-catalog-details][open]{
+  display:block;
+  grid-column:1/-1;
+  width:100%;
+  min-width:0;
+  border-radius:16px;
+  overflow:hidden;
+}
+#barama-catalog-v117a6-location,#barama-catalog-v117a6-amenity{scroll-margin-top:125px}
+@media(max-width:760px){
+  .barama-catalog-v117a6__header{width:100%;max-width:380px;justify-content:start}
+}
+@media(max-width:400px){
+  .barama-catalog-v117a6__header{gap:7px}
+  .barama-catalog-v117a6__header .barama-catalog-v117a6__action{
+    min-height:42px;
+    padding:9px 7px;
+    gap:5px;
+    font-size:.74rem;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .barama-catalog-v117a6__header .barama-catalog-v117a6__action{transition:none}
+}
+
+/* v1.0.17-A10: consistent Catalog action-menu typography for links and forms. */
+.workspace-row-actions__menu :is(a.table-action,button.table-action){
+  box-sizing:border-box!important;display:flex!important;align-items:center!important;
+  justify-content:flex-start!important;width:100%!important;min-height:39px!important;
+  margin:0!important;padding:9px 12px!important;
+  font-family:inherit!important;font-size:.875rem!important;font-weight:700!important;
+  line-height:1.3!important;letter-spacing:0!important;text-transform:none!important;
+  text-align:left!important;text-decoration:none!important;white-space:nowrap!important;
+}
+.workspace-row-actions__menu :is(a.table-action,button.table-action):focus-visible{
+  outline:2px solid var(--barama-primary,#165dff)!important;outline-offset:-2px!important;
+}

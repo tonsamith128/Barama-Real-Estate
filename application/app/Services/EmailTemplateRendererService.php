@@ -17,7 +17,8 @@ final class EmailTemplateRendererService
     public function render(
         string $templateKey,
         array $variables,
-        array $fallback
+        array $fallback,
+        ?string $locale = null
     ): array {
         try {
             $template = (new EmailTemplateRepository())->activeByKey(
@@ -31,6 +32,28 @@ final class EmailTemplateRendererService
                 $template = null;
             } else {
                 throw $exception;
+            }
+        }
+
+        /* BARAMA_EMAIL_TEMPLATE_LOCALE_RENDER_V140 */
+        if ($template !== null && $locale !== null) {
+            $normalizedLocale = strtolower(trim($locale));
+            if (in_array($normalizedLocale, ['km', 'zh'], true)) {
+                try {
+                    $variant = (new \Barama\Repositories\EmailTemplateLocalizationRepository())
+                        ->activeVariantByKey(strtolower(trim($templateKey)), $normalizedLocale);
+                    if ($variant !== null) {
+                        $variant['id'] = (int) $variant['template_id'];
+                        $template = $variant;
+                    }
+                } catch (\PDOException $exception) {
+                    if (
+                        $exception->getCode() !== '42S02'
+                        && !str_contains($exception->getMessage(), 'communication_email_template_variants')
+                    ) {
+                        throw $exception;
+                    }
+                }
             }
         }
 

@@ -52,7 +52,6 @@ $bundledHeroDefaults = match ($pageKind) {
 };
 
 $automaticHeroSources = $bundledHeroDefaults;
-
 $imageSrc = '';
 if ($heroEnabled && $backgroundType === 'image') {
     if (($background['image_source'] ?? '') === 'media' && !empty($background['image_media_uuid'])) {
@@ -133,6 +132,8 @@ $saleLabel = trim((string) ($saleRentConfig['sale_label'] ?? 'For sale'));
 $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/marketplace-hero-heading-v112.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/marketplace-search-glass-v117a31.css') . '?v=117a31') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/marketplace-search-focus-v117a32.css') . '?v=117a32') ?>">
 <section class="marketplace-hero marketplace-hero--discovery marketplace-hero--<?= e($pageKind) ?> marketplace-config-hero marketplace-config-hero--background-<?= e($backgroundType) ?> <?= $hasHeroBackground ? 'marketplace-config-hero--rich-background' : '' ?>">
     <?php if ($heroEnabled && $backgroundType === 'color'): ?>
         <div class="marketplace-config-hero__background marketplace-config-hero__background--color hero-bg-preset--<?= e($colorPreset) ?>" aria-hidden="true"></div>
@@ -163,7 +164,7 @@ $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
     <?php endif; ?>
 
     <?php if ($hasHeroBackground && $backgroundType !== 'color'): ?>
-        <div class="marketplace-config-hero__overlay marketplace-config-hero__overlay--<?= e((string) $overlayStrength) ?>" aria-hidden="true"></div>
+        <div class="marketplace-config-hero__overlay" data-barama-marketplace-hero-overlay="<?= e(number_format($overlayStrength / 100, 2, '.', '')) ?>" aria-hidden="true"></div>
     <?php endif; ?>
 
     <div class="container app-container marketplace-config-hero__content">
@@ -190,7 +191,7 @@ $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
         <?php endif; ?>
 
         <?php if ($hasFilterControls): ?>
-            <form class="discovery-filter <?= $pageKind === 'properties' ? '' : 'discovery-filter--compact' ?> marketplace-config-filter" method="get" data-marketplace-filter aria-label="<?= e(ucfirst($pageKind)) ?> filters">
+            <form class="discovery-filter <?= $pageKind === 'properties' ? '' : 'discovery-filter--compact' ?> marketplace-config-filter barama-hero-glass-a31" method="get" data-marketplace-filter aria-label="<?= e(ucfirst($pageKind)) ?> filters">
                 <div class="discovery-filter__primary discovery-filter__primary--dynamic">
                     <?php if ($searchEnabled): ?>
                         <label class="discovery-filter__search">
@@ -238,15 +239,17 @@ $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
                     <?php endif; ?>
 
                     <?php if ($locationsEnabled): ?>
-                        <label>
-                            <span class="visually-hidden">Location</span>
-                            <select name="location">
-                                <option value=""><?= e($allLocationsLabel) ?></option>
-                                <?php foreach ((array) ($locations ?? []) as $location): ?>
-                                    <option value="<?= e((string) ($location['id'] ?? '')) ?>" <?= (string) ($filters['location'] ?? '') === (string) ($location['id'] ?? '') ? 'selected' : '' ?>><?= e((string) ($location['name'] ?? '')) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </label>
+                        <?php /* BARAMA_PUBLIC_LOCATION_PICKER_HERO_V112 */ ?>
+
+                        <?= \Barama\Core\View::partial('components/public-location-picker', [
+
+                            'name' => 'location',
+
+                            'value' => (string) ($filters['location'] ?? ''),
+
+                            'label' => $allLocationsLabel,
+
+                        ]) ?>
                     <?php endif; ?>
 
                     <?php if ($pageKind === 'projects' && $searchEnabled): ?>

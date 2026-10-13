@@ -26,6 +26,7 @@ final class AccountController
         'notifications' => ['title' => 'Notifications', 'description' => 'Review marketplace updates and control in-app and email notification preferences.'],
         'recent' => ['title' => 'Recently Viewed', 'description' => 'Return to published properties you recently opened while signed in.'],
         'company' => ['title' => 'Company Access', 'description' => 'Request your first company workspace or accept invitations from approved companies.'],
+        'apply' => ['title' => 'Apply for Developer / Company', 'description' => 'Submit your real-estate business for administrator approval.'],
         'profile' => ['title' => 'Profile Settings', 'description' => 'Maintain your personal account details, timezone, and preferred language.'],
         'privacy' => ['title' => 'Privacy Settings', 'description' => 'Control marketplace activity history and clear personal browsing activity.'],
         'security' => ['title' => 'Security Settings', 'description' => 'Manage your password, verified email address, and account status securely.'],
@@ -39,6 +40,22 @@ final class AccountController
     public function section(Request $request, string $section): Response
     {
         return $this->renderSection($request, strtolower(trim($section)));
+    }
+
+    public function workspaceAccess(Request $request): Response
+    {
+        $auth = new \Barama\Services\AuthService();
+        if ($auth->canAccessWorkspace('dashboard') || $auth->canAccessWorkspace('developer') || $auth->canAccessWorkspace('account')) {
+            return Response::redirect(url($auth->homePath()));
+        }
+        return Response::html(View::render('account/workspace-access', [
+            'pageTitle' => 'Workspace access review', 'activeArea' => 'account',
+        ]), 403);
+    }
+
+    public function applyDeveloper(Request $request): Response
+    {
+        return $this->renderSection($request, 'apply');
     }
 
     public function emailChange(Request $request, string $token): Response
@@ -217,7 +234,8 @@ final class AccountController
                 $personalizationSearch,
                 $personalizationState,
                 $personalizationType,
-                150
+                150,
+                true // Include security and system notifications shown by the header badge.
             );
         } elseif ($section === 'recent') {
             if (!in_array($personalizationSort, ['recent_desc', 'most_viewed', 'title_asc'], true)) {
@@ -230,7 +248,7 @@ final class AccountController
                 $personalizationSort,
                 100
             );
-        } elseif ($section === 'company') {
+        } elseif (in_array($section, ['company', 'apply'], true)) {
             $ownedCompanies = $accountSettings->ownedCompaniesForAccess($userId);
             $companyInvitations = $accountSettings->invitationsForEmail((string) $user['email']);
         }
@@ -267,7 +285,7 @@ final class AccountController
                 'frequency' => $personalizationFrequency,
             ],
             'personalizationSort' => $personalizationSort,
-            'locations' => in_array($section, ['alerts', 'company'], true)
+            'locations' => in_array($section, ['alerts', 'company', 'apply'], true)
                 ? $marketplace->activeLocations()
                 : [],
             'propertyTypes' => DomainRules::PROPERTY_TYPES,
@@ -286,6 +304,12 @@ final class AccountController
     }
 
     /** @return array<int,array{label:string,path:string,icon:string}> */
+    /** Navigation source shared with Settings; do not maintain duplicate sidebar lists. */
+    public function settingsNavigation(): array
+    {
+        return $this->navigation();
+    }
+
     private function navigation(): array
     {
         return [
@@ -302,6 +326,7 @@ final class AccountController
             ['label' => 'Recent', 'path' => '/account/recent', 'icon' => 'clock'],
             ['heading' => 'Business Access'],
             ['label' => 'Company Access', 'path' => '/account/company', 'icon' => 'building'],
+            ['label' => 'Apply for Developer', 'path' => '/account/developer/apply', 'icon' => 'plus'],
             ['heading' => 'Settings'],
             ['label' => 'Basic', 'path' => '/account/settings', 'icon' => 'settings'],
             ['label' => 'Profile', 'path' => '/account/settings/profile', 'icon' => 'user'],

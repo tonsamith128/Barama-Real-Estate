@@ -1,0 +1,11 @@
+/* Barama v1.0.6 — Public footer control collision clearance.
+   The existing fixed Back-to-Top design remains unchanged until JS detects
+   overlap with a footer social link or footer theme control. */
+body.barama-public-surface .barama-back-to-top[data-back-to-top] {
+    bottom: max(84px, calc(env(safe-area-inset-bottom) + 84px), var(--barama-footer-clearance, 0px)) !important;
+}
+@media (max-width: 575.98px) {
+    body.barama-public-surface .barama-back-to-top[data-back-to-top] {
+        bottom: max(76px, calc(env(safe-area-inset-bottom) + 76px), var(--barama-footer-clearance, 0px)) !important;
+    }
+}

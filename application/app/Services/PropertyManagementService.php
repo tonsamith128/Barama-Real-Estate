@@ -92,7 +92,7 @@ final class PropertyManagementService
         $auth = new AuthService();
         $user = $auth->user();
 
-        if ($user === null || !$auth->can('dashboard.access')) {
+        if ($user === null || !$auth->can('dashboard.access') || !$auth->can('property.manage')) { // BARAMA_A48D1_PROPERTY_SERVICE
             throw new DomainException('Administrator access is required.');
         }
 
@@ -120,7 +120,7 @@ final class PropertyManagementService
         $auth = new AuthService();
         $user = $auth->user();
 
-        if ($user === null || !$auth->can('dashboard.access')) {
+        if ($user === null || !$auth->can('dashboard.access') || !$auth->can('property.manage')) { // BARAMA_A48D1_PROPERTY_SERVICE
             throw new DomainException('Administrator access is required.');
         }
 

@@ -143,6 +143,11 @@ final class SavedSearchAlertService
                 'entity_type' => 'saved_search',
                 'entity_id' => (int) $search['id'],
                 'dedupe_key' => $dedupe,
+                'email_variables' => [
+                    'search_name' => $name,
+                    'match_count' => (string) $count,
+                    'matches_summary' => implode("\n", $itemsText),
+                ],
                 'email_subject' => $title . ' · Barama Real Estate',
                 'email_html' => '<p><strong>' . e($title) . '</strong></p>'
                     . '<p>' . e($message) . '</p><ul>' . $itemsHtml . '</ul>'

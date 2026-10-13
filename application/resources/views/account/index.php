@@ -2,6 +2,18 @@
 
 declare(strict_types=1);
 
+// BARAMA_A46R4_ACCOUNT_DEVELOPER_STANDARD_CARDS
+$baramaA46r4Compact = static function (mixed $value): string {
+    $number = is_numeric($value) ? max(0, (float) $value) : 0.0;
+    foreach ([1000000000000 => 'T', 1000000000 => 'B', 1000000 => 'M', 1000 => 'K'] as $scale => $suffix) {
+        if ($number >= $scale) {
+            $text = number_format($number / $scale, 1, '.', '');
+            return rtrim(rtrim($text, '0'), '.') . $suffix;
+        }
+    }
+    return number_format((int) $number);
+};
+
 $humanize = static fn (mixed $value): string =>
     ucwords(str_replace('_', ' ', trim((string) $value)));
 
@@ -57,20 +69,78 @@ $propertySearchUrl = static function (array $search): string {
     return url('/properties' . ($query !== [] ? '?' . http_build_query($query) : ''));
 };
 ?>
-<section class="account-page">
+<section class="account-page<?= $activeSection === 'security'
+    ? ' account-page--security-v1129'
+    : ($activeSection === 'company' ? ' account-page--company-v114' : '') ?>">
+
+
+
+
+
+
     <div class="account-page__head">
         <div>
             <span class="eyebrow">Customer Account</span>
             <h1><?= e($sectionTitle) ?></h1>
             <p><?= e($sectionDescription) ?></p>
         </div>
-        <div class="account-page__identity">
-            <span><?= app_icon('users') ?></span>
+        <?php if ($activeSection === 'apply'): ?>
+            <?php if (auth_workspace_can('developer')): ?>
+                <a class="barama-application-v116__header-action" href="<?= e(url('/developer')) ?>" aria-label="Open Business Workspace">
+                    <?= app_icon('building') ?> <span>Open Business Workspace</span> <span aria-hidden="true">→</span>
+                </a>
+            <?php endif; ?>
+        <?php elseif ($activeSection === 'company' && auth_workspace_can('developer')): ?>
+            <a class="barama-company-v114__header-action" href="<?= e(url('/developer')) ?>" aria-label="Open listing workspace">
+                <?= app_icon('building') ?> <span>Open listing workspace</span> <span aria-hidden="true">→</span>
+            </a>
+        <?php elseif ($activeSection === 'company' && !auth_workspace_can('developer') && $emailVerified): ?>
+            <a class="barama-company-v114__header-action" href="<?= e(url('/account/developer/apply')) ?>" aria-label="Apply for Developer or Company">+ <span>Apply for Developer / Company</span></a>
+        <?php else: ?>
+        <div class="account-page__identity<?= $activeSection === 'profile' ? ' account-page__identity--avatar-v110' : '' ?>">
+            <?php if ($activeSection === 'profile'): ?>
+                <?php $customerAvatarUuid = trim((string) ($profile['avatar_uuid'] ?? '')); ?>
+                <div class="barama-customer-avatar-v110" data-avatar-v110>
+                    <button type="button" class="barama-customer-avatar-v110__trigger" data-avatar-v110-toggle aria-expanded="false" aria-controls="customer-avatar-menu-v110" aria-label="Manage profile photo" title="Manage profile photo">
+                        <?php if ($customerAvatarUuid !== ''): ?>
+                            <img src="<?= e(url('/account/avatar/' . rawurlencode($customerAvatarUuid))) ?>" alt="" width="44" height="44" loading="eager">
+                        <?php else: ?>
+                            <?= app_icon('user') ?>
+                        <?php endif; ?>
+                        <span class="barama-customer-avatar-v110__edit" aria-hidden="true"><?= app_icon('image') ?></span>
+                    </button>
+                    <div id="customer-avatar-menu-v110" class="barama-customer-avatar-v110__menu" role="group" aria-label="Profile photo controls">
+                        <strong class="barama-customer-avatar-v110__menu-title">Profile photo</strong>
+                        <form action="<?= e(url('/account/profile')) ?>" method="post" enctype="multipart/form-data" data-avatar-v107-upload>
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="profile_action" value="avatar_upload">
+                            <input class="barama-avatar-v107__input" id="customer-avatar-input-v110" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-avatar-v107-input>
+                            <label for="customer-avatar-input-v110" tabindex="0" class="barama-customer-avatar-v110__menu-action" title="<?= $customerAvatarUuid !== '' ? 'Replace profile photo' : 'Upload profile photo' ?>">
+                                <?= app_icon('image') ?>
+                                <?= $customerAvatarUuid !== '' ? 'Replace photo' : 'Upload photo' ?>
+                            </label>
+                        </form>
+                        <?php if ($customerAvatarUuid !== ''): ?>
+                            <form action="<?= e(url('/account/profile')) ?>" method="post" data-avatar-v107-remove>
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="profile_action" value="avatar_remove">
+                                <button class="barama-customer-avatar-v110__menu-action barama-customer-avatar-v110__menu-action--remove" type="submit">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg> Remove photo
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                        <small>JPG, PNG or WebP · Up to 5 MB</small>
+                    </div>
+                </div>
+            <?php else: ?>
+                <span><?= app_icon('users') ?></span>
+            <?php endif; ?>
             <div>
                 <strong><?= e((string) $accountUser['name']) ?></strong>
                 <small><?= e((string) $accountUser['email']) ?></small>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 
     <div data-account-notice hidden></div>
@@ -87,13 +157,38 @@ $propertySearchUrl = static function (array $search): string {
     <?php endif; ?>
 
     <?php if ($activeSection === 'overview'): ?>
-        <div class="account-stat-grid">
-            <a href="<?= e(url('/account/saved')) ?>"><span><?= app_icon('heart') ?></span><strong><?= e((string) $summary['saved']) ?></strong><small>Saved properties</small></a>
-            <a href="<?= e(url('/account/compare')) ?>"><span><?= app_icon('compare') ?></span><strong><?= e((string) $summary['compare']) ?></strong><small>In comparison</small></a>
-            <a href="<?= e(url('/account/inquiries')) ?>"><span><?= app_icon('message') ?></span><strong><?= e((string) $summary['inquiries']) ?></strong><small>Inquiries</small></a>
-            <a href="<?= e(url('/account/viewings')) ?>"><span><?= app_icon('calendar') ?></span><strong><?= e((string) $summary['viewings']) ?></strong><small>Active viewings</small></a>
-            <a href="<?= e(url('/account/alerts')) ?>"><span><?= app_icon('bell') ?></span><strong><?= e((string) $summary['alerts']) ?></strong><small>Active alerts</small></a>
-            <a href="<?= e(url('/account/notifications')) ?>"><span><?= app_icon('bell') ?></span><strong><?= e((string) $summary['notifications']) ?></strong><small>Unread notifications</small></a>
+        <div class="account-stat-grid account-stat-grid--a46r4" aria-label="Account summary">
+            <a class="account-stat-grid__card" href="<?= e(url('/account/saved')) ?>" aria-label="Saved properties: <?= e(number_format((int) $summary['saved'])) ?>" title="Saved properties: <?= e(number_format((int) $summary['saved'])) ?>">
+                <span class="account-stat-grid__watermark" aria-hidden="true"><?= app_icon('heart') ?></span>
+                <strong><?= e($baramaA46r4Compact($summary['saved'])) ?></strong>
+                <small>Saved properties</small>
+            </a>
+            <a class="account-stat-grid__card" href="<?= e(url('/account/compare')) ?>" aria-label="In comparison: <?= e(number_format((int) $summary['compare'])) ?>" title="In comparison: <?= e(number_format((int) $summary['compare'])) ?>">
+                <span class="account-stat-grid__watermark" aria-hidden="true"><?= app_icon('compare') ?></span>
+                <strong><?= e($baramaA46r4Compact($summary['compare'])) ?></strong>
+                <small>In comparison</small>
+            </a>
+            <a class="account-stat-grid__card" href="<?= e(url('/account/inquiries')) ?>" aria-label="Inquiries: <?= e(number_format((int) $summary['inquiries'])) ?>" title="Inquiries: <?= e(number_format((int) $summary['inquiries'])) ?>">
+                <span class="account-stat-grid__watermark" aria-hidden="true"><?= app_icon('message') ?></span>
+                <strong><?= e($baramaA46r4Compact($summary['inquiries'])) ?></strong>
+                <small>Inquiries</small>
+            </a>
+            <a class="account-stat-grid__card" href="<?= e(url('/account/viewings')) ?>" aria-label="Active viewings: <?= e(number_format((int) $summary['viewings'])) ?>" title="Active viewings: <?= e(number_format((int) $summary['viewings'])) ?>">
+                <span class="account-stat-grid__watermark" aria-hidden="true"><?= app_icon('calendar') ?></span>
+                <strong><?= e($baramaA46r4Compact($summary['viewings'])) ?></strong>
+                <small>Active viewings</small>
+            </a>
+            <a class="account-stat-grid__card" href="<?= e(url('/account/alerts')) ?>" aria-label="Active alerts: <?= e(number_format((int) $summary['alerts'])) ?>" title="Active alerts: <?= e(number_format((int) $summary['alerts'])) ?>">
+                <span class="account-stat-grid__watermark" aria-hidden="true"><?= app_icon('bell') ?></span>
+                <strong><?= e($baramaA46r4Compact($summary['alerts'])) ?></strong>
+                <small>Active alerts</small>
+            </a>
+            <a class="account-stat-grid__card" href="<?= e(url('/account/notifications')) ?>" aria-label="Unread notifications: <?= e(number_format((int) $summary['notifications'])) ?>" title="Unread notifications: <?= e(number_format((int) $summary['notifications'])) ?>">
+                <span class="account-stat-grid__watermark" aria-hidden="true"><?= app_icon('bell') ?></span>
+                <strong><?= e($baramaA46r4Compact($summary['notifications'])) ?></strong>
+                <small>Unread notifications</small>
+            </a>
+
         </div>
 
         <div class="account-quick-actions" aria-label="Account shortcuts">
@@ -343,41 +438,43 @@ $propertySearchUrl = static function (array $search): string {
 
             <section class="account-panel">
                 <div class="account-panel__head account-panel__head--actions">
-                    <div><h2>Property activity inbox</h2><span><?= e((string) $summary['notifications']) ?> unread marketplace notification<?= (int) $summary['notifications'] === 1 ? '' : 's' ?></span></div>
+                    <div><h2>My notifications</h2><span><?= e((string) $summary['notifications']) ?> unread notification<?= (int) $summary['notifications'] === 1 ? '' : 's' ?></span></div>
                     <?php if ($summary['notifications'] > 0): ?><form action="<?= e(url('/account/notifications/read-all')) ?>" method="post" data-account-action><?= csrf_field() ?><button class="btn btn-outline-secondary btn-sm" type="submit">Mark all read</button></form><?php endif; ?>
                 </div>
 
                 <form method="get" class="account-personalization-filter account-personalization-filter--notifications">
-                    <label class="account-personalization-search"><span><?= app_icon('search') ?></span><input name="q" maxlength="80" value="<?= e($personalizationSearch) ?>" placeholder="Search property notifications"></label>
+                    <label class="account-personalization-search"><span><?= app_icon('search') ?></span><input name="q" maxlength="80" value="<?= e($personalizationSearch) ?>" placeholder="Search notifications"></label>
                     <label><span>State</span><select name="state"><option value="">Read & unread</option><option value="unread" <?= ($personalizationFilters['state'] ?? '') === 'unread' ? 'selected' : '' ?>>Unread</option><option value="read" <?= ($personalizationFilters['state'] ?? '') === 'read' ? 'selected' : '' ?>>Read</option></select></label>
-                    <label><span>Activity</span><select name="category"><option value="">All property activity</option><option value="saved_search_alerts" <?= ($personalizationFilters['category'] ?? '') === 'saved_search_alerts' ? 'selected' : '' ?>>Property matches</option><option value="viewing_updates" <?= ($personalizationFilters['category'] ?? '') === 'viewing_updates' ? 'selected' : '' ?>>Viewings</option><option value="inquiry_updates" <?= ($personalizationFilters['category'] ?? '') === 'inquiry_updates' ? 'selected' : '' ?>>Inquiries</option></select></label>
+                    <label><span>Activity</span><select name="category"><option value="">All activity</option><option value="saved_search_alerts" <?= ($personalizationFilters['category'] ?? '') === 'saved_search_alerts' ? 'selected' : '' ?>>Property matches</option><option value="viewing_updates" <?= ($personalizationFilters['category'] ?? '') === 'viewing_updates' ? 'selected' : '' ?>>Viewings</option><option value="inquiry_updates" <?= ($personalizationFilters['category'] ?? '') === 'inquiry_updates' ? 'selected' : '' ?>>Inquiries</option></select></label>
                     <button class="btn btn-primary btn-sm" type="submit">Filter</button>
                     <?php if ($personalizationHasFilters): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/account/notifications')) ?>">Reset</a><?php endif; ?>
                 </form>
 
                 <?php if ($notifications === []): ?>
-                    <div class="account-empty account-empty--compact"><?= app_icon('bell') ?><strong><?= $personalizationHasFilters ? 'No property notifications match these filters.' : 'No property notifications yet.' ?></strong><span><?= $personalizationHasFilters ? 'Adjust or reset the filters to see other marketplace activity.' : 'Matching listings, inquiry updates, and viewing activity will appear here.' ?></span></div>
+                    <div class="account-empty account-empty--compact"><?= app_icon('bell') ?><strong><?= $personalizationHasFilters ? 'No notifications match these filters.' : 'No notifications yet.' ?></strong><span><?= $personalizationHasFilters ? 'Adjust or reset the filters to see other marketplace activity.' : 'Matching listings, inquiry updates, and viewing activity will appear here.' ?></span></div>
                 <?php else: ?>
-                    <div class="account-notification-list">
-                        <?php foreach ($notifications as $notification): ?>
-                            <article class="account-notification-item <?= empty($notification['read_at']) ? 'is-unread' : '' ?>">
-                                <div class="account-notification-item__icon"><?= app_icon(match ((string) $notification['category']) {'viewing_updates' => 'calendar','inquiry_updates' => 'message','saved_search_alerts' => 'home',default => 'bell',}) ?></div>
-                                <div class="account-notification-item__body">
-                                    <div class="account-notification-item__meta"><span><?= e(match ((string) $notification['category']) {'saved_search_alerts' => 'Property match','viewing_updates' => 'Viewing update','inquiry_updates' => 'Inquiry update',default => $humanize($notification['category']),}) ?></span><time><?= e(date('M j, Y H:i', strtotime((string) $notification['created_at']))) ?></time></div>
-                                    <h3><?= e((string) $notification['title']) ?></h3>
-                                    <p><?= e((string) $notification['message']) ?></p>
-                                    <div class="account-notification-item__actions">
-                                        <?php if (!empty($notification['action_url'])): ?><a href="<?= e(url((string) $notification['action_url'])) ?>">Open property activity</a><?php endif; ?>
-                                        <?php if (empty($notification['read_at'])): ?><form action="<?= e(url('/account/notifications/' . (int) $notification['id'] . '/read')) ?>" method="post" data-account-action><?= csrf_field() ?><button type="submit">Mark read</button></form><?php else: ?><span class="account-read-state"><?= app_icon('check') ?> Read</span><?php endif; ?>
-                                    </div>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
+                    <div class="barama-notification-table-v112__wrap">
+                        <table class="barama-notification-table-v112" aria-label="Customer notifications">
+                            <thead><tr><th>Notification</th><th>Category</th><th>Received</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($notifications as $notification): ?>
+                                    <?php $unread = empty($notification['read_at']); ?>
+                                    <tr class="<?= $unread ? 'is-unread' : '' ?>">
+                                        <td data-label="Notification"><strong><?= e((string)$notification['title']) ?></strong><small><?= e((string)$notification['message']) ?></small></td>
+                                        <td data-label="Category"><?= e($humanize($notification['category'])) ?></td>
+                                        <td data-label="Received"><time><?= e((string)$notification['created_at']) ?></time></td>
+                                        <td data-label="Status"><span class="barama-notification-table-v112__badge <?= $unread ? 'is-unread' : 'is-read' ?>"><?= $unread ? 'Unread' : 'Read' ?></span></td>
+                                        <td data-label="Action"><form method="post" action="<?= e(url('/notifications/' . (int)$notification['id'] . '/open')) ?>"><?= csrf_field() ?><input type="hidden" name="source" value="account"><button class="barama-notification-table-v112__open" type="submit">Open <span aria-hidden="true">→</span></button></form></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 <?php endif; ?>
             </section>
         </div>
     <?php elseif ($activeSection === 'company'): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/account-company-access-v114.css') . '?v=117a3') ?>">
         <?php
         $canRequestCompany = true;
         foreach ($ownedCompanies as $ownedCompany) {
@@ -386,71 +483,272 @@ $propertySearchUrl = static function (array $search): string {
                 break;
             }
         }
+        $hasWorkspaceAccess = auth_workspace_can('developer');
         ?>
-        <div class="account-settings-grid">
-            <section class="account-panel account-panel--featured">
-                <div class="account-panel__head"><h2>Real-estate company access</h2><span>Company access is only for managing projects, properties, listings, inquiries, viewings, leads, team members, and listing media.</span></div>
-
-                <?php if ($companyInvitations !== []): ?>
-                    <div class="account-company-section-title"><strong>Pending company invitations</strong><span><?= e((string) count($companyInvitations)) ?> awaiting your action</span></div>
-                    <div class="account-invitation-list">
-                        <?php foreach ($companyInvitations as $invitation): ?>
-                            <article>
-                                <span class="account-invitation-list__icon"><?= app_icon('building') ?></span>
-                                <div><strong><?= e((string) $invitation['company_name']) ?></strong><small>Real-estate workspace role: <?= e($humanize($invitation['member_role'])) ?></small><small>Invited by <?= e((string) $invitation['invited_by_name']) ?> · Expires <?= e(date('M j, Y H:i', strtotime((string) $invitation['expires_at']))) ?></small></div>
-                                <?php if ($emailVerified): ?><form action="<?= e(url('/account/company-invitations/' . (int) $invitation['id'] . '/accept')) ?>" method="post" data-account-action><?= csrf_field() ?><button class="btn btn-primary btn-sm" type="submit">Accept company access</button></form><?php else: ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('/verify-email')) ?>">Verify email first</a><?php endif; ?>
-                            </article>
-                        <?php endforeach; ?>
+        <div class="barama-company-v114">
+            <section class="barama-company-v114__panel" aria-labelledby="company-access-title-v114">
+                <header class="barama-company-v114__panel-head">
+                    <div>
+                        <h2 id="company-access-title-v114">Company access</h2>
+                        <p>Manage your real-estate company access, review status, and listing workspace.</p>
                     </div>
-                <?php endif; ?>
-
-                <?php if ($ownedCompanies !== []): ?>
-                    <div class="account-company-section-title"><strong>Your real-estate companies</strong><span>Portfolio access and review state</span></div>
-                    <div class="account-company-status account-company-status--portfolio">
+                    <span class="barama-company-v114__count"><?= e((string) count($ownedCompanies)) ?> compan<?= count($ownedCompanies) === 1 ? 'y' : 'ies' ?></span>
+                </header>
+                <div class="barama-company-v114__scroll">
+                    <table class="barama-company-v114__table" aria-label="Your company access records">
+                        <thead><tr><th scope="col">Company / Workspace</th><th scope="col">Access type</th><th scope="col">Portfolio</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+                        <tbody>
                         <?php foreach ($ownedCompanies as $company): ?>
-                            <article>
-                                <div class="account-company-status__main">
-                                    <div class="account-company-status__heading"><span class="status-badge status-badge--<?= e((string) $company['status']) ?>"><?= e($humanize($company['status'])) ?></span><span><?= e($humanize($company['company_type'])) ?></span></div>
-                                    <h3><?= e((string) $company['name']) ?></h3>
-                                    <p><?= e((string) ($company['location_name'] ?? 'Location not set')) ?><?= !empty($company['email']) ? ' · ' . e((string) $company['email']) : '' ?></p>
-                                    <dl class="account-company-portfolio"><div><dt>Projects</dt><dd><?= e((string) ($company['project_count'] ?? 0)) ?></dd></div><div><dt>Properties</dt><dd><?= e((string) ($company['property_count'] ?? 0)) ?></dd></div><div><dt>Listings</dt><dd><?= e((string) ($company['listing_count'] ?? 0)) ?></dd></div></dl>
-                                </div>
-                                <div class="account-company-status__action">
-                                    <?php if ((string) $company['status'] === 'approved' && auth_can('developer.access')): ?><a class="btn btn-primary btn-sm" href="<?= e(url('/developer')) ?>">Manage listings</a>
-                                    <?php elseif ((string) $company['status'] === 'pending'): ?><span class="account-review-note"><?= app_icon('clock') ?> Administrator review pending</span>
-                                    <?php elseif ((string) $company['status'] === 'rejected'): ?><span class="account-review-note is-danger"><?= app_icon('alert') ?> Company request not approved</span>
-                                    <?php elseif ((string) $company['status'] === 'suspended'): ?><span class="account-review-note is-danger"><?= app_icon('alert') ?> Company access suspended</span><?php endif; ?>
-                                </div>
-                            </article>
+                            <?php $status = (string) ($company['status'] ?? 'draft'); ?>
+                            <tr>
+                                <td data-label="Company / Workspace">
+                                    <strong><?= e((string) $company['name']) ?></strong>
+                                    <small><?= e((string) ($company['location_name'] ?? 'Location not set')) ?><?php if (!empty($company['email'])): ?> · <?= e((string) $company['email']) ?><?php endif; ?></small>
+                                </td>
+                                <td data-label="Access type"><?= e($humanize((string) ($company['company_type'] ?? 'company'))) ?></td>
+                                <td data-label="Portfolio"><div class="barama-company-v114__metrics"><span><b><?= e((string) (int) ($company['project_count'] ?? 0)) ?></b> Projects</span><span><b><?= e((string) (int) ($company['property_count'] ?? 0)) ?></b> Properties</span><span><b><?= e((string) (int) ($company['listing_count'] ?? 0)) ?></b> Listings</span></div></td>
+                                <td data-label="Status"><span class="barama-company-v114__state barama-company-v114__state--<?= e(in_array($status, ['approved','pending','rejected','suspended','draft','archived'], true) ? $status : 'other') ?>"><?= e($humanize($status)) ?></span></td>
+                                <td data-label="Action">
+                                    <?php if ($status === 'approved' && $hasWorkspaceAccess): ?>
+                                        <a class="barama-company-v114__row-action" href="<?= e(url('/developer')) ?>">Open workspace <span aria-hidden="true">→</span></a>
+                                    <?php elseif ($status === 'pending'): ?><span class="barama-company-v114__muted">Awaiting review</span>
+                                    <?php elseif ($status === 'rejected'): ?><span class="barama-company-v114__muted">Not approved</span>
+                                    <?php elseif ($status === 'suspended'): ?><span class="barama-company-v114__muted">Access suspended</span>
+                                    <?php else: ?><span class="barama-company-v114__muted">—</span><?php endif; ?>
+                                </td>
+                            </tr>
                         <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!$emailVerified): ?>
-                    <div class="account-review-note"><?= app_icon('mail') ?> Verify your account email before submitting a real-estate company for review.</div>
-                <?php elseif ($canRequestCompany && !auth_can('developer.access')): ?>
-                    <div class="account-company-section-title"><strong>Request a real-estate company workspace</strong><span>For developers, agencies, property companies, and property owners listing inventory on Barama.</span></div>
-                    <form action="<?= e(url('/account/company/onboard')) ?>" method="post" data-account-action class="account-form account-company-form">
-                        <?= csrf_field() ?>
-                        <div class="account-form__grid">
-                            <label><span>Company name</span><input class="form-control" name="name" required maxlength="180"></label>
-                            <label><span>Company type</span><select class="form-select" name="company_type" required><?php foreach ($companyTypes as $type): ?><option value="<?= e($type) ?>"><?= e($humanize($type)) ?></option><?php endforeach; ?></select></label>
-                            <label><span>Legal name</span><input class="form-control" name="legal_name" maxlength="191"></label>
-                            <label><span>Registration number</span><input class="form-control" name="registration_number" maxlength="120"></label>
-                            <label><span>Company email</span><input class="form-control" name="email" type="email" value="<?= e((string) $accountUser['email']) ?>" maxlength="191"></label>
-                            <label><span>Phone</span><input class="form-control" name="phone" maxlength="60"></label>
-                            <label class="account-form__span-2"><span>Primary property market location</span><select class="form-select" name="location_id"><option value="">Select location</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?> · <?= e($humanize($location['type'])) ?></option><?php endforeach; ?></select></label>
-                            <label class="account-form__span-2"><span>Company website</span><input class="form-control" name="website" type="url" maxlength="255" placeholder="https://"></label>
-                            <label class="account-form__span-2"><span>Real-estate business description</span><textarea class="form-control" name="description" rows="4" maxlength="10000" placeholder="Describe your real-estate company, development projects, or property listing activity."></textarea></label>
-                        </div>
-                        <button class="btn btn-primary" type="submit"><?= app_icon('building') ?> Submit company for review</button>
-                    </form>
-                <?php elseif (auth_can('developer.access')): ?>
-                    <div class="account-access-ready"><?= app_icon('check') ?><div><strong>Real-estate company workspace access is active.</strong><span>Manage company profile, projects, properties, listings, customer inquiries, viewing requests, leads, team access, and listing media.</span></div><a class="btn btn-primary btn-sm" href="<?= e(url('/developer')) ?>">Open listing workspace</a></div>
-                <?php endif; ?>
+                        <?php if ($ownedCompanies === [] && $hasWorkspaceAccess): ?>
+                            <tr>
+                                <td data-label="Company / Workspace"><strong>Listing workspace</strong><small>Available to your signed-in account</small></td>
+                                <td data-label="Access type">Developer access</td>
+                                <td data-label="Portfolio"><span class="barama-company-v114__muted">—</span></td>
+                                <td data-label="Status"><span class="barama-company-v114__state barama-company-v114__state--approved">Active</span></td>
+                                <td data-label="Action"><a class="barama-company-v114__row-action" href="<?= e(url('/developer')) ?>">Open workspace <span aria-hidden="true">→</span></a></td>
+                            </tr>
+                        <?php elseif ($ownedCompanies === []): ?>
+                            <tr class="barama-company-v114__empty"><td colspan="5"><span><?= app_icon('building') ?></span><strong>No company records yet</strong><small>Request company access below or accept an invitation to begin.</small></td></tr>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </section>
+
+            <?php if ($companyInvitations !== []): ?>
+                <section class="barama-company-v114__panel" aria-labelledby="company-invitations-title-v114">
+                    <header class="barama-company-v114__panel-head"><div><h2 id="company-invitations-title-v114">Pending invitations</h2><p>Company invitations waiting for your response.</p></div><span class="barama-company-v114__count"><?= e((string) count($companyInvitations)) ?> pending</span></header>
+                    <div class="barama-company-v114__scroll">
+                        <table class="barama-company-v114__table" aria-label="Pending company invitations">
+                            <thead><tr><th scope="col">Company</th><th scope="col">Role</th><th scope="col">Expires</th><th scope="col">Action</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($companyInvitations as $invitation): ?>
+                                    <tr>
+                                        <td data-label="Company"><strong><?= e((string) $invitation['company_name']) ?></strong><small>Invited by <?= e((string) $invitation['invited_by_name']) ?></small></td>
+                                        <td data-label="Role"><?= e($humanize($invitation['member_role'])) ?></td>
+                                        <td data-label="Expires"><?= e(date('M j, Y H:i', strtotime((string) $invitation['expires_at']))) ?></td>
+                                        <td data-label="Action"><?php if ($emailVerified): ?><form action="<?= e(url('/account/company-invitations/' . (int) $invitation['id'] . '/accept')) ?>" method="post" data-account-action><?= csrf_field() ?><button class="barama-company-v114__row-action" type="submit">Accept invitation <span aria-hidden="true">→</span></button></form><?php else: ?><a class="barama-company-v114__row-action" href="<?= e(url('/verify-email')) ?>">Verify email first</a><?php endif; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if (!$emailVerified): ?>
+                <div class="barama-company-v114__notice"><?= app_icon('mail') ?> Verify your account email before submitting a company for review.</div>
+            <?php elseif ($canRequestCompany && !$hasWorkspaceAccess): ?>
+                <section class="barama-company-v117a3__upgrade" aria-labelledby="barama-company-v117a3-upgrade-title">
+                    <div class="barama-company-v117a3__upgrade-main">
+                        <div class="barama-company-v117a3__upgrade-copy">
+                            <span class="barama-company-v117a3__eyebrow">Business upgrade</span>
+                            <h2 id="barama-company-v117a3-upgrade-title">Become a Developer or Company</h2>
+                            <p>Apply to list and manage real-estate inventory. Your account stays a customer account until administrator approval.</p>
+                            <a class="barama-company-v117a3__apply" href="<?= e(url('/account/developer/apply')) ?>">
+                                <span>Apply for Developer / Company</span>
+                                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+                            </a>
+                        </div>
+                        <div class="barama-company-v117a3__upgrade-art" aria-hidden="true">
+                            <svg viewBox="0 0 500 294" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="company117a3Tower" x1="141" y1="70" x2="332" y2="236" gradientUnits="userSpaceOnUse"><stop stop-color="#EDF4FF"/><stop offset="1" stop-color="#73A8FF"/></linearGradient>
+                                    <linearGradient id="company117a3TowerSide" x1="256" y1="125" x2="333" y2="231" gradientUnits="userSpaceOnUse"><stop stop-color="#91B8FF"/><stop offset="1" stop-color="#276FE9"/></linearGradient>
+                                    <linearGradient id="company117a3Card" x1="280" y1="99" x2="424" y2="245" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4EDFF"/></linearGradient>
+                                    <linearGradient id="company117a3Platform" x1="92" y1="211" x2="425" y2="280" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F8FF"/><stop offset="1" stop-color="#CFDFFF"/></linearGradient>
+                                    <filter id="company117a3Shadow" x="40" y="20" width="450" height="270" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="12"/></filter>
+                                </defs>
+                                <ellipse cx="272" cy="246" rx="191" ry="17" fill="#3877CC" fill-opacity=".12"/>
+                                <path d="M85 209 230 145l197 79-143 57-199-72Z" fill="url(#company117a3Platform)" stroke="#D4E2FD" stroke-width="2"/>
+                                <path d="m85 209 199 72v10L85 220v-11Z" fill="#B9D2F8"/>
+                                <path d="m284 281 143-57v10l-143 57v-10Z" fill="#A8C8FA"/>
+                                <path d="m135 134 59-22 63 24-57 23-65-25Z" fill="#F4F8FF" stroke="#BCD5FF" stroke-width="2"/>
+                                <path d="m135 134 65 25v89l-65-25v-89Z" fill="url(#company117a3Tower)"/>
+                                <path d="m200 159 57-23v89l-57 23v-89Z" fill="url(#company117a3TowerSide)"/>
+                                <path d="m175 88 54-23 70 28-56 24-68-29Z" fill="#F6FAFF" stroke="#BCD5FF" stroke-width="2"/>
+                                <path d="m175 88 68 29v116l-68-27V88Z" fill="url(#company117a3Tower)"/>
+                                <path d="m243 117 56-24v115l-56 25V117Z" fill="url(#company117a3TowerSide)"/>
+                                <path d="m208 75 16-7 43 17-17 8-42-18Z" fill="#D8E8FF"/>
+                                <path d="M225 67V32" stroke="#4A85F2" stroke-width="4" stroke-linecap="round"/>
+                                <path d="m225 31 11 5-11 6-11-6 11-5Z" fill="#1767F9"/>
+                                <g fill="#DBE9FF" stroke="#9BC0FA" stroke-width="1.2">
+                                    <path d="m187 111 15 6v17l-15-6v-17Zm26 10 15 6v17l-15-6v-17Zm-26 24 15 6v17l-15-6v-17Zm26 10 15 6v17l-15-6v-17Zm-26 24 15 6v17l-15-6v-17Z"/>
+                                    <path d="m147 163 14 5v16l-14-5v-16Zm25 10 14 5v16l-14-5v-16Zm-25 13 14 5v16l-14-5v-16Z"/>
+                                </g>
+                                <g fill="#CBE0FF"><path d="m257 132 13-5v16l-13 5v-16Zm25-11 11-5v16l-11 5v-16Zm-25 35 13-5v16l-13 5v-16Zm25-11 11-5v16l-11 5v-16Zm-25 35 13-5v16l-13 5v-16Z"/></g>
+                                <g transform="rotate(-8 351 166)">
+                                    <rect x="279" y="90" width="151" height="150" rx="15" fill="url(#company117a3Card)" stroke="#D3E3FF" stroke-width="2"/>
+                                    <rect x="294" y="106" width="121" height="18" rx="9" fill="#E1EBFC"/>
+                                    <rect x="297" y="143" width="48" height="48" rx="11" fill="#D5E5FF"/>
+                                    <path d="m307 165 14-12 15 12m-25-2v15h21v-15" stroke="#1767F9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M356 153h54M356 169h45M299 207h107" stroke="#A8C8F8" stroke-width="8" stroke-linecap="round"/>
+                                    <path d="M299 224h71" stroke="#C3D8F8" stroke-width="7" stroke-linecap="round"/>
+                                </g>
+                                <circle cx="389" cy="223" r="27" fill="#165DFF" stroke="#D5E4FF" stroke-width="5"/>
+                                <path d="m375 224 9 9 18-19" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="352" cy="71" r="30" fill="#E4EFFF" stroke="#B6D3FF" stroke-width="2"/>
+                                <circle cx="344" cy="62" r="7" fill="#4385F7"/><circle cx="361" cy="66" r="6" fill="#7DA9FD"/>
+                                <path d="M330 84c0-10 27-10 27 0v3h-27v-3Zm29-1c0-5 11-7 14 0v4h-14v-4Z" fill="#4385F7"/>
+                                <path d="m116 228 6-24 6 24m-6-2v14" stroke="#7BB782" stroke-width="5" stroke-linecap="round"/>
+                                <path d="m272 253 6-24 6 24m-6-2v13" stroke="#7BB782" stroke-width="5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <ul class="barama-company-v117a3__benefits" aria-label="Business workspace features">
+                        <li>
+                            <span class="barama-company-v117a3__benefit-icon"><?= app_icon('building') ?></span>
+                            <span><strong>Publish listings</strong><small>Showcase approved properties</small></span>
+                        </li>
+                        <li>
+                            <span class="barama-company-v117a3__benefit-icon"><?= app_icon('layers') ?></span>
+                            <span><strong>Manage workspace</strong><small>Organize property inventory</small></span>
+                        </li>
+                        <li>
+                            <span class="barama-company-v117a3__benefit-icon"><?= app_icon('shield') ?></span>
+                            <span><strong>Admin approval required</strong><small>Access follows approval</small></span>
+                        </li>
+                    </ul>
+                </section>
+            <?php endif; ?>
+        </div>
+    <?php elseif ($activeSection === 'apply'): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/developer-application-v115.css') . '?v=117a5') ?>">
+        <script src="<?= e(asset('js/developer-application-v115.js') . '?v=115') ?>" defer></script>
+        <?php
+        $pendingApplication = false;
+        foreach ($ownedCompanies as $applicationCompany) {
+            if (!in_array((string) $applicationCompany['status'], ['rejected', 'archived'], true)) { $pendingApplication = true; break; }
+        }
+        ?>
+        <div class="barama-application-v115">
+            <section class="barama-application-v115__intro barama-application-v117a4__intro" aria-labelledby="barama-apply-v117a4-title">
+                <div class="barama-application-v117a4__intro-copy">
+                    <span class="barama-application-v117a4__eyebrow">Business membership</span>
+                    <h2 id="barama-apply-v117a4-title">Become a verified business member</h2>
+                    <p>Apply to create a Developer or Company workspace for real-estate projects and listings. An administrator reviews your application before access is granted.</p>
+                    <div class="barama-application-v117a4__assurances" aria-label="Application process">
+                        <span><?= app_icon('shield') ?> Admin reviewed</span>
+                        <span><?= app_icon('check') ?> Existing customer activity retained</span>
+                    </div>
+                </div>
+                <div class="barama-application-v117a4__intro-art" aria-hidden="true">
+
+                            <svg viewBox="0 0 500 294" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="apply117a4Tower" x1="141" y1="70" x2="332" y2="236" gradientUnits="userSpaceOnUse"><stop stop-color="#EDF4FF"/><stop offset="1" stop-color="#73A8FF"/></linearGradient>
+                                    <linearGradient id="apply117a4TowerSide" x1="256" y1="125" x2="333" y2="231" gradientUnits="userSpaceOnUse"><stop stop-color="#91B8FF"/><stop offset="1" stop-color="#276FE9"/></linearGradient>
+                                    <linearGradient id="apply117a4Card" x1="280" y1="99" x2="424" y2="245" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4EDFF"/></linearGradient>
+                                    <linearGradient id="apply117a4Platform" x1="92" y1="211" x2="425" y2="280" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F8FF"/><stop offset="1" stop-color="#CFDFFF"/></linearGradient>
+                                    <filter id="apply117a4Shadow" x="40" y="20" width="450" height="270" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="12"/></filter>
+                                </defs>
+                                <ellipse cx="272" cy="246" rx="191" ry="17" fill="#3877CC" fill-opacity=".12"/>
+                                <path d="M85 209 230 145l197 79-143 57-199-72Z" fill="url(#apply117a4Platform)" stroke="#D4E2FD" stroke-width="2"/>
+                                <path d="m85 209 199 72v10L85 220v-11Z" fill="#B9D2F8"/>
+                                <path d="m284 281 143-57v10l-143 57v-10Z" fill="#A8C8FA"/>
+                                <path d="m135 134 59-22 63 24-57 23-65-25Z" fill="#F4F8FF" stroke="#BCD5FF" stroke-width="2"/>
+                                <path d="m135 134 65 25v89l-65-25v-89Z" fill="url(#apply117a4Tower)"/>
+                                <path d="m200 159 57-23v89l-57 23v-89Z" fill="url(#apply117a4TowerSide)"/>
+                                <path d="m175 88 54-23 70 28-56 24-68-29Z" fill="#F6FAFF" stroke="#BCD5FF" stroke-width="2"/>
+                                <path d="m175 88 68 29v116l-68-27V88Z" fill="url(#apply117a4Tower)"/>
+                                <path d="m243 117 56-24v115l-56 25V117Z" fill="url(#apply117a4TowerSide)"/>
+                                <path d="m208 75 16-7 43 17-17 8-42-18Z" fill="#D8E8FF"/>
+                                <path d="M225 67V32" stroke="#4A85F2" stroke-width="4" stroke-linecap="round"/>
+                                <path d="m225 31 11 5-11 6-11-6 11-5Z" fill="#1767F9"/>
+                                <g fill="#DBE9FF" stroke="#9BC0FA" stroke-width="1.2">
+                                    <path d="m187 111 15 6v17l-15-6v-17Zm26 10 15 6v17l-15-6v-17Zm-26 24 15 6v17l-15-6v-17Zm26 10 15 6v17l-15-6v-17Zm-26 24 15 6v17l-15-6v-17Z"/>
+                                    <path d="m147 163 14 5v16l-14-5v-16Zm25 10 14 5v16l-14-5v-16Zm-25 13 14 5v16l-14-5v-16Z"/>
+                                </g>
+                                <g fill="#CBE0FF"><path d="m257 132 13-5v16l-13 5v-16Zm25-11 11-5v16l-11 5v-16Zm-25 35 13-5v16l-13 5v-16Zm25-11 11-5v16l-11 5v-16Zm-25 35 13-5v16l-13 5v-16Z"/></g>
+                                <g transform="rotate(-8 351 166)">
+                                    <rect x="279" y="90" width="151" height="150" rx="15" fill="url(#apply117a4Card)" stroke="#D3E3FF" stroke-width="2"/>
+                                    <rect x="294" y="106" width="121" height="18" rx="9" fill="#E1EBFC"/>
+                                    <rect x="297" y="143" width="48" height="48" rx="11" fill="#D5E5FF"/>
+                                    <path d="m307 165 14-12 15 12m-25-2v15h21v-15" stroke="#1767F9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M356 153h54M356 169h45M299 207h107" stroke="#A8C8F8" stroke-width="8" stroke-linecap="round"/>
+                                    <path d="M299 224h71" stroke="#C3D8F8" stroke-width="7" stroke-linecap="round"/>
+                                </g>
+                                <circle cx="389" cy="223" r="27" fill="#165DFF" stroke="#D5E4FF" stroke-width="5"/>
+                                <path d="m375 224 9 9 18-19" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="352" cy="71" r="30" fill="#E4EFFF" stroke="#B6D3FF" stroke-width="2"/>
+                                <circle cx="344" cy="62" r="7" fill="#4385F7"/><circle cx="361" cy="66" r="6" fill="#7DA9FD"/>
+                                <path d="M330 84c0-10 27-10 27 0v3h-27v-3Zm29-1c0-5 11-7 14 0v4h-14v-4Z" fill="#4385F7"/>
+                                <path d="m116 228 6-24 6 24m-6-2v14" stroke="#7BB782" stroke-width="5" stroke-linecap="round"/>
+                                <path d="m272 253 6-24 6 24m-6-2v13" stroke="#7BB782" stroke-width="5" stroke-linecap="round"/>
+                            </svg>                </div>
+            </section>
+            <?php if (auth_workspace_can('developer')): ?>
+                <div class="barama-application-v115__notice">Your account already has business workspace access.</div>
+            <?php elseif (!$emailVerified): ?>
+                <div class="barama-application-v115__notice">Verify your email before submitting an application. <a href="<?= e(url('/verify-email')) ?>">Verify email</a></div>
+            <?php elseif ($pendingApplication): ?>
+                <div class="barama-application-v115__notice">You already have an existing company application. Check its status on <a href="<?= e(url('/account/company')) ?>">Company Access</a>.</div>
+            <?php else: ?>
+                <form action="<?= e(url('/account/company/onboard')) ?>" method="post" data-account-action class="account-form barama-application-v115__form">
+                    <?= csrf_field() ?>
+                    <fieldset class="barama-application-v115__kind barama-application-v117a4__chooser">
+                        <legend>Choose account type</legend>
+                        <p class="barama-application-v117a4__chooser-help">Select the business workspace you want to apply for.</p>
+                        <div class="barama-application-v117a4__choices">
+                            <label class="barama-application-v117a4__choice">
+                                <input type="radio" name="application_kind" value="developer" checked required>
+                                <span class="barama-application-v117a4__choice-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16M6 21V5l6-3 6 3v16M9 8h1m4 0h1M9 12h1m4 0h1M9 16h1m4 0h1M11 21v-3h2v3"/></svg>
+                                </span>
+                                <span class="barama-application-v117a4__choice-content"><strong>Developer</strong><small>Development projects, company portfolios, properties and listings.</small></span>
+                                <span class="barama-application-v117a4__choice-check" aria-hidden="true"></span>
+                            </label>
+                            <label class="barama-application-v117a4__choice">
+                                <input type="radio" name="application_kind" value="company" required>
+                                <span class="barama-application-v117a4__choice-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-4 7 4v13M9 12h2m2 0h2M9 16h2m2 0h2M10 21v-3h4v3M2 9l10-6 10 6"/></svg>
+                                </span>
+                                <span class="barama-application-v117a4__choice-content"><strong>Company / Agency</strong><small>Property companies, agencies, brokers and approved listing operators.</small></span>
+                                <span class="barama-application-v117a4__choice-check" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <div class="account-form__grid">
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1m4 0h1M9 14h1m4 0h1M10 21v-4h4v4"/></svg><span>Company / business name *</span></span><input class="form-control" name="name" required maxlength="180" autocomplete="organization"></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6M7 16h4"/></svg><span>Business type *</span></span><select class="form-select" name="company_type" required>
+                            <option value="developer">Property developer</option><option value="agency">Real-estate agency</option><option value="property_company">Property company</option><option value="owner">Property owner</option>
+                        </select></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6zM15 3v5h5M9 12h7M9 16h7"/></svg><span>Legal / registered business name</span></span><input class="form-control" name="legal_name" maxlength="191"></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14M4 15h14M10 3 7 21M17 3l-3 18"/></svg><span>Registration number</span></span><input class="form-control" name="registration_number" maxlength="120"></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Business email *</span></span><input class="form-control" name="email" type="email" required value="<?= e((string) $accountUser['email']) ?>" maxlength="191"></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h4l1 5-3 2c1.2 2.4 2.9 4 5.2 5.2l2-3 4.8 1.1v4c0 1.5-1.3 2.6-2.8 2.4C10.2 19 5 13.8 4.4 6.8 4.2 5.3 5.5 3 7 3z"/></svg><span>Business phone</span></span><input class="form-control" name="phone" maxlength="60"></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Primary operating location</span></span><select class="form-select" name="location_id"><option value="">Select location</option><?php foreach ($locations as $location): ?><option value="<?= e((string) $location['id']) ?>"><?= e((string) $location['name']) ?> · <?= e($humanize($location['type'])) ?></option><?php endforeach; ?></select></label>
+                        <label class="barama-application-v117a5__field"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-4 4-4 14 0 18M12 3c4 4 4 14 0 18"/></svg><span>Website</span></span><input class="form-control" name="website" type="url" maxlength="255" placeholder="https://"></label>
+                        <label class="barama-application-v117a5__field account-form__span-2"><span class="barama-application-v117a5__field-label"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 10h16M4 15h12M4 20h9"/></svg><span>Business description *</span></span><textarea class="form-control" name="description" required rows="5" maxlength="10000" placeholder="Describe your real-estate business and planned activities."></textarea></label>
+                    </div>
+                    <label class="barama-application-v115__agree"><input type="checkbox" name="accept_business_terms" value="1" required> I understand that approval moves my account to the appropriate business workspace. Only an administrator can downgrade it later.</label>
+                    <footer class="barama-application-v115__actions"><button class="btn btn-primary" type="submit">Submit for administrator review</button><a class="btn btn-outline-secondary" href="<?= e(url('/account/company')) ?>">Cancel</a></footer>
+                </form>
+            <?php endif; ?>
         </div>
     <?php elseif ($activeSection === 'profile'): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/customer-profile-avatar-v110.css') . '?v=110') ?>">
+        <script src="<?= e(asset('js/profile-avatar-unified-v107.js') . '?v=107') ?>" defer></script>
+        <script src="<?= e(asset('js/customer-profile-avatar-v110.js') . '?v=110') ?>" defer></script>
         <div class="account-settings-grid">
             <section class="account-panel">
                 <div class="account-panel__head"><h2>Personal profile</h2><span>Your login email is managed separately under Security.</span></div>
