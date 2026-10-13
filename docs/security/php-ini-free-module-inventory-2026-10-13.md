@@ -1022,3 +1022,70 @@ bash run-on-aapanel.sh --check
 Expected general markers: `PINNED_PRIVATE_SOURCE_ROOT=VERIFIED`, `BARAMA_PINNED_ENTRYPOINT=PASS`, `GUARDED_PREINSTALL_REQUIRES=2`, three separate `INCLUDE_CANDIDATE_N_METADATA=` values, `INCLUDE_TARGET_FILE_CONTENT_READ=NONE`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
 
 **Next release gate**: verify whether parent overlay fallback exists and determine any active callback effects by separately controlled trusted-source static review. No actual PHP app execution or signed update/rollback until accepted independent runtime confinement. CodeCanyon FINAL ON HOLD.
+
+
+## 2026-10-13 — v1.0.21 aaPanel accepted: guarded support candidates all absent
+
+User provided full stdout from `Barama-Guarded-Include-Target-Metadata-aaPanel-v1.0.21.zip`. External SHA256 `d9bd2ff4310bdb2523980557498e9fe21041580345de0718392b3c28c79b96d3` PASS, all 285/285 unit tests PASS, nonstate SHA256 unchanged:
+`900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+- Private source: 629 nonstate files, 340 PHP, 40 directories, 243 static route declarations, source version `0.9.22-dev`.
+- The 10 fixed GitHub bootstrap reference blobs still show the **same 7 matched / 3 diverged** (`index.php`, `application/routes/web.php`, `application/app/Support/helpers.php`). Full GitHub tree equivalence not established.
+- `BARAMA_PINNED_ENTRYPOINT=PASS`; `GUARDED_PREINSTALL_REQUIRES=2`.
+- Candidate 1 (in-source change-confirmation support) metadata `MISSING_PARENT`.
+- Candidate 2 (parent-overlay change-confirmation support fallback) metadata `MISSING_PARENT`.
+- Candidate 3 (in-source session-expiry support) metadata `MISSING_PARENT`.
+- `INCLUDE_TARGET_FILE_CONTENT_READ=NONE`, `PHP_APPLICATION_EXECUTION=NONE`, `SOURCE_AND_PRODUCTION_WRITES=NONE`.
+- **Correction**: Because the verified entrypoint guards each of these includes with `is_file`, all three currently absent candidates imply both optional support loaders **would be skipped on that unchanged snapshot**. Missing `application/support` is not proof of an unconditional fatal missing dependency, and is no longer the principal bootstrap blocker.
+- Unreviewed source divergence and side-effectful runtime bootstrap remain unapproved. `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`; `CODECANYON_FINAL=ON_HOLD`.
+
+## Pinned GitHub runtime boundary source review (no application execution)
+
+Read connected private GitHub files at immutable commit `fc617c12790f7075ccfd0e418a1bba3443450941`:
+
+- `application/bootstrap/runtime.php` (blob `fe164a39007f91bed85d4ce0c072862fec6b1da7`) registers autoload, invokes `RuntimeEnvironment::load()` and `Config::load()`, modifies PHP INI/session cookie options, and can call `session_start()`.
+- `application/app/Core/RuntimeEnvironment.php` (blob `9622818033126d2fabaf3d2d84b3fc57c9a10b7e`) conditionally **requires PHP** from `application/storage/app/installation/environment.php` if present. This is stateful private content not inspected by these audits; do not run on host.
+- `application/app/Core/Config.php` (blob `05cc382cd82802113e5b424cb8b566e612fea549`) globs and **requires PHP config files**, not merely plain metadata.
+- `application/bootstrap/app.php` (blob `9c00caf1cdd6902aa9cf116245841bf65ba36465`) registers an exception handler able to create `application/storage/logs` and write `app.log` on failures, loads route PHP and constructs `Application`.
+- `application/app/Core/Application.php` (blob `7bf7d00c2c7f176e063717dc0448b863d60c1d20`) calls request capture, router dispatch and response send.
+- `application/app/Core/Installation.php` contains separate mutable installation APIs, not evidence they execute on the normal startup path.
+- **Consequence:** Even if the preinstall optional includes are absent, a real PHP startup can access/require private PHP configuration state, initiate sessions, set headers/cookies and write logs. An isolated fake-state, no-network, non-root, read-only mount/pid confinement is required before actually evaluating the application.
+
+## v1.0.22 — Prebootstrap execution boundary (read-only; NEXT)
+
+Verified archive: `Barama-Prebootstrap-Execution-Boundary-aaPanel-v1.0.22.zip`.
+ZIP **SHA256** `e1619d11226539ed6460c51d23d004b1fab9b8ebab520d9cb87acb50659d0f58`.
+Size **23,752 bytes**. 10 code/test/readme files + `SHA256SUMS.txt` (**10 checksum entries**).
+
+Procedure:
+- First validates the same full 629-file nonstate tree fingerprint and seven matched/three divergent reference bootstrap blobs, then rechecks all three optional support-file candidate metadata statuses are absent (if any appears, stop for review).
+- Reads only the exact nine pinned private nonsecret PHP source files with root-owned nofollow path traversal, strict file caps and exact pinned Git blob IDs. It checks approved code capability markers for runtime state loading, configuration PHP loading, PHP session/cookie setup, exception file logging, request dispatch and installation's separate write APIs. No private state, PHP target code, customer data or .env opened; private source contents are not echoed.
+- **Not a PHP AST or actual startup test.** Static marker presence establishes code-path potential, not occurrence on every request.
+- Independent clean ZIP extraction and SHA256SUMS PASS, syntax PASS, local **79/79 tests PASS**. Unapproved `--probe` returns 2. When source overlay is absent, new gate prints `STOP: PINNED_PREBOOTSTRAP_BOUNDARY_V122_FAILED`, return 1. No fallback webroot.
+- **Live v1.0.22 aaPanel execution not yet tested.** No PHP app/database/network, signing/installer, production or staging source writes authorized.
+
+aaPanel:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Prebootstrap-Execution-Boundary-aaPanel-v1.0.22.zip"
+SHA="e1619d11226539ed6460c51d23d004b1fab9b8ebab520d9cb87acb50659d0f58"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Prebootstrap-Execution-Boundary-aaPanel-v1.0.22
+bash run-on-aapanel.sh --check
+```
+
+Expected completion markers (if pinned source remains unchanged):
+```ini
+PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS
+OPTIONAL_PREINSTALL_SUPPORT_CANDIDATES_ABSENT=3
+PREBOOTSTRAP_REFERENCE_BLOBS_MATCHED=9
+BARAMA_PREBOOTSTRAP_BOUNDARY_AUDIT=PASS
+UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED
+ISOLATED_RUNTIME_HARNESS=REVIEW_AND_BUILD_REQUIRED
+CODECANYON_FINAL=ON_HOLD
+```
+
+Next after acceptance: design/review an isolated **copy-based** PHP runtime harness with empty non-production state, no secrets/network, mapped temp session directory/logging and policy against production impact; only then request explicit permission for actual isolated PHP execution. Signed update installation and rollback still not tested.
