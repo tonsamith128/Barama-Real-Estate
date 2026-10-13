@@ -1302,3 +1302,48 @@ bash run-on-aapanel.sh --check
 Expected: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTES_PRIVATE_SHA256_REVALIDATED=PASS`, count outputs `POST_UNIQUE_PREFIX_MATCHES`, `POST_PREFIX_OVERLAP_ROUTES`, `POST_NO_PREFIX_MATCH_COUNT`, `BARAMA_ROUTER_UNIQUE_GUARD_COVERAGE=PASS`, and holds `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
 
 **Next release-engineering action**: review business purpose, authorization/CSRF strategy of unmatched POST route families; separately obtain explicit authorization to examine the two newly detected class implementations, especially whether predispatch catch is fail-open, prior to any actual PHP startup or code revision. No source writes or GitHub main changes authorized by the audit. 
+
+
+## 2026-10-13 — v1.0.26 accepted: exact unique Router prefix route coverage
+
+User-provided aaPanel `Barama-Router-Unique-Guard-Coverage-aaPanel-v1.0.26.zip` transcript confirms outer SHA256 `d5df20d56693458f3c76349ce8ef0523bfbaf26992e76312c7e8bf75c48a8067` PASS; all inner hashes PASS; **138 tests run, 137 passed and 1 expected skipped**. Pinned nonstate 629-file SHA256 remains `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`, Router SHA256 `126d7ab2e12a90dd61c2006f4ae441d628d298043aba7f5c09d19e022fe7396e`, routes SHA256 `44ed9f7bb7e5ae23613d06fc2fa0fb9dec4f24b373bd715efbb93838d3c4d007`.
+
+Confirmed among 243 static routes:
+- POST **149**: unique prefix-matched **132**, overlaps **0**, outside the new ChangeConfirmationMiddleware POST-prefix rule **17**.
+- GET **94**: unique prefix-matched **65**, overlaps **0**, not matched **29**. **No automatic guard appended to GET** by this particular rule.
+- Prefix-specific POST groups disjoint: 87/23/22; GET groups disjoint: 46/12/7.
+- The report emits exact 17 *hashed* POST route IDs plus hashed route-family IDs and path-depth/parameter-count shapes, without private route strings. These are an immutable known set for subsequent audit:
+  `f2fe0b3d00fcb9fd`, `9cbe1f491237e407`, `daafa38cccfa47ee`, `70b49f24b0084543`, `0575d6a556e761aa`, `81ce94936d5aec9b`, `4705188b7cb69fbb`, `f1d3826e72bef02d`, `8859b7a22fa3339c`, `6d0ddbf09dc5ad51`, `51dd14c2f8faf5d0`, `61c9c29517db3d37`, `05b9fd98127b01f5`, `9fe8606ffea00e43`, `7b28bdbf6812ba75`, `5f9ed7ffe18e4375`, `de76882d75eada43`.
+- `UNMATCHED_POST_ROUTE_AUTHORIZATION=NOT_ASSESSED`, `UNMATCHED_POST_ROUTE_CSRF_CONTROLS=NOT_ASSESSED`, `PRE_DISPATCH_EARLY_RETURN_AND_EXCEPTION_EFFECTS=NOT_ASSESSED`, class contents NOT opened, source/production writes NONE, application PHP/SQL/network/updater NOT executed.
+- `BARAMA_ROUTER_UNIQUE_GUARD_COVERAGE=PASS`, but `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+**Interpretation**: 132/149 (88.6%) static POST route signatures match the new Router rule. The other 17 might be publicly intended forms, auth endpoints, webhooks, or other exceptions already protected by separate mechanisms. No evidence that they lack protection; do not automatically apply new middleware or change route behavior.
+
+## v1.0.27 — Static declared middleware evidence for the 17 unmatched POST registrations (NEXT)
+
+Artifact `Barama-Router-Declared-Middleware-aaPanel-v1.0.27.zip`, exact external ZIP **SHA256 `34c21bffb67fc4c2e1a4b2cdef4c9c945cb0db2a09d7c20156f5a7bc2e0d901c`**, 52,452 bytes.
+
+- Inherits existing v1.0.26 pin/allowlist: **only** reads private `application/app/Core/Router.php` and `application/routes/web.php`; no new private source access, no middleware/service contents or protected app state read.
+- Pins source tree, exact Router and route bytes, route declarations (149 POST, 94 GET) and the **17 exact shortened SHA route identities** from accepted v1.0.26.
+- Adds a bounded comment/string/nested-bracket lexical argument parser; inspects registration's third positional middleware argument for each of those 17 routes. Classifies as no third argument, direct literal middleware array, simple statically declared literal-array variable alias, unresolved variable alias, or other dynamic expression. Prints fixed labels `DECLARED` / `NOT_EXPLICITLY_DECLARED` / `UNKNOWN` for AuthMiddleware, GuestMiddleware, CsrfMiddleware and PermissionMiddleware. No route literals, PHP source lines, variable names, arbitrary class names, user data or credentials printed.
+- **Highly important limitations**: registration text does not prove middleware actually executes; syntax-only 'no explicit CSRF' is NOT equivalent to missing CSRF protection, and some webhook/public callback endpoints require purposeful different controls. Dynamic registration remains UNKNOWN, not deemed safe. **No controller, middleware, predispatch service or installation state read, no PHP AST or runtime testing**.
+- Independent fresh ZIP extraction, 21 internal SHA256SUMS PASS, archive test PASS, shell syntax PASS, **159/159 offline tests PASS**. Unsupported `--probe` exits 2; absent pinned private source exits fail-closed 1. **aaPanel v1.0.27 not yet run**.
+- Not a CodeCanyon/release acceptance. `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+One aaPanel command after uploading ZIP to `/root`:
+
+```bash
+bash <<'BASH'
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Router-Declared-Middleware-aaPanel-v1.0.27.zip"
+SHA="34c21bffb67fc4c2e1a4b2cdef4c9c945cb0db2a09d7c20156f5a7bc2e0d901c"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Router-Declared-Middleware-aaPanel-v1.0.27
+bash run-on-aapanel.sh --check
+BASH
+```
+
+Expected broad markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTES_PRIVATE_SHA256_REVALIDATED=PASS`, `POST_ROUTES_OUTSIDE_AUTOMATIC_RULE=17`, `APPROVED_SOURCE_CONTENT_FILES_READ=2`, `NEW_CLASS_IMPLEMENTATIONS_READ=0`, `BARAMA_ROUTER_DECLARED_MIDDLEWARE_V127=PASS`, `CODECANYON_FINAL=ON_HOLD`. If the parser reports its generic STOP, retain STOP; do not adjust pins based on unreviewed code.
