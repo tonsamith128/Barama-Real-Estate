@@ -1,0 +1,86 @@
+--- a/probe.py
++++ b/probe.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-"""Read-only host preflight and strictly isolated php -n -m inventory."""
++"""Read-only host preflight and strictly isolated php -n -m inventory (v1.0.2)."""
+ import argparse, ctypes, errno, hashlib, os, pathlib, re, shutil, subprocess, sys, tempfile
+ 
+ PHP='/www/server/php/85/bin/php'
+@@ -72,6 +72,32 @@
+     if not 15<=len(paths)<=90: fail('unexpected library closure size')
+     return sorted(paths)
+ 
++def sandbox_library_target(root, library_path):
++    """Create *only* chroot library parent directories with traversable modes.
++
++    The aaPanel wrapper uses umask 077. Without explicit chmod, mkdir()
++    creates 0700 directories, causing execve('/php') to return EACCES for
++    non-root UID 65534 when the ELF interpreter is nested below /lib64 or /lib.
++    Chroot root and directories contain no customer files and are made 0755;
++    the host /root and the staging app are never changed.
++    """
++    pure=pathlib.PurePosixPath(library_path)
++    if (not pure.is_absolute() or '..' in pure.parts or
++            not library_path.startswith(('/lib/','/lib64/','/usr/lib/'))):
++        fail('invalid system ELF library path for sandbox')
++    root=pathlib.Path(root)
++    current=root
++    for part in pure.parts[1:-1]:
++        current=current/part
++        if current.is_symlink():
++            fail('symlink inside ephemeral library tree rejected')
++        current.mkdir(mode=0o755,exist_ok=True)
++        if not current.is_dir():
++            fail('invalid ephemeral library parent')
++        current.chmod(0o755)  # umask 077 would otherwise leave mode 0700
++    return root.joinpath(*pure.parts[1:])
++
++
+ def confinement():
+     libc=ctypes.CDLL(None,use_errno=True)
+     if libc.prctl(PR_SET_NO_NEW_PRIVS,1,0,0,0)!=0: fail('no-new-privs failed')
+@@ -101,10 +127,9 @@
+         shutil.copyfile(PHP,temp+'/php')
+         os.chmod(temp+'/php',0o755)
+         for path in closure():
+-            target=pathlib.Path(temp+path)
+-            target.parent.mkdir(parents=True,exist_ok=True)
++            target=sandbox_library_target(temp,path)
+             shutil.copyfile(os.path.realpath(path),target)
+-            target.chmod(0o644 if not path.endswith('ld-linux-x86-64.so.2') else 0o755)
++            target.chmod(0o755 if path.endswith('ld-linux-x86-64.so.2') else 0o644)
+         r=subprocess.run([sys.executable,__file__,'--child'],capture_output=True,text=True,env={'BARAMA_SANDBOX_ROOT':temp},timeout=20)
+         if r.returncode: fail('confined PHP execution failed (no module inventory accepted): '+r.stderr[:250])
+         data=r.stdout
+@@ -113,19 +138,20 @@
+         modules=[i.strip() for i in first if i.strip()]
+         if not modules or len(modules)>120 or any(not MOD_RE.fullmatch(x) for x in modules): fail('unexpected module list')
+         if len(modules)!=len(set(modules)): fail('duplicated modules')
+-        print('EPHEMERAL_MOUNT_AND_NETWORK_NAMESPACE=PASS')
+-        print('PHP_INI_CONFIGURATION=DISABLED')
+-        print('EXTERNAL_MODULE_SO_FILES=NOT_COPIED')
+-        print('APPLICATION_SOURCE_AND_MYSQL_SOCKET=NOT_COPIED')
+-        print('NONROOT_EXECUTION=65534:65534')
+-        print('PHP_MODULE_COUNT='+str(len(modules)))
+-        for item in modules: print('BUILTIN_MODULE='+item)
+-        for required in ('PDO','pdo_mysql','openssl','json','SPL','Core'):
+-            print('INI_FREE_'+required.upper()+'='+('PRESENT' if required in modules else 'ABSENT'))
+-        print('BARAMA_PHP_INI_FREE_MODULE_PROBE=PASS')
+     finally:
+         if libc.umount2(os.fsencode(temp),MNT_DETACH)!=0:
+             syscall_failure('sandbox tmpfs cleanup failed')
++    # Report PASS only after the tmpfs has been unmounted successfully.
++    print('EPHEMERAL_MOUNT_AND_NETWORK_NAMESPACE=PASS')
++    print('PHP_INI_CONFIGURATION=DISABLED')
++    print('EXTERNAL_MODULE_SO_FILES=NOT_COPIED')
++    print('APPLICATION_SOURCE_AND_MYSQL_SOCKET=NOT_COPIED')
++    print('NONROOT_EXECUTION=65534:65534')
++    print('PHP_MODULE_COUNT='+str(len(modules)))
++    for item in modules: print('BUILTIN_MODULE='+item)
++    for required in ('PDO','pdo_mysql','openssl','json','SPL','Core'):
++        print('INI_FREE_'+required.upper()+'='+('PRESENT' if required in modules else 'ABSENT'))
++    print('BARAMA_PHP_INI_FREE_MODULE_PROBE=PASS')
+ 
+ def main():
+     p=argparse.ArgumentParser();p.add_argument('--check',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--inside',action='store_true');p.add_argument('--child',action='store_true');a=p.parse_args()
