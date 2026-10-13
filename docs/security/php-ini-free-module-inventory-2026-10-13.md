@@ -992,3 +992,33 @@ User executed a standalone read-only Python review of the **exact pinned** priva
 4. Do not copy missing `application/support` files, modify private source, change GitHub `main`, or run PHP to test these guards.
 
 **Status:** `BARAMA_PINNED_ENTRYPOINT=PASS`, `PREINSTALL_GUARDED_REQUIRES=CONFIRMED`, `EXTERNAL_PARENT_FALLBACK=UNVERIFIED`, `INCLUDE_CALLBACK_EFFECTS=NOT_TESTED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+
+## v1.0.21 — Pinned guarded support-include candidate *metadata* (NEXT)
+
+Archive: `Barama-Guarded-Include-Target-Metadata-aaPanel-v1.0.21.zip`; **ZIP SHA256 `d9bd2ff4310bdb2523980557498e9fe21041580345de0718392b3c28c79b96d3`**; 89,637 bytes. Offline **285/285 tests PASS** on build and independent fresh extraction; 30 source/manifest files; internal SHA256SUMS PASS; `unzip -t` PASS; shell syntax PASS. `--probe` rejected and missing pinned source fails closed. **Live aaPanel v1.0.21 not yet tested**.
+
+Reason: the user-provided pinned `index.php` guard-structure review establishes both earlier `require_once $variable` expressions are **optional** based on preceding `is_file` checks. One change-confirmation support includes fallback to `dirname(__DIR__)` outside pinned `source` but within the known overlay parent; the session-expired support check has only a local candidate. The earlier marker `BLOCKED_MISSING_SHARED_SOURCE_SUBTREE` was over-conservative as a claim of mandatory missing dependency and is **superseded by conditional-load and fallback review status**. Never treat the missing subtree as proof of fatal bootstrap failure.
+
+New package carries earlier immutable read-only 629-file provenance gate and the pinned private entrypoint SHA256 `27b5f91f53725074bb5ca9b7b6ece1d050100db139d637bc81b362a928c836aa`. It:
+- Verifies precisely three static source assignments in pinned `index.php`: local change-confirmation path, bounded parent overlay fallback path, local session-expired path; checks `if(is_file)` guard counts, in addition to full nonstate tree checksum continuity.
+- Permits only metadata checks of candidate PHP paths within `application/` under the exact source and explicitly named overlay parent. Secure no-follow directory-fd walks require owner root and no group/world writes; target `stat(..., follow_symlinks=False)` type/owner/link/mode/size checks. A target may be `MISSING_PARENT`, `MISSING_FILE` or `PRESENT_TRUSTED_METADATA_ONLY`. Unexpected names, storage paths, symlinks, file types or trust boundaries stop the check.
+- Never opens/reads included targets, executes PHP, reads database/credentials, talks over the network, or modifies source/production. Does **not** validate included code provenance, callback effects, runtime router middleware, or signed updater install/rollback. Presence of parent-overlay fallback is NOT authorization for loading it.
+- Rejects all execution/deployment modes and future source identity drift.
+
+aaPanel:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Guarded-Include-Target-Metadata-aaPanel-v1.0.21.zip"
+SHA="d9bd2ff4310bdb2523980557498e9fe21041580345de0718392b3c28c79b96d3"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Guarded-Include-Target-Metadata-aaPanel-v1.0.21
+bash run-on-aapanel.sh --check
+```
+
+Expected general markers: `PINNED_PRIVATE_SOURCE_ROOT=VERIFIED`, `BARAMA_PINNED_ENTRYPOINT=PASS`, `GUARDED_PREINSTALL_REQUIRES=2`, three separate `INCLUDE_CANDIDATE_N_METADATA=` values, `INCLUDE_TARGET_FILE_CONTENT_READ=NONE`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+**Next release gate**: verify whether parent overlay fallback exists and determine any active callback effects by separately controlled trusted-source static review. No actual PHP app execution or signed update/rollback until accepted independent runtime confinement. CodeCanyon FINAL ON HOLD.
