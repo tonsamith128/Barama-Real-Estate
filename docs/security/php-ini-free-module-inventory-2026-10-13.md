@@ -846,3 +846,46 @@ bash run-on-aapanel.sh --check
 Expected diagnostic completion: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EARLY_REQUIRE_ONCE_VARIABLE_SITES=2`, `PRIOR_ASSIGNMENTS_1=2`, `PRIOR_ASSIGNMENTS_2=1`, `INCLUDE_TARGET_FILE_CONTENTS_OPENED=0`, `BARAMA_PREINSTALL_ASSIGNMENT_METADATA_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
 
 No source re-pinning, production webroot fallback, PHP execution, license secret access, or installation. The next task is to review these syntactic assignment/metadata outcomes and perform a separately authorized static review of any positively identified nonsecret target files before designing a genuine isolated app bootstrap. CodeCanyon FINAL still ON HOLD.
+
+
+## 2026-10-13 — v1.0.18 accepted aaPanel metadata audit: two missing-parent source candidates
+
+User-supplied aaPanel log:
+- Correct v1.0.18 package SHA-256 `fadbe114f5cd6edd201756c70687679c1916bfa1be33a6eea7ac4e9337e2e48d` PASS.
+- **226/226 offline tests** PASS; exact full private nonstate source fingerprint still `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Preinstallation `require_once` site 1: **two** prior assignment expressions. Assignment 1 TOP_LEVEL_LEXICAL `STATIC_CANDIDATE_APPLICATION_NONSTATE_PHP`, candidate ID `ece1e4aec6c25c82`, target status **`MISSING_PARENT_METADATA_ONLY`**. Assignment 2 NESTED_LEXICAL `FUNCTION_OR_SIDE_EFFECT_DEPENDENT`, target unresolved and not inspected.
+- Site 2: **one** TOP_LEVEL_LEXICAL `STATIC_CANDIDATE_APPLICATION_NONSTATE_PHP`, candidate ID `db9cf6767bf6178b`, target status **`MISSING_PARENT_METADATA_ONLY`**.
+- `STATIC_TARGET_METADATA_CHECKS=2`; `INCLUDE_TARGET_FILE_CONTENTS_OPENED=0`; no PHP/SQL/network/updater, no production or source writes.
+- v1.0.18 returned `BARAMA_PREINSTALL_ASSIGNMENT_METADATA_TRIAGE=PASS`, but **did not resolve or approve either include**, proving neither real execution path nor side-effect safety. `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+**Security decision:** Do not copy missing candidate dependencies from production, create placeholder files, re-pin the accepted source, or execute the application merely to suppress the missing-parent result. Need to distinguish the absent parent boundary at each candidate, then review verified source-of-truth and real control flow.
+
+## v1.0.19 — pinned missing dependency parent chain metadata diagnostic (NEXT)
+
+Package: `Barama-Preinstall-Dependency-Chain-aaPanel-v1.0.19.zip`.
+
+External ZIP SHA-256: `b7969605bcf9850c155440eb1727de5e487262a7790f2d94074c2f59088e91b2`; **80,205 bytes**.
+
+- Exact trusted private root: `/root/barama-private-v2-http-source-overlay/source`; revalidates v1.0.9 static topology, v1.0.10–v1.0.18 pinned source and three-file identities, exact 629-file SHA-256 and the previously accepted 2/1 variable assignment inventory.
+- For only the two previously identified static application PHP candidate IDs `ece1e4aec6c25c82` and `db9cf6767bf6178b`, follows **directory metadata only**, using directory file-descriptor nofollow traversal under pinned source, with owner/mode/device restrictions. Finds number of existing prefix directories, position (level) of first missing parent, and truncated hash of missing parent prefix to compare whether both candidates fail in the same subtree. Does **not print private path strings, variable names or source lines**.
+- If a path unexpectedly no longer has a missing parent, STOP; do not silently accept a mutated source path or grant bootstrap permission.
+- Does not open/read any target PHP file contents. No actual PHP AST/control flow, module import resolution, handler auth, app runtime, SQL, service, network, updater, signer or production modifications.
+- Local **248/248 offline tests** PASS and fresh ZIP re-extraction **248/248** PASS; internal SHA256SUMS PASS; bash and Python syntax PASS; unapproved `--probe` rejected, absent private root fails closed. **Live aaPanel v1.0.19 NOT YET TESTED**.
+
+aaPanel:
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Preinstall-Dependency-Chain-aaPanel-v1.0.19.zip"
+SHA="b7969605bcf9850c155440eb1727de5e487262a7790f2d94074c2f59088e91b2"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Preinstall-Dependency-Chain-aaPanel-v1.0.19
+bash run-on-aapanel.sh --check
+```
+
+Expected on unchanged source: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `STATIC_CANDIDATE_PATHS_CHECKED=2`, each `CANDIDATE_N_STATUS=MISSING_PARENT`, `BARAMA_PREINSTALL_DEPENDENCY_CHAIN_DIAGNOSTIC=PASS`, `BARAMA_MISSING_PREINSTALL_SOURCE_DEPENDENCIES=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+A diagnostic PASS does **not** show that required dependencies can be safely restored or that either PHP include would execute. Next is source-of-truth recovery planning and targeted static review of branch control flow without using production source as fallback; genuine disconnected bootstrap and signed update/rollback remain untested.
