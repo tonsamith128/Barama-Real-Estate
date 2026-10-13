@@ -179,3 +179,51 @@ bash run-on-aapanel.sh --probe PROBE_ISOLATED_FILEINFO_ZIP_MODULES_ONLY
 Accept only if `EXTENSION_FILEINFO_ISOLATED_LOAD=PASS`, `EXTENSION_ZIP_ISOLATED_LOAD=PASS`, `BARAMA_PHP_SELECTED_EXTENSION_SANDBOX_PROBE=PASS`, and `TEMPORARY_SANDBOX=REMOVED`.
 
 **v1.0.4 aaPanel live result: NOT YET TESTED.** Do not change PHP INI, copy Barama source, touch MySQL, modify firewall, sign a release, or publish. CodeCanyon FINAL remains **ON HOLD**.
+
+## 2026-10-13: v1.0.4 aaPanel acceptance — PASS
+
+User-provided aaPanel transcript:
+- ZIP verified against `ca7423f70950d2a4e137eededb6c8bbfc894dac3be70aae4ded7426168e77304`.
+- 48/48 offline tests PASS; `PHP_RUNTIME_BINARY_PIN=PASS`, `PHP_CORE_ELF_RESOLUTIONS=48`, `ADDITIONAL_ELF_RESOLUTIONS=2`.
+- `EXTENSION_FILEINFO_SHA256=4b4bfc5676233036cf4856c9ddc01c5274a1b5a6d004e313655a7dddfaef4360`.
+- `EXTENSION_ZIP_SHA256=6a93dee35e7d42fd18bae63dfb48088404b3647d37080e06f9e22e7631382968`.
+- `EXTENSION_FILEINFO_ISOLATED_LOAD=PASS`, `EXTENSION_ZIP_ISOLATED_LOAD=PASS`.
+- `BARAMA_PHP_SELECTED_EXTENSION_SANDBOX_PROBE=PASS`, `TEMPORARY_SANDBOX=REMOVED`.
+- PHP INI disabled, mount/network/PID namespaces isolated, UID/GID 65534, IMAP excluded, app code and database sockets not copied.
+- **Acceptance scope: two modules loaded separately**, without actual fileinfo MIME or ZipArchive functional exercise, app bootstrap or updater execution.
+
+## v1.0.5 combined fileinfo + zip functional smoke (proposed next gate)
+
+Package: `Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.5.zip`
+SHA-256: `913928416f54cc036df5df58ff1894093420ed4c4792a1d8844cfed7554d4808`
+Size: 20,657 bytes.
+- Reuses previously accepted v1.0.4 isolated PHP loader/confinement, pins PHP SHA and BOTH extension SHAs captured above.
+- Revalidates baseline and individually activated extensions (unchanged module deltas), then loads `fileinfo` and `zip` **together** with `php -n -d extension=... -d extension=... -r` as UID/GID 65534 in private tmpfs chroot.
+- Synthetic-only functional assertions: `finfo(FILEINFO_MIME_TYPE)->buffer` returns `text/plain`; `ZipArchive` creates, reads, verifies and unlinks a small synthetic zip in `/scratch` inside private tmpfs; scratch directory must be empty.
+- No Barama source/config/DB/socket, no IMAP, no normal PHP INI, no license/signer, no firewall/service changes. A failure must fail closed; do not relax confinement or skip checks to obtain PASS.
+- Offline 61/61 tests PASS; fresh ZIP SHA256SUMS PASS; shell lint PASS; synthetic PHP syntax lint PASS; invalid approval phrase rejected.
+- **v1.0.5 live aaPanel execution: NOT YET TESTED.** This is NOT a Barama bootstrap test.
+
+### aaPanel instructions for v1.0.5
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.5.zip"
+SHA="913928416f54cc036df5df58ff1894093420ed4c4792a1d8844cfed7554d4808"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.5
+bash run-on-aapanel.sh --check
+# ONLY IF PRELIGHT PASSES:
+bash run-on-aapanel.sh --probe PROBE_COMBINED_FILEINFO_ZIP_FUNCTIONAL_SMOKE_ONLY
+```
+Required success markers:
+```ini
+BARAMA_PHP_COMBINED_SMOKE_PREFLIGHT=PASS
+BARAMA_SYNTHETIC_FILEINFO_ZIP_FUNCTIONAL_SMOKE=PASS
+BARAMA_PHP_COMBINED_RUNTIME_SMOKE=PASS
+TEMPORARY_SANDBOX=REMOVED
+```
+
+CodeCanyon FINAL remains ON HOLD until isolated Barama bootstrap, genuine signed-update install, and rollback acceptance complete.
