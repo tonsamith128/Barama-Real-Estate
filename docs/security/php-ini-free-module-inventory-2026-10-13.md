@@ -1390,3 +1390,8 @@ BASH
 Expected broad markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `OUTSIDE_POST_EXPLICIT_CSRF=16`, `OUTSIDE_POST_NO_THIRD_ARGUMENT=1`, `EXCEPTION_ROUTE_CATEGORY=PAYMENT_PROVIDER_WEBHOOK`, `EXCEPTION_HANDLER_DECLARATION=PINNED_STATIC_MATCH`, `WEBHOOK_CONTROLLER_FILE_METADATA=<actual server result>`, `BARAMA_WEBHOOK_EXCEPTION_IDENTITY_V128=PASS`, `CODECANYON_FINAL=ON_HOLD`.
 
 **Next substantive milestone** after accepting metadata: review separate, explicitly authorized source-scoped `PaymentWebhookController.php`, `ChangeConfirmationMiddleware.php` and imported predispatch service, verifying auth/signature fail-open/closed, replay guard, middleware ordering and side effects. No permission yet to read those target implementations. v1.0.22 prebootstrap audit remains not accepted; no isolated runtime execution or production changes.
+
+
+## 2026-10-13 v1.0.28 aaPanel acceptance
+
+ZIP outer and inner checksums passed. 172 tests ran, 171 passed, 1 skipped. Exact 629-file source SHA256 remains 900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687. The one non-CSRF-declared route of 17 routes outside the automatic rule is verified as POST /payments/webhooks/{provider}, with PaymentWebhookController::receive. Target controller exists (metadata-only); no implementation file contents were opened, no PHP application executed, no production/source writes. Webhook signatures, replay handling, idempotency, middleware behavior and pre-dispatch service remain untested. The next source-content review needs explicit owner approval limited to the webhook controller, change-confirmation middleware, and exact service imported by Router. CodeCanyon FINAL ON HOLD.
