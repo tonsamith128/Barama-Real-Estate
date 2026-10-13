@@ -11,12 +11,12 @@ Continue after the accepted PHP 8.5.8 INI-free `php -n -v` sandbox acceptance. I
 
 ## aaPanel kit
 Artifact: `Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0.zip`
-SHA-256: `a8df66d886ad3cab58790cff36a94beb15402d25cd60b6adf7e4937a6b2bd060`
+SHA-256: `33517da460bdb1edd5bcb468aa5eb57529b462efd1b018c20b859518c8ed690a`
 
 Execute only after verifying the ZIP:
 ```bash
 cd /root
-echo 'a8df66d886ad3cab58790cff36a94beb15402d25cd60b6adf7e4937a6b2bd060  Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0.zip' | sha256sum -c -
+echo '33517da460bdb1edd5bcb468aa5eb57529b462efd1b018c20b859518c8ed690a  Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0.zip' | sha256sum -c -
 unzip -oq Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0.zip
 cd Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0
 bash run-on-aapanel.sh --check
