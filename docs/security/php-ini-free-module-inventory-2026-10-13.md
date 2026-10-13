@@ -321,3 +321,42 @@ bash run-on-aapanel.sh --check
 Expected marker: `BARAMA_DISCONNECTED_BOOTSTRAP_STATIC_PREFLIGHT=PASS`. If absent, stop and review the mismatch. No `--probe` or `--deploy` exists in this kit.
 
 CodeCanyon FINAL remains **ON HOLD**; signed update install and rollback are still NOT TESTED.
+
+
+## 2026-10-13: v1.0.7 static source gate outcome (aaPanel) — FAIL, no execution
+
+Observed exact output: ZIP hash PASS, 15/15 offline unit tests PASS, then `STOP: SOURCE GATE FAILED: required source file missing: index.php` from the pinned private overlay at `/root/barama-private-v2-http-source-overlay`. This means **the fixed overlay root does not contain the expected root-level entrypoint**. It does not prove the previously accepted 629-file source inventory was lost, nor prove Barama is incompatible. No PHP, network, database, or updater execution was performed.
+
+Do not copy `index.php` from production, run a fallback production bootstrap, modify the overlay or relax private root enforcement to make this check pass.
+
+### v1.0.8 read-only private source layout diagnostic (NEXT)
+
+Archive: `Barama-Private-Source-Layout-Diagnostic-aaPanel-v1.0.8.zip`
+SHA-256: `1b26f434a1039791fe1ec29814a47c15f8233801f991c5e9517b98d14ef71622`
+Size: 7877 bytes.
+
+- Fixed, private, read-only source overlay: `/root/barama-private-v2-http-source-overlay`.
+- A distinct, explicitly known private scaffold `/root/barama-isolated-runtime-scaffold/code` is checked for root-level entrypoint *presence by metadata only*. It is **not** selected as alternate source or executed.
+- Bounded directory-entry scan under overlay, excluding `storage`, `.env*`, secrets, license/backups/cache/logs, vendor and node_modules. No file contents read.
+- Reports root `index.php` presence, bounded nested entrypoint candidates, `application`/VERSION/bootstrap/routes metadata and nonstate file counts. Does not open environment or secrets.
+- Refuses symlinked nonstate paths, unsafe candidate modes, hard-linked `index.php`, untrusted overlay root, unbounded enumeration.
+- No production source or website access, no PHP, MySQL, network or updater.
+- Running 18 offline tests creates and removes temporary fixtures under the host's normal temp directory; this is not a production/source modification.
+- Fresh ZIP integrity, SHA256SUMS, shell syntax, 18/18 offline tests PASS locally. **Live aaPanel execution NOT TESTED.**
+- The diagnostic `BARAMA_PRIVATE_SOURCE_LAYOUT_DIAGNOSTIC=PASS` is NOT a bootstrap acceptance marker.
+
+### aaPanel
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP=Barama-Private-Source-Layout-Diagnostic-aaPanel-v1.0.8.zip
+SHA=1b26f434a1039791fe1ec29814a47c15f8233801f991c5e9517b98d14ef71622
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Private-Source-Layout-Diagnostic-aaPanel-v1.0.8
+bash run-on-aapanel.sh --check
+```
+
+Next decision: compare the reported topology against the accepted private 629-file inventory and private scaffold and prepare a **separately pinned** non-executing bootstrap source verification only after that reconciliation. CodeCanyon FINAL remains ON HOLD.
