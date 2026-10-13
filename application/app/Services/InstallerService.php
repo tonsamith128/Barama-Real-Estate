@@ -84,6 +84,7 @@ final class InstallerService
             );
         }
 
+        // Other feature CSS/JS files are permitted. Only require the canonical assets.
         $checks[] = $this->requiredCheck(
             'Canonical stylesheet',
             is_file(BASE_PATH . '/assets/css/app.css')
@@ -985,6 +986,7 @@ SQL);
             'Required runtime folders are writable.'
         );
 
+        // Health uses the same existence/readability contract as Requirements.
         $checks[] = $this->healthCheck(
             'Canonical stylesheet',
             is_file(BASE_PATH . '/assets/css/app.css')
