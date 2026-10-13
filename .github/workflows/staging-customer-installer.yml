@@ -69,10 +69,30 @@ jobs:
             grep -Fxq "$file" build/customer-files.txt || { echo "MISSING: $file"; exit 1; }
           done
           test "$(grep -Ec '^application/database/migrations/[0-9]{4}_[^/]+\.php$' build/customer-files.txt)" -eq 30
-          if grep -Eq '^(\.env($|\.)|\.git/|\.github/|docs/|application/storage/(app|cache|logs|uploads)/[^/]+)' build/customer-files.txt; then
-            echo 'ERROR: Unsafe/development/runtime data in customer ZIP.'
-            exit 1
-          fi
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          path = "build/Barama-Real-Estate-0.9.22-dev.zip"
+          approved = {
+              "application/storage/cache/.gitignore",
+              "application/storage/logs/.gitignore",
+              "application/storage/uploads/.gitignore",
+              "application/storage/uploads/.htaccess",
+          }
+          with ZipFile(path) as package:
+              names = package.namelist()
+          unsafe = []
+          for name in names:
+              if name.endswith("/"):
+                  continue  # Required empty installation/runtime directories
+              if (name == ".env" or name.startswith(".env.")
+                      or name.startswith((".git/", ".github/", "docs/"))):
+                  unsafe.append(name)
+              if name.startswith("application/storage/") and name not in approved:
+                  unsafe.append(name)
+          if unsafe:
+              raise SystemExit("Unsafe customer ZIP contents: " + ", ".join(unsafe))
+          print("[PASS] No runtime state, .env, development files or credentials included")
+          PY
           echo '[PASS] Installer, auth, 30 migrations, V2 updater and safety inventory'
 
       - name: Publish downloadable GitHub artifact
