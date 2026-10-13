@@ -15,6 +15,15 @@ if ($zip->open($zipPath) !== true) {
 }
 
 $root = dirname(__DIR__);
+require_once __DIR__ . '/installer-asset-contract.php';
+
+$installerSource = $zip->getFromName(
+    'application/app/Services/InstallerService.php'
+);
+if (!is_string($installerSource)) {
+    throw new RuntimeException('Customer ZIP does not contain InstallerService.');
+}
+baramaAssertInstallerCanonicalAssets($installerSource);
 $sourceVersion = trim((string) @file_get_contents($root . '/VERSION'));
 
 if (
