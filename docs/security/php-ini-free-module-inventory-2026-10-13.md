@@ -131,3 +131,51 @@ TEMPORARY_SANDBOX=REMOVED
 Failure is NOT a reason to weaken network/namespace/chroot/sandbox restrictions. No customer data, app execution, database authentication, production PHP config change, signing identity, or updater action is authorized.
 
 CodeCanyon FINAL stays **ON HOLD** until genuine signed release installation and rollback are tested.
+
+
+## 2026-10-13: v1.0.3 preflight failure; v1.0.4 correction
+
+### Observed aaPanel v1.0.3 result
+- ZIP integrity verified and original 41/41 offline unit tests passed.
+- `bash run-on-aapanel.sh --check` then raised `NameError: name 're' is not defined` in `extension_probe.py`, `extensions()`, at the `re.fullmatch(...)` extension ABI-directory check.
+- **Read-only preflight: FAIL**; isolated PHP dynamic extension execution **NOT STARTED**; neither `fileinfo.so` nor `zip.so` was loaded.
+- **v1.0.3 superseded: do not rerun.** Prior built-in PHP core sandbox v1.0.2 acceptance remains unaffected.
+
+### Repaired v1.0.4 diagnostic-only package
+
+Archive: `Barama-PHP-INI-Free-Extension-Probe-aaPanel-v1.0.4.zip`
+
+ZIP SHA-256: `ca7423f70950d2a4e137eededb6c8bbfc894dac3be70aae4ded7426168e77304`
+
+Size: 17940 bytes.
+
+Changes:
+- Explicit `import re` in `extension_probe.py`. No weakening of the root-owned path, ELF, namespace, non-root, chroot, or approved-extension policies.
+- Added 7 tests which **execute the actual extension-discovery and CLI `--check` code paths** with synthetic fixtures, so missing imported modules are caught rather than merely checking a regex in the test.
+- **48/48 offline tests PASS**; source syntax and shell parse PASS; SHA256SUMS verified after fresh extraction; invalid opt-in phrase rejected.
+- These checks were conducted in the package build container using mock extension files. No actual aaPanel PHP extension loader was run locally.
+
+To use aaPanel (upload ZIP to `/root` first):
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-PHP-INI-Free-Extension-Probe-aaPanel-v1.0.4.zip"
+SHA="ca7423f70950d2a4e137eededb6c8bbfc894dac3be70aae4ded7426168e77304"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-PHP-INI-Free-Extension-Probe-aaPanel-v1.0.4
+bash run-on-aapanel.sh --check
+```
+
+Run opt-in only after `BARAMA_PHP_SELECTED_EXTENSION_PREFLIGHT=PASS`:
+
+```bash
+cd /root/Barama-PHP-INI-Free-Extension-Probe-aaPanel-v1.0.4
+bash run-on-aapanel.sh --probe PROBE_ISOLATED_FILEINFO_ZIP_MODULES_ONLY
+```
+
+Accept only if `EXTENSION_FILEINFO_ISOLATED_LOAD=PASS`, `EXTENSION_ZIP_ISOLATED_LOAD=PASS`, `BARAMA_PHP_SELECTED_EXTENSION_SANDBOX_PROBE=PASS`, and `TEMPORARY_SANDBOX=REMOVED`.
+
+**v1.0.4 aaPanel live result: NOT YET TESTED.** Do not change PHP INI, copy Barama source, touch MySQL, modify firewall, sign a release, or publish. CodeCanyon FINAL remains **ON HOLD**.
