@@ -1347,3 +1347,46 @@ BASH
 ```
 
 Expected broad markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTES_PRIVATE_SHA256_REVALIDATED=PASS`, `POST_ROUTES_OUTSIDE_AUTOMATIC_RULE=17`, `APPROVED_SOURCE_CONTENT_FILES_READ=2`, `NEW_CLASS_IMPLEMENTATIONS_READ=0`, `BARAMA_ROUTER_DECLARED_MIDDLEWARE_V127=PASS`, `CODECANYON_FINAL=ON_HOLD`. If the parser reports its generic STOP, retain STOP; do not adjust pins based on unreviewed code.
+
+
+## 2026-10-13 — v1.0.27 aaPanel accepted: 16 explicit CSRF registrations + 1 webhook exception candidate
+
+User pasted complete verified stdout for `Barama-Router-Declared-Middleware-aaPanel-v1.0.27.zip`. External ZIP SHA256 `34c21bffb67fc4c2e1a4b2cdef4c9c945cb0db2a09d7c20156f5a7bc2e0d901c` PASS, all internal checksums PASS, **159 tests run, 158 PASS, 1 expected skipped** (source-present host). `BARAMA_ROUTER_DECLARED_MIDDLEWARE_V127=PASS`, original nonstate 629-file SHA256 `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687` unchanged.
+
+Among 17 exactly pinned POST routes outside the new ChangeConfirmationMiddleware automatic 3-prefix rule:
+- **16** have statically explicit `CsrfMiddleware` in the *registration text*; **6** explicit `AuthMiddleware`; **5** explicit `GuestMiddleware`; **0** explicit `PermissionMiddleware`. Middleware execution, auth permission effects, global and handler checks **NOT TESTED**.
+- Third-argument lexical forms: 12 direct static array, 4 static array aliases, 1 no third argument, 0 unresolved/dynamic.
+- Exact no-third route ID `81ce94936d5aec9b` matches the previously approved private routes parser's hash for `POST /payments/webhooks/{provider}`. The immutable GitHub reference `application/routes/web.php` shown previously also registers this endpoint with `PaymentWebhookController::receive` and no third arg. This likely represents an intentional webhook CSRF exception, but the **private** exact handler symbol must be independently pinned.
+- There is no evidence of an actual CSRF bypass from the registration alone. Webhooks need independent provider cryptographic verification, timestamp/replay and idempotency protections. These are **NOT TESTED** because controller contents were not authorized for review.
+- `APPROVED_SOURCE_CONTENT_FILES_READ=2`: only private Router and routes; `NEW_CLASS_IMPLEMENTATIONS_READ=0`; no app PHP/SQL/network/updater or production/source writes.
+- `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+## v1.0.28 — Exact webhook registration identity and controller metadata (NEXT)
+
+Archive: `Barama-Webhook-Exception-Identity-aaPanel-v1.0.28.zip`; **external SHA256 `9beabb18835dd8f4080969ba4629f27e9f8c3bc27f8c88ea4cd19adeca2960ad`**; size **56,315 bytes**, **24 files** including **23 internal SHA256SUMS entries**.
+
+- Reuses previous source integrity gates, immutable Router/routes SHA256 and read allowlist (two approved private PHP files only). Does **not** read other class/controller PHP contents.
+- Ensures exactly **one** route among 17 outside auto-prefix rule has no third middleware argument, its route ID is `81ce94936d5aec9b`, the literal pinned declaration is `POST /payments/webhooks/{provider}`, the fixed route file imports `PaymentWebhookController`, and its handler declaration is exactly `[PaymentWebhookController::class, 'receive']` (static text; no handler execution). Ensures the other 16 are explicitly registered with CsrfMiddleware, and 0 unresolved.
+- Checks the hardcoded `application/app/Http/Controllers/PaymentWebhookController.php` via root-owned descriptor-anchored O_NOFOLLOW **stat only**; reports status `MISSING_PARENT` / `MISSING_FILE` / `PRESENT_TRUSTED_METADATA_ONLY`. No target class contents opened and no signature/verifier behavior claimed. Status must come from aaPanel.
+- Reports `WEBHOOK_SIGNATURE_VERIFICATION=NOT_TESTED`, `WEBHOOK_REPLAY_AND_IDEMPOTENCY=NOT_TESTED`, `WEBHOOK_CSRF_EXEMPTION_SECURITY=REVIEW_REQUIRED`; no PHP AST, runtime, installation updater/signer or source writes.
+- **172/172 offline unit tests PASS** locally and separately from fresh extracted ZIP; all **23 internal SHA256SUMS PASS**, ZIP integrity PASS, shell syntax PASS. Unsupported --probe exits 2, missing pinned source fails closed exit 1.
+- **aaPanel live v1.0.28 not yet executed**. This is a declaration/metadata audit, **not** waiver for webhook CSRF or CodeCanyon release.
+
+After uploading ZIP to `/root`:
+```bash
+bash <<'BASH'
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Webhook-Exception-Identity-aaPanel-v1.0.28.zip"
+SHA="9beabb18835dd8f4080969ba4629f27e9f8c3bc27f8c88ea4cd19adeca2960ad"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Webhook-Exception-Identity-aaPanel-v1.0.28
+bash run-on-aapanel.sh --check
+BASH
+```
+
+Expected broad markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `OUTSIDE_POST_EXPLICIT_CSRF=16`, `OUTSIDE_POST_NO_THIRD_ARGUMENT=1`, `EXCEPTION_ROUTE_CATEGORY=PAYMENT_PROVIDER_WEBHOOK`, `EXCEPTION_HANDLER_DECLARATION=PINNED_STATIC_MATCH`, `WEBHOOK_CONTROLLER_FILE_METADATA=<actual server result>`, `BARAMA_WEBHOOK_EXCEPTION_IDENTITY_V128=PASS`, `CODECANYON_FINAL=ON_HOLD`.
+
+**Next substantive milestone** after accepting metadata: review separate, explicitly authorized source-scoped `PaymentWebhookController.php`, `ChangeConfirmationMiddleware.php` and imported predispatch service, verifying auth/signature fail-open/closed, replay guard, middleware ordering and side effects. No permission yet to read those target implementations. v1.0.22 prebootstrap audit remains not accepted; no isolated runtime execution or production changes.
