@@ -711,3 +711,50 @@ CODECANYON_FINAL=ON_HOLD
 ```
 
 **Live v1.0.15 aaPanel result: NOT YET TESTED.** The remaining release path requires a targeted review of the real include targets, route handler/middleware access control, strictly confined disconnected application bootstrap, and actual signed-update install/rollback. Production changes are not authorized; CodeCanyon FINAL ON HOLD.
+
+
+## 2026-10-13 — v1.0.15 early include + route impact aaPanel acceptance (diagnostic only)
+
+The user provided the aaPanel output for the verified v1.0.15 ZIP `5d8f2a032afc6ec091b0fce696db4e423af2c0ea077ea71135192b32bc767ef3`, with 159/159 offline tests PASS and source fingerprint unchanged `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+Findings:
+- **2 includes occur before installation guard**, with expression IDs `080cedfd5cb5f1ae` and `36dbd8704972f94b`. Both forms `OTHER_EXPRESSION`; `UNRESOLVED_EXPRESSION_NOT_OPENED`. Dynamic indicators and URI/stream indicators were not detected by the lexical scanner; that is **NOT** a resolution of include target or side effects.
+- **14** possible route-template overlap pairs: **PUBLIC 6, DEVELOPER 1, DASHBOARD 7, ACCOUNT 0**.
+- Every pair classified `SHARED_COVERS_NEW_TEMPLATE`. This denotes a **narrower new route appearing before a broader retained reference template**, which may be an intentional exception; it does NOT prove an authorization bypass or safe middleware.
+- `INCLUDE_TARGET_FILES_OPENED=0`; `ROUTE_HANDLER_MIDDLEWARE_AUTHORIZATION=NOT_TESTED`; `APPLICATION_PHP_SQL_NETWORK=NOT_EXECUTED`; `SOURCE_AND_PRODUCTION_WRITES=NONE`.
+- `BARAMA_EARLY_INCLUDE_ROUTE_IMPACT_TRIAGE=PASS` means the static diagnostic completed. `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`; `CODECANYON_FINAL=ON_HOLD`.
+
+## v1.0.16 — Additional include-shape and explicit route middleware diagnostic (next gate)
+
+Artifact: `Barama-Preinstall-Include-Route-Middleware-aaPanel-v1.0.16.zip`
+SHA-256: `158e1224bc20d8860840b294fba0fbbde4404f16a7823cb58b5b96de6caa7639`
+Size: **63,674 bytes**.
+
+- Fixed private source `/root/barama-private-v2-http-source-overlay/source`, pinned 629-file SHA-256 `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Reuses the v1.0.9–v1.0.15 read-only gate chain, including exact three divergent-file identities, 167 GitHub reference route digests, path trust/bounds and never opening secrets or private runtime state.
+- Adds a bounded lexical analysis of the **two early include-expression grammatical shapes** (require/include, once flag, `__DIR__`, `dirname`, variables, literals, concatenation and conditional indicators) without printing include path/target, opening a target file or evaluating PHP.
+- Parses route-call argument boundaries from the previously accepted 243 literal declarations using a bounded string/comment-aware parenthesis splitter; for the same 14 potential overlap pairs reports earlier **new** and later **shared** explicit middleware flags and whether an earlier new declaration may omit an explicit Auth/Permission middleware present on the later shared declaration. Known `$guest`, `$guestPost` and `$csrf` aliases are only considered known if their expected assignment appears. Unresolved/unknown expressions are flagged UNKNOWN.
+- **Explicit declaration metadata only**: handlers and middleware implementations, controller-internal authorization, runtime router behavior, actual include paths/side effects and PHP AST/control flow are **NOT TESTED**. Lexical presence or absence is not an authorization verdict.
+- No code, route path, included target, secrets or runtime state is printed; only categories and truncated signature digests.
+- Build-local and **fresh-extraction** package QA: 176/176 offline tests PASS (including synthetic full-243-route parser test), 20 internal file SHA256SUMS checks PASS, Python and shell syntax PASS; `--probe` rejected; no-fallback private-source guard stopped correctly outside aaPanel.
+- **v1.0.16 live aaPanel execution NOT YET TESTED.** This diagnostic does not execute PHP, access SQL/network or modify production/staging source, signing identities or updater.
+
+### aaPanel command
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Preinstall-Include-Route-Middleware-aaPanel-v1.0.16.zip"
+SHA="158e1224bc20d8860840b294fba0fbbde4404f16a7823cb58b5b96de6caa7639"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Preinstall-Include-Route-Middleware-aaPanel-v1.0.16
+bash run-on-aapanel.sh --check
+```
+
+Expected diagnostic completion markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EARLY_INCLUDE_EXPRESSION_COUNT=2`, `POTENTIAL_ROUTE_OVERLAP_PAIRS=14`, `BARAMA_INCLUDE_MIDDLEWARE_STATIC_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+Do not treat the hypothetical `ROUTE_MIDDLEWARE_POTENTIAL_STATIC_GAP` count as a confirmed security vulnerability, nor a zero count as a safety guarantee. The next gate will require real include-target resolution and guarded middleware/handler review before any confined bootstrap execution.
+
+**CodeCanyon FINAL remains ON HOLD** until complete source/side-effect acceptance plus genuine signed-update installation and rollback.
