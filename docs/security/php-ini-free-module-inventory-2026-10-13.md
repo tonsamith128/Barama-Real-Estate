@@ -43,3 +43,35 @@ A failure such as `EPERM` must **not** be bypassed by weakening confinement. Thi
 
 ## Release gate
 CodeCanyon FINAL remains **ON HOLD**. Barama application bootstrap and genuine signed-update install and rollback are **NOT TESTED**.
+
+
+## v1.0.2 — Repaired private loader-directory permissions (2026-10-13)
+
+Observed v1.0.1 on aaPanel: archive hash PASS, nine offline tests PASS, ELF preflight PASS; the confined child failed before module inventory with `[Errno 13] Permission denied: '/php'`. Code review located a likely cause: library directories created under wrapper `umask 077` were mode `0700`, so UID 65534 could not traverse them to the ELF interpreter. Precise kernel-path root cause remains provisional until v1.0.2 is tested on host.
+
+- Self-contained diagnostic artifact: `Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.2.zip`
+- ZIP SHA-256: `52c79ce087743596d91d5f9e3ac8aa4ea9dfda7f4ea7e345e422fd4e9dd749b7`
+- Byte size: `9472`
+- Fresh-extraction SHA256SUMS: PASS; offline tests: 18/18 PASS; shell syntax: PASS; invalid probe approval phrase: rejected.
+- Sandbox change: set mode `0755` on **ephemeral chroot library parent directories only** (the public chroot root was already `0755`); never chmod host parents or app source.
+- Keep PHP binary and ELF loader `0755`, libraries `0644`; no-new-privileges, UID/GID 65534, tmpfs, mount/network/PID namespaces, chroot, pinned PHP hash, explicit approval phrase preserved.
+- Success marker is printed only **after** successful ephemeral tmpfs unmount. `TEMPORARY_SANDBOX=REMOVED` additionally proves parent temporary directory cleanup.
+- **aaPanel v1.0.2 live execution: NOT TESTED.** v1.0.1 superseded. No Barama bootstrap, DB, dynamic extensions, signed update, or rollback authorized.
+
+### v1.0.2 aaPanel commands
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP=Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.2.zip
+SHA=52c79ce087743596d91d5f9e3ac8aa4ea9dfda7f4ea7e345e422fd4e9dd749b7
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.2
+bash run-on-aapanel.sh --check
+# After preflight PASS only:
+bash run-on-aapanel.sh --probe PROBE_INI_FREE_BUILTIN_MODULES_ONLY
+```
+
+Required to proceed: `BARAMA_PHP_INI_FREE_MODULE_PREFLIGHT=PASS`, `BARAMA_PHP_INI_FREE_MODULE_PROBE=PASS`, and `TEMPORARY_SANDBOX=REMOVED`. Otherwise stop, do not weaken confinement, and investigate result.
