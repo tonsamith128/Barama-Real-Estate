@@ -804,3 +804,45 @@ bash run-on-aapanel.sh --check
 Successful **diagnostic** completion requires `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EARLY_REQUIRE_ONCE_VARIABLE_SITES=2`, `INCLUDE_TARGET_FILES_OPENED=0` and `BARAMA_PREINSTALL_BINDING_TRACE=PASS` while retaining `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
 
 Next: evaluate binding classifications for a targeted static target/content and actual handler authorization review inside independent confinement, before any runtime bootstrap. Signed update/rollback still NOT TESTED.
+
+
+## 2026-10-13 — v1.0.17 early include binding trace accepted on aaPanel (diagnostic only)
+
+User-provided aaPanel transcript:
+- Verified external v1.0.17 package SHA-256 `7abe2631c719382c27884dc0d6c448e70cf8c1540b408e69c66be5d7096e1484`.
+- 199/199 offline unit tests PASS.
+- Exact accepted 629-file source fingerprint revalidated: `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Exactly two early `require_once $variable` sites before the installer guard.
+  - First site `080cedfd5cb5f1ae`: `MULTIPLE_ASSIGNMENTS_UNRESOLVED`; **2 prior assignment candidates**, assignment scope UNKNOWN, no static target chosen.
+  - Second site `36dbd8704972f94b`: `STATIC_CANDIDATE_APPLICATION_NONSTATE_PHP` from **one** prior top-level lexical assignment; candidate hash `db9cf6767bf6178b`. Target file existence/content/side effects **not verified**.
+- `INCLUDE_TARGET_FILES_OPENED=0`; `BARAMA_PREINSTALL_BINDING_TRACE=PASS`; `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`; `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`; `CODECANYON_FINAL=ON_HOLD`.
+- No PHP application, SQL/network, uploader/updater or production modification.
+
+## v1.0.18 — Read-only early include assignment site classification and target *metadata* (NEXT)
+
+ZIP: `Barama-Preinstall-Assignment-Candidate-Metadata-aaPanel-v1.0.18.zip`
+ZIP SHA-256: `fadbe114f5cd6edd201756c70687679c1916bfa1be33a6eea7ac4e9337e2e48d`
+Size: **76,266 bytes**. New module: `bin/preinstall_assignment_metadata.py`.
+
+- Retains the prior v1.0.9–v1.0.17 read-only source checks, exact private `/root/barama-private-v2-http-source-overlay/source`, accepted source SHA-256 above and pinned 3-file identity constraints.
+- New gate inspects only approved **`index.php`** text already read by prior triage; enumerates the two prior assignments to the first early include variable and the one assignment to the second. Reports assignment ordering, a lexical nesting class, RHS syntactic class and 16-char SHA-256 identifiers. Does **not** print variable names, RHS source, or candidate paths.
+- If and only if a RHS is exactly a safe, static `__DIR__ . '/application/...php'` nonstate path, it may inspect the **target's metadata only**, with strict allowlisted path grammar and `O_NOFOLLOW` anchored parent directory FDs, final `stat(..., follow_symlinks=False)`, trust/owner/mode/type/nlink/size checks. **Target PHP file content is not opened/read or executed**; sensitive and runtime-state paths are excluded. Filesystem-related errors are redacted.
+- This is lexical and does NOT resolve PHP control flow or select one of the first site's two assignments. Target metadata presence does not imply content safety. App bootstrap, handler/middleware authorization, signed updater install and rollback NOT TESTED.
+- Offline/fresh ZIP QA: 226/226 tests PASS, 24 SHA256SUMS entries PASS, bash/Python syntax PASS, unapproved `--probe` returns exit 2, absent pinned source returns exit 1 safely. **Live v1.0.18 aaPanel: NOT YET TESTED.**
+
+### aaPanel
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Preinstall-Assignment-Candidate-Metadata-aaPanel-v1.0.18.zip"
+SHA="fadbe114f5cd6edd201756c70687679c1916bfa1be33a6eea7ac4e9337e2e48d"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Preinstall-Assignment-Candidate-Metadata-aaPanel-v1.0.18
+bash run-on-aapanel.sh --check
+```
+
+Expected diagnostic completion: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EARLY_REQUIRE_ONCE_VARIABLE_SITES=2`, `PRIOR_ASSIGNMENTS_1=2`, `PRIOR_ASSIGNMENTS_2=1`, `INCLUDE_TARGET_FILE_CONTENTS_OPENED=0`, `BARAMA_PREINSTALL_ASSIGNMENT_METADATA_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+No source re-pinning, production webroot fallback, PHP execution, license secret access, or installation. The next task is to review these syntactic assignment/metadata outcomes and perform a separately authorized static review of any positively identified nonsecret target files before designing a genuine isolated app bootstrap. CodeCanyon FINAL still ON HOLD.
