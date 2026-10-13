@@ -360,3 +360,49 @@ bash run-on-aapanel.sh --check
 ```
 
 Next decision: compare the reported topology against the accepted private 629-file inventory and private scaffold and prepare a **separately pinned** non-executing bootstrap source verification only after that reconciliation. CodeCanyon FINAL remains ON HOLD.
+
+
+## 2026-10-13 — v1.0.8 private source layout diagnostic accepted (aaPanel)
+
+User-provided server output:
+- `Barama-Private-Source-Layout-Diagnostic-aaPanel-v1.0.8.zip` SHA verification PASS; 18/18 offline tests PASS.
+- `PINNED_OVERLAY_ROOT=VERIFIED_PRIVATE`; nonstate overlay inventory: 630 files, 41 directories, 340 PHP files.
+- Root entry point absent (`OVERLAY_ROOT_INDEX_PHP=ABSENT`); root-level `application`, `VERSION`, runtime/bootstrap/routes all absent.
+- Nine `index.php` candidates, including **`source/index.php`**, `source/installer/index.php`, `source/updater/index.php`, and several templates under `source/application/resources/views`.
+- `LAYOUT_CLASSIFICATION=NESTED_ENTRYPOINT_CANDIDATE_ONLY`.
+- Separate `/root/barama-isolated-runtime-scaffold/code/index.php` found by *metadata only*. **Scaffold not selected as fallback.**
+- `BARAMA_PRIVATE_SOURCE_LAYOUT_DIAGNOSTIC=PASS`; source bytes and secret/runtime state never read; no PHP/app/network/DB execution.
+- The earlier 629-file accepted snapshot and 630-file v1.0.8 overlay nonstate count are not proven equivalent; **do not treat as a 1-file content drift without reconciliation**.
+
+**Engineering conclusion:** the v1.0.7 static gate targeted the wrong root, not evidence of source loss. The next candidate application root is the exact nested `/root/barama-private-v2-http-source-overlay/source`; source completeness remains to be statically checked.
+
+## v1.0.9 — Nested-source static bootstrap gate (next aaPanel check)
+
+Artifact: `Barama-Disconnected-Bootstrap-Source-Static-Gate-aaPanel-v1.0.9.zip`
+
+ZIP SHA-256: `396116535219806f34004a3a479a0261af4a8664df1813f73bbaf71d90afbbfb`
+
+ZIP size: 8,309 bytes.
+
+Changes against v1.0.7:
+- Fix exact pinned application source to `/root/barama-private-v2-http-source-overlay/source`, **without fallback** to production webroot, scaffold or any other source location.
+- Verify trusted, root-owned, nonsymlink private overlay, nested source root, and fixed parent chain. Reject untrusted writes, links, missing source files, malformed `VERSION`, and missing expected bootstrap code relationships.
+- Read **only ten explicit, bounded non-secret source files** under nested source with `O_NOFOLLOW` and file-stat validation. Enumerate nonstate filenames with depth/file limits; skip storage, .env*, private/secrets/license/backups/logs/cache and other sensitive trees. Runtime state metadata intentionally NOT inspected.
+- No application PHP executed; no SQL, staging DB, secrets, network, updater, signer, production INI or deployment operations.
+- 25/25 offline local tests PASS; fresh extraction SHA256SUMS PASS; shell validation PASS; wrong approval mode rejected; unpinned build-host check safely fails closed.
+- **v1.0.9 live aaPanel result: NOT YET TESTED.** A static structural PASS is not approval to execute application code.
+
+aaPanel:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Disconnected-Bootstrap-Source-Static-Gate-aaPanel-v1.0.9.zip"
+SHA="396116535219806f34004a3a479a0261af4a8664df1813f73bbaf71d90afbbfb"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Disconnected-Bootstrap-Source-Static-Gate-aaPanel-v1.0.9
+bash run-on-aapanel.sh --check
+```
+
+Next gate on PASS: separate content provenance/hash reconciliation and side-effect review to design a confined disconnected application probe. Barama execution is NOT YET AUTHORIZED. Signed-update installation/rollback remain NOT TESTED. **CodeCanyon FINAL ON HOLD.**
