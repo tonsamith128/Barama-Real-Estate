@@ -227,3 +227,42 @@ TEMPORARY_SANDBOX=REMOVED
 ```
 
 CodeCanyon FINAL remains ON HOLD until isolated Barama bootstrap, genuine signed-update install, and rollback acceptance complete.
+
+
+## 2026-10-13: v1.0.5 failed before functional PHP execution — v1.0.6 repair
+
+Observed on aaPanel for `Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.5.zip`:
+- Archive integrity PASS; read-only preflight PASS.
+- Offline tests 61/61 PASS; PHP core pin, 48 core ELF resolutions, 2 additional ELF resolutions and pinned `fileinfo.so`/`zip.so` hashes verified.
+- Opt-in confined probe failed with `AttributeError: 'PosixPath' object has no attribute 'chown'` at `extension_probe.py:229` in `confined_inventory()`.
+- It failed while configuring synthetic scratch access, **before launching the PHP combined functional smoke**. The prior accepted v1.0.4 individual extension loads are unaffected.
+- **v1.0.5 superseded; do not rerun.**
+
+### v1.0.6 correction — diagnostic only
+Archive: `Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.6.zip`
+SHA-256: `9dc8071f5fd57be9efd105d0cc642cc30704830205e11972842b416ffd2d40d1`
+Size: 23537 bytes.
+
+- Replace invalid `scratch.chown(65534, 65534)` with Linux-supported `os.chown(scratch, 65534, 65534, follow_symlinks=False)` after creating the **private tmpfs-only** scratch directory and rejecting symlinks; verify UID/GID 65534 and mode 0700 before synthetic PHP invocation.
+- Add regression tests which execute actual `confined_inventory()` flow using mocked `mount`, `umount2`, `os.chown`, file copies and PHP child processes, verifying success, functional rejection and ownership-change failure. Real mount and PHP operations are **NOT performed in these tests**.
+- Offline tests 66/66 PASS; Python/shell/synthetic PHP syntax PASS; fresh-extraction SHA256SUMS PASS; bad opt-in phrase rejected.
+- No Barama source/config/DB, customer data, PHP INI, IMAP, signing keys, firewall or updater is included. Preserve mount/network/PID namespace isolation, tmpfs chroot, non-root UID/GID and PHP/extension SHA pins.
+- **v1.0.6 live aaPanel probe NOT YET TESTED.** Even if the smoke passes, full Barama bootstrap and genuine signed update installation/rollback are still untested.
+
+### aaPanel instructions
+Upload v1.0.6 archive into `/root`:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP=Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.6.zip
+SHA=9dc8071f5fd57be9efd105d0cc642cc30704830205e11972842b416ffd2d40d1
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.6
+bash run-on-aapanel.sh --check
+# Proceed only after preflight PASS:
+bash run-on-aapanel.sh --probe PROBE_COMBINED_FILEINFO_ZIP_FUNCTIONAL_SMOKE_ONLY
+```
+
+Full acceptance requires `BARAMA_PHP_COMBINED_SMOKE_PREFLIGHT=PASS`, `BARAMA_SYNTHETIC_FILEINFO_ZIP_FUNCTIONAL_SMOKE=PASS`, `BARAMA_PHP_COMBINED_RUNTIME_SMOKE=PASS` and `TEMPORARY_SANDBOX=REMOVED`. CodeCanyon FINAL remains ON HOLD.
