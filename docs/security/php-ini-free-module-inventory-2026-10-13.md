@@ -447,3 +447,57 @@ bash run-on-aapanel.sh --check
 Successful capture marker: `BARAMA_NONSTATE_SOURCE_INTEGRITY_CAPTURE=PASS`. Always inspect `BARAMA_BOOTSTRAP_REFERENCE_RESULT`; `BARAMA_SOURCE_PROVENANCE=PARTIAL_NOT_FINAL` is the intended limit.
 
 No production webroot, INI, firewall, application PHP runtime, database, license, signing identity, genuine updater install, or rollback is accessed or executed. CodeCanyon FINAL **ON HOLD**.
+
+
+## 2026-10-13 — v1.0.10 live acceptance: tree fingerprint PASS; reference divergence REQUIRES REVIEW
+
+User-provided aaPanel transcript confirmed verified ZIP, 46/46 offline tests and exact private overlay identity. Source: `0.9.22-dev`; 629 nonstate files, 340 PHP files, 40 nonstate directories; 7,025,491 bytes; 243 static route declarations.
+
+Accepted SHA-256 tree fingerprint:
+`900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`
+
+Pinned GitHub revision `fc617c12790f7075ccfd0e418a1bba3443450941`: 10 reviewed bootstrap Git blob comparisons, 7 matched, **3 differed**:
+- `index.php`
+- `application/routes/web.php`
+- `application/app/Support/helpers.php`
+
+Output `BARAMA_NONSTATE_SOURCE_INTEGRITY_CAPTURE=PASS`; `BARAMA_BOOTSTRAP_REFERENCE_RESULT=TEN_FILES_DIVERGE_REVIEW_REQUIRED`; `BARAMA_SOURCE_PROVENANCE=PARTIAL_NOT_FINAL`.
+
+Reference-code inspection of `fc617c1` found **167 static route declarations** (`get=57, post=110, add=0`) against private `243` (count delta +76). This is NOT a precise added-route diff: removals/edits may exist. GitHub helpers baseline includes 23 function names. The three reference Git blob IDs are in the previously pinned v1.0.10 source gate.
+
+**No source reconciliation, restore, merge, production change or bootstrap execution is authorized by this acceptance.**
+
+## v1.0.11 — Bootstrap divergence static triage (NEXT)
+
+ZIP: `Barama-Bootstrap-Divergence-Triage-aaPanel-v1.0.11.zip`
+SHA-256: `c8c349df964b661f0647d2dbfd466852ec650b5f98cd1645eb939c6fed80f001`
+Size: 20,672 bytes.
+
+- Reuses v1.0.9 source topology inspection and v1.0.10 bounded, private nonstate source fingerprint.
+- Requires **exact match** to the accepted tree SHA-256, counts, byte size, seven matched and exactly three divergent allowed files.
+- Reads only those three fixed private nonsecret source files through directory-FD-anchored `O_NOFOLLOW` file operations, bounds, root ownership, no-hardlink, stable identity tests.
+- Prints fixed path labels, Git blob IDs, source SHA-256, reference/current line and byte counts, GET/POST/add route declaration *counts*, presence of fixed GitHub helper-function names, and presence/order of seven `index.php` bootstrap anchor strings.
+- Does **not** print private source lines, route paths, arbitrary names, secret values or file data.
+- This package carries **reference structural metrics, not reference source bytes**; an exact line-by-line diff or full GitHub tree equivalence remains NOT TESTED.
+- Only the fixed private source overlay `/root/barama-private-v2-http-source-overlay/source` is examined. No application PHP, DB, network, .env, runtime configuration, service, updater, signer or production change.
+- 69/69 offline local tests PASS; bash/Python syntax PASS; fresh-extraction checksums PASS; invalid `--probe` rejected.
+- **Live aaPanel v1.0.11 outcome: NOT YET TESTED.**
+
+### aaPanel
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Bootstrap-Divergence-Triage-aaPanel-v1.0.11.zip"
+SHA="c8c349df964b661f0647d2dbfd466852ec650b5f98cd1645eb939c6fed80f001"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Bootstrap-Divergence-Triage-aaPanel-v1.0.11
+bash run-on-aapanel.sh --check
+```
+
+Expected diagnostic completion marker: `BARAMA_BOOTSTRAP_DIVERGENCE_TRIAGE=PASS`, alongside `BARAMA_SOURCE_PROVENANCE=PARTIAL_RECONCILIATION_REQUIRED`. This only accepts the read-only triage; it does not mean a source version has been approved.
+
+If fingerprint or trust controls do not match, STOP without weakening confinement or copying code.
+
+**CodeCanyon FINAL: ON HOLD.** Confined disconnected bootstrap, genuine signed-update install and rollback are NOT TESTED.
