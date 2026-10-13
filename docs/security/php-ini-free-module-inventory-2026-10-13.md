@@ -1123,3 +1123,48 @@ GitHub at pinned ref `fc617c12790f7075ccfd0e418a1bba3443450941` independently ha
 **Next:** Run only existing v1.0.22 `check_source_integrity()` and `read_root_owned('application/app/Core/Router.php')` with fixed exception-code classification; report `SOURCE_BLOB_DRIFT` vs `UNTRUSTED_FILE_OR_PARENT` without printing source, changing hashes, or executing PHP. If blob drift, obtain a bounded no-follow SHA/blobh fingerprint and explicitly review the private-vs-reference Router logic/permissions before revising any pin or acceptance gate. **Never just replace Router with outdated GitHub code or adjust manifest to suppress the STOP.**
 
 V1.0.22 boundary audit is still **NOT ACCEPTED**; release/bootstrap/updater and CodeCanyon FINAL are on hold.
+
+
+## 2026-10-13 — v1.0.22 Router blob mismatch confirmed and v1.0.23 staged
+
+The user executed the existing v1.0.22 package's narrow Router failure classification on aaPanel. After verifying SHA256SUMS and the same full 629-file source fingerprint `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`, it printed:
+
+```ini
+PINNED_SOURCE_FINGERPRINT=PASS
+ROUTER_EXPECTED_GIT_BLOB=2e8f8cdf2fbcc5950b389513be681cc46e855742
+ROUTER_FAILURE_CLASS=SOURCE_BLOB_DRIFT
+SOURCE_CONTENT_PRINTED=NONE
+PHP_APPLICATION_EXECUTION=NONE
+SOURCE_AND_PRODUCTION_WRITES=NONE
+V122_BOUNDARY_ACCEPTANCE=ON_HOLD
+CODECANYON_FINAL=ON_HOLD
+```
+
+This **confirms** the trust-checked private Router.php bytes differ from the pinned GitHub reference blob. The failure is **not** a permission or symlink trust failure. Only source equivalence remains unestablished; no actual Router vulnerability proven. Earlier 10-file reference comparison excluded Router.php. Do not silently revise its expected blob or replace the private Router with the GitHub file.
+
+**v1.0.23 new gate**: `Barama-Router-Drift-Structural-Review-aaPanel-v1.0.23.zip`.
+
+Verified external ZIP **SHA-256 `0bbcf52820b2c3af5496d6bb8b1215ca45d96327b514e14021c84c791b4cb40e`**, size **30,147 bytes**.
+
+- Carries the exact immutable GitHub `application/app/Core/Router.php` reference from commit `fc617c12790f7075ccfd0e418a1bba3443450941`, size **4,996** bytes, Git blob `2e8f8cdf2fbcc5950b389513be681cc46e855742`; baseline source is included in `reference/Router.php` with internal SHA-256 checksum.
+- Reuses v1.0.22 `bootstrap_static_gate.py`, `source_provenance_gate.py`, `guarded_include_metadata_probe.py` and `prebootstrap_boundaries.py`; checks exact full private source tree fingerprint and ten-file provenance before comparing Router.
+- Newly trusted descriptor-anchored O_NOFOLLOW root-owned bounded read for **only** the approved private Router.php. Compares reference and private Git blob, reports private SHA-256, size and diff hunk line ranges/affected method categories, hashed hunk identifiers, marker-presence booleans and security keyword classes; **does not print private source lines, strings or variable names**.
+- Diff is lexical; an indicated class is NOT security finding or semantic equivalence proof. v1.0.22 remains formally NOT ACCEPTED until the Router divergence and security-relevant behavior are specifically reviewed.
+- Local and independent fresh-archive extraction checks: **90/90 offline unit tests PASS**, 13 internal files match SHA256SUMS, `unzip -t` PASS, syntax PASS; unsupported `--probe` returns exit 2; absence of pinned private source returns exit 1. **Live aaPanel v1.0.23 NOT YET TESTED**.
+- No PHP app, database/network, installer/updater, production or source writes.
+
+After uploading ZIP to `/root`:
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Router-Drift-Structural-Review-aaPanel-v1.0.23.zip"
+SHA="0bbcf52820b2c3af5496d6bb8b1215ca45d96327b514e14021c84c791b4cb40e"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Router-Drift-Structural-Review-aaPanel-v1.0.23
+bash run-on-aapanel.sh --check
+```
+
+Expected general markers if source remains unchanged: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_ROOT_OWNED_NOFOLLOW_READ=PASS`, `ROUTER_BLOB_DRIFT=CONFIRMED`, `BARAMA_ROUTER_DRIFT_STRUCTURAL_REVIEW=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`. Structural report identifies precisely which method regions differ; the next step is controlled semantic inspection of only affected Router code, not acceptance from textual markers alone.
