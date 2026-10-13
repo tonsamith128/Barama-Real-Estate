@@ -609,3 +609,50 @@ CODECANYON_FINAL=ON_HOLD
 ```
 
 A diagnostic PASS is **not** a source reconciliation approval. NEXT: interpret shared/new/removed/order results, review additional entrypoint includes and actual middleware and access control before designing any confined disconnected PHP application execution. Genuine signed update installation/rollback remains mandatory before CodeCanyon FINAL.
+
+
+## 2026-10-13 — v1.0.13 route signature reconciliation accepted (user aaPanel log)
+
+User provided live diagnostic transcript for verified `Barama-Route-Signature-Reconciliation-aaPanel-v1.0.13.zip` (`b4b2b4ca309acbf9c8df5e8dc183d1c667c404b1fd717579b115634336768a4a`). All 112 offline tests PASS; exact accepted private source fingerprint remains `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+Exact METHOD+literal-route-path signature comparisons against the pinned reference `fc617c12790f7075ccfd0e418a1bba3443450941`, route blob `236468ff78a8f67b1662fc9df6d9e54cba90ff6c`:
+- GET: common 57, private-only 37, reference-only **0**, shared relative order preserved.
+- POST: common 110, private-only 39, reference-only **0**, shared relative order preserved.
+- Public GET fallback `/{slug}` remains final private GET route.
+- Thus 167/167 reference signatures preserved and **76 exact private-only signatures** (not merely an aggregate count delta).
+- Private entrypoint has four include/require lexical occurrences vs reference two. Their actual targets, control flow and side effects remain **NOT TESTED**.
+- Route handler, middleware, access control and PHP AST semantics remain **NOT TESTED**.
+- `BARAMA_ROUTE_SIGNATURE_RECONCILIATION_TRIAGE=PASS`; `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`; `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`.
+- No app, SQL, network, production or source writes were performed.
+
+## v1.0.14 — Bootstrap include boundary and route precedence static triage (NEXT)
+
+Archive: `Barama-Bootstrap-Include-Route-Precedence-aaPanel-v1.0.14.zip`
+SHA-256: `7fcb5b1fe917f4187741988606d293fa0fb16d6a40ea2b6e9b3a2e89f8427274`
+Size: 44,256 bytes.
+
+Continues the exact static validation chain from v1.0.9–v1.0.13:
+- Fixed private source `/root/barama-private-v2-http-source-overlay/source` and previously accepted full SHA-256 tree fingerprint; ownership/no-symlink/hardlink controls. Revalidates all three pinned file blobs, lexical counters and exact 167 reference signatures shared in order.
+- Reads the same **three** previously accepted nonsecret bootstrap files; no runtime state, `.env`, license secrets, database or customer data.
+- Classifies the four lexical PHP `index.php` include/require occurrences into previously known runtime/app bootstrap fragments and *other*; reports hashed expression fingerprints, static positions relative to installation/version-guard anchor text, and dynamic/URI stream lexical indicators. Does not print include targets or source strings.
+- Checks whether any newly inserted private route's static template **could overlap** with a retained reference route registered later (possible first-match shadow), and vice versa, with per-method aggregate counts but no private paths.
+- Models pinned `Router::match` only at the level of literal segment vs `{parameter}` template intersections. **Not** a PHP AST, handler/middleware/access-control audit or runtime router simulation. Regex may count text in comments/strings; false negatives/positives possible; all results are diagnostic only.
+- Offline 138/138 tests PASS, fresh ZIP extraction SHA256SUMS PASS, bash syntax PASS, wrong `--probe` rejected, missing pinned private source fails closed on build host. **Live aaPanel execution NOT YET TESTED**.
+- No PHP application execution, network, SQL, production services/INI changes, staging source mutation, updater, signing identity or installer touched.
+
+aaPanel command:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Bootstrap-Include-Route-Precedence-aaPanel-v1.0.14.zip"
+SHA="7fcb5b1fe917f4187741988606d293fa0fb16d6a40ea2b6e9b3a2e89f8427274"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Bootstrap-Include-Route-Precedence-aaPanel-v1.0.14
+bash run-on-aapanel.sh --check
+```
+
+Expected diagnostic markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EXAMINED_ENTRYPOINT_INCLUDES=4`, `PRIVATE_ONLY_ROUTE_SIGNATURES=76`, `BARAMA_BOOTSTRAP_BOUNDARY_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`. If any identity check fails, STOP; no fallback, re-pinning, source editing or bypass.
+
+This diagnostic is **not** source-reconciliation acceptance. Real Barama disconnected bootstrap and genuine signed-update install/rollback remain NOT TESTED. CodeCanyon FINAL **ON HOLD**.
