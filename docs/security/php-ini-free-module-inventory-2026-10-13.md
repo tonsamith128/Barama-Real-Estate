@@ -550,3 +550,62 @@ bash run-on-aapanel.sh --check
 Required diagnostic completion: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `BARAMA_BOOTSTRAP_LEXICAL_RISK_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`.
 
 **v1.0.12 live aaPanel execution NOT TESTED.** CodeCanyon FINAL remains ON HOLD; true source-level reconciliation, confined disconnected bootstrap, genuine signed-update installation and rollback still pending.
+
+
+## 2026-10-13 — v1.0.12 aaPanel lexical triage accepted, source review still open
+
+User-provided v1.0.12 transcript:
+- ZIP SHA-256 verified: `42cb681424ca95fb79884043da7a43baec1a2014aebf9438413a3f9c88c70f67`
+- 90/90 offline tests PASS; full private nonstate source fingerprint revalidated:
+  `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Exactly three divergent files checked: `index.php`, `application/routes/web.php`, `application/app/Support/helpers.php`.
+- `index.php`: 4 lexical include/require occurrences vs 2 in GitHub reference. No increase in specified process-execution, dynamic eval, direct PDO, file-write, session-start, curl or stream counters. **Actual include targets/side effects not verified.**
+- Private route declarations: 243 vs GitHub 167. All 243 were literal according to the bounded lexical scanner; no duplicates or unclassified expressions. **Actual handler and middleware behavior not reviewed.**
+- Helpers: 23 function declarations on each side, unchanged aggregate environment access counts.
+- `RISK_SENSITIVE_LEXICAL_COUNT_INCREASES=0`; `BARAMA_BOOTSTRAP_LEXICAL_RISK_TRIAGE=PASS`; `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`; `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`.
+- These are regex-based lexical indicators, not PHP AST/control flow findings, absence-of-risk proof, or an authorized application startup.
+- No production or staging code changes, SQL, network, updater, signer, or app PHP execution.
+
+## v1.0.13 — exact literal route signature comparison, read-only (NEXT)
+
+Package: `Barama-Route-Signature-Reconciliation-aaPanel-v1.0.13.zip`
+SHA-256: `b4b2b4ca309acbf9c8df5e8dc183d1c667c404b1fd717579b115634336768a4a`
+Size: 38,042 bytes.
+
+Changes/scope:
+- Preserves the v1.0.9 through v1.0.12 static preflight logic, exact private root and fingerprint guard, source ownership and no-follow checking, and fixed three-file comparison.
+- Includes a SHA-256-pinned reference manifest of **167** GitHub literal METHOD+PATH signatures from revision `fc617c12790f7075ccfd0e418a1bba3443450941`, route file Git blob `236468ff78a8f67b1662fc9df6d9e54cba90ff6c`.
+- Reference signatures are in the kit as digests, not raw paths. Private METHOD+PATH signatures are hashed in memory; no private route paths/source lines are printed.
+- Compares exact shared/private-only/reference-only signatures by GET and POST; reports relative order preservation among shared signatures and whether the known reference public fallback is the last private GET declaration.
+- Rechecks lexical entrypoint include count 4 vs 2 without interpreting include targets or their side effects.
+- Explicitly does **not** compare route handlers, middleware, auth policy, PHP AST, runtime side effects, or complete source equivalence; does **not** execute app/PHP, touch database or runtime state, or authorize bootstrap.
+- Fresh ZIP extraction SHA256SUMS PASS; syntax PASS; **112/112 offline unit tests PASS**; wrong `--probe` approval rejected. **Live aaPanel v1.0.13: NOT TESTED.**
+- If the pinned source tree or private Git blob IDs differ, the kit must STOP; do not re-pin the source merely to obtain PASS.
+
+### aaPanel instructions
+Upload to `/root` and run:
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Route-Signature-Reconciliation-aaPanel-v1.0.13.zip"
+SHA="b4b2b4ca309acbf9c8df5e8dc183d1c667c404b1fd717579b115634336768a4a"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Route-Signature-Reconciliation-aaPanel-v1.0.13
+bash run-on-aapanel.sh --check
+```
+
+Expected diagnostic markers:
+```ini
+PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS
+PRIVATE_ROUTE_DECLARATIONS=243
+REFERENCE_ROUTE_DECLARATIONS=167
+BARAMA_ROUTE_SIGNATURE_RECONCILIATION_TRIAGE=PASS
+BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED
+DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED
+CODECANYON_FINAL=ON_HOLD
+```
+
+A diagnostic PASS is **not** a source reconciliation approval. NEXT: interpret shared/new/removed/order results, review additional entrypoint includes and actual middleware and access control before designing any confined disconnected PHP application execution. Genuine signed update installation/rollback remains mandatory before CodeCanyon FINAL.
