@@ -24,6 +24,18 @@ if (!is_string($installerSource)) {
     throw new RuntimeException('Customer ZIP does not contain InstallerService.');
 }
 baramaAssertInstallerCanonicalAssets($installerSource);
+
+foreach ([
+    'application/app/Services/Updates/TrustedReleaseFeed.php',
+    'application/app/Services/Updates/SignedReleaseInspector.php',
+    'application/app/Services/Updates/PrivateArtifactHttpClientV2.php',
+    'application/app/Services/Updates/PrivateArtifactReceiverV2.php',
+    'application/app/Http/Controllers/SystemCenterController.php',
+] as $updateComponent) {
+    if (!is_string($zip->getFromName($updateComponent))) {
+        throw new RuntimeException('V2 updater component missing from customer ZIP: ' . $updateComponent);
+    }
+}
 $sourceVersion = trim((string) @file_get_contents($root . '/VERSION'));
 
 if (
