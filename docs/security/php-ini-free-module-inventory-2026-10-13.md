@@ -1209,3 +1209,50 @@ bash run-on-aapanel.sh --check
 ```
 
 Expected on unchanged source: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTER_CONTROL_WITNESS_HUNKS=5`, `BARAMA_ROUTER_CONTROL_WITNESS=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`. After return, conduct a human-reviewed semantic assessment of the masked control flow; additional source review may be necessary. Do NOT interpret the witness diagnostic PASS as Router or CodeCanyon release acceptance.
+
+
+## 2026-10-13 — v1.0.24 aaPanel Router witness accepted, semantic release gate remains open
+
+User uploaded v1.0.24 terminal transcript. External ZIP `Barama-Router-Control-Flow-Witness-aaPanel-v1.0.24.zip` SHA256 `df51fd29cdee523488d2f00f353664d9b79ab5c7c63b0573882010ee7ed63c69` passed; internal SHA256SUMS PASS; **103 tests run, 102 passed and 1 intentionally skipped** (host source exists).
+
+Private nonstate 629-file fingerprint still `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`; pinned private Router SHA256 `126d7ab2e12a90dd61c2006f4ae441d628d298043aba7f5c09d19e022fe7396e` PASS; five exact hunks confirmed.
+
+**Redacted change structure**:
+1. Newly imported class A is `Barama\Http\Middleware\ChangeConfirmationMiddleware` (independently matched identifier hash in redacted hunk); imported class B is in namespace `Barama\Services` (specific class name still redacted).
+2. In `Router::add()`, normalize the HTTP method to uppercase and normalize route path, then for POST requests whose normalized path matches a new private three-prefix predicate, append a `ChangeConfirmationMiddleware` instance. The registered route stores these normalized values. The fact this middleware gets *appended* (not prepended) and is limited to matched POST routes is security-relevant; does not prove authorization.
+3. In `Router::dispatch()`, before the existing route loop, instantiate imported `Barama\Services` class, call a method with the request, and **return early if the result is a Response**. Its surrounding `catch (\Throwable) {}` silently suppresses failures. If it is a security gate, exceptions may be *fail-open*, but purpose and impact are NOT established.
+4. The new private method checks route path equal to or prefixed by one of **three** private literal path prefixes. Prefix literals and private class name deliberately not printed in the diagnostic.
+
+`BARAMA_ROUTER_CONTROL_WITNESS=PASS` indicates only successful diagnostic. `ROUTER_ADD_CHANGE`, `ROUTER_DISPATCH_CHANGE`, `ROUTER_EXTRA_METHOD=HUMAN_SEMANTIC_REVIEW_REQUIRED`; `PHP_AST_CONTROL_FLOW_OR_AUTHORIZATION=NOT_PROVEN`; `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`; `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`; `CODECANYON_FINAL=ON_HOLD`. No PHP/SQL/network/production changes.
+
+## v1.0.25 — Router POST guard coverage and imported class *metadata* (NEXT)
+
+Package: `Barama-Router-Guard-Coverage-aaPanel-v1.0.25.zip`.
+External ZIP **SHA256 `e374fa3810f197d09ba6ae0a2cd4bd41e8be7ab94eed34359d74e94cdc3524f3`**, 42,217 bytes.
+
+- Full existing 629-file source integrity and pinned private Router/code hunk identities rechecked; approved `application/routes/web.php` SHA256 `44ed9f7bb7e5ae23613d06fc2fa0fb9dec4f24b373bd715efbb93838d3c4d007` and reference Router blob pinned.
+- Reads only **two** pinned private nonsecret source files through root-owned O_NOFOLLOW descriptor walks: `Router.php` and `application/routes/web.php`. Checks normalized POST-class middleware append syntax and the new private predicate's 3 route-prefix literals, without printing literals; verifies 243 route declarations (149 POST, 94 GET).
+- Counts per-prefix statically declared POST and GET routes matching exact prefix or prefix followed by `/`; reports 16-char SHA256 prefix IDs, counts, and aggregate number. **Overlaps can double count**; no conclusion about runtime route precedence, CSRF/permissions, request rewrites or handler internals.
+- Only metadata `stat`, **never read target PHP contents**, for `application/app/Http/Middleware/ChangeConfirmationMiddleware.php` and one `application/app/Services/<imported-class>.php` discovered from the fixed pinned Router. Rejects unexpected path, symlink, type, ownership or write permissions; reports missing/present metadata classification. Not proof of actual autoload or service safety.
+- Reports pre-dispatch Response-return and Throwable-catch lexical existence; not actual code execution.
+- **120/120 offline unit tests PASS** (including synthetic exact expected Router control-flow grammar), separate fresh ZIP extraction SHA256SUMS PASS (17 internal entries), `unzip -t` and shell syntax PASS. `--probe` exits 2, absent pinned source exits 1. **aaPanel v1.0.25 NOT YET TESTED.**
+- No PHP interpreter, app state reads, SQL/network, shell execution (except QA synthetic CLI negative tests), updater/signer, or staging/production source writes.
+
+Run after uploading ZIP to `/root`:
+```bash
+bash <<'BASH'
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Router-Guard-Coverage-aaPanel-v1.0.25.zip"
+SHA="e374fa3810f197d09ba6ae0a2cd4bd41e8be7ab94eed34359d74e94cdc3524f3"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Router-Guard-Coverage-aaPanel-v1.0.25
+bash run-on-aapanel.sh --check
+BASH
+```
+
+Expected broad markers only: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTES_PRIVATE_SHA256_REVALIDATED=PASS`, `SENSITIVE_PREFIX_COUNT=3`, class metadata statuses (must come from real aaPanel), `BARAMA_ROUTER_GUARD_COVERAGE=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+After accepted results, review class implementation content **only with explicit scoped source-read authorization**, especially ChangeConfirmationMiddleware fail-open/CSRF behavior and imported pre-dispatch service silent Throwable catch. Never repin the old Router to make v1.0.22 pass. All production unchanged.
