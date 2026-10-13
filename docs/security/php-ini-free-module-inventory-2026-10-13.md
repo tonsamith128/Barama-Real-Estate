@@ -1104,3 +1104,22 @@ Source code review of v1.0.22 gate reveals that after printing `OPTIONAL_PREINST
 **Safe next action:** use the previously verified v1.0.22 kit and a separate nonmutating Python diagnostic to call its `check_source_integrity()` and `read_root_owned()` and `inspect_patterns()` for each of exactly the nine allowlisted files; report `FILE_READ_OR_PIN=FAIL` versus `MARKERS=MISSING_LABELS`, printing only hardcoded labels and **no private code or secret paths**. This is diagnostic-only; never relax the pinned blob checks or turn a STOP into PASS. Once the specific file or marker is identified, fix the test's false assumption or reconcile actual private code in a new immutable artifact.
 
 **Release:** v1.0.22 **NOT ACCEPTED**, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+
+## 2026-10-13 — v1.0.22 fail-closed root cause narrowed to Router.php only (pending exact exception class)
+
+User executed the separate read-only file-by-file diagnostic against the **unchanged** 629-file pinned source tree SHA256 `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`. The diagnostic rechecked all nine allowlisted files using the original v1.0.22 file read and textual marker functions.
+
+- `FILE_01`–`FILE_07`: **PASS**.
+- `FILE_08_PATH=application/app/Core/Router.php`: `READ_TRUST_OR_BLOB_PIN_FAILURE`.
+- `FILE_09_PATH=index.php`: **PASS**.
+- `FAILED_FILE_CHECKS=1`, `BARAMA_V122_DIAGNOSTIC=RECONCILIATION_REQUIRED`.
+- `PHP_APPLICATION_EXECUTION=NONE`, `SOURCE_AND_PRODUCTION_WRITES=NONE`, `CODECANYON_FINAL=ON_HOLD`.
+
+Inspected exact v1.0.22 shipped `bin/prebootstrap_boundaries.py` in the local verified archive: `read_root_owned` requires root-owned regular non-hardlinked no-follow Router source, exact reference Git blob `2e8f8cdf2fbcc5950b389513be681cc46e855742`, then checks first-match routing marker `return $pipeline($request);`. The safe diagnostic caught and collapsed file-trust and blob-pin exceptions into one status. **No root cause between filesystem trust and source blob drift is yet proven.**
+
+GitHub at pinned ref `fc617c12790f7075ccfd0e418a1bba3443450941` independently has Router blob `2e8f8cdf2fbcc5950b389513be681cc46e855742` and expected dispatch/middleware marker. The v1.0.10–v1.0.21 **ten-file** provenance allowlist did *not* include Router.php, so prior reports of exactly three differences did not establish that Router matched the GitHub baseline.
+
+**Next:** Run only existing v1.0.22 `check_source_integrity()` and `read_root_owned('application/app/Core/Router.php')` with fixed exception-code classification; report `SOURCE_BLOB_DRIFT` vs `UNTRUSTED_FILE_OR_PARENT` without printing source, changing hashes, or executing PHP. If blob drift, obtain a bounded no-follow SHA/blobh fingerprint and explicitly review the private-vs-reference Router logic/permissions before revising any pin or acceptance gate. **Never just replace Router with outdated GitHub code or adjust manifest to suppress the STOP.**
+
+V1.0.22 boundary audit is still **NOT ACCEPTED**; release/bootstrap/updater and CodeCanyon FINAL are on hold.
