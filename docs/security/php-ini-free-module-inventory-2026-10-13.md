@@ -972,3 +972,23 @@ User-provided aaPanel transcript of the already verified `Barama-Preinstall-Miss
 **Release-engineering conclusion:** There is an unreviewed source-version split: private new index pre-install includes reference possible nonstate PHP under a subtree absent both from pinned overlay and authoritative GitHub main. Nested lexical placement does NOT prove they execute on every request; metadata missing alone does NOT justify creating missing files. Resolve with a scoped code-level diff of pinned private entry point against GitHub, review early conditional guards and actual include assignments, then choose an explicit remediation (remove accidental includes or add vetted source files via controlled source-of-truth and **new** fingerprint). Approval must be based on actual code review, not more repetitive metadata probes.
 
 **Do not:** create a missing directory/placeholder, copy production files, run PHP application, use an alternate webroot, re-pin to suppress red flags, alter main/production branches, or enable signed update/rollback before source and runtime acceptance. All production code unchanged by these audits; **CodeCanyon FINAL remains ON HOLD**.
+
+
+## 2026-10-13 — v1.0.20 finding reclassified after verified `index.php` guard-structure disclosure
+
+User executed a standalone read-only Python review of the **exact pinned** private `index.php`, SHA-256 `27b5f91f53725074bb5ca9b7b6ece1d050100db139d637bc81b362a928c836aa`; it printed `BARAMA_PINNED_ENTRYPOINT=PASS` and redacted PHP strings/comments.
+
+**What the source visibly establishes before the install guard:**
+- A change-confirmation support candidate is assigned from `__DIR__`; if absent per PHP `is_file()`, it reassigns a candidate rooted in `dirname(__DIR__)`. The conditional `require_once` is nested beneath `if (is_file($baramaChangeConfirmationSupport))`, followed by an optional `function_exists` / `ob_start(callback)`.
+- A session-expired support candidate is assigned from `__DIR__`; its conditional `require_once` is nested beneath `if (is_file($baramaSessionExpiredSupport))`, followed by an optional `function_exists` / `ob_start(callback)`.
+- Both paths execute **before** the application installation lock/guard is evaluated. Actual literal subpaths and callback names were intentionally redacted in the transcript. No target file read, PHP executed or production write.
+
+**Critical interpretation correction**: The v1.0.18–v1.0.20 missing `application/support` parent metadata finding proves only that the two *in-source static candidates* are absent. Because the requires are guarded with `is_file`, that absence does **not** establish mandatory dependency load failure or unconditional inability to bootstrap. First include has a parent-of-source fallback outside the earlier pin, which might allow optional pre-install loading; presence and integrity **not verified**. The v1.0.20 marker `BARAMA_DISCONNECTED_BOOTSTRAP_READINESS=BLOCKED_MISSING_SHARED_SOURCE_SUBTREE` was an intentionally conservative classification but should not be interpreted as a proven fatal PHP missing-file error.
+
+**Outstanding real blockers**:
+1. Inspect only *metadata* of the two direct local candidates and the first parent-of-source fallback, without executing includes or opening untrusted external content. Constrain inspection to the explicitly known `/root/barama-private-v2-http-source-overlay` parent and pin source SHA; return no paths/secrets, fail closed on unexpected target type, ownership or symlink.
+2. Review whether any loaded callback can alter HTTP bodies/headers or cause storage/network activity, and source provenance for any candidate actually present.
+3. Retain handler-level authorization review, strict disconnected bootstrap/side-effect containment and signed-update installation and rollback.
+4. Do not copy missing `application/support` files, modify private source, change GitHub `main`, or run PHP to test these guards.
+
+**Status:** `BARAMA_PINNED_ENTRYPOINT=PASS`, `PREINSTALL_GUARDED_REQUIRES=CONFIRMED`, `EXTERNAL_PARENT_FALLBACK=UNVERIFIED`, `INCLUDE_CALLBACK_EFFECTS=NOT_TESTED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
