@@ -266,3 +266,58 @@ bash run-on-aapanel.sh --probe PROBE_COMBINED_FILEINFO_ZIP_FUNCTIONAL_SMOKE_ONLY
 ```
 
 Full acceptance requires `BARAMA_PHP_COMBINED_SMOKE_PREFLIGHT=PASS`, `BARAMA_SYNTHETIC_FILEINFO_ZIP_FUNCTIONAL_SMOKE=PASS`, `BARAMA_PHP_COMBINED_RUNTIME_SMOKE=PASS` and `TEMPORARY_SANDBOX=REMOVED`. CodeCanyon FINAL remains ON HOLD.
+
+
+## 2026-10-13: v1.0.6 combined functional smoke accepted (aaPanel output)
+
+User executed verified `Barama-PHP-INI-Free-Combined-Smoke-aaPanel-v1.0.6.zip` SHA `9dc8071f5fd57be9efd105d0cc642cc30704830205e11972842b416ffd2d40d1`.
+
+Observed: 66/66 offline tests PASS; PHP binary pin PASS; 48 core ELF resolutions; 2 additional ELF resolutions; `fileinfo.so` SHA `4b4bfc5676233036cf4856c9ddc01c5274a1b5a6d004e313655a7dddfaef4360`, `zip.so` SHA `6a93dee35e7d42fd18bae63dfb48088404b3647d37080e06f9e22e7631382968`; IMAP excluded; production PHP INI unchanged per probe.
+
+Verified output:
+```ini
+EPHEMERAL_MOUNT_NETWORK_PID_NAMESPACES=PASS
+PHP_EXTENSION_EXECUTION_NONROOT_UID_GID=65534:65534
+INI_FREE_BASELINE_MODULE_COUNT=46
+EXTENSION_FILEINFO_ISOLATED_LOAD=PASS
+EXTENSION_ZIP_ISOLATED_LOAD=PASS
+BARAMA_SYNTHETIC_FILEINFO_ZIP_FUNCTIONAL_SMOKE=PASS
+BARAMA_PHP_COMBINED_RUNTIME_SMOKE=PASS
+TEMPORARY_SANDBOX=REMOVED
+```
+
+**Accepted for INI-free PHP runtime + synthetic combined extension functionality only.** Neither Barama application code nor staging database, private credentials, license, Publisher identity or updater was exercised.
+
+## v1.0.7 — Disconnected bootstrap *static* source preflight (NEXT)
+
+From canonical repository review:
+- `index.php` checks `application/storage/app/installation/installed.php`, may redirect to installer/updater, then loads runtime/bootstrap and dispatches the application.
+- `application/bootstrap/runtime.php` executes `RuntimeEnvironment::load()`, `Config::load()` and `session_start()`.
+- `RuntimeEnvironment::load()` may `require` private installation/environment state, `Config::load()` executes PHP config files.
+- `application/bootstrap/app.php` registers an exception handler which may create/write application logs on failure.
+- Therefore directly requiring or running the full application is **not** an acceptable next no-effect probe.
+
+Prepared self-contained aaPanel-only, no-PHP-execution static gate:
+- ZIP: `Barama-Disconnected-Bootstrap-Static-Gate-aaPanel-v1.0.7.zip`
+- SHA-256: `106709157590900dd5ca0560736a7f81ea7a09405fa21042653e3d2bf330179b`
+- Private accepted source overlay: `/root/barama-private-v2-http-source-overlay` (fixed in diagnostic code; no alternative fallback).
+- Reviews ten explicit nonsecret bootstrap source/version files and nonstate file names only, with path/ownership/symlink safety checks and static code-topology checks.
+- Does **NOT** open installation/environment/license state content, read `.env`, walk `application/storage`, invoke PHP, connect to MySQL, perform network requests, run Barama, or alter files.
+- 15/15 offline tests PASS; fresh-extraction checks PASS; bash syntax PASS.
+- **Live aaPanel v1.0.7 source preflight NOT YET TESTED.** PASS permits planning the next confined bootstrap test; it does NOT authorize application execution.
+
+Commands after uploading ZIP to `/root`:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP=Barama-Disconnected-Bootstrap-Static-Gate-aaPanel-v1.0.7.zip
+SHA=106709157590900dd5ca0560736a7f81ea7a09405fa21042653e3d2bf330179b
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Disconnected-Bootstrap-Static-Gate-aaPanel-v1.0.7
+bash run-on-aapanel.sh --check
+```
+Expected marker: `BARAMA_DISCONNECTED_BOOTSTRAP_STATIC_PREFLIGHT=PASS`. If absent, stop and review the mismatch. No `--probe` or `--deploy` exists in this kit.
+
+CodeCanyon FINAL remains **ON HOLD**; signed update install and rollback are still NOT TESTED.
