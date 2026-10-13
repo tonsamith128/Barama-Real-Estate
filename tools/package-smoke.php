@@ -104,29 +104,7 @@ try {
     $migrationNames = array_map('basename', $migrationFiles);
     sort($migrationNames, SORT_STRING);
 
-    $expectedMigrations = [
-        '0001_create_auth_core.php',
-        '0002_seed_auth_roles_permissions.php',
-        '0003_create_real_estate_domain.php',
-        '0004_seed_real_estate_permissions.php',
-        '0005_create_domain_workflow_support.php',
-        '0006_create_customer_engagement.php',
-        '0007_create_notification_delivery.php',
-        '0008_create_application_settings.php',
-        '0009_create_account_onboarding.php',
-        '0010_release_security_hardening.php',
-        '0011_create_workspace_preferences.php',
-        '0012_create_cms_pages.php',
-        '0013_create_billing_foundation.php',
-        '0014_create_invoice_transaction_foundation.php',
-        '0015_create_coupon_discount_foundation.php',
-        '0016_create_tax_rule_foundation.php',
-        '0017_create_payment_webhook_foundation.php',
-        '0018_create_communication_permission.php',
-        '0019_create_email_template_foundation.php',
-        '0021_create_newsletter_subscribers.php',
-        '0022_create_contact_messages.php',
-    ];
+    $expectedMigrations = require __DIR__ . '/pinned-migration-names.php';
 
     if ($migrationNames !== $expectedMigrations) {
         throw new RuntimeException(
@@ -147,37 +125,29 @@ try {
     sort($cssNames, SORT_STRING);
     sort($jsNames, SORT_STRING);
 
-    $approvedCssFiles = [
-        'assets/css/app.css',
-        'assets/css/admin-settings-v120.css',
-        'assets/css/cms-rich-content-v116.css',
-        'assets/css/error-page-v114.css',
-        'assets/css/finance-plans-v139.css',
-        'assets/css/marketplace-config-v109.css',
-        'assets/css/marketplace-hero-heading-v112.css',
-        'assets/css/page-builder-v116.css',
-        'assets/css/property-detail-flow-v113.css',
-        'assets/css/system-health-v1126.css',
-        'assets/css/workspace-sidebar-scroll-v115.css',
-    ];
-    $approvedJsFiles = [
-        'assets/js/app.js',
-        'assets/js/admin-settings-v120.js',
-        'assets/js/finance-plans-v139.js',
-        'assets/js/marketplace-config-v109.js',
-        'assets/js/page-builder-v116.js',
-        'assets/js/page-builder-v117.js',
-        'assets/js/page-builder-v119.js',
-        'assets/js/system-health-theme-v1126.js',
-        'assets/js/workspace-sidebar-scroll-v115.js',
-    ];
+    // The repository source tree, not a retired hand-maintained shortlist,
+    // is the canonical baseline for the *exact* customer installation ZIP.
+    $sourceRoot = dirname(__DIR__);
+    $approvedCssFiles = array_map(
+        static fn (string $file): string => 'assets/css/' . basename($file),
+        glob($sourceRoot . '/assets/css/*.css') ?: []
+    );
+    $approvedJsFiles = array_map(
+        static fn (string $file): string => 'assets/js/' . basename($file),
+        glob($sourceRoot . '/assets/js/*.js') ?: []
+    );
+    sort($approvedCssFiles, SORT_STRING);
+    sort($approvedJsFiles, SORT_STRING);
 
     $unapprovedCssFiles = array_values(array_diff($cssNames, $approvedCssFiles));
     $unapprovedJsFiles = array_values(array_diff($jsNames, $approvedJsFiles));
+    $missingCssFiles = array_values(array_diff($approvedCssFiles, $cssNames));
+    $missingJsFiles = array_values(array_diff($approvedJsFiles, $jsNames));
 
     if (
         !in_array('assets/css/app.css', $cssNames, true)
         || $unapprovedCssFiles !== []
+        || $missingCssFiles !== []
     ) {
         throw new RuntimeException(
             'Package CSS inventory contains missing core or unapproved modular assets.'
@@ -187,6 +157,7 @@ try {
     if (
         !in_array('assets/js/app.js', $jsNames, true)
         || $unapprovedJsFiles !== []
+        || $missingJsFiles !== []
     ) {
         throw new RuntimeException(
             'Package JavaScript inventory contains missing core or unapproved modular assets.'

@@ -235,46 +235,55 @@ $collectFiles = static function (string $directory, string $extension) use ($roo
 $cssFiles = $collectFiles($root . '/assets', 'css');
 $jsFiles = $collectFiles($root . '/assets', 'js');
 
-$approvedCssFiles = [
-    'assets/css/app.css',
-    'assets/css/admin-settings-v120.css',
-    'assets/css/cms-rich-content-v116.css',
-    'assets/css/error-page-v114.css',
-    'assets/css/finance-plans-v139.css',
-    'assets/css/marketplace-config-v109.css',
-    'assets/css/marketplace-hero-heading-v112.css',
-    'assets/css/page-builder-v116.css',
-    'assets/css/property-detail-flow-v113.css',
-    'assets/css/system-health-v1126.css',
-    'assets/css/workspace-sidebar-scroll-v115.css',
-];
-$unapprovedCssFiles = array_values(array_diff($cssFiles, $approvedCssFiles));
+// This is repository QA, not customer runtime. Only tracked, reviewed source
+// assets are approved; untracked CSS/JS additions are rejected.
+$trackedAssets = [];
+$gitOutput = [];
+$gitExit = 1;
+if (function_exists('exec')) {
+    exec(
+        'git -C ' . escapeshellarg($root)
+            . ' ls-files --cached -- assets/css assets/js 2>&1',
+        $gitOutput,
+        $gitExit
+    );
+}
+if ($gitExit !== 0) {
+    $fail('Git tracked-asset inventory cannot be verified.');
+} else {
+    $trackedAssets = array_values(array_filter(
+        $gitOutput,
+        static fn (string $file): bool =>
+            preg_match('#^assets/(?:css/[^/]+\\.css|js/[^/]+\\.js)$#', $file) === 1
+    ));
+}
+$approvedCssFiles = array_values(array_filter(
+    $trackedAssets,
+    static fn (string $file): bool => str_starts_with($file, 'assets/css/')
+));
+$approvedJsFiles = array_values(array_filter(
+    $trackedAssets,
+    static fn (string $file): bool => str_starts_with($file, 'assets/js/')
+));
 
-$unapprovedCssFiles === []
-    ? $pass('First-party CSS files match the approved asset allowlist.')
+$unapprovedCssFiles = array_values(array_diff($cssFiles, $approvedCssFiles));
+$missingCssFiles = array_values(array_diff($approvedCssFiles, $cssFiles));
+
+$unapprovedCssFiles === [] && $missingCssFiles === [] && in_array('assets/css/app.css', $cssFiles, true)
+    ? $pass('First-party CSS matches tracked inventory with canonical stylesheet.')
     : $fail(
         'Unapproved first-party CSS files detected: '
-        . implode(', ', $unapprovedCssFiles)
+        . implode(', ', array_merge($unapprovedCssFiles, $missingCssFiles))
     );
 
-$approvedJsFiles = [
-    'assets/js/app.js',
-    'assets/js/admin-settings-v120.js',
-    'assets/js/finance-plans-v139.js',
-    'assets/js/marketplace-config-v109.js',
-    'assets/js/page-builder-v116.js',
-    'assets/js/page-builder-v117.js',
-    'assets/js/page-builder-v119.js',
-    'assets/js/system-health-theme-v1126.js',
-    'assets/js/workspace-sidebar-scroll-v115.js',
-];
 $unapprovedJsFiles = array_values(array_diff($jsFiles, $approvedJsFiles));
+$missingJsFiles = array_values(array_diff($approvedJsFiles, $jsFiles));
 
-$unapprovedJsFiles === []
-    ? $pass('First-party JavaScript files match the approved asset allowlist.')
+$unapprovedJsFiles === [] && $missingJsFiles === [] && in_array('assets/js/app.js', $jsFiles, true)
+    ? $pass('First-party JavaScript matches tracked inventory with canonical script.')
     : $fail(
         'Unapproved first-party JavaScript files detected: '
-        . implode(', ', $unapprovedJsFiles)
+        . implode(', ', array_merge($unapprovedJsFiles, $missingJsFiles))
     );
 
 $allFiles = [];
@@ -300,9 +309,15 @@ foreach ($iterator as $item) {
 }
 
 $forbiddenNamePattern = '/(?:^|[\/._-])(old|backup|bak|copy|legacy)(?:[\/._-]|$)/i';
+$approvedSemanticNames = [
+    'assets/css/auth-copy-v117a34.css',
+    'assets/js/auth-copy-v117a34.js',
+    'application/database/migrations/0030_update_homepage_hero_copy.php',
+];
 $forbidden = array_values(array_filter(
     $allFiles,
     static fn (string $file): bool => preg_match($forbiddenNamePattern, $file) === 1
+        && !in_array($file, $approvedSemanticNames, true)
 ));
 
 $forbidden === []
@@ -348,32 +363,10 @@ count($migrationNames) === count(array_unique($migrationNames))
     ? $pass('Database migration filenames are unique.')
     : $fail('Duplicate database migration filenames detected.');
 
-$expectedMigrationNames = [
-    '0001_create_auth_core.php',
-    '0002_seed_auth_roles_permissions.php',
-    '0003_create_real_estate_domain.php',
-    '0004_seed_real_estate_permissions.php',
-    '0005_create_domain_workflow_support.php',
-    '0006_create_customer_engagement.php',
-    '0007_create_notification_delivery.php',
-    '0008_create_application_settings.php',
-    '0009_create_account_onboarding.php',
-    '0010_release_security_hardening.php',
-    '0011_create_workspace_preferences.php',
-    '0012_create_cms_pages.php',
-    '0013_create_billing_foundation.php',
-    '0014_create_invoice_transaction_foundation.php',
-    '0015_create_coupon_discount_foundation.php',
-    '0016_create_tax_rule_foundation.php',
-    '0017_create_payment_webhook_foundation.php',
-    '0018_create_communication_permission.php',
-    '0019_create_email_template_foundation.php',
-    '0021_create_newsletter_subscribers.php',
-    '0022_create_contact_messages.php',
-];
+$expectedMigrationNames = require __DIR__ . '/pinned-migration-names.php';
 
 $migrationNames === $expectedMigrationNames
-    ? $pass('Database migration sequence matches the canonical catalog through 0022.')
+    ? $pass('Database migration sequence matches the pinned canonical catalog through 0031.')
     : $fail('Database migration sequence drift detected: ' . implode(', ', $migrationNames));
 
 $migrationPrefixes = array_map(
