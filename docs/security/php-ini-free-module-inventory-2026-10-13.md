@@ -1168,3 +1168,44 @@ bash run-on-aapanel.sh --check
 ```
 
 Expected general markers if source remains unchanged: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_ROOT_OWNED_NOFOLLOW_READ=PASS`, `ROUTER_BLOB_DRIFT=CONFIRMED`, `BARAMA_ROUTER_DRIFT_STRUCTURAL_REVIEW=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`. Structural report identifies precisely which method regions differ; the next step is controlled semantic inspection of only affected Router code, not acceptance from textual markers alone.
+
+
+## 2026-10-13 — v1.0.23 live structural Router review accepted (diagnostic only)
+
+User-uploaded full aaPanel transcript verifies `Barama-Router-Drift-Structural-Review-aaPanel-v1.0.23.zip` outer SHA256 `0bbcf52820b2c3af5496d6bb8b1215ca45d96327b514e14021c84c791b4cb40e`, inner hashes PASS, **90 tests run: 89 PASS and 1 skipped** (skip = synthetic missing-source test on host where source actually exists).
+
+- `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`; unchanged 629-file nonstate SHA256 `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+- Exact trusted no-follow Router source read PASS.
+- Reference Router Git blob `2e8f8cdf2fbcc5950b389513be681cc46e855742`, **4,996 bytes**, **169 lines**, **7 methods**.
+- Private Router Git blob `bdf8e43f390263d87fb31dd7f0ab3ff71d85ec0b`, SHA256 `126d7ab2e12a90dd61c2006f4ae441d628d298043aba7f5c09d19e022fe7396e`, **6,009 bytes**, **201 lines**, **8 methods**.
+- Five exact change hunks: file-scope insert private lines 7–8; route `add()` insert lines 49–58 and replace 60–61; `dispatch()` insertion private 71–79; new private method insertion lines 185–195. `add()` hunks include method/path and middleware lexical indicators; modified `dispatch()` classified `OTHER_OR_FORMATTING` by heuristic **not proof of harmless behavior**; new method name withheld as hash. First-match return, method check, middleware interface/reversal, handler resolution, route/path matching and normalization markers all PRESENT but not equivalent behavior proof.
+- `BARAMA_ROUTER_DRIFT_STRUCTURAL_REVIEW=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+- No application PHP, SQL, network or source/production writes.
+
+Security priority is examining the actual syntactic logic behind the five Router changes before accepting route-first-match and access-control semantics. Do not replace the private Router with GitHub, silently repin v1.0.22, or perform live bootstrap.
+
+## v1.0.24 — No-execute redacted Router control-flow witness (NEXT, local QA complete)
+
+Verified ZIP: `Barama-Router-Control-Flow-Witness-aaPanel-v1.0.24.zip`
+**SHA256: `df51fd29cdee523488d2f00f353664d9b79ab5c7c63b0573882010ee7ed63c69`**; **43,492 bytes**.
+- Carries v1.0.23 trusted full-source integrity, fixed allowlisted Router O_NOFOLLOW read and exact pinned GitHub `reference/Router.php` source.
+- Adds exact private Router identity pins (6,009 bytes, Git blob `bdf8e43f390263d87fb31dd7f0ab3ff71d85ec0b`, SHA256 `126d7ab2e12a90dd61c2006f4ae441d628d298043aba7f5c09d19e022fe7396e`) and exact line/index checks on all **five** known hunks. Any drift stops safely.
+- New `bin/router_control_witness.py` prints only a **bounded, token-redacted structural rendering of the five changed hunks**, never raw literal PHP source lines, string values (except common HTTP verbs), comments or unapproved variable/identifier names. Unknown identifiers get short hashed aliases; numeric literals masked. It also counts conditional/return/throw/loop tokens per change and marks `add()`, `dispatch()` and the extra method as `HUMAN_SEMANTIC_REVIEW_REQUIRED`. This output is *derived proprietary source logic*: keep it private, not publicly posted.
+- Uses only static Python text analysis and pinned source bytes; no PHP interpreter, app state, network, database, installation, updater, signer, production write or source change. Not a PHP AST or proof of security.
+- **103/103 offline unit tests PASS**, including separate ZIP fresh-extraction test; all **16** internal SHA256SUMS entries PASS, `unzip -t` PASS and shell syntax PASS; unsupported `--probe` returns exit 2; missing pinned source returns exit 1 safely.
+- **Live aaPanel v1.0.24 NOT YET TESTED.** v1.0.22 boundary still NOT ACCEPTED.
+
+After uploading verified ZIP to `/root`, aaPanel command:
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Router-Control-Flow-Witness-aaPanel-v1.0.24.zip"
+SHA="df51fd29cdee523488d2f00f353664d9b79ab5c7c63b0573882010ee7ed63c69"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Router-Control-Flow-Witness-aaPanel-v1.0.24
+bash run-on-aapanel.sh --check
+```
+
+Expected on unchanged source: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `ROUTER_PRIVATE_SHA256_REVALIDATED=PASS`, `ROUTER_CONTROL_WITNESS_HUNKS=5`, `BARAMA_ROUTER_CONTROL_WITNESS=PASS`, `V122_PREBOOTSTRAP_BOUNDARY=REVIEW_REQUIRED`, `UNCONFINED_PHP_BOOTSTRAP=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`. After return, conduct a human-reviewed semantic assessment of the masked control flow; additional source review may be necessary. Do NOT interpret the witness diagnostic PASS as Router or CodeCanyon release acceptance.
