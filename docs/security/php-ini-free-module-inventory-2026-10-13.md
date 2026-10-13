@@ -889,3 +889,64 @@ bash run-on-aapanel.sh --check
 Expected on unchanged source: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `STATIC_CANDIDATE_PATHS_CHECKED=2`, each `CANDIDATE_N_STATUS=MISSING_PARENT`, `BARAMA_PREINSTALL_DEPENDENCY_CHAIN_DIAGNOSTIC=PASS`, `BARAMA_MISSING_PREINSTALL_SOURCE_DEPENDENCIES=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
 
 A diagnostic PASS does **not** show that required dependencies can be safely restored or that either PHP include would execute. Next is source-of-truth recovery planning and targeted static review of branch control flow without using production source as fallback; genuine disconnected bootstrap and signed update/rollback remain untested.
+
+
+## 2026-10-13 — v1.0.19 missing preinstall source dependency chain diagnostic accepted
+
+The user-provided aaPanel transcript for verified `Barama-Preinstall-Dependency-Chain-aaPanel-v1.0.19.zip` (external SHA256 `b7969605bcf9850c155440eb1727de5e487262a7790f2d94074c2f59088e91b2`) showed **248/248 offline tests PASS** and unchanged accepted source fingerprint `900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+Observed source path candidate metadata, with no target files opened:
+- Candidate 1: `MISSING_PARENT`, existing depth 1, first missing level 2, total parent depth 2, first missing ID `2e6468a2936671ce`.
+- Candidate 2: **identical** missing parent depth and fingerprint.
+- `BOTH_PATHS_SHARE_FIRST_MISSING_PARENT=YES`.
+- That 16-char SHA-256 first-missing-prefix digest matches the relative subtree **`application/support`** (distinct from the existing PHP class path `application/app/Support`), subject to the previously accepted 2 candidate path grammar checks. The path was not printed by the diagnostic; its cleartext identification comes from subsequent comparison with the known source path convention.
+- One additional first-include assignment remains function-dependent and unresolved.
+- `INCLUDE_TARGET_CONTENTS_OPENED=0`, `SOURCE_AND_PRODUCTION_WRITES=NONE`, `APP_PHP_DATABASE_NETWORK_AND_UPDATER=NOT_EXECUTED`.
+- Diagnostic `BARAMA_PREINSTALL_DEPENDENCY_CHAIN_DIAGNOSTIC=PASS` does NOT approve bootstrap. `BARAMA_MISSING_PREINSTALL_SOURCE_DEPENDENCIES=REVIEW_REQUIRED` and `CODECANYON_FINAL=ON_HOLD`.
+
+**Actionable blocker**: source-of-truth verification for one missing application-support subtree, and PHP control-flow analysis for early requires, before any attempt to run Barama source. Do not create placeholder PHP files, copy production source, conflate different Support paths, or re-pin to work around this blocker.
+
+## v1.0.20 — Pin-locked shared missing subtree and lexical early-require readiness (NEXT)
+
+Archive `Barama-Preinstall-Missing-Support-Readiness-aaPanel-v1.0.20.zip`.
+
+ZIP **SHA-256**: `03a9be921ee12c92d57e9ac0367082116d088b4804f5d6b83e3aa0be10452b25`.
+
+Size 85,370 bytes.
+
+Scope:
+- Reuse earlier v1.0.9–v1.0.19 static source fingerprint/topology checks pinned to only `/root/barama-private-v2-http-source-overlay/source`.
+- Identify both approved candidate paths as belonging to the same known `application/support` (relative path) subtree; ensure both still have missing parent metadata at exactly depth 2, without any fallback to the separate `application/app/Support` path.
+- Classify whether the two additional pre-installation `require_once` statements lie at lexical top level or inside braces, and report whether missing static assignment candidates could block bootstrapping. **This is a lexical brace-depth diagnostic, not PHP AST/control-flow or target verification.**
+- No PHP included or executed, target contents opened, source/production writes, secret or runtime-state access, DB, network, or updater.
+- Does NOT authorize restoration, startup, signed update or rollback. Unresolved nested function-dependent assignment remains open.
+- Local and fresh-extracted ZIP QA: **268/268 offline tests PASS**, all 28 internal checksums verified, bash/Python syntax PASS, unsupported `--probe` stopped with exit 2 and missing pinned source stopped with exit 1.
+- **v1.0.20 aaPanel outcome: NOT YET TESTED**.
+
+### aaPanel
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Preinstall-Missing-Support-Readiness-aaPanel-v1.0.20.zip"
+SHA="03a9be921ee12c92d57e9ac0367082116d088b4804f5d6b83e3aa0be10452b25"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Preinstall-Missing-Support-Readiness-aaPanel-v1.0.20
+bash run-on-aapanel.sh --check
+```
+
+Expected only on unchanged accepted source:
+```ini
+PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS
+PREINSTALL_EARLY_REQUIRE_SITES=2
+COMMON_MISSING_SUBTREE_CLASS=APPLICATION_SUPPORT_NONSTATE_DIRECTORY
+STATIC_CANDIDATE_PATHS_WITH_MISSING_PARENT=2
+SHARED_MISSING_PARENT_CONFIRMED=YES
+PHP_TARGET_CONTENTS_OPENED=0
+BARAMA_PREINSTALL_SUPPORT_READINESS_DIAGNOSTIC=PASS
+BARAMA_DISCONNECTED_BOOTSTRAP_READINESS=BLOCKED_MISSING_SHARED_SOURCE_SUBTREE
+CODECANYON_FINAL=ON_HOLD
+```
+
+Next action on acceptance: source-of-truth identification and human-reviewed code/guard examination, then independently staged immutable source repair if authorized. Never move to actual PHP startup or signed updater tests until dependency integrity and side-effect safety are established.
