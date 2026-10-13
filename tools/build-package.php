@@ -12,6 +12,18 @@ if (!is_string($installerSource)) {
     throw new RuntimeException('InstallerService source is missing.');
 }
 baramaAssertInstallerCanonicalAssets($installerSource);
+
+foreach ([
+    'application/app/Services/Updates/TrustedReleaseFeed.php',
+    'application/app/Services/Updates/SignedReleaseInspector.php',
+    'application/app/Services/Updates/PrivateArtifactHttpClientV2.php',
+    'application/app/Services/Updates/PrivateArtifactReceiverV2.php',
+    'application/app/Http/Controllers/SystemCenterController.php',
+] as $updateComponent) {
+    if (!is_file($root . '/' . $updateComponent)) {
+        throw new RuntimeException('V2 updater component missing from customer source: ' . $updateComponent);
+    }
+}
 $version = trim((string) file_get_contents($root . '/VERSION'));
 
 if ($version === '' || !class_exists(ZipArchive::class)) {
