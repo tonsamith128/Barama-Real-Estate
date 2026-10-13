@@ -1,0 +1,67 @@
+--- a/Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0/probe.py
++++ b/Barama-PHP-INI-Free-Module-Inventory-aaPanel-v1.0.0/probe.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ """Read-only host preflight and strictly isolated php -n -m inventory."""
+-import argparse, ctypes, hashlib, os, pathlib, re, shutil, stat, subprocess, sys, tempfile
++import argparse, ctypes, errno, hashlib, os, pathlib, re, shutil, subprocess, sys, tempfile
+@@ -8,7 +8,32 @@
+ MOD_RE=re.compile(r'^[A-Za-z][A-Za-z0-9_ ]{0,100}$')
+ PR_SET_NO_NEW_PRIVS=38
+ PR_CAPBSET_DROP=24
+-MOUNT_FLAGS=0
++# Keep VFS flags out of tmpfs filesystem options.
++MS_NOSUID=2
++MS_NODEV=4
++MS_REC=1<<14
++MS_PRIVATE=1<<18
++MNT_DETACH=2
++TMPFS_FLAGS=MS_NOSUID|MS_NODEV
++TMPFS_OPTIONS=b'size=220m,mode=0700'
++
++def get_libc():
++    libc=ctypes.CDLL(None,use_errno=True)
++    libc.mount.argtypes=[ctypes.c_char_p,ctypes.c_char_p,ctypes.c_char_p,ctypes.c_ulong,ctypes.c_char_p]
++    libc.mount.restype=ctypes.c_int
++    libc.umount2.argtypes=[ctypes.c_char_p,ctypes.c_int]
++    libc.umount2.restype=ctypes.c_int
++    return libc
++
++def syscall_failure(stage):
++    code=ctypes.get_errno()
++    reason=errno.errorcode.get(code,'UNKNOWN')
++    fail(stage+' (errno='+str(code)+' '+reason+': '+os.strerror(code)+')')
++
++def mount_tmpfs(libc,directory):
++    if libc.mount(b'tmpfs',os.fsencode(directory),b'tmpfs',TMPFS_FLAGS,TMPFS_OPTIONS)!=0:
++        syscall_failure('tmpfs mount rejected')
++
+@@ -65,12 +90,12 @@
+     if os.geteuid()!=0: fail('root required')
+     if os.readlink('/proc/self/ns/net')==os.environ.get('BARAMA_HOST_NET_NS'): fail('network namespace not isolated')
+     if os.readlink('/proc/self/ns/mnt')==os.environ.get('BARAMA_HOST_MNT_NS'): fail('mount namespace not isolated')
+-    libc=ctypes.CDLL(None,use_errno=True)
+-    # MS_REC | MS_PRIVATE: prevent propagation of mount operations to the host.
+-    if libc.mount(None,b'/',None, (1<<14)|(1<<18),None)!=0: fail('private mounts unavailable')
++    libc=get_libc()
++    # Prevent mount propagation to the host.
++    if libc.mount(None,b'/',None,MS_REC|MS_PRIVATE,None)!=0:
++        syscall_failure('private mount propagation rejected')
+     temp=os.environ['BARAMA_SANDBOX_ROOT']
+-    if libc.mount(b'tmpfs',temp.encode(),b'tmpfs',0,b'size=220m,mode=0700,nosuid,nodev')!=0:
+-        fail('tmpfs mounting failed')
++    mount_tmpfs(libc,temp)
+@@ -99,7 +124,8 @@
+             print('INI_FREE_'+required.upper()+'='+('PRESENT' if required in modules else 'ABSENT'))
+         print('BARAMA_PHP_INI_FREE_MODULE_PROBE=PASS')
+     finally:
+-        libc.umount2(temp.encode(),2)
++        if libc.umount2(os.fsencode(temp),MNT_DETACH)!=0:
++            syscall_failure('sandbox tmpfs cleanup failed')
+@@ -114,7 +140,7 @@
+     with tempfile.TemporaryDirectory(prefix='barama-ini-free-',dir='/root') as directory:
+         os.chmod(directory,0o700)
+         env=dict(os.environ, BARAMA_SANDBOX_ROOT=directory, BARAMA_HOST_NET_NS=os.readlink('/proc/self/ns/net'),BARAMA_HOST_MNT_NS=os.readlink('/proc/self/ns/mnt'))
+-        r=subprocess.run(['unshare','--mount','--net','--pid','--fork',sys.executable,__file__,'--inside'],env=env,timeout=45)
++        r=subprocess.run(['/usr/bin/unshare','--mount','--net','--pid','--fork',sys.executable,__file__,'--inside'],env=env,timeout=45)
+         if r.returncode: fail('sandbox returned failure')
