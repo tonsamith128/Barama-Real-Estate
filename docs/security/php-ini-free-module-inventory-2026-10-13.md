@@ -758,3 +758,49 @@ Expected diagnostic completion markers: `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVAL
 Do not treat the hypothetical `ROUTE_MIDDLEWARE_POTENTIAL_STATIC_GAP` count as a confirmed security vulnerability, nor a zero count as a safety guarantee. The next gate will require real include-target resolution and guarded middleware/handler review before any confined bootstrap execution.
 
 **CodeCanyon FINAL remains ON HOLD** until complete source/side-effect acceptance plus genuine signed-update installation and rollback.
+
+
+## 2026-10-13 — v1.0.16 aaPanel accepted: early include variable forms and route middleware declarations
+
+User-provided transcript confirms verified `Barama-Preinstall-Include-Route-Middleware-aaPanel-v1.0.16.zip` (SHA-256 `158e1224bc20d8860840b294fba0fbbde4404f16a7823cb58b5b96de6caa7639`), all 176 offline tests PASS, and previous 629-file source tree SHA-256 unchanged:
+`900d5125852765df420537a42a50d5c208582bbab1dbfdb7a4b62b02fa3fa687`.
+
+Verified findings:
+- Two additional early `REQUIRE` statements are `_once=YES`, use PHP **variables** rather than direct literal paths, and appear **before** the installation guard.
+- For each expression: `HAS_DIR_MAGIC=NO`, `HAS_DIRNAME=NO`, `HAS_LITERAL=NO`, `HAS_CONCAT=NO`, `HAS_CONDITIONAL=NO`. Target resolution `UNRESOLVED_EXPRESSION_NOT_OPENED`; **no included PHP file was opened or executed**.
+- 14 known earlier-new/later-retained route-template intersections passed bounded explicit-middleware review. `ROUTE_MIDDLEWARE_POTENTIAL_STATIC_GAP=0`, `ROUTE_MIDDLEWARE_UNKNOWN_MIDDLEWARE=0`, `ROUTE_MIDDLEWARE_NOT_INDICATED=14`. Static declarations appear to preserve the corresponding reference Auth/Permission flags, where present; no handler/control-flow authorization assessment was performed.
+- For public routes, some earlier new routes have additional Auth or Guest middleware compared with the unprotected shared fallback; absence of gaps should not be confused with runtime access-control proof.
+- `BARAMA_INCLUDE_MIDDLEWARE_STATIC_TRIAGE=PASS`, `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+- Production/staging source writes, app PHP execution, network and database access: **NONE reported**.
+
+## v1.0.17 — Read-only early include variable binding trace (NEXT)
+
+ZIP: `Barama-Preinstall-Include-Binding-Trace-aaPanel-v1.0.17.zip`
+**SHA-256:** `7abe2631c719382c27884dc0d6c448e70cf8c1540b408e69c66be5d7096e1484`
+Size: **69,454 bytes**.
+
+- Retains the exact pinned private Barama nonstate source `/root/barama-private-v2-http-source-overlay/source`, the full accepted source SHA-256 above and existing root-owned, O_NOFOLLOW, trusted-file 3-file review.
+- New `bin/preinstall_bindings.py` performs strictly read-only **lexical** scanning of the approved `index.php` content. For each of the two identified `require_once $variable;` expressions, it searches **only prior assignments in that same file**; classifies unbound/ambiguous/conditional or nested assignments, simple `__DIR__ . '/local.php'` candidates and up to 3 levels of variable aliases. It checks only the grammar of possible candidate paths: excluded private storage, secrets, traversal and dangerous path shapes never become approved candidates.
+- Emits truncated SHA256 IDs and classification labels only — **no PHP variable names, include target paths, source strings or file content**.
+- No target PHP file is opened, statted or executed. A valid-looking static candidate is **NOT** proof the assignment is reachable, target exists, target contents are safe, or bootstrap may run. The scanner intentionally does not implement full PHP AST/control flow/heredocs and is diagnostic only.
+- It does not access the production site, source outside pinned nonstate overlay, PHP INI/runtime, credentials, MySQL, external network, license/updater/signing keys or customer data. No code modification/installation.
+- **199/199 offline tests PASS** after fresh extraction. Internal file SHA256SUMS PASS; Python/shell syntax PASS; `--probe` rejected; missing private source causes safe STOP in build container.
+- **Live v1.0.17 aaPanel result: NOT YET TESTED.** All existing release prohibitions remain in place.
+
+Command after uploading ZIP to `/root`:
+
+```bash
+set -Eeuo pipefail
+umask 077
+cd /root
+ZIP="Barama-Preinstall-Include-Binding-Trace-aaPanel-v1.0.17.zip"
+SHA="7abe2631c719382c27884dc0d6c448e70cf8c1540b408e69c66be5d7096e1484"
+echo "$SHA  $ZIP" | sha256sum -c -
+unzip -oq "$ZIP" -d /root
+cd /root/Barama-Preinstall-Include-Binding-Trace-aaPanel-v1.0.17
+bash run-on-aapanel.sh --check
+```
+
+Successful **diagnostic** completion requires `PINNED_PRIVATE_SOURCE_FINGERPRINT_REVALIDATED=PASS`, `EARLY_REQUIRE_ONCE_VARIABLE_SITES=2`, `INCLUDE_TARGET_FILES_OPENED=0` and `BARAMA_PREINSTALL_BINDING_TRACE=PASS` while retaining `BARAMA_SOURCE_RECONCILIATION=REVIEW_REQUIRED`, `DISCONNECTED_BOOTSTRAP_EXECUTION=NOT_AUTHORIZED`, `CODECANYON_FINAL=ON_HOLD`.
+
+Next: evaluate binding classifications for a targeted static target/content and actual handler authorization review inside independent confinement, before any runtime bootstrap. Signed update/rollback still NOT TESTED.
