@@ -104,6 +104,40 @@ const assert = (condition, message) => {
     }
 };
 
+// On compact screens Barama v1.1.19+ intentionally uses an inline icon
+// navigation and hides the hamburger. Test the actual accessible navigation
+// contract; retain drawer interaction tests for layouts that show the toggle.
+const verifyMobileNavigation = async (page, label) => {
+    const menu = page.locator('[data-site-menu-toggle]');
+    if (await menu.isVisible()) {
+        await menu.click();
+        assert(
+            await menu.getAttribute('aria-expanded') === 'true',
+            label + ' mobile menu did not open.'
+        );
+        await page.keyboard.press('Escape');
+        assert(
+            await menu.getAttribute('aria-expanded') === 'false',
+            label + ' mobile menu did not close on Escape.'
+        );
+        return;
+    }
+
+    const nav = page.locator('[data-site-navigation]');
+    assert(await nav.isVisible(), label + ' compact navigation is hidden.');
+    const links = nav.locator('.main-nav a');
+    let visible = 0;
+    for (let i = 0; i < await links.count(); i++) {
+        const link = links.nth(i);
+        if (!await link.isVisible()) continue;
+        const accessibleName = (await link.getAttribute('aria-label')
+            || await link.textContent() || '').trim();
+        assert(accessibleName !== '', label + ' icon navigation link lacks an accessible name.');
+        visible++;
+    }
+    assert(visible >= 2, label + ' compact header has fewer than two usable navigation links.');
+};
+
 const noOverflow = async (page, label) => {
     const dimensions = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
@@ -194,17 +228,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
                 });
-                const menu = page.locator('[data-site-menu-toggle]');
-                await menu.click();
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'true',
-                    browserName + ' mobile navigation did not open.'
-                );
-                await page.keyboard.press('Escape');
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'false',
-                    browserName + ' mobile navigation did not close with Escape.'
-                );
+                await verifyMobileNavigation(page, browserName);
             } else {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
@@ -348,17 +372,7 @@ try {
 
         if (viewport.name === 'mobile') {
             await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
-            const menu = page.locator('[data-site-menu-toggle]');
-            await menu.click();
-            assert(
-                await menu.getAttribute('aria-expanded') === 'true',
-                'Mobile navigation did not expose expanded state.'
-            );
-            await page.keyboard.press('Escape');
-            assert(
-                await menu.getAttribute('aria-expanded') === 'false',
-                'Mobile navigation did not close with Escape.'
-            );
+            await verifyMobileNavigation(page, 'Chromium');
         }
 
         await context.close();
