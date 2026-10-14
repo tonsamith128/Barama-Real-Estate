@@ -9,6 +9,8 @@ on:
       - 'application/app/Services/InstallerService.php'
       - 'application/app/Support/helpers.php'
       - 'tools/http-routing-smoke.php'
+      - 'tools/auth-premium-routing-smoke.cjs'
+      - 'assets/js/auth-*.js'
       - '.github/workflows/routing-compatibility.yml'
 
 permissions:
@@ -32,6 +34,11 @@ jobs:
           php -l tools/http-routing-smoke.php
       - name: Verify clean and rewrite-free PHP routing
         run: php tools/http-routing-smoke.php
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify premium auth enhancements on clean and PHP routes
+        run: node tools/auth-premium-routing-smoke.cjs
       - name: Verify installer accepts both routing modes without bypassing entrypoint check
         run: |
           php -r '
