@@ -104,20 +104,18 @@ function run_barama_upgrade_smoke(
         );
     }
 
-    $expectedPendingMigrations = [
-        '0010_release_security_hardening.php',
-        '0011_create_workspace_preferences.php',
-        '0012_create_cms_pages.php',
-        '0013_create_billing_foundation.php',
-        '0014_create_invoice_transaction_foundation.php',
-        '0015_create_coupon_discount_foundation.php',
-        '0016_create_tax_rule_foundation.php',
-        '0017_create_payment_webhook_foundation.php',
-        '0018_create_communication_permission.php',
-        '0019_create_email_template_foundation.php',
-        '0021_create_newsletter_subscribers.php',
-        '0022_create_contact_messages.php',
-    ];
+    // The upgrade suite must cover the *current* migration catalog, not an
+    // obsolete fixed list that silently ignores later customer migrations.
+    $expectedPendingMigrations = \Barama\Support\MigrationCatalog::pending($applied);
+
+    if (
+        !in_array('0010_release_security_hardening.php', $expectedPendingMigrations, true)
+        || count($expectedPendingMigrations) < 12
+    ) {
+        throw new \RuntimeException(
+            'The upgrade QA pending-migration inventory is incomplete.'
+        );
+    }
 
     $adminPassword = 'Barama-Upgrade-QA-123!';
     $hash = password_hash($adminPassword, PASSWORD_DEFAULT);
