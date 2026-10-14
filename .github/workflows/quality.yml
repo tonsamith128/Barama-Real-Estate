@@ -65,6 +65,12 @@ jobs:
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
+      - name: Enable audit trigger capability on isolated CI MySQL
+        run: |
+          docker exec "${{ job.services.mysql.id }}" \
+            mysql -uroot -proot_test_password \
+            -e "SET GLOBAL log_bin_trust_function_creators = 1;"
+
       - name: Run database migrations
         run: php tools/migrate.php
 
