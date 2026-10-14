@@ -11,6 +11,10 @@ on:
       - 'docs/HOSTING_COMPATIBILITY.md'
       - 'documentation/NGINX_CLEAN_URLS.md'
       - 'tools/installer-clean-routing-smoke.php'
+      - 'tools/auth-premium-routing-smoke.cjs'
+      - 'assets/js/auth-*.js'
+      - 'assets/css/auth-premium-v117a33.css'
+      - 'application/resources/views/layouts/app.php'
       - 'application/app/Support/helpers.php'
       - 'tools/http-routing-smoke.php'
       - '.github/workflows/routing-compatibility.yml'
@@ -39,5 +43,7 @@ jobs:
         run: php tools/http-routing-smoke.php
       - name: Verify mandatory clean routing for new installations
         run: php tools/installer-clean-routing-smoke.php
+      - name: Verify premium authentication UI on clean and PHP routes
+        run: node tools/auth-premium-routing-smoke.cjs
       - name: Verify Barama entrypoint is required
         run: grep -Fq 'Barama application entrypoint' application/app/Services/InstallerService.php
