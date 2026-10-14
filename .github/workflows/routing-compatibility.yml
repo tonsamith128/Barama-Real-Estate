@@ -7,6 +7,10 @@ on:
   pull_request:
     paths:
       - 'application/app/Services/InstallerService.php'
+      - 'docs/INSTALLER.md'
+      - 'docs/HOSTING_COMPATIBILITY.md'
+      - 'documentation/NGINX_CLEAN_URLS.md'
+      - 'tools/installer-clean-routing-smoke.php'
       - 'application/app/Support/helpers.php'
       - 'tools/http-routing-smoke.php'
       - '.github/workflows/routing-compatibility.yml'
@@ -30,8 +34,10 @@ jobs:
           php -l application/app/Services/InstallerService.php
           php -l application/app/Support/helpers.php
           php -l tools/http-routing-smoke.php
-      - name: Verify clean and rewrite-free PHP routing
+      - name: Verify clean and legacy URL parsing
         run: php tools/http-routing-smoke.php
+      - name: Verify mandatory clean routing for new installations
+        run: php tools/installer-clean-routing-smoke.php
       - name: Verify installer accepts both routing modes without bypassing entrypoint check
         run: |
           php -r '
