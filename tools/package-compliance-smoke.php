@@ -355,6 +355,7 @@ $allowedHosts = [
     'tonsamith.com',
     'youtube.com',
     'youtube-nocookie.com',
+    'i.ytimg.com', // YouTube thumbnail display inside email template builder.
 ];
 $reservedExampleHosts = [
     'example.com',
