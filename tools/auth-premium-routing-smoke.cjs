@@ -64,8 +64,8 @@ console.log(`[PASS] Premium authentication URL modes: ${checks} script/route che
 
 const a33 = fs.readFileSync(path.join(root, 'assets/js/auth-premium-v117a33.js'), 'utf8');
 const a36 = fs.readFileSync(path.join(root, 'assets/js/auth-title-centering-v117a36.js'), 'utf8');
-assert.doesNotMatch(a33, /\\.style\\./, 'A33 must use CSS classes, not element.style');
-assert.doesNotMatch(a36, /\\.style\\./, 'A36 must use stylesheet alignment, not element.style');
+assert.equal(a33.includes('.style.'), false, 'A33 must use CSS classes, not element.style');
+assert.equal(a36.includes('.style.'), false, 'A36 must use stylesheet alignment, not element.style');
 const authCss = fs.readFileSync(path.join(root, 'assets/css/auth-premium-v117a33.css'), 'utf8');
-assert.match(authCss, /\\.barama-auth-a33__original-name-field\\s*\\{/, 'A33 hidden legacy name field needs a CSS rule');
+assert.equal(authCss.includes('.barama-auth-a33__original-name-field {'), true, 'A33 hidden name field needs an external CSS rule');
 console.log('[PASS] Premium auth uses external stylesheets for layout.');
