@@ -84,6 +84,18 @@ final class InstallerService
             );
         }
 
+        // A hosting panel may supply a placeholder index.php that exists but
+        // never boots Barama. Detect it before collecting database credentials.
+        $entrypoint = @file_get_contents(BASE_PATH . '/index.php');
+        $checks[] = $this->requiredCheck(
+            'Barama application entrypoint',
+            is_string($entrypoint)
+                && str_contains($entrypoint, 'BARAMA_START')
+                && str_contains($entrypoint, 'application/bootstrap/app.php')
+                && str_contains($entrypoint, '$app->run();'),
+            'The website root must contain Barama\'s packaged index.php, not the hosting default.'
+        );
+
         // Other feature CSS/JS files are permitted. Only require the canonical assets.
         $checks[] = $this->requiredCheck(
             'Canonical stylesheet',
@@ -111,9 +123,11 @@ final class InstallerService
         $checks[] = [
             'label' => 'Application routing',
             'detail' => $routingMode === 'clean'
-                ? 'Clean application URLs are supported by the web server.'
-                : 'Clean URL rewrites were not detected. Barama will use its no-configuration routing fallback.',
-            'status' => $routingMode === 'clean' ? 'pass' : 'warning',
+                ? 'Ready: clean URLs work. Barama automatically selected clean routing.'
+                : 'Ready: built-in PHP routing works without URL rewrites. Links use index.php?_route=...; short URLs are optional and require web-server support.',
+            // Both modes are supported first-party routing options. An absent
+            // Nginx rewrite is not a broken application or installation error.
+            'status' => 'pass',
             'required' => false,
         ];
 
