@@ -440,6 +440,28 @@ try {
         'Keyboard focus does not have a visible focus indicator.'
     );
 
+    // Verify the same centered, stylesheet-driven premium UI shipped to
+    // customers (not just successful HTTP responses or accessibility).
+    for (const spec of [
+        { path: '/login', heading: 'Welcome Back' },
+        { path: '/register', heading: 'Create account' },
+        { path: '/forgot-password', heading: 'Forgot password' },
+    ]) {
+        await page.goto(installedBase + spec.path, { waitUntil: 'networkidle' });
+        const premium = page.locator('body.barama-auth-a33.barama-auth-a34.barama-auth-a35.barama-auth-a36');
+        await premium.waitFor({ state: 'attached' });
+        const card = premium.locator('.barama-auth-a33__card');
+        assert(await card.isVisible(), spec.path + ' premium auth card is hidden.');
+        assert(
+            (await card.locator('.barama-auth-a36__heading').innerText()).trim() === spec.heading,
+            spec.path + ' premium heading mismatch.'
+        );
+        assert(
+            await card.locator('[style]').count() === 0,
+            spec.path + ' auth markup contains prohibited inline CSS.'
+        );
+    }
+
     await page.goto(installedBase + '/login', { waitUntil: 'networkidle' });
     await seriousAccessibility(page, 'login');
 
