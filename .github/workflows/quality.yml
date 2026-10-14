@@ -97,6 +97,8 @@ jobs:
 
       - name: Run HTTP routing normalization smoke test
         run: php tools/http-routing-smoke.php
+      - name: Enforce clean routing for new customer installations
+        run: php tools/installer-clean-routing-smoke.php
 
       - name: Run route/controller contract smoke test
         run: php tools/route-contract-smoke.php
