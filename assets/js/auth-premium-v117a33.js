@@ -3,7 +3,16 @@
    social OAuth links and backend name field. Avoid adding unsupported providers. */
 (function () {
   'use strict';
-  const route = location.pathname.replace(/\/+$/, '') || '/';
+  // Resolve the public route in both clean and installer-selected query mode.
+  // This changes presentation only; forms and their server-side paths are unchanged.
+  const browserPath = location.pathname.replace(/\/+$/, '') || '/';
+  const queryRoute = /(?:^|\/)index\.php$/i.test(browserPath)
+    ? new URLSearchParams(location.search).get('_route')
+    : null;
+  const cleanMatch = browserPath.match(/\/(?:login|register|forgot-password)$/);
+  const route = queryRoute && /^\/(?:login|register|forgot-password)\/?$/.test(queryRoute)
+    ? queryRoute.replace(/\/+$/, '')
+    : cleanMatch ? cleanMatch[0] : browserPath;
   if (!['/login', '/register', '/forgot-password'].includes(route)) return;
   function run() {
     const body = document.body;
