@@ -10,6 +10,9 @@ on:
       - 'application/resources/data/**'
       - 'application/support/**'
       - 'application/bin/**'
+      - 'application/app/Services/InstallerService.php'
+      - 'application/app/Support/helpers.php'
+      - '.github/workflows/complete-staging-customer-zip.yml'
   workflow_dispatch:
 
 permissions:
