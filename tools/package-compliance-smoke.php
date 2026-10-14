@@ -346,6 +346,7 @@ if (in_array(
 $allowedHosts = [
     // The official Cloudflare Turnstile widget is used by the built-in admin security test.
     'challenges.cloudflare.com',
+    'api.mapbox.com', // Barama's first-party Mapbox location search integration.
     'cdn.jsdelivr.net',
     'codecanyon.net',
     'getbootstrap.com',
