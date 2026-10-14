@@ -4,7 +4,16 @@
  */
 (function () {
   'use strict';
-  const pathname = location.pathname.replace(/\/+$/, '') || '/';
+  // Resolve the public route in both clean and installer-selected query mode.
+  // This changes presentation only; forms and their server-side paths are unchanged.
+  const browserPath = location.pathname.replace(/\/+$/, '') || '/';
+  const queryRoute = /(?:^|\/)index\.php$/i.test(browserPath)
+    ? new URLSearchParams(location.search).get('_route')
+    : null;
+  const cleanMatch = browserPath.match(/\/(?:login|register|forgot-password)$/);
+  const pathname = queryRoute && /^\/(?:login|register|forgot-password)\/?$/.test(queryRoute)
+    ? queryRoute.replace(/\/+$/, '')
+    : cleanMatch ? cleanMatch[0] : browserPath;
   const routes = ['/login', '/register', '/forgot-password'];
   if (!routes.includes(pathname)) return;
 
