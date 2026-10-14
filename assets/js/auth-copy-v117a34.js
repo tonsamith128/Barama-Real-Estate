@@ -4,7 +4,15 @@
  */
 (function () {
   'use strict';
-  const pathname = location.pathname.replace(/\/+$/, '') || '/';
+  // Apply the same premium UI to clean and legacy PHP-routed auth paths.
+  // Do not trust _route on unrelated paths or change form submissions.
+  const browserPath = location.pathname.replace(/\/+$/, '') || '/';
+  const fallback = /(?:^|\/)index\.php$/i.test(browserPath)
+    ? new URLSearchParams(location.search).get('_route') : null;
+  const cleanMatch = browserPath.match(/\/(?:login|register|forgot-password)$/);
+  const pathname = fallback && /^\/(?:login|register|forgot-password)\/?$/.test(fallback)
+    ? fallback.replace(/\/+$/, '')
+    : cleanMatch ? cleanMatch[0] : browserPath;
   const routes = ['/login', '/register', '/forgot-password'];
   if (!routes.includes(pathname)) return;
 
