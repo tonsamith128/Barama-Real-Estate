@@ -105,6 +105,8 @@ jobs:
         run: php tools/http-routing-smoke.php
       - name: Enforce clean routing for new customer installations
         run: php tools/installer-clean-routing-smoke.php
+      - name: Verify premium auth JavaScript without inline CSS
+        run: node tools/auth-premium-routing-smoke.cjs
 
       - name: Run route/controller contract smoke test
         run: php tools/route-contract-smoke.php
