@@ -162,10 +162,10 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
                 <label class="config-field-grid__wide"><span>Headline</span><input class="form-control" name="title" maxlength="180" required value="<?= e((string) ($hero['title'] ?? '')) ?>"></label>
                 <label class="config-field-grid__wide"><span>Description</span><textarea class="form-control" name="description" rows="4" maxlength="700" required><?= e((string) ($hero['description'] ?? '')) ?></textarea></label>
                 <?php if ($isContact): ?>
-                    <div class="config-field-grid__wide" style="display:grid;gap:.75rem">
+                    <div class="config-field-grid__wide config-contact-hero-tools">
                         <label><span>Contact hero background image · Upload replacement</span><input class="form-control" type="file" name="hero_image" accept="image/jpeg,image/png,image/webp"></label>
                         <small>JPG, PNG, or WebP · up to 5 MB · at least 600 × 400 pixels. Uploading a new file replaces the selected hero image when you save. No text is embedded in the default photograph.</small>
-                        <img src="<?= e(($hero['image_url'] ?? '') !== '' ? (str_starts_with((string) $hero['image_url'], '/') ? url((string) $hero['image_url']) : (string) $hero['image_url']) : asset('images/contact/agent-asian-default-v117a17.webp')) ?>" alt="Current Contact hero image" style="display:block;width:100%;max-width:260px;max-height:180px;object-fit:cover;border-radius:14px;border:1px solid #d7e1f1">
+                        <img src="<?= e(($hero['image_url'] ?? '') !== '' ? (str_starts_with((string) $hero['image_url'], '/') ? url((string) $hero['image_url']) : (string) $hero['image_url']) : asset('images/contact/agent-asian-default-v117a17.webp')) ?>" alt="Current Contact hero image" class="config-contact-hero-preview">
                     </div>
                     <label class="config-field-grid__wide"><span>Image URL (optional alternative)</span><input class="form-control" type="text" name="image_url" maxlength="1000" value="<?= e((string) ($hero['image_url'] ?? '')) ?>" placeholder="Leave blank for default Asian business agent, or enter a HTTPS URL"><small>To restore the bundled default, clear this field and save without uploading.</small></label>
                 <?php else: ?>
