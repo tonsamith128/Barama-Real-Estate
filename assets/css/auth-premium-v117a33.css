@@ -63,6 +63,7 @@ body.barama-auth-a33 .barama-auth-a33__submit {
   color:#fff!important;font-size:15px!important;font-weight:700!important;box-shadow:0 8px 17px rgba(26,96,255,.16);
 }
 body.barama-auth-a33 .barama-auth-a33__submit:hover {background:var(--a33-blue-hover)!important;border-color:var(--a33-blue-hover)!important;}
+body.barama-auth-a33 .barama-auth-a33__original-name-field {display:none!important;}
 body.barama-auth-a33 .barama-auth-a33__name-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 14px;}
 body.barama-auth-a33 .barama-auth-a33__name-grid > label {display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:700;color:var(--a33-muted);}
 body.barama-auth-a33 .barama-auth-a33__name-grid input {width:100%;box-sizing:border-box;padding:0 12px;}
