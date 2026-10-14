@@ -191,9 +191,13 @@ Release QA runs the exact generated customer ZIP behind Apache and Nginx before 
 
 Apache uses the packaged `.htaccess` front-controller rules.
 
-For Nginx, Step 2 performs a clean-route probe. When the host already provides front-controller routing, Barama stores `APP_ROUTING_MODE=clean`. When clean rewrites are unavailable, Barama stores `APP_ROUTING_MODE=query` and automatically generates functional `index.php?_route=...` application URLs. Customers are not required to edit Nginx configuration or create rewrite rules manually.
+For new installations, Step 2 requires a successful clean-route probe before the customer can continue. The installer stores `APP_ROUTING_MODE=clean` only. It never selects query-based fallback routing for a new customer installation. This prevents successful setup followed by unexpected query-style links.
 
-Control-panel or server owners may still add a normal Nginx front-controller rewrite later to obtain clean URLs; the application remains functional without that server change.
+Apache: the customer ZIP includes the canonical `.htaccess` front-controller rules. On hosting where overrides and `mod_rewrite` are permitted, no extra routing setup is needed.
+
+Nginx/aaPanel: the host must supply `try_files $uri $uri/ /index.php?$query_string;` (or an equivalent secure front-controller rule) in its site rewrite settings. PHP itself cannot override Nginx routing. Step 2 explains the needed configuration and blocks until the probe passes. See `documentation/NGINX_CLEAN_URLS.md` bundled with the customer ZIP.
+
+Existing sites installed in query-compatible mode remain supported by the URL helper until migrated. Do not flip their configuration or remove the compatibility helper automatically during updates; first verify the clean routes on that customer's host.
 
 These automated checks do not replace the final live-server five-step installer test.
 
