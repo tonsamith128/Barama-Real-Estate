@@ -68,6 +68,7 @@ try {
         'CHANGELOG.md',
         'documentation/index.html',
         'installer/index.php',
+        'documentation/NGINX_CLEAN_URLS.md',
         'updater/index.php',
         'application/bootstrap/app.php',
         'application/bootstrap/runtime.php',
