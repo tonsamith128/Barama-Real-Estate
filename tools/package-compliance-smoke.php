@@ -344,6 +344,8 @@ if (in_array(
 }
 
 $allowedHosts = [
+    // The official Cloudflare Turnstile widget is used by the built-in admin security test.
+    'challenges.cloudflare.com',
     'cdn.jsdelivr.net',
     'codecanyon.net',
     'getbootstrap.com',
