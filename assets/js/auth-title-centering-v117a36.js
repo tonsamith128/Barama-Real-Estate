@@ -4,7 +4,15 @@
  */
 (function () {
   'use strict';
-  const route = location.pathname.replace(/\/+$/, '') || '/';
+  // Apply the same premium UI to clean and legacy PHP-routed auth paths.
+  // Do not trust _route on unrelated paths or change form submissions.
+  const browserPath = location.pathname.replace(/\/+$/, '') || '/';
+  const fallback = /(?:^|\/)index\.php$/i.test(browserPath)
+    ? new URLSearchParams(location.search).get('_route') : null;
+  const cleanMatch = browserPath.match(/\/(?:login|register|forgot-password)$/);
+  const route = fallback && /^\/(?:login|register|forgot-password)\/?$/.test(fallback)
+    ? fallback.replace(/\/+$/, '')
+    : cleanMatch ? cleanMatch[0] : browserPath;
   if (!['/login', '/register', '/forgot-password'].includes(route)) return;
 
   function findHelper(card, heading) {
@@ -43,18 +51,11 @@
     const helper = findHelper(card, heading);
     hero.appendChild(heading);
     heading.classList.add('barama-auth-a36__heading');
-    heading.style.textAlign = 'center';
-    heading.style.marginInline = 'auto';
 
     if (helper) {
       hero.appendChild(helper);
       helper.classList.add('barama-auth-a36__helper');
-      helper.style.textAlign = 'center';
-      helper.style.marginInline = 'auto';
     }
-
-    hero.style.textAlign = 'center';
-    hero.style.alignItems = 'center';
     body.classList.add('barama-auth-a36');
     body.dataset.baramaA36Ready = '1';
   }
