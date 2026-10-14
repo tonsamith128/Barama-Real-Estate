@@ -339,7 +339,7 @@ $appJsVersion = is_file($appJsFile)
     <!-- BARAMA_AUTH_TITLE_CENTERING_V117A36_END -->
     <!-- BARAMA_AUTH_POLICY_LINKS_V117A37_BEGIN -->
     <?php if ($isStandaloneAuthPage && $authRoutePath === '/register'): ?>
-        <script src="<?= e(asset('js/auth-policy-links-v117a37.js') . '?v=117a37') ?>" defer></script>
+        <script src="<?= e(asset('js/auth-policy-links-v117a37.js') . '?v=117a37-r2') ?>" data-terms-url="<?= e(url('/policies?=terms-of-service')) ?>" data-privacy-url="<?= e(url('/policies?=privacy-policy')) ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_POLICY_LINKS_V117A37_END -->
     <!-- BARAMA_VERIFY_EMAIL_V117A38_BEGIN -->
