@@ -92,6 +92,8 @@ $hasUnsafePhpShortTag = static function (string $content): bool {
     return false;
 };
 
+$violations = [];
+
 foreach ($entries as $entry) {
     if (str_ends_with($entry, '/')) {
         continue;
@@ -129,46 +131,42 @@ foreach ($entries as $entry) {
         in_array($extension, ['php', 'html'], true)
         && preg_match('/\sstyle\s*=\s*["\']/i', $content) === 1
     ) {
-        throw new RuntimeException(
-            'Inline CSS style attribute detected in shipped markup: ' . $entry
-        );
+        $violations[] = 'Inline CSS style attribute detected in shipped markup: ' . $entry;
     }
 
     if (
         in_array($extension, ['php', 'html'], true)
         && preg_match('/\son[a-z]+\s*=\s*["\']/i', $content) === 1
     ) {
-        throw new RuntimeException(
-            'Inline JavaScript event handler detected in shipped markup: ' . $entry
-        );
+        $violations[] = 'Inline JavaScript event handler detected in shipped markup: ' . $entry;
     }
 
     if (
         in_array($extension, ['php', 'js'], true)
         && preg_match('/\beval\s*\(/i', $content) === 1
     ) {
-        throw new RuntimeException(
-            'Runtime eval() usage detected: ' . $entry
-        );
+        $violations[] = 'Runtime eval() usage detected: ' . $entry;
     }
 
     if ($extension === 'php' && $hasUnsafePhpShortTag($content)) {
-        throw new RuntimeException(
-            'Unsafe PHP short tag detected: ' . $entry
-        );
+        $violations[] = 'Unsafe PHP short tag detected: ' . $entry;
     }
 
     if (
         $extension === 'php'
         && preg_match('/\b(?:var_dump|print_r)\s*\(/i', $content) === 1
     ) {
-        throw new RuntimeException(
-            'Runtime debug dump detected: ' . $entry
-        );
+        $violations[] = 'Runtime debug dump detected: ' . $entry;
     }
 }
 
 $zip->close();
+
+if ($violations !== []) {
+    throw new RuntimeException(
+        "CodeCanyon package compliance failures:\n- " . implode("\n- ", $violations)
+    );
+}
 
 fwrite(
     STDOUT,
