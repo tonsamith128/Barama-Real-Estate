@@ -349,10 +349,10 @@ $a46RenderBreakdown = static function (array $rows, string $name) use ($a46Esc):
     foreach ($rows as $row) {
         $count = max(0, (int) ($row['total'] ?? 0));
         $label = ucwords(str_replace('_', ' ', (string) ($row['status'] ?? 'Other')));
-        $width = round($count * 100 / $total, 2);
+        $width = max(0, min(100, (int) round($count * 100 / $total)));
         echo '<div class="a46-breakdown-row"><div class="a46-breakdown-label"><span>' . $a46Esc($label)
             . '</span><strong>' . number_format($count) . '</strong></div>'
-            . '<div class="a46-bar-track"><span style="width:' . $width . '%"></span></div></div>';
+            . '<div class="a46-bar-track"><span class="a46-bar-fill-p' . $width . '"></span></div></div>';
     }
 };
 $a46RenderDaily = static function (array $series) use ($a46Esc): void {
@@ -361,9 +361,9 @@ $a46RenderDaily = static function (array $series) use ($a46Esc): void {
     echo '<div class="a46-chart-total">' . number_format($count) . ' in the last 14 days</div>';
     echo '<div class="a46-daybars" role="img" aria-label="Daily record counts for the last 14 days">';
     foreach ($series as $datum) {
-        $height = round(max(0, (int) $datum['count']) / $peak * 100, 2);
+        $height = max(0, min(100, (int) round(max(0, (int) $datum['count']) / $peak * 100)));
         $day = $a46Esc(date('M j', strtotime($datum['day'])));
-        echo '<div class="a46-daybar"><span style="height:' . $height . '%" title="'
+        echo '<div class="a46-daybar"><span class="a46-day-fill-p' . $height . '" title="'
             . $day . ': ' . (int) $datum['count'] . '"></span></div>';
     }
     echo '</div><div class="a46-chart-axis"><span>' . $a46Esc(date('M j', strtotime($series[0]['day'])))

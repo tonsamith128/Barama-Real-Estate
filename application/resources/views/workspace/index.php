@@ -969,7 +969,7 @@ $renderActions = static function (array $row) use (
                         . '" method="post" data-workspace-form>'
                         . csrf_field()
                         . '<input type="hidden" name="confirm_verify" value="VERIFY">'
-                        . '<button class="table-action table-action--primary" type="submit" onclick="return confirm(&quot;Verify this email manually? Confirm identity using independent evidence.&quot;)">Verify</button></form>';
+                        . '<button class="table-action table-action--primary" type="submit" data-barama-confirm="Verify this email manually? Confirm identity using independent evidence.">Verify</button></form>';
                 }
 
                 $buttons[] = '<form action="' . e(url('/dashboard/users/' . $id . '/sessions/revoke'))

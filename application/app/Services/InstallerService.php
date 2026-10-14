@@ -119,16 +119,14 @@ final class InstallerService
             'required' => false,
         ];
 
-        $routingMode = $this->routingMode();
+        $cleanRoutingReady = $this->routingMode() === 'clean';
         $checks[] = [
             'label' => 'Application routing',
-            'detail' => $routingMode === 'clean'
-                ? 'Ready: clean URLs work. Barama automatically selected clean routing.'
-                : 'Ready: built-in PHP routing works without URL rewrites. Links use index.php?_route=...; short URLs are optional and require web-server support.',
-            // Both modes are supported first-party routing options. An absent
-            // Nginx rewrite is not a broken application or installation error.
-            'status' => 'pass',
-            'required' => false,
+            'detail' => $cleanRoutingReady
+                ? 'Ready: clean URLs are reachable. Barama will use /login, /register and other clean routes.'
+                : 'Clean URLs are required before installation. Apache: enable mod_rewrite and AllowOverride All for the packaged .htaccess. Nginx/aaPanel: add location / { try_files $uri $uri/ /index.php?$query_string; } to the site rewrite settings, save, and refresh this step. No database reset is needed.',
+            'status' => $cleanRoutingReady ? 'pass' : 'fix',
+            'required' => true,
         ];
 
         return $checks;
@@ -680,7 +678,13 @@ final class InstallerService
         $migrations = $this->runMigrations($pdo);
         $installationId = Installation::installationId();
         $appKey = base64_encode(random_bytes(32));
-        $routingMode = $this->routingMode();
+        // Installation cannot reach this point without a verified clean
+        // front-controller route. Never ship new customers with fallback links.
+        if ($this->routingMode() !== 'clean') {
+            throw new RuntimeException(
+                'Clean application URLs must be enabled before installation.'
+            );
+        }
 
         try {
             $pdo->beginTransaction();
@@ -693,7 +697,7 @@ final class InstallerService
                 'APP_ENV' => 'production',
                 'APP_DEBUG' => false,
                 'APP_URL' => $website['site_url'],
-                'APP_ROUTING_MODE' => $routingMode,
+                'APP_ROUTING_MODE' => 'clean',
                 'APP_TIMEZONE' => $website['timezone'],
                 'APP_LOCALE' => $website['default_language'],
                 'APP_KEY' => $appKey,

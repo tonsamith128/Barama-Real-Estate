@@ -104,6 +104,52 @@ const assert = (condition, message) => {
     }
 };
 
+// On compact screens Barama v1.1.19+ intentionally uses an inline icon
+// navigation and hides the hamburger. Test the actual accessible navigation
+// contract; retain drawer interaction tests for layouts that show the toggle.
+const verifyMobileNavigation = async (page, label) => {
+    const menu = page.locator('[data-site-menu-toggle]');
+    if (await menu.isVisible()) {
+        await menu.click();
+        assert(
+            await menu.getAttribute('aria-expanded') === 'true',
+            label + ' mobile menu did not open.'
+        );
+        await page.keyboard.press('Escape');
+        assert(
+            await menu.getAttribute('aria-expanded') === 'false',
+            label + ' mobile menu did not close on Escape.'
+        );
+        return;
+    }
+
+    const nav = page.locator('[data-site-navigation]');
+    assert(await nav.isVisible(), label + ' compact navigation is hidden.');
+    const links = nav.locator('.main-nav a');
+    let visible = 0;
+    for (let i = 0; i < await links.count(); i++) {
+        const link = links.nth(i);
+        if (!await link.isVisible()) continue;
+        const accessibleName = (await link.getAttribute('aria-label')
+            || await link.textContent() || '').trim();
+        assert(accessibleName !== '', label + ' icon navigation link lacks an accessible name.');
+        visible++;
+    }
+    assert(visible >= 2, label + ' compact header has fewer than two usable navigation links.');
+};
+
+// Theme control is relocated to the account menu on public pages. Open
+// that menu when needed; never click a deliberately hidden footer fallback.
+const activatePublicThemeToggle = async (page) => {
+    const toggle = page.locator('[data-theme-toggle]:visible').first();
+    if (await toggle.count() === 0) {
+        const profile = page.locator('[data-public-user-trigger]');
+        assert(await profile.isVisible(), 'Public account menu is unavailable for theme control.');
+        await profile.click();
+    }
+    await toggle.click();
+};
+
 const noOverflow = async (page, label) => {
     const dimensions = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
@@ -194,17 +240,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
                 });
-                const menu = page.locator('[data-site-menu-toggle]');
-                await menu.click();
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'true',
-                    browserName + ' mobile navigation did not open.'
-                );
-                await page.keyboard.press('Escape');
-                assert(
-                    await menu.getAttribute('aria-expanded') === 'false',
-                    browserName + ' mobile navigation did not close with Escape.'
-                );
+                await verifyMobileNavigation(page, browserName);
             } else {
                 await page.goto(installedBase + '/', {
                     waitUntil: 'networkidle',
@@ -213,7 +249,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                     localStorage.setItem('barama-theme', 'light');
                 });
                 await page.reload({ waitUntil: 'networkidle' });
-                await page.locator('[data-theme-toggle]').click();
+                await activatePublicThemeToggle(page);
 
                 assert(
                     await page.locator('html').getAttribute('data-bs-theme')
@@ -348,17 +384,7 @@ try {
 
         if (viewport.name === 'mobile') {
             await page.goto(installedBase + '/', { waitUntil: 'networkidle' });
-            const menu = page.locator('[data-site-menu-toggle]');
-            await menu.click();
-            assert(
-                await menu.getAttribute('aria-expanded') === 'true',
-                'Mobile navigation did not expose expanded state.'
-            );
-            await page.keyboard.press('Escape');
-            assert(
-                await menu.getAttribute('aria-expanded') === 'false',
-                'Mobile navigation did not close with Escape.'
-            );
+            await verifyMobileNavigation(page, 'Chromium');
         }
 
         await context.close();
@@ -425,6 +451,28 @@ try {
         focusState.outlineStyle !== 'none' && focusState.outlineWidth !== '0px',
         'Keyboard focus does not have a visible focus indicator.'
     );
+
+    // Verify the same centered, stylesheet-driven premium UI shipped to
+    // customers (not just successful HTTP responses or accessibility).
+    for (const spec of [
+        { path: '/login', heading: 'Welcome Back' },
+        { path: '/register', heading: 'Create account' },
+        { path: '/forgot-password', heading: 'Forgot password' },
+    ]) {
+        await page.goto(installedBase + spec.path, { waitUntil: 'networkidle' });
+        const premium = page.locator('body.barama-auth-a33.barama-auth-a34.barama-auth-a35.barama-auth-a36');
+        await premium.waitFor({ state: 'attached' });
+        const card = premium.locator('.barama-auth-a33__card');
+        assert(await card.isVisible(), spec.path + ' premium auth card is hidden.');
+        assert(
+            (await card.locator('.barama-auth-a36__heading').innerText()).trim() === spec.heading,
+            spec.path + ' premium heading mismatch.'
+        );
+        assert(
+            await card.locator('[style]').count() === 0,
+            spec.path + ' auth markup contains prohibited inline CSS.'
+        );
+    }
 
     await page.goto(installedBase + '/login', { waitUntil: 'networkidle' });
     await seriousAccessibility(page, 'login');
@@ -494,7 +542,7 @@ try {
         fullPage: true,
     });
 
-    await page.locator('[data-theme-toggle]').click();
+    await activatePublicThemeToggle(page);
     assert(
         await page.locator('html').getAttribute('data-bs-theme') === 'dark',
         'Installed theme toggle did not activate dark mode.'

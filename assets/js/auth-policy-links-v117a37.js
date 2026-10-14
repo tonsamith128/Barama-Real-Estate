@@ -4,11 +4,18 @@
  */
 (function () {
   'use strict';
-  if ((location.pathname.replace(/\/+$/, '') || '/') !== '/register') return;
+  const browserPath = location.pathname.replace(/\/+$/, '') || '/';
+  const fallback = /(?:^|\/)index\.php$/i.test(browserPath)
+    ? new URLSearchParams(location.search).get('_route') : null;
+  const route = fallback && /^\/register\/?$/.test(fallback)
+    ? fallback.replace(/\/+$/, '')
+    : /\/register$/.test(browserPath) ? '/register' : browserPath;
+  if (route !== '/register') return;
 
+  const script = document.currentScript;
   const destinations = Object.freeze({
-    '/terms': '/policies?=terms-of-service',
-    '/privacy': '/policies?=privacy-policy'
+    '/terms': script && script.getAttribute('data-terms-url') || '/policies?=terms-of-service',
+    '/privacy': script && script.getAttribute('data-privacy-url') || '/policies?=privacy-policy'
   });
 
   function correctLinks() {

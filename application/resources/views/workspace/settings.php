@@ -227,7 +227,7 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
 
     <?php if ($section === 'basic' && $workspace === 'dashboard'): ?>
         <?php $identity = is_array($websiteIdentity ?? null) ? $websiteIdentity : []; ?>
-        <section id="barama-branding-identity-panel" class="barama-settings-card" style="margin-bottom:22px;min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box">
+        <section id="barama-branding-identity-panel" class="barama-settings-card barama-settings-card--branding-identity">
             <div class="barama-settings-card__head"><span class="barama-settings-card__icon"><?= app_icon('globe') ?></span><div><h2>Website Identity &amp; Branding</h2><p>Global website information, light/dark logos and browser icon. Existing branding is shown until replaced.</p></div></div>
             <form method="post" action="<?= e(url('/dashboard/settings/basic')) ?>" enctype="multipart/form-data" class="barama-settings-form">
                 <?= csrf_field() ?>
@@ -245,10 +245,10 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
                         <strong><?= e($details[0]) ?></strong>
                         <small><?= e($details[1]) ?></small>
                         <div class="barama-branding-preview-v104<?= $key==='dark_logo' ? ' barama-branding-preview-v104--dark' : '' ?>">
-                            <img class="barama-branding-img-v104<?= $isFavicon ? ' barama-branding-img-v104--favicon' : '' ?>" src="<?= e(asset((string)($identity[$key] ?? 'images/branding/barama-logo-header.png'))) ?>" alt="<?= e($details[0]) ?> preview" loading="lazy" width="<?= $isFavicon ? '44' : '140' ?>" height="<?= $isFavicon ? '44' : '60' ?>" style="width:<?= $isFavicon ? '44' : '140' ?>px!important;height:<?= $isFavicon ? '44' : '60' ?>px!important;object-fit:contain!important;max-width:100%!important">
+                            <img class="barama-branding-img-v104<?= $isFavicon ? ' barama-branding-img-v104--favicon' : '' ?>" src="<?= e(asset((string)($identity[$key] ?? 'images/branding/barama-logo-header.png'))) ?>" alt="<?= e($details[0]) ?> preview" loading="lazy" width="<?= $isFavicon ? '44' : '140' ?>" height="<?= $isFavicon ? '44' : '60' ?>" >
                         </div>
                         <label class="barama-branding-pick-v104" for="barama-branding-upload-<?= e($field) ?>">Replace image
-                            <input id="barama-branding-upload-<?= e($field) ?>" type="file" name="<?= e($field) ?>" accept="<?= $field==='favicon'?'image/png':'image/png,image/jpeg,image/webp' ?>" aria-label="Choose <?= e($details[0]) ?> image" onchange="this.closest('.barama-branding-card-v103').querySelector('.barama-branding-file-name-v104').textContent = this.files.length ? this.files[0].name : 'Current image retained'">
+                            <input id="barama-branding-upload-<?= e($field) ?>" type="file" name="<?= e($field) ?>" accept="<?= $field==='favicon'?'image/png':'image/png,image/jpeg,image/webp' ?>" aria-label="Choose <?= e($details[0]) ?> image" data-barama-branding-file>
                         </label>
                         <small class="barama-branding-file-name-v104" aria-live="polite">Current image retained</small>
                     </div>

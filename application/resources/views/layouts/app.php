@@ -315,31 +315,31 @@ $appJsVersion = is_file($appJsFile)
     <?php endif; ?>
     <!-- BARAMA_AUTH_PREMIUM_V117A33_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-premium-v117a33.css') . '?v=117a33') ?>">
-        <script src="<?= e(asset('js/auth-premium-v117a33.js') . '?v=117a33') ?>" defer></script>
+        <link rel="stylesheet" href="<?= e(asset('css/auth-premium-v117a33.css') . '?v=117a33-r2') ?>">
+        <script src="<?= e(asset('js/auth-premium-v117a33.js') . '?v=117a33-r2') ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_PREMIUM_V117A33_END -->
     <!-- BARAMA_AUTH_COPY_V117A34_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-copy-v117a34.css') . '?v=117a34') ?>">
-        <script src="<?= e(asset('js/auth-copy-v117a34.js') . '?v=117a34') ?>" data-barama-website-name="<?= e(trim((string) ($websiteName ?? '')) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>" defer></script>
+        <link rel="stylesheet" href="<?= e(asset('css/auth-copy-v117a34.css') . '?v=117a34-r2') ?>">
+        <script src="<?= e(asset('js/auth-copy-v117a34.js') . '?v=117a34-r2') ?>" data-barama-website-name="<?= e(trim((string) ($websiteName ?? '')) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_COPY_V117A34_END -->
     <!-- BARAMA_AUTH_CENTERED_V117A35_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-centered-v117a35.css') . '?v=117a35') ?>">
-        <script src="<?= e(asset('js/auth-centered-v117a35.js') . '?v=117a35') ?>" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>" defer></script>
+        <link rel="stylesheet" href="<?= e(asset('css/auth-centered-v117a35.css') . '?v=117a35-r2') ?>">
+        <script src="<?= e(asset('js/auth-centered-v117a35.js') . '?v=117a35-r2') ?>" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_CENTERED_V117A35_END -->
     <!-- BARAMA_AUTH_TITLE_CENTERING_V117A36_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-title-centering-v117a36.css') . '?v=117a36') ?>">
-        <script src="<?= e(asset('js/auth-title-centering-v117a36.js') . '?v=117a36') ?>" defer></script>
+        <link rel="stylesheet" href="<?= e(asset('css/auth-title-centering-v117a36.css') . '?v=117a36-r2') ?>">
+        <script src="<?= e(asset('js/auth-title-centering-v117a36.js') . '?v=117a36-r2') ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_TITLE_CENTERING_V117A36_END -->
     <!-- BARAMA_AUTH_POLICY_LINKS_V117A37_BEGIN -->
     <?php if ($isStandaloneAuthPage && $authRoutePath === '/register'): ?>
-        <script src="<?= e(asset('js/auth-policy-links-v117a37.js') . '?v=117a37') ?>" defer></script>
+        <script src="<?= e(asset('js/auth-policy-links-v117a37.js') . '?v=117a37-r2') ?>" data-terms-url="<?= e(url('/policies?=terms-of-service')) ?>" data-privacy-url="<?= e(url('/policies?=privacy-policy')) ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_POLICY_LINKS_V117A37_END -->
     <!-- BARAMA_VERIFY_EMAIL_V117A38_BEGIN -->
@@ -348,6 +348,12 @@ $appJsVersion = is_file($appJsFile)
         <script src="<?= e(asset('js/verify-email-auth-v117a38.js') . '?v=117a38') ?>" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Website') ?>" defer></script>
     <?php endif; ?>
     <!-- BARAMA_VERIFY_EMAIL_V117A38_END -->
+    <!-- CodeCanyon compliant external UI styling; no inline CSS. -->
+    <link href="<?= e(asset('css/codecanyon-ui-compliance-v1.css') . '?v=1') ?>" rel="stylesheet">
+    <?php if ($isWorkspacePage): ?>
+        <script src="<?= e(asset('js/branding-file-name-v1.js') . '?v=1') ?>" defer></script>
+        <script src="<?= e(asset('js/workspace-confirm-v1.js') . '?v=1') ?>" defer></script>
+    <?php endif; ?>
 </head>
 <body class="<?= e(trim(
     ($isStandaloneAuthPage ? 'auth-standalone-body ' : '')

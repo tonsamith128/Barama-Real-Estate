@@ -7,6 +7,14 @@ on:
   pull_request:
     paths:
       - 'application/app/Services/InstallerService.php'
+      - 'docs/INSTALLER.md'
+      - 'docs/HOSTING_COMPATIBILITY.md'
+      - 'documentation/NGINX_CLEAN_URLS.md'
+      - 'tools/installer-clean-routing-smoke.php'
+      - 'tools/auth-premium-routing-smoke.cjs'
+      - 'assets/js/auth-*.js'
+      - 'assets/css/auth-premium-v117a33.css'
+      - 'application/resources/views/layouts/app.php'
       - 'application/app/Support/helpers.php'
       - 'tools/http-routing-smoke.php'
       - '.github/workflows/routing-compatibility.yml'
@@ -15,8 +23,8 @@ permissions:
   contents: read
 
 jobs:
-  query-routing:
-    name: PHP Routing & Installer Contract
+  clean-routing:
+    name: Clean URL Installer Contract
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,16 +38,12 @@ jobs:
           php -l application/app/Services/InstallerService.php
           php -l application/app/Support/helpers.php
           php -l tools/http-routing-smoke.php
-      - name: Verify clean and rewrite-free PHP routing
+          php -l tools/installer-clean-routing-smoke.php
+      - name: Verify clean and legacy URL parsing
         run: php tools/http-routing-smoke.php
-      - name: Verify installer accepts both routing modes without bypassing entrypoint check
-        run: |
-          php -r '
-          $source = file_get_contents("application/app/Services/InstallerService.php");
-          if (!str_contains($source, "Barama application entrypoint")
-              || !str_contains($source, "'\''status'\'' => '\''pass'\''")
-              || !str_contains($source, "built-in PHP routing works without URL rewrites")) {
-              exit(1);
-          }
-          echo "[PASS] Compatible built-in routing and packaged entrypoint guard present.\n";
-          '
+      - name: Verify mandatory clean routing for new installations
+        run: php tools/installer-clean-routing-smoke.php
+      - name: Verify premium authentication UI on clean and PHP routes
+        run: node tools/auth-premium-routing-smoke.cjs
+      - name: Verify Barama entrypoint is required
+        run: grep -Fq 'Barama application entrypoint' application/app/Services/InstallerService.php

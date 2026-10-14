@@ -254,7 +254,7 @@ if ($gitExit !== 0) {
     $trackedAssets = array_values(array_filter(
         $gitOutput,
         static fn (string $file): bool =>
-            preg_match('#^assets/(?:css/[^/]+\\.css|js/[^/]+\\.js)$#', $file) === 1
+            preg_match('#^assets/(?:css/[^/]+\\.css|js/(?:[^/]+\\.js|vendor/qrcode-v133\\.js))$#', $file) === 1
     ));
 }
 $approvedCssFiles = array_values(array_filter(

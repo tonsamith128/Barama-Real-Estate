@@ -253,14 +253,14 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         <?php endforeach; ?>
         </tbody>
       </table></div>
-      <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note" role="status" aria-live="polite" style="margin:12px 0 0;padding:12px;border:1px solid var(--bsys-border, #bcbfc5);border-radius:12px"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
+      <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note bsys-note--feed-status" role="status" aria-live="polite"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
       <div class="bsys-premium-footer-actions">
-        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-updates')) ?>" style="display:inline-flex;align-items:center">
+        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-updates')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
           <button class="bsys-button bsys-button--primary" type="submit" <?= !empty($systemFeedReadiness['can_check']) ? '' : 'disabled title="Author must configure the trusted publisher public key and release-feed contract"' ?>>Check for updates</button>
         </form>
         <span class="bsys-note">Discovery only · no download or installation</span>
-        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/inspect-staged-release')) ?>" style="display:inline-flex;align-items:center">
+        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/inspect-staged-release')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
           <button class="bsys-button" type="submit" <?= !empty($systemReleaseReadiness['inspect_enabled']) ? '' : 'disabled title="Stage a signed release and provision the trusted public key first"' ?>>Inspect signed staged release</button>
         </form>

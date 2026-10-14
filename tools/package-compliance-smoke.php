@@ -344,6 +344,10 @@ if (in_array(
 }
 
 $allowedHosts = [
+    // The official Cloudflare Turnstile widget is used by the built-in admin security test.
+    'challenges.cloudflare.com',
+    'dash.cloudflare.com', // Host-linked admin setup guidance for Turnstile.
+    'api.mapbox.com', // Barama's first-party Mapbox location search integration.
     'cdn.jsdelivr.net',
     'codecanyon.net',
     'getbootstrap.com',
@@ -351,6 +355,7 @@ $allowedHosts = [
     'tonsamith.com',
     'youtube.com',
     'youtube-nocookie.com',
+    'i.ytimg.com', // YouTube thumbnail display inside email template builder.
 ];
 $reservedExampleHosts = [
     'example.com',

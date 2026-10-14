@@ -39,7 +39,7 @@ location / {
 
 Protected application paths must not be served as static files.
 
-This is normally a hosting/vhost capability rather than a customer application setting. The live-server acceptance test must confirm the selected hosting environment already provides or safely applies this routing before Barama is described as one-click on that environment.
+This is normally a hosting/vhost capability rather than a customer application setting. The installer checks the clean front controller during Step 2 and refuses to proceed if Nginx is not configured. The customer ZIP includes `documentation/NGINX_CLEAN_URLS.md` with aaPanel instructions. Never overwrite an entire virtual host configuration from PHP, and preserve denial of protected application paths.
 
 GitHub release QA runs the exact customer ZIP behind Nginx and PHP-FPM using this standard front-controller contract at both the domain root and a configured subdirectory.
 

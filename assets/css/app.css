@@ -18070,3 +18070,6 @@ html[data-theme="dark"] ::-moz-selection, html.dark ::-moz-selection,
 .barama-a49-user-access a:focus-visible,.barama-a49-user-access button:focus-visible {outline:2px solid var(--barama-primary);outline-offset:3px;}
 @media(max-width:850px){.barama-a49-user-access__body{grid-template-columns:1fr;}}
 /* BARAMA_A49A_USER_MANAGEMENT_UI_END */
+
+/* Workspace access notice uses canonical stylesheet, not inline markup. */
+.workspace-access-unavailable {padding:64px 20px;max-width:720px;min-height:65vh;}
