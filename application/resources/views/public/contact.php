@@ -22,15 +22,10 @@ $order = is_array($page['section_order'] ?? null)
         $contactHeroImage = $contactHeroRawImage !== ''
             ? (str_starts_with($contactHeroRawImage, '/') ? url($contactHeroRawImage) : $contactHeroRawImage)
             : $contactHeroDefaultImage;
-        $contactHeroCssUrl = json_encode(
-            $contactHeroImage,
-            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES
-        );
         ?>
         <!-- Versioned Contact-only stylesheet; safe even when the shared head caches A17/A18. -->
         <link rel="stylesheet" href="<?= e(asset('css/contact-hero-v117a17.css')) ?>?v=117a19" media="all">
-        <section class="builtin-contact-hero-v117a17 builtin-contact-hero-v117a18 builtin-contact-hero-v117a19<?= $contactHeroRawImage !== '' ? ' has-custom-contact-hero' : '' ?>"
-                 style="--barama-contact-photo: url(<?= e((string) $contactHeroCssUrl) ?>)">
+        <section class="builtin-contact-hero-v117a17 builtin-contact-hero-v117a18 builtin-contact-hero-v117a19<?= $contactHeroRawImage !== '' ? ' has-custom-contact-hero' : '' ?>">
             <div class="builtin-contact-hero-v117a18__ambient" aria-hidden="true"></div>
             <div class="builtin-contact-hero-v117a18__subject" aria-hidden="true">
                 <img class="builtin-contact-hero-v117a19__photo" src="<?= e($contactHeroImage) ?>" alt="" fetchpriority="high" loading="eager" decoding="async">
