@@ -138,6 +138,18 @@ const verifyMobileNavigation = async (page, label) => {
     assert(visible >= 2, label + ' compact header has fewer than two usable navigation links.');
 };
 
+// Theme control is relocated to the account menu on public pages. Open
+// that menu when needed; never click a deliberately hidden footer fallback.
+const activatePublicThemeToggle = async (page) => {
+    const toggle = page.locator('[data-theme-toggle]:visible').first();
+    if (await toggle.count() === 0) {
+        const profile = page.locator('[data-public-user-trigger]');
+        assert(await profile.isVisible(), 'Public account menu is unavailable for theme control.');
+        await profile.click();
+    }
+    await toggle.click();
+};
+
 const noOverflow = async (page, label) => {
     const dimensions = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
@@ -237,7 +249,7 @@ const runCrossBrowserCritical = async (browserType, browserName) => {
                     localStorage.setItem('barama-theme', 'light');
                 });
                 await page.reload({ waitUntil: 'networkidle' });
-                await page.locator('[data-theme-toggle]').click();
+                await activatePublicThemeToggle(page);
 
                 assert(
                     await page.locator('html').getAttribute('data-bs-theme')
@@ -530,7 +542,7 @@ try {
         fullPage: true,
     });
 
-    await page.locator('[data-theme-toggle]').click();
+    await activatePublicThemeToggle(page);
     assert(
         await page.locator('html').getAttribute('data-bs-theme') === 'dark',
         'Installed theme toggle did not activate dark mode.'
