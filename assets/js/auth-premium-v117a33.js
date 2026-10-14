@@ -3,7 +3,15 @@
    social OAuth links and backend name field. Avoid adding unsupported providers. */
 (function () {
   'use strict';
-  const route = location.pathname.replace(/\/+$/, '') || '/';
+  // Apply the same premium UI to clean and legacy PHP-routed auth paths.
+  // Do not trust _route on unrelated paths or change form submissions.
+  const browserPath = location.pathname.replace(/\/+$/, '') || '/';
+  const fallback = /(?:^|\/)index\.php$/i.test(browserPath)
+    ? new URLSearchParams(location.search).get('_route') : null;
+  const cleanMatch = browserPath.match(/\/(?:login|register|forgot-password)$/);
+  const route = fallback && /^\/(?:login|register|forgot-password)\/?$/.test(fallback)
+    ? fallback.replace(/\/+$/, '')
+    : cleanMatch ? cleanMatch[0] : browserPath;
   if (!['/login', '/register', '/forgot-password'].includes(route)) return;
   function run() {
     const body = document.body;
@@ -98,7 +106,7 @@
       const host = existing.closest('.form-group,.mb-3,.field,.input-group,.form-field,.auth-field') || existing.parentElement;
       if (host && host !== form) {
         host.parentNode.insertBefore(grid,host);
-        host.style.display = 'none';
+        host.classList.add('barama-auth-a33__original-name-field');
         existing.dataset.baramaA33Split = '1';
         // preserve original field name, CSRF, constraints, and submission payload shape.
         existing.type = 'hidden';existing.required = false;
