@@ -352,6 +352,7 @@ $appJsVersion = is_file($appJsFile)
     <link href="<?= e(asset('css/codecanyon-ui-compliance-v1.css') . '?v=1') ?>" rel="stylesheet">
     <?php if ($isWorkspacePage): ?>
         <script src="<?= e(asset('js/branding-file-name-v1.js') . '?v=1') ?>" defer></script>
+        <script src="<?= e(asset('js/workspace-confirm-v1.js') . '?v=1') ?>" defer></script>
     <?php endif; ?>
 </head>
 <body class="<?= e(trim(
