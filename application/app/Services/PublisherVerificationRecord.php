@@ -125,6 +125,14 @@ final class PublisherVerificationRecord
         $domain = LicenseManagerClient::canonicalDomain((string) ($runtime['APP_URL'] ?? ''));
         $savedDomain = LicenseManagerClient::canonicalDomain((string) ($license['domain'] ?? ''));
 
+        $url = parse_url((string) ($runtime['APP_URL'] ?? ''));
+        if (!is_array($url) || ($url['scheme'] ?? null) !== 'https'
+            || !is_string($url['host'] ?? null)
+            || isset($url['user']) || isset($url['pass']) || isset($url['port'])
+            || ($license['publisher_v2_activation'] ?? null) !== null) {
+            return null;
+        }
+
         if (!is_string($token) || strlen(trim($token)) < 16 || strlen($token) > 512
             || !is_string($savedId) || preg_match('/^[a-f0-9]{32}$/D', $savedId) !== 1
             || preg_match('/^[a-f0-9]{32}$/D', $installationId) !== 1
