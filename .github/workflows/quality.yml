@@ -62,6 +62,13 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Verify persistent Auto Updater license status
+        run: |
+          php -l application/app/Services/PublisherVerificationRecord.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/resources/views/workspace/system-center.php
+          php tools/publisher-verification-record-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
