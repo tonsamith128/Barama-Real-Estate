@@ -159,6 +159,23 @@ final class SystemCenterController
         if (!in_array($state, $allowed, true)) {
             $state = 'Unable to verify';
         }
+        // Only a publisher-confirmed result is persisted. Temporary failures
+        // never erase previous trusted verification history.
+        if (in_array($state, [
+            'Active license verified',
+            'Publisher confirmed revoked',
+            'Publisher confirmed suspended',
+            'Publisher confirmed expired',
+        ], true)) {
+            try {
+                if (!\Barama\Services\PublisherVerificationRecord::remember($state)) {
+                    $state = 'License binding mismatch';
+                }
+            } catch (Throwable) {
+                error_log('[Barama Auto Updater] Private verification history could not be stored.');
+                $state = 'Unable to verify';
+            }
+        }
         $checkedAt = gmdate('Y-m-d H:i') . ' UTC';
         $_SESSION['_barama_publisher_license_result_v111'] = [
             'state' => $state, 'checked_at' => $checkedAt,
@@ -209,12 +226,30 @@ final class SystemCenterController
             return Response::html('Not found', 404);
         }
 
+        $publisherFlash = !empty($_SESSION['_barama_publisher_license_flash_v112']);
+        unset($_SESSION['_barama_publisher_license_flash_v112']);
         $publisherResult = $_SESSION['_barama_publisher_license_result_v111'] ?? null;
+        $savedPublisherResult = null;
+        if ($section === 'auto-updater') {
+            try {
+                $savedPublisherResult = \Barama\Services\PublisherVerificationRecord::read();
+            } catch (Throwable) {
+                // Private license metadata is optional for rendering, never a GET-time write.
+            }
+        }
         if (!is_array($publisherResult) || !isset($publisherResult['state'], $publisherResult['checked_at'])
             || !is_string($publisherResult['state']) || !is_string($publisherResult['checked_at'])
             || !preg_match('/^(Active license verified|Unable to verify|License not configured|License binding mismatch|Publisher settings not trusted|Wait before retrying|Publisher temporarily unavailable|Publisher confirmed revoked|Publisher confirmed suspended|Publisher confirmed expired)$/D', $publisherResult['state'])
         ) {
-            $publisherResult = ['state' => 'Not checked', 'checked_at' => 'Never'];
+            $publisherResult = $savedPublisherResult
+                ?? ['state' => 'Not checked', 'checked_at' => 'Never'];
+        } elseif ($savedPublisherResult !== null && !$publisherFlash
+            && in_array($publisherResult['state'], [
+                'Unable to verify', 'Wait before retrying', 'Publisher temporarily unavailable',
+            ], true)) {
+            // On a later page load, preserve the last authenticated publisher
+            // result instead of requiring the administrator to check again.
+            $publisherResult = $savedPublisherResult;
         }
         $feedResult = $_SESSION['_barama_update_feed_result_v151'] ?? null;
         if (!is_array($feedResult) || !in_array(($feedResult['status'] ?? ''),
@@ -244,8 +279,6 @@ final class SystemCenterController
             try { $feedReady = \Barama\Services\Updates\TrustedReleaseFeed::readiness(); }
             catch (\Throwable) { /* Rendering is safe when the publisher is unavailable. */ }
         }
-        $publisherFlash = !empty($_SESSION['_barama_publisher_license_flash_v112']);
-        unset($_SESSION['_barama_publisher_license_flash_v112']);
         $metadata = Installation::metadata();
         $installedVersion = trim((string) ($metadata['version'] ?? ''));
         $snapshot = $section === 'health'
