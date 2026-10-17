@@ -120,7 +120,9 @@ final class SystemCenterController
             $_SESSION['_barama_update_feed_flash_v151'] = match ($result['status']) {
                 'available' => 'A newer publisher-signed release was found. No package was downloaded.',
                 'eligible' => 'Update entitlement confirmed. No newer signed release was published.',
-                'ineligible' => 'Publisher reports that this installation is not entitled to updates.',
+                'ineligible' => ($result['reason'] ?? '') === 'not_configured'
+                    ? 'Update entitlement has not been configured by the publisher. Contact License assistance; no update was downloaded.'
+                    : 'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
                 default => 'Update check completed.',
             };
         } catch (\Throwable) {
@@ -158,6 +160,23 @@ final class SystemCenterController
         ];
         if (!in_array($state, $allowed, true)) {
             $state = 'Unable to verify';
+        }
+        // Only a publisher-confirmed result is persisted. Temporary failures
+        // never erase previous trusted verification history.
+        if (in_array($state, [
+            'Active license verified',
+            'Publisher confirmed revoked',
+            'Publisher confirmed suspended',
+            'Publisher confirmed expired',
+        ], true)) {
+            try {
+                if (!\Barama\Services\PublisherVerificationRecord::remember($state)) {
+                    $state = 'License binding mismatch';
+                }
+            } catch (Throwable) {
+                error_log('[Barama Auto Updater] Private verification history could not be stored.');
+                $state = 'Unable to verify';
+            }
         }
         $checkedAt = gmdate('Y-m-d H:i') . ' UTC';
         $_SESSION['_barama_publisher_license_result_v111'] = [
@@ -209,19 +228,70 @@ final class SystemCenterController
             return Response::html('Not found', 404);
         }
 
+        $publisherFlash = !empty($_SESSION['_barama_publisher_license_flash_v112']);
+        unset($_SESSION['_barama_publisher_license_flash_v112']);
         $publisherResult = $_SESSION['_barama_publisher_license_result_v111'] ?? null;
+        $savedPublisherResult = null;
+        $installedActivation = null;
+        if ($section === 'auto-updater') {
+            try {
+                $savedPublisherResult = \Barama\Services\PublisherVerificationRecord::read();
+                $local = (new \Barama\Services\Licensing\UnifiedLicenseService())->localStatus();
+                if (!empty($local['installer_recognized'])
+                    && in_array($local['state'] ?? null, ['verified', 'pending'], true)) {
+                    $receipt = Installation::licenseState();
+                    $v2 = $receipt['publisher_v2_verification'] ?? null;
+                    $blocked = is_array($v2)
+                        && in_array($v2['blocked_reason'] ?? null,
+                            ['LICENSE_REVOKED', 'LICENSE_SUSPENDED', 'LICENSE_EXPIRED'], true)
+                        && \Barama\Services\LicenseManagerClient::canonicalDomain((string) ($v2['domain'] ?? ''))
+                            === \Barama\Services\LicenseManagerClient::canonicalDomain((string) ($receipt['domain'] ?? ''));
+                    $expiry = $receipt['expires_at'] ?? null;
+                    $expired = is_string($expiry) && trim($expiry) !== ''
+                        && ($expiresAt = strtotime($expiry)) !== false
+                        && $expiresAt <= time();
+                    if (!$blocked && !$expired
+                        && ($receipt['publisher_v2_activation'] ?? null) === null) {
+                        $installedActivation = [
+                            'state' => 'Installed license recognized',
+                            'checked_at' => is_string($local['last_verified_at'] ?? null)
+                                ? $local['last_verified_at'] : 'Activation recorded',
+                        ];
+                    }
+                }
+            } catch (Throwable) {
+                // A missing/invalid canonical receipt never creates a verified status.
+            }
+        }
         if (!is_array($publisherResult) || !isset($publisherResult['state'], $publisherResult['checked_at'])
             || !is_string($publisherResult['state']) || !is_string($publisherResult['checked_at'])
             || !preg_match('/^(Active license verified|Unable to verify|License not configured|License binding mismatch|Publisher settings not trusted|Wait before retrying|Publisher temporarily unavailable|Publisher confirmed revoked|Publisher confirmed suspended|Publisher confirmed expired)$/D', $publisherResult['state'])
         ) {
-            $publisherResult = ['state' => 'Not checked', 'checked_at' => 'Never'];
+            $publisherResult = $savedPublisherResult ?? $installedActivation
+                ?? ['state' => 'Not checked', 'checked_at' => 'Never'];
+        }
+        if (!$publisherFlash && ($savedPublisherResult !== null || $installedActivation !== null)) {
+            // A persisted publisher decision takes priority over installed
+            // activation. A revoked result must never become locally "active".
+            $publisherResult = $savedPublisherResult ?? $installedActivation;
+        } elseif ($savedPublisherResult === null
+            && in_array($publisherResult['state'], [
+                'Active license verified',
+                'Publisher confirmed revoked',
+                'Publisher confirmed suspended',
+                'Publisher confirmed expired',
+            ], true)) {
+            // A session is not evidence: never resurrect it after the license
+            // token, domain, installation ID or expiry changes.
+            $publisherResult = $installedActivation
+                ?? ['state' => 'Not checked', 'checked_at' => 'Never'];
         }
         $feedResult = $_SESSION['_barama_update_feed_result_v151'] ?? null;
         if (!is_array($feedResult) || !in_array(($feedResult['status'] ?? ''),
             ['available','eligible','ineligible','unavailable'], true)
             || !is_int($feedResult['at'] ?? null)
             || time() - $feedResult['at'] > 600 || $feedResult['at'] > time() + 30
-            || !in_array(($feedResult['entitlement'] ?? ''), ['Eligible','Not entitled','Not checked'], true)
+            || !in_array(($feedResult['entitlement'] ?? ''), ['Eligible','Not entitled','Not configured','Not checked'], true)
             || !in_array(($feedResult['feed'] ?? ''), ['Signed release verified','No release published','Not available','Unavailable'], true)
             || !is_string($feedResult['version'] ?? null)
             || !preg_match('/^(?:|\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?)$/D', $feedResult['version'])) {
@@ -235,6 +305,8 @@ final class SystemCenterController
             'A newer publisher-signed release was found. No package was downloaded.',
             'Update entitlement confirmed. No newer signed release was published.',
             'Publisher reports that this installation is not entitled to updates.',
+            'Update entitlement has not been configured by the publisher. Contact License assistance; no update was downloaded.',
+            'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
             'Update check completed.',
             'Unable to confirm update entitlement or a trusted release. The installed license was not changed.',
         ];
@@ -244,8 +316,6 @@ final class SystemCenterController
             try { $feedReady = \Barama\Services\Updates\TrustedReleaseFeed::readiness(); }
             catch (\Throwable) { /* Rendering is safe when the publisher is unavailable. */ }
         }
-        $publisherFlash = !empty($_SESSION['_barama_publisher_license_flash_v112']);
-        unset($_SESSION['_barama_publisher_license_flash_v112']);
         $metadata = Installation::metadata();
         $installedVersion = trim((string) ($metadata['version'] ?? ''));
         $snapshot = $section === 'health'

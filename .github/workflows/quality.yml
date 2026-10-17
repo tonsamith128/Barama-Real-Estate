@@ -73,6 +73,23 @@ jobs:
           php -l application/resources/views/workspace/finance-plans.php
           php tools/finance-plans-modal-theme-smoke.php
 
+      - name: Verify persistent Auto Updater license status
+        run: |
+          php -l application/app/Services/PublisherVerificationRecord.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/resources/views/workspace/system-center.php
+          php tools/publisher-verification-record-smoke.php
+          node --check assets/js/barama-auto-updater-premium-v120.js
+          node --check assets/js/barama-publisher-license-ux-v112.js
+
+      - name: Verify Auto Updater actions and publisher entitlement outcomes
+        run: |
+          php -l application/resources/views/workspace/system-center.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/app/Services/Updates/TrustedReleaseFeed.php
+          php tools/auto-updater-header-actions-smoke.php
+          php tools/auto-updater-entitlement-results-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 

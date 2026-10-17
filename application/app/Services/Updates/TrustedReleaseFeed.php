@@ -105,7 +105,11 @@ final class TrustedReleaseFeed
             && ($response['schema'] ?? null) === 'tonsamith-signed-discovery-v2'
             && in_array(($response['error'] ?? null), ['entitlement_denied', 'entitlement_not_configured'], true)) {
             $result['status'] = 'ineligible';
-            $result['entitlement'] = 'Not entitled';
+            // These two authoritative publisher responses must remain distinct.
+            // Neither grants entitlement; expose only a safe allowlisted reason.
+            $notConfigured = $response['error'] === 'entitlement_not_configured';
+            $result['entitlement'] = $notConfigured ? 'Not configured' : 'Not entitled';
+            $result['reason'] = $notConfigured ? 'not_configured' : 'denied';
             $result['feed'] = 'Not available';
             return $result;
         }

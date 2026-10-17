@@ -18,13 +18,15 @@ $systemPublisherFlash = !empty($systemPublisherFlash);
 $systemLicenseBinding = is_array($systemLicenseBinding ?? null) ? $systemLicenseBinding : [];
 $publisherState = (string) ($systemPublisherCheck['state'] ?? 'Not checked');
 $publisherVerified = $publisherState === 'Active license verified';
+$publisherRecognized = $publisherState === 'Installed license recognized';
+$publisherPositive = $publisherVerified || $publisherRecognized;
 $versionMatches = $systemVersion !== '' && $systemVersion === $systemInstalledVersion;
 $systemServices = is_array($systemSnapshot['services'] ?? null) ? $systemSnapshot['services'] : [];
 $licenseLabel = (string) ($systemLicense['status'] ?? 'Not recorded');
 $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/barama-system-center-v103.css') . '?v=110') ?>">
-<?php if ($systemSection === 'auto-updater'): ?><link rel="stylesheet" href="<?= e(asset('css/barama-publisher-license-ux-v112.css') . '?v=113') ?>"><link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-premium-v120.css') . '?v=121') ?>"><?php endif; ?>
+<?php if ($systemSection === 'auto-updater'): ?><link rel="stylesheet" href="<?= e(asset('css/barama-publisher-license-ux-v112.css') . '?v=113') ?>"><link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-premium-v120.css') . '?v=121') ?>"><link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-actions-v122.css') . '?v=122') ?>"><?php endif; ?>
 <section class="barama-sys-v103 <?= $systemSection === 'auto-updater' ? 'bsys-auto-premium' : '' ?>" aria-labelledby="barama-system-title">
   <nav class="bsys-breadcrumb" aria-label="Breadcrumb">Administration / System / <?= e($systemTitle) ?></nav>
   <div class="bsys-header">
@@ -32,7 +34,21 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
       <h1 id="barama-system-title"><?= e($systemTitle) ?></h1>
       <?php if ($systemSection !== 'auto-updater'): ?><p class="bsys-description"><?php if ($systemSection === 'about'): ?>Product identity, installation, license records, support resources and runtime requirements.<?php elseif ($systemSection === 'updates'): ?>Review version compatibility and the existing guarded updater. Signed automatic updates are not yet enabled.<?php elseif ($systemSection === 'auto-updater'): ?>Secure product delivery from Ton Samith. Only verified local readiness indicators are shown until the update service is connected.<?php else: ?>Read-only service signals and infrastructure readiness. Only the checks expressly shown as tested have been measured.<?php endif; ?></p><?php endif; ?>
     </div>
+    <?php if ($systemSection === 'auto-updater'): ?>
+    <div class="bsys-update-header-right">
+      <div class="bsys-update-header-actions" aria-label="Update management actions">
+        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-updates')) ?>" class="bsys-inline-action">
+          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+          <button class="bsys-button bsys-button--primary" type="submit" <?= !empty($systemFeedReadiness['can_check']) ? '' : 'disabled title="Author must configure the trusted publisher public key and release-feed contract"' ?>>Check for updates</button>
+        </form>
+        <?php if (!empty($systemUpdaterPresent)): ?><a class="bsys-button bsys-button--outline" href="<?= e(url('/updater/')) ?>">Open guarded updater <span aria-hidden="true">↗</span></a><?php endif; ?>
+      </div>
+      <small class="bsys-update-discovery-note">Discovery only · no automatic download or installation</small>
+      <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note bsys-note--feed-status bsys-update-header-feedback" role="status" aria-live="polite"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
+    </div>
+    <?php else: ?>
     <div class="bsys-chip-row"><span class="bsys-chip">Barama Real Estate</span><span class="bsys-state bsys-state--neutral">v<?= e($systemVersion) ?></span></div>
+    <?php endif; ?>
   </div>
 
 
@@ -55,12 +71,12 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
   $feedVersion = (string)($feedResult['version'] ?? '');
   $feedConfigured = !empty($feedReady['can_check']);
   $premiumRows = [
-    ['id'=>'license','icon'=>'shield','label'=>'Live license validation',
-      'state'=>$publisherVerified ? 'Verified' : $publisherState,
-      'tone'=>$publisherVerified ? 'good' : 'needs',
-      'summary'=>$publisherVerified ? 'Publisher confirmed the current installation' : 'Verify the active publisher license',
-      'detail'=>'The active license is checked with Ton Samith when an administrator submits Verify again. This is separate from update entitlement.',
-      'priority'=>$publisherVerified ? 20 : 200],
+    ['id'=>'license','icon'=>'shield','label'=>'Publisher verification record',
+      'state'=>$publisherVerified ? 'Verified' : ($publisherRecognized ? 'Activated' : $publisherState),
+      'tone'=>$publisherPositive ? 'good' : 'needs',
+      'summary'=>$publisherVerified ? 'Last successful publisher check securely saved for this installation' : ($publisherRecognized ? 'Existing installed activation recognized; optional publisher check' : 'Publisher confirmation not recorded for this installation'),
+      'detail'=>'The last trusted publisher result stays recorded across sessions until the installation binding changes or a new trusted verification replaces it. Verify again is optional; update entitlement is checked separately.',
+      'priority'=>$publisherPositive ? 20 : 200],
     ['id'=>'domain','icon'=>'globe','label'=>'Bound domain authorization',
       'state'=>$boundOk ? 'Matched' : 'Review needed', 'tone'=>$boundOk ? 'good' : 'needs',
       'summary'=>$boundOk ? 'Matches the current website domain' : 'Review the recorded domain binding',
@@ -69,7 +85,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
     ['id'=>'entitlement','icon'=>'key','label'=>'Update entitlement',
       'state'=>(string)($feedResult['entitlement']??'Not checked'),
       'tone'=>$feedEligible ? 'good' : ($feedStatus==='ineligible' ? 'needs' : 'neutral'),
-      'summary'=>$feedEligible ? 'Publisher confirmed update eligibility for this installation' : ($feedStatus==='ineligible' ? 'Publisher denied update entitlement' : ($feedConfigured ? 'Use Check for updates to request entitlement' : 'Publisher update contract not configured')),
+      'summary'=>$feedEligible ? 'Publisher confirmed update eligibility for this installation' : ($feedStatus==='ineligible' ? (($feedResult['reason'] ?? '') === 'not_configured' ? 'Publisher has not configured update eligibility for this installation' : 'Publisher denied update entitlement') : ($feedConfigured ? 'Use Check for updates to request entitlement' : 'Publisher update contract not configured')),
       'detail'=>'Authoritative entitlement requires a POST to the trusted publisher with the existing installation-bound activation. Last check: '.(string)($feedResult['checked_at']??'Never').'. A valid license by itself does not grant update entitlement.',
       'priority'=>110],
     ['id'=>'feed','icon'=>'signal','label'=>'Signed release feed',
@@ -114,7 +130,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
       return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'.($paths[$name] ?? $paths['settings']).'</svg>';
   };
   ?>
-  <section class="bsys-license-focus bsys-license-center bsys-premium-hero" aria-label="License verification center" data-publisher-control data-publisher-flash="<?= $systemPublisherFlash ? '1' : '0' ?>" data-verified="<?= $publisherVerified ? '1' : '0' ?>">
+  <section class="bsys-license-focus bsys-license-center bsys-premium-hero" aria-label="License verification center" data-publisher-control data-publisher-flash="<?= $systemPublisherFlash ? '1' : '0' ?>" data-verified="<?= $publisherPositive ? '1' : '0' ?>">
     <div class="bsys-premium-main">
       <div class="bsys-license-emblem" data-publisher-emblem aria-hidden="true">
         <span class="bsys-license-emblem-halo"></span>
@@ -123,16 +139,20 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
       </div>
       <div class="bsys-premium-hero-copy">
         <span class="bsys-license-eyebrow">License verification</span>
-        <h2 data-publisher-hero-title><?= $publisherVerified ? 'License verified' : 'Verify your Barama license' ?></h2>
-        <p class="bsys-license-hero-detail" data-publisher-hero-detail><?= $publisherVerified ? 'Ton Samith confirmed an active license for this installation.' : 'Check your license securely with Ton Samith.' ?></p>
+        <h2 data-publisher-hero-title><?= $publisherVerified ? 'License verified' : ($publisherRecognized ? 'License activated' : 'Verify your Barama license') ?></h2>
+        <p class="bsys-license-hero-detail" data-publisher-hero-detail><?= $publisherVerified ? 'Publisher verification saved for this installation. No repeat check is required to view the recorded result.' : ($publisherRecognized ? 'Your installed license is already recognized. A new publisher check is optional.' : 'Check your license securely with Ton Samith when you choose.') ?></p>
         <div class="bsys-license-last" role="status" aria-live="polite" aria-atomic="true">
-          <span class="bsys-state <?= $publisherVerified ? 'bsys-state--good' : 'bsys-state--neutral' ?>" data-publisher-state><?= e($publisherState) ?></span>
-          <small data-publisher-checked>Last checked: <?= e((string) ($systemPublisherCheck['checked_at'] ?? 'Never')) ?></small>
+          <span class="bsys-state <?= $publisherPositive ? 'bsys-state--good' : 'bsys-state--neutral' ?>" data-publisher-state><?= e($publisherState) ?></span>
+          <small data-publisher-checked><?= $publisherRecognized ? 'Activation recorded: ' : 'Last checked: ' ?><?= e((string) ($systemPublisherCheck['checked_at'] ?? 'Never')) ?></small>
         </div>
-        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-license')) ?>" data-publisher-check-form>
-          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-          <button type="submit" class="bsys-button bsys-button--primary bsys-license-check-button" data-publisher-check-button><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.5 6"/><path d="M20 4v7h-7"/></svg><span data-publisher-button-text><?= $publisherVerified ? 'Verify again' : 'Check license' ?></span></button>
-        </form>
+        <div class="bsys-license-action-row" aria-label="License verification and support">
+          <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-license')) ?>" data-publisher-check-form>
+            <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+            <button type="submit" class="bsys-button bsys-button--primary bsys-license-check-button" data-publisher-check-button><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.5 6"/><path d="M20 4v7h-7"/></svg><span data-publisher-button-text><?= $publisherVerified ? 'Verify again' : ($publisherRecognized ? 'Verify publisher (optional)' : 'Check license') ?></span></button>
+          </form>
+          <a class="bsys-button bsys-button--outline" href="https://tonsamith.com/contact" target="_blank" rel="noopener noreferrer">Request domain replacement <span aria-hidden="true">↗</span></a>
+          <a class="bsys-button bsys-button--outline" href="https://tonsamith.com/contact" target="_blank" rel="noopener noreferrer">License assistance <span aria-hidden="true">↗</span></a>
+        </div>
       </div>
     </div>
     <div class="bsys-premium-hero-meta"><div><span>Bound domain</span><strong><?= e($boundDomain) ?></strong></div><div><span>Installed version</span><strong>v<?= e($systemVersion) ?></strong></div></div>
@@ -253,21 +273,13 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         <?php endforeach; ?>
         </tbody>
       </table></div>
-      <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note bsys-note--feed-status" role="status" aria-live="polite"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
-      <div class="bsys-premium-footer-actions">
-        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-updates')) ?>" class="bsys-inline-action">
-          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-          <button class="bsys-button bsys-button--primary" type="submit" <?= !empty($systemFeedReadiness['can_check']) ? '' : 'disabled title="Author must configure the trusted publisher public key and release-feed contract"' ?>>Check for updates</button>
-        </form>
-        <span class="bsys-note">Discovery only · no download or installation</span>
+      <div class="bsys-premium-footer-actions" aria-label="Staged release inspection">
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/inspect-staged-release')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
           <button class="bsys-button" type="submit" <?= !empty($systemReleaseReadiness['inspect_enabled']) ? '' : 'disabled title="Stage a signed release and provision the trusted public key first"' ?>>Inspect signed staged release</button>
         </form>
         <?php if (($systemReleaseInspection['status']??'')==='Signed package verified (not installed)'): ?><span class="bsys-state bsys-state--good" role="status">Signed package verified · not installed</span><?php endif; ?>
-        <?php if ($updaterFound): ?><a class="bsys-button bsys-button--primary" href="<?= e(url('/updater/')) ?>">Open guarded updater <span aria-hidden="true">↗</span></a><?php endif; ?>
-        <a class="bsys-button" href="https://tonsamith.com/contact" target="_blank" rel="noopener noreferrer">Request domain replacement <span aria-hidden="true">↗</span></a>
-        <a class="bsys-button" href="https://tonsamith.com/contact" target="_blank" rel="noopener noreferrer">License assistance <span aria-hidden="true">↗</span></a>
+        <span class="bsys-note">Staged inspection only · never installs a package</span>
       </div>
     </section>
 
