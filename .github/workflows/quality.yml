@@ -68,6 +68,11 @@ jobs:
           php tools/finance-plans-premium-smoke.php
           node --check assets/js/finance-plans-actions-v181.js
 
+      - name: Verify Plans Create/Edit modal theme
+        run: |
+          php -l application/resources/views/workspace/finance-plans.php
+          php tools/finance-plans-modal-theme-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
