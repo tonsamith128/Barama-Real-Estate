@@ -1,0 +1,135 @@
+/* Barama Auto Updater action layout v1.2.2.
+ * Scoped only to dashboard/system/auto-updater. No global theme edits.
+ */
+.barama-sys-v103.bsys-auto-premium .bsys-header {
+    align-items: flex-start;
+    gap: 18px 24px;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex: 0 1 auto;
+    max-width: 100%;
+    gap: 10px;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-right .bsys-chip-row {
+    justify-content: flex-end;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-actions,
+.barama-sys-v103.bsys-auto-premium .bsys-license-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-actions {
+    justify-content: flex-end;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-actions form,
+.barama-sys-v103.bsys-auto-premium .bsys-license-action-row form {
+    display: inline-flex;
+    flex: 0 0 auto;
+    margin: 0;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-actions .bsys-button {
+    min-height: 42px;
+    padding: 9px 16px;
+    white-space: nowrap;
+    text-decoration: none;
+    font-weight: 730;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-button--outline {
+    background: var(--bp-panel);
+    color: var(--bp-text) !important;
+    border: 1px solid var(--bp-line);
+}
+.barama-sys-v103.bsys-auto-premium .bsys-button--outline:hover {
+    background: var(--bsys-inset);
+    border-color: var(--bp-accent);
+}
+.barama-sys-v103.bsys-auto-premium .bsys-button--outline:focus-visible,
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-actions .bsys-button:focus-visible {
+    outline: 2px solid var(--bp-accent);
+    outline-offset: 3px;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-update-discovery-note {
+    color: var(--bp-muted);
+    font-size: .72rem;
+    font-weight: 550;
+    line-height: 1.45;
+    text-align: right;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-license-action-row {
+    justify-content: flex-start;
+    width: 100%;
+    margin-top: 3px;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-premium-hero-copy .bsys-license-action-row form {
+    margin: 0;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-license-action-row .bsys-button {
+    min-height: 42px;
+    border-radius: 10px;
+    font-size: .8rem;
+    font-weight: 720;
+    white-space: normal;
+    line-height: 1.3;
+    padding: 9px 13px;
+    text-align: center;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-license-action-row .bsys-license-check-button {
+    min-width: 0;
+    padding-inline: 17px;
+    white-space: nowrap;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-premium-footer-actions {
+    margin-top: 0;
+    padding-top: 14px;
+    padding-bottom: 16px;
+}
+.barama-sys-v103.bsys-auto-premium .bsys-premium-footer-actions .bsys-note {
+    font-size: .75rem;
+}
+@media (max-width: 1060px) {
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-right {
+        width: 100%;
+        align-items: flex-start;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-right .bsys-chip-row,
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-actions {
+        justify-content: flex-start;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-update-discovery-note {
+        text-align: left;
+    }
+}
+@media (max-width: 630px) {
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-actions {
+        width: 100%;
+        align-items: stretch;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-actions form,
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-actions > a {
+        flex: 1 1 100%;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-update-header-actions .bsys-button {
+        width: 100%;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-license-action-row {
+        align-items: stretch;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-license-action-row form,
+    .barama-sys-v103.bsys-auto-premium .bsys-license-action-row > a {
+        flex: 1 1 100%;
+    }
+    .barama-sys-v103.bsys-auto-premium .bsys-license-action-row .bsys-button {
+        width: 100%;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .barama-sys-v103.bsys-auto-premium .bsys-button--outline {
+        transition: none;
+    }
+}
