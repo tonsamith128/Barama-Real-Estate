@@ -85,7 +85,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
     ['id'=>'entitlement','icon'=>'key','label'=>'Update entitlement',
       'state'=>(string)($feedResult['entitlement']??'Not checked'),
       'tone'=>$feedEligible ? 'good' : ($feedStatus==='ineligible' ? 'needs' : 'neutral'),
-      'summary'=>$feedEligible ? 'Publisher confirmed update eligibility for this installation' : ($feedStatus==='ineligible' ? 'Publisher denied update entitlement' : ($feedConfigured ? 'Use Check for updates to request entitlement' : 'Publisher update contract not configured')),
+      'summary'=>$feedEligible ? 'Publisher confirmed update eligibility for this installation' : ($feedStatus==='ineligible' ? (($feedResult['reason'] ?? '') === 'not_configured' ? 'Publisher has not configured update eligibility for this installation' : 'Publisher denied update entitlement') : ($feedConfigured ? 'Use Check for updates to request entitlement' : 'Publisher update contract not configured')),
       'detail'=>'Authoritative entitlement requires a POST to the trusted publisher with the existing installation-bound activation. Last check: '.(string)($feedResult['checked_at']??'Never').'. A valid license by itself does not grant update entitlement.',
       'priority'=>110],
     ['id'=>'feed','icon'=>'signal','label'=>'Signed release feed',
