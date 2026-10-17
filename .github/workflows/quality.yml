@@ -62,6 +62,12 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Verify Plans page actions, theme and accessibility controls
+        run: |
+          php -l application/resources/views/workspace/finance-plans.php
+          php tools/finance-plans-premium-smoke.php
+          node --check assets/js/finance-plans-actions-v181.js
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
