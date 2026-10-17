@@ -26,6 +26,7 @@
   let pendingController;
   const messages = Object.freeze({
     'Active license verified': 'The publisher confirmed an active Barama license bound to this installation. Update entitlement is not yet checked.',
+    'Installed license recognized': 'Your stored activated license is recognized. Publisher verification is optional.',
     'Unable to verify': 'The publisher did not confirm a matching active license. Check the publisher connection and license record; no credentials were changed.',
     'License not configured': 'No usable activation token or installation ID is recorded on this installation.',
     'License binding mismatch': 'The local license does not match the expected product, domain, or installation.',
@@ -79,7 +80,9 @@
     busy = false;
     button.disabled = false;
     button.dataset.busy = '0';
-    buttonText.textContent = host.dataset.verified === '1' ? 'Verify again' : 'Check license';
+    buttonText.textContent = currentState.textContent.trim() === 'Installed license recognized'
+      ? 'Verify publisher (optional)'
+      : host.dataset.verified === '1' ? 'Verify again' : 'Check license';
     progress.hidden = true;
     host.dataset.checking = '0';
   }
@@ -129,7 +132,7 @@
       if (table) table.textContent = data.state;
       notify(data.state, nextMessage);
     } catch (error) {
-      let explanation = 'Verification could not be completed in this browser. Refresh and confirm your administrator session before trying again.';
+      let explanation = 'The new check could not be completed in this browser. Refresh to restore the last recorded license result before considering another check.';
       if (error && error.name === 'AbortError') explanation = 'The response took too long. The server may still be completing the check; refresh to see the latest status before retrying.';
       if (heroTitle) heroTitle.textContent = 'Verification not completed';
       if (heroDetail) heroDetail.textContent = explanation;
