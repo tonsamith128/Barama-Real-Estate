@@ -18,6 +18,8 @@ $systemPublisherFlash = !empty($systemPublisherFlash);
 $systemLicenseBinding = is_array($systemLicenseBinding ?? null) ? $systemLicenseBinding : [];
 $publisherState = (string) ($systemPublisherCheck['state'] ?? 'Not checked');
 $publisherVerified = $publisherState === 'Active license verified';
+$publisherRecognized = $publisherState === 'Installed license recognized';
+$publisherPositive = $publisherVerified || $publisherRecognized;
 $versionMatches = $systemVersion !== '' && $systemVersion === $systemInstalledVersion;
 $systemServices = is_array($systemSnapshot['services'] ?? null) ? $systemSnapshot['services'] : [];
 $licenseLabel = (string) ($systemLicense['status'] ?? 'Not recorded');
@@ -56,11 +58,11 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
   $feedConfigured = !empty($feedReady['can_check']);
   $premiumRows = [
     ['id'=>'license','icon'=>'shield','label'=>'Publisher verification record',
-      'state'=>$publisherVerified ? 'Verified' : $publisherState,
-      'tone'=>$publisherVerified ? 'good' : 'needs',
-      'summary'=>$publisherVerified ? 'Last successful publisher check securely saved for this installation' : 'Publisher confirmation not recorded for this installation',
+      'state'=>$publisherVerified ? 'Verified' : ($publisherRecognized ? 'Activated' : $publisherState),
+      'tone'=>$publisherPositive ? 'good' : 'needs',
+      'summary'=>$publisherVerified ? 'Last successful publisher check securely saved for this installation' : ($publisherRecognized ? 'Existing installed activation recognized; optional publisher check' : 'Publisher confirmation not recorded for this installation'),
       'detail'=>'The last trusted publisher result stays recorded across sessions until the installation binding changes or a new trusted verification replaces it. Verify again is optional; update entitlement is checked separately.',
-      'priority'=>$publisherVerified ? 20 : 200],
+      'priority'=>$publisherPositive ? 20 : 200],
     ['id'=>'domain','icon'=>'globe','label'=>'Bound domain authorization',
       'state'=>$boundOk ? 'Matched' : 'Review needed', 'tone'=>$boundOk ? 'good' : 'needs',
       'summary'=>$boundOk ? 'Matches the current website domain' : 'Review the recorded domain binding',
@@ -114,7 +116,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
       return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'.($paths[$name] ?? $paths['settings']).'</svg>';
   };
   ?>
-  <section class="bsys-license-focus bsys-license-center bsys-premium-hero" aria-label="License verification center" data-publisher-control data-publisher-flash="<?= $systemPublisherFlash ? '1' : '0' ?>" data-verified="<?= $publisherVerified ? '1' : '0' ?>">
+  <section class="bsys-license-focus bsys-license-center bsys-premium-hero" aria-label="License verification center" data-publisher-control data-publisher-flash="<?= $systemPublisherFlash ? '1' : '0' ?>" data-verified="<?= $publisherPositive ? '1' : '0' ?>">
     <div class="bsys-premium-main">
       <div class="bsys-license-emblem" data-publisher-emblem aria-hidden="true">
         <span class="bsys-license-emblem-halo"></span>
@@ -123,15 +125,15 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
       </div>
       <div class="bsys-premium-hero-copy">
         <span class="bsys-license-eyebrow">License verification</span>
-        <h2 data-publisher-hero-title><?= $publisherVerified ? 'License verified' : 'Verify your Barama license' ?></h2>
-        <p class="bsys-license-hero-detail" data-publisher-hero-detail><?= $publisherVerified ? 'Publisher verification saved for this installation. No repeat check is required to view the recorded result.' : 'Check your license securely with Ton Samith when you choose.' ?></p>
+        <h2 data-publisher-hero-title><?= $publisherVerified ? 'License verified' : ($publisherRecognized ? 'License activated' : 'Verify your Barama license') ?></h2>
+        <p class="bsys-license-hero-detail" data-publisher-hero-detail><?= $publisherVerified ? 'Publisher verification saved for this installation. No repeat check is required to view the recorded result.' : ($publisherRecognized ? 'Your installed license is already recognized. A new publisher check is optional.' : 'Check your license securely with Ton Samith when you choose.') ?></p>
         <div class="bsys-license-last" role="status" aria-live="polite" aria-atomic="true">
-          <span class="bsys-state <?= $publisherVerified ? 'bsys-state--good' : 'bsys-state--neutral' ?>" data-publisher-state><?= e($publisherState) ?></span>
-          <small data-publisher-checked>Last checked: <?= e((string) ($systemPublisherCheck['checked_at'] ?? 'Never')) ?></small>
+          <span class="bsys-state <?= $publisherPositive ? 'bsys-state--good' : 'bsys-state--neutral' ?>" data-publisher-state><?= e($publisherState) ?></span>
+          <small data-publisher-checked><?= $publisherRecognized ? 'Activation recorded: ' : 'Last checked: ' ?><?= e((string) ($systemPublisherCheck['checked_at'] ?? 'Never')) ?></small>
         </div>
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-license')) ?>" data-publisher-check-form>
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-          <button type="submit" class="bsys-button bsys-button--primary bsys-license-check-button" data-publisher-check-button><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.5 6"/><path d="M20 4v7h-7"/></svg><span data-publisher-button-text><?= $publisherVerified ? 'Verify again' : 'Check license' ?></span></button>
+          <button type="submit" class="bsys-button bsys-button--primary bsys-license-check-button" data-publisher-check-button><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.5 6"/><path d="M20 4v7h-7"/></svg><span data-publisher-button-text><?= $publisherVerified ? 'Verify again' : ($publisherRecognized ? 'Verify publisher (optional)' : 'Check license') ?></span></button>
         </form>
       </div>
     </div>
