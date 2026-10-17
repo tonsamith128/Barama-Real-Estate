@@ -291,7 +291,7 @@ final class SystemCenterController
             ['available','eligible','ineligible','unavailable'], true)
             || !is_int($feedResult['at'] ?? null)
             || time() - $feedResult['at'] > 600 || $feedResult['at'] > time() + 30
-            || !in_array(($feedResult['entitlement'] ?? ''), ['Eligible','Not entitled','Not checked'], true)
+            || !in_array(($feedResult['entitlement'] ?? ''), ['Eligible','Not entitled','Not configured','Not checked'], true)
             || !in_array(($feedResult['feed'] ?? ''), ['Signed release verified','No release published','Not available','Unavailable'], true)
             || !is_string($feedResult['version'] ?? null)
             || !preg_match('/^(?:|\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?)$/D', $feedResult['version'])) {
@@ -305,6 +305,8 @@ final class SystemCenterController
             'A newer publisher-signed release was found. No package was downloaded.',
             'Update entitlement confirmed. No newer signed release was published.',
             'Publisher reports that this installation is not entitled to updates.',
+            'Update entitlement has not been configured by the publisher. Contact License assistance; no update was downloaded.',
+            'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
             'Update check completed.',
             'Unable to confirm update entitlement or a trusted release. The installed license was not changed.',
         ];
