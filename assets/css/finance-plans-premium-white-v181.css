@@ -1,0 +1,295 @@
+/* Barama Plans & Packages — scoped premium surface, controls and action menu v1.8.1.
+   Applies only to /dashboard/plans. No global theme overrides or inline CSS. */
+
+/* Light mode is a clean uninterrupted white admin page, not the tinted
+   dashboard gradient. The sidebar/top bar remain owned by the global theme. */
+html:not([data-bs-theme="dark"]) .workspace-main:has(> main .finance-plans) {
+    background: #fff;
+}
+html[data-bs-theme="dark"] .workspace-main:has(> main .finance-plans) {
+    background: var(--barama-bg, #0b1422);
+}
+
+.finance-plans {
+    --plans-paper: #fff;
+    --plans-ink: #18243b;
+    --plans-muted: #64748b;
+    --plans-line: #e2e8f0;
+    --plans-soft: #f5f8fd;
+    --plans-hover: #f5f8ff;
+    --plans-focus: #2563eb;
+    color: var(--plans-ink);
+    isolation: isolate;
+}
+
+html[data-bs-theme="dark"] .finance-plans {
+    --plans-paper: var(--barama-surface, #172236);
+    --plans-ink: var(--barama-text, #e7edf6);
+    --plans-muted: var(--barama-muted, #9daec5);
+    --plans-line: var(--barama-border, #344259);
+    --plans-soft: #202d42;
+    --plans-hover: #24334a;
+    --plans-focus: #8caeff;
+}
+
+.finance-plans .finance-plans__library {
+    min-width: 0;
+    padding-top: 0;
+    border-top: 0;
+    background: transparent;
+}
+
+.finance-plans .finance-plans__section-head h2,
+.finance-plans .finance-plans__name {
+    color: var(--plans-ink);
+}
+
+.finance-plans .finance-plans__section-head p,
+.finance-plans .finance-plans__section-head > span,
+.finance-plans .finance-plans__hero p {
+    color: var(--plans-muted);
+}
+
+/* Input, placeholder, search icon, native options and select arrow remain
+   legible in both light/dark mode, including focus and disabled states. */
+.finance-plans .finance-plans__filters {
+    align-items: stretch;
+    gap: 10px;
+}
+
+.finance-plans .finance-plans__filters label {
+    display: block;
+    min-width: 0;
+}
+
+.finance-plans .finance-plans__filters input,
+.finance-plans .finance-plans__filters select {
+    display: block;
+    height: 42px;
+    min-height: 42px;
+    min-width: 0;
+    border: 1px solid var(--plans-line);
+    border-radius: 11px;
+    color: var(--plans-ink);
+    background-color: var(--plans-paper);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .035);
+    color-scheme: light;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.finance-plans .finance-plans__filters input {
+    padding-left: 39px;
+    padding-right: 14px;
+    appearance: none;
+}
+
+.finance-plans .finance-plans__filters input::placeholder {
+    color: var(--plans-muted);
+    opacity: 1;
+}
+
+.finance-plans .finance-plans__filters label svg {
+    z-index: 1;
+    left: 13px;
+    color: var(--plans-muted);
+    pointer-events: none;
+}
+
+.finance-plans .finance-plans__filters select {
+    padding: 0 36px 0 13px;
+    cursor: pointer;
+}
+
+.finance-plans .finance-plans__filters select option {
+    color: var(--plans-ink);
+    background: var(--plans-paper);
+}
+
+.finance-plans .finance-plans__filters input:hover,
+.finance-plans .finance-plans__filters select:hover {
+    border-color: color-mix(in srgb, var(--plans-focus) 32%, var(--plans-line));
+}
+
+.finance-plans .finance-plans__filters input:focus-visible,
+.finance-plans .finance-plans__filters select:focus-visible {
+    border-color: var(--plans-focus);
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--plans-focus) 19%, transparent);
+}
+
+html[data-bs-theme="dark"] .finance-plans .finance-plans__filters input,
+html[data-bs-theme="dark"] .finance-plans .finance-plans__filters select {
+    color-scheme: dark;
+    background-color: var(--plans-paper);
+    color: var(--plans-ink);
+}
+
+.finance-plans .finance-plans__filters .btn {
+    min-height: 42px;
+    border-radius: 11px;
+}
+
+/* Professional inventory table on the page's global paper surface. Preserve
+   horizontal scrolling on narrow screens without clipping the fixed menu. */
+.finance-plans .finance-plans__table-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--plans-line);
+    border-radius: 16px;
+    background: var(--plans-paper);
+    box-shadow: 0 8px 25px rgba(15, 23, 42, .025);
+}
+
+.finance-plans .finance-plans__table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: var(--plans-ink);
+    background: var(--plans-paper);
+}
+
+.finance-plans .finance-plans__table th,
+.finance-plans .finance-plans__table td {
+    border-bottom: 1px solid var(--plans-line);
+    background: transparent;
+}
+
+.finance-plans .finance-plans__table thead th {
+    padding-block: 13px;
+    background: var(--plans-soft);
+    color: var(--plans-muted);
+    font-size: .73rem;
+    font-weight: 750;
+    letter-spacing: .045em;
+}
+
+.finance-plans .finance-plans__table tbody td {
+    height: 60px;
+    padding-block: 11px;
+    font-size: .84rem;
+    color: var(--plans-ink);
+}
+
+.finance-plans .finance-plans__table tbody tr:hover td {
+    background: var(--plans-hover);
+}
+
+.finance-plans .finance-plans__table td small {
+    color: var(--plans-muted);
+    font-size: .74rem;
+}
+
+.finance-plans .finance-plans__table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.finance-plans .finance-plans__table th:nth-child(12),
+.finance-plans .finance-plans__table td:nth-child(12) {
+    width: 64px;
+    min-width: 64px;
+    padding-inline: 10px;
+    text-align: center;
+}
+
+.finance-plans .finance-plans__table td:nth-child(12) > .workspace-row-actions {
+    position: relative;
+    display: inline-flex;
+    width: 36px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions > summary {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    margin: 0;
+    border: 1px solid var(--plans-line);
+    border-radius: 10px;
+    background: var(--plans-paper);
+    color: var(--plans-ink);
+    cursor: pointer;
+    list-style: none;
+    line-height: 1;
+    user-select: none;
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions > summary::-webkit-details-marker {
+    display: none;
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions > summary:hover,
+.finance-plans .finance-plans__table .workspace-row-actions[open] > summary {
+    color: var(--plans-focus);
+    border-color: color-mix(in srgb, var(--plans-focus) 35%, var(--plans-line));
+    background: var(--plans-hover);
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions > summary:focus-visible {
+    outline: 2px solid var(--plans-focus);
+    outline-offset: 2px;
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions__menu {
+    position: fixed;
+    z-index: 2400;
+    width: max-content;
+    min-width: 174px;
+    max-width: min(232px, calc(100vw - 24px));
+    padding: 6px;
+    border: 1px solid var(--plans-line);
+    border-radius: 12px;
+    background: var(--plans-paper);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
+    color: var(--plans-ink);
+    text-align: left;
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions__menu .table-action {
+    display: block;
+    width: 100%;
+    min-height: 37px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: var(--plans-ink);
+    font-size: .84rem;
+    font-weight: 650;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions__menu .table-action:hover,
+.finance-plans .finance-plans__table .workspace-row-actions__menu .table-action:focus-visible {
+    background: var(--plans-hover) !important;
+    color: var(--plans-focus);
+}
+
+.finance-plans .finance-plans__table .workspace-row-actions__menu .table-action--danger {
+    color: var(--barama-danger, #dc3545);
+}
+
+html[data-bs-theme="dark"] .finance-plans .finance-plans__table-wrap {
+    box-shadow: 0 14px 32px rgba(0, 0, 0, .17);
+}
+
+@media (max-width: 760px) {
+    .finance-plans .finance-plans__filters {
+        grid-template-columns: 1fr;
+    }
+    .finance-plans .finance-plans__table thead th {
+        font-size: .68rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .finance-plans .finance-plans__filters input,
+    .finance-plans .finance-plans__filters select {
+        transition: none;
+    }
+}
