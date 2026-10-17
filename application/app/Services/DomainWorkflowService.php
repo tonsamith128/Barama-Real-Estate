@@ -218,6 +218,16 @@ final class DomainWorkflowService
                 $note
             );
 
+            // Persist workflow alerts atomically with the corresponding history
+            // entry so the bell does not announce a failed submission/review.
+            if ($resource === 'company') {
+                (new CompanyWorkflowNotificationService())->onTransition(
+                    $entityId,
+                    $toStatus,
+                    (int) $pdo->lastInsertId()
+                );
+            }
+
             if ($resource === 'company' && $toStatus === 'approved') {
                 $companyMembers = $pdo->prepare(
                     'SELECT u.id, u.email
