@@ -14,6 +14,11 @@ $assert(substr_count($view,"asset('css/barama-auto-updater-actions-v122.css')")=
 $assert(substr_count($view,"action=\"<?= e(url('/dashboard/system/auto-updater/check-updates'))")===1,'Exactly one CSRF-protected update check');
 $assert(substr_count($view,"action=\"<?= e(url('/dashboard/system/auto-updater/check-license'))")===1,'Exactly one license check');
 $assert(str_contains($view,'class="bsys-update-header-actions"') && str_contains($view,'class="bsys-license-action-row"'),'Actions at header and license hero');
+$header = explode('<div class="bsys-update-header-right">', $view, 2)[1] ?? '';
+$header = explode('<?php else: ?>', $header, 2)[0] ?? '';
+$assert($header !== '' && !str_contains($header, 'bsys-chip-row'), 'No duplicate product/version badges in Auto Updater header');
+$assert(str_contains($header, 'Check for updates') && str_contains($header, 'Open guarded updater'), 'Primary updater actions remain top-right');
+$assert(substr_count($view, 'class="bsys-chip-row"') === 1, 'Retain existing metadata badges on other System pages');
 $assert(str_contains($view,'aria-label="Staged release inspection"') && str_contains($view,'inspect-staged-release'),'Staged inspection remains available');
 $assert(substr_count($view,'Request domain replacement <span aria-hidden="true">↗</span>')===1,'Domain replacement appears only once');
 $assert(substr_count($view,'License assistance <span aria-hidden="true">↗</span>')===1,'License assistance appears only once');
