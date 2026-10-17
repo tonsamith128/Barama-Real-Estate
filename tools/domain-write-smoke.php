@@ -183,12 +183,96 @@ if ($draftRecord === null || count($draftRecord['media']) !== 1) {
 
 $workflow = new DomainWorkflowService();
 $workflow->transition('company', $companyId, 'pending', 'QA submit');
+
+$companyPendingAlert = $pdo->prepare(
+    'SELECT action_url FROM notifications
+     WHERE user_id = :user_id AND entity_type = "company"
+       AND entity_id = :company_id AND type = "company_pending"
+     LIMIT 1'
+);
+$companyPendingAlert->execute(['user_id' => $adminId, 'company_id' => $companyId]);
+if ($companyPendingAlert->fetchColumn() !== '/dashboard/manage/company/' . $companyId) {
+    throw new RuntimeException('Admin bell did not receive company approval request.');
+}
+
 $workflow->transition('project', $projectId, 'pending', 'QA submit');
 $workflow->transition('property', $propertyId, 'pending', 'QA submit');
 $workflow->transition('listing', $listingId, 'pending', 'QA submit');
 
 Session::put('auth.user_id', $adminId);
 $workflow->transition('company', $companyId, 'approved', 'QA approve');
+
+$companyApprovedAlert = $pdo->prepare(
+    'SELECT action_url FROM notifications
+     WHERE user_id = :user_id AND entity_type = "company"
+       AND entity_id = :company_id AND type = "company_approved"
+     LIMIT 1'
+);
+$companyApprovedAlert->execute(['user_id' => $developerId, 'company_id' => $companyId]);
+if ($companyApprovedAlert->fetchColumn() !== '/developer/company') {
+    throw new RuntimeException('Company owner bell did not receive approval result.');
+}
+
+// Regression: an administrator may correct an approved company gallery without
+// reverting the workflow status, but other published inventory remains locked.
+$approvedCompanyFile = tempnam(sys_get_temp_dir(), 'barama-company-');
+if (!is_string($approvedCompanyFile) || file_put_contents($approvedCompanyFile, $png) === false) {
+    throw new RuntimeException('Unable to prepare approved-company QA image.');
+}
+$approvedCompanyMediaId = (new MediaStorageService())->storeAndAttach([
+    'name' => 'approved-company-qa.png',
+    'tmp_name' => $approvedCompanyFile,
+    'error' => UPLOAD_ERR_OK,
+    'size' => filesize($approvedCompanyFile),
+], [
+    'entity_type' => 'company',
+    'entity_id' => $companyId,
+    'collection' => 'gallery',
+    'is_primary' => false,
+    'alt_text' => 'QA approved company image',
+]);
+
+$companyMediaAttachment = $pdo->prepare(
+    'SELECT id FROM media_attachments
+     WHERE entity_type = "company" AND entity_id = :company_id
+       AND media_asset_id = :media_id LIMIT 1'
+);
+$companyMediaAttachment->execute([
+    'company_id' => $companyId,
+    'media_id' => $approvedCompanyMediaId,
+]);
+$companyMediaAttachmentId = (int) $companyMediaAttachment->fetchColumn();
+if ($companyMediaAttachmentId < 1) {
+    throw new RuntimeException('Approved-company media was not attached.');
+}
+
+$companyMedia = new MediaManagementService();
+$companyMedia->setPrimary($companyMediaAttachmentId);
+$companyMedia->updateAltText($companyMediaAttachmentId, 'Updated approved company photo');
+$primaryCompanyImage = $pdo->prepare(
+    'SELECT ma.is_primary, m.alt_text
+     FROM media_attachments ma
+     INNER JOIN media_assets m ON m.id = ma.media_asset_id
+     WHERE ma.id = :id LIMIT 1'
+);
+$primaryCompanyImage->execute(['id' => $companyMediaAttachmentId]);
+$primaryCompanyImageRow = $primaryCompanyImage->fetch(\PDO::FETCH_ASSOC);
+if (!is_array($primaryCompanyImageRow)
+    || (int) $primaryCompanyImageRow['is_primary'] !== 1
+    || $primaryCompanyImageRow['alt_text'] !== 'Updated approved company photo') {
+    throw new RuntimeException('Approved-company primary-image or alt-text update failed.');
+}
+
+$companyMedia->remove($companyMediaAttachmentId);
+$approvedCompanyAudit = $pdo->prepare(
+    'SELECT COUNT(*) FROM security_audit_events
+     WHERE actor_user_id = :actor_user_id AND event_type LIKE "admin.approved_company_media_%"'
+);
+$approvedCompanyAudit->execute(['actor_user_id' => $adminId]);
+if ((int) $approvedCompanyAudit->fetchColumn() < 4) {
+    throw new RuntimeException('Approved-company privileged media edits were not audited.');
+}
+
 $workflow->transition('project', $projectId, 'approved', 'QA approve');
 $workflow->transition('project', $projectId, 'published', 'QA publish');
 $workflow->transition('property', $propertyId, 'approved', 'QA approve');
@@ -226,6 +310,16 @@ try {
     $listingEditLocked = true;
 }
 
+$approvedCompanyUploadLocked = false;
+try {
+    (new MediaStorageService())->storeAndAttach([], [
+        'entity_type' => 'company',
+        'entity_id' => $companyId,
+    ]);
+} catch (DomainException) {
+    $approvedCompanyUploadLocked = true;
+}
+
 $companyEditLocked = false;
 try {
     (new CompanyManagementService())->update($companyId, [
@@ -246,7 +340,7 @@ try {
     $mediaEditLocked = true;
 }
 
-if (!$listingEditLocked || !$companyEditLocked || !$mediaEditLocked) {
+if (!$listingEditLocked || !$companyEditLocked || !$mediaEditLocked || !$approvedCompanyUploadLocked) {
     throw new RuntimeException('Reviewed-content edit locks were not enforced.');
 }
 

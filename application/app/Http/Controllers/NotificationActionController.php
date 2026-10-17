@@ -71,7 +71,7 @@ final class NotificationActionController
             || preg_match('~(^|/)\.{1,2}(/|$)~', $path)) {
             return null;
         }
-        if (preg_match('~^/(?:dashboard/(?:audit|security|notifications|inquiries|properties|projects|companies|users)(?:/|$)|developer/(?:notifications|company|projects|properties|listings|inquiries|viewings|leads)(?:/|$)|account/(?:notifications|alerts|viewings|inquiries|saved|recent|profile)(?:/|$)|properties(?:/|$)|projects(?:/|$)|company(?:/|$))~', $path) !== 1) {
+        if (preg_match('~^/(?:dashboard/(?:audit|security|notifications|inquiries|properties|projects|companies|users|approvals)(?:/|$)|dashboard/manage/company/[1-9][0-9]*$|developer/(?:notifications|company|projects|properties|listings|inquiries|viewings|leads)(?:/|$)|account/(?:notifications|alerts|viewings|inquiries|saved|recent|profile)(?:/|$)|properties(?:/|$)|projects(?:/|$)|company(?:/|$))~', $path) !== 1) {
             return null;
         }
         return $raw;

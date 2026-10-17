@@ -43,7 +43,17 @@ final class MediaStorageService
         }
 
         (new CompanyAccessService())->assertCanManage((int) $context['company_id']);
-        if (!in_array((string) $context['status'], ['draft', 'rejected'], true)) {
+
+        $approvedCompanyAdmin = ApprovedCompanyMediaEditPolicy::allows(
+            $entityType,
+            (string) $context['status'],
+            $auth->hasRole('administrator'),
+            $auth->can('dashboard.access'),
+            $auth->can('company.manage'),
+            $auth->can('media.manage')
+        );
+
+        if (!in_array((string) $context['status'], ['draft', 'rejected'], true) && !$approvedCompanyAdmin) {
             throw new DomainException(
                 'Reviewed or published records are locked. Return the target to an editable review state before changing its media.'
             );
@@ -162,6 +172,14 @@ final class MediaStorageService
                 (int) ($input['position'] ?? 0),
                 DomainInput::boolean($input, 'is_primary')
             );
+            if ($approvedCompanyAdmin) {
+                (new SecurityAuditService())->record(
+                    'admin.approved_company_media_uploaded',
+                    (int) $user['id'],
+                    null,
+                    ['company_id' => $entityId, 'media_id' => $mediaId]
+                );
+            }
             $pdo->commit();
             return $mediaId;
         } catch (Throwable $exception) {

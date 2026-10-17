@@ -540,7 +540,14 @@ $details = match ($recordResource) {
                 <span>#<?= e((string) $record['id']) ?></span>
             </div>
         </div>
-        <?php if ($actions !== []): ?><div class="workspace-record-actions"><?= implode('', $actions) ?></div><?php endif; ?>
+        <?php if ($actions !== [] || ($workspaceType === 'admin' && $recordResource === 'company' && $status === 'pending')): ?>
+            <div class="workspace-record-actions">
+                <?php if ($workspaceType === 'admin' && $recordResource === 'company' && $status === 'pending'): ?>
+                    <a class="btn btn-outline-secondary" href="<?= e(url('/dashboard/approvals?type=company')) ?>"><?= app_icon('shield') ?><span>Approval Queue</span></a>
+                <?php endif; ?>
+                <?= implode('', $actions) ?>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div data-workspace-notice hidden></div>
