@@ -1,0 +1,310 @@
+/* BARAMA_PLANS_MODAL_PREMIUM_THEME_V182
+ * Scoped to Create/Edit Plan dialog, which lives outside .finance-plans.
+ * Retains all existing PHP fields, CSRF and billing actions.
+ * No global or inline style changes.
+ */
+.finance-plan-modal {
+    --pm-surface: #ffffff;
+    --pm-subtle: #f7f9fd;
+    --pm-field: #ffffff;
+    --pm-text: #17243b;
+    --pm-muted: #64748b;
+    --pm-border: #dde5f0;
+    --pm-accent: #2563eb;
+    --pm-accent-soft: #eef4ff;
+    --pm-notice: #f0f6ff;
+    --pm-shadow: 0 32px 90px rgba(15, 23, 42, .24);
+    color: var(--pm-text);
+    color-scheme: light;
+}
+html[data-bs-theme="dark"] .finance-plan-modal {
+    --pm-surface: #111e30;
+    --pm-subtle: #17263a;
+    --pm-field: #152237;
+    --pm-text: #f0f5fd;
+    --pm-muted: #a6b7d0;
+    --pm-border: #33445d;
+    --pm-accent: #86a8ff;
+    --pm-accent-soft: #203658;
+    --pm-notice: #172d4c;
+    --pm-shadow: 0 32px 90px rgba(0, 0, 0, .54);
+    color-scheme: dark;
+}
+
+.finance-plan-modal .finance-plan-modal__backdrop {
+    background: rgba(10, 20, 37, .50);
+    backdrop-filter: blur(6px);
+}
+html[data-bs-theme="dark"] .finance-plan-modal .finance-plan-modal__backdrop {
+    background: rgba(2, 8, 18, .76);
+}
+
+.finance-plan-modal .finance-plan-modal__dialog {
+    box-sizing: border-box;
+    width: min(920px, calc(100vw - 36px));
+    max-height: min(860px, calc(100dvh - 36px));
+    overflow: hidden;
+    border: 1px solid var(--pm-border);
+    border-radius: 20px;
+    background: var(--pm-surface);
+    color: var(--pm-text);
+    box-shadow: var(--pm-shadow);
+}
+.finance-plan-modal .finance-plan-modal__dialog > header {
+    align-items: center;
+    padding: 20px 24px 18px;
+    border-bottom: 1px solid var(--pm-border);
+    background: var(--pm-surface);
+}
+.finance-plan-modal .finance-plan-modal__dialog .eyebrow {
+    color: var(--pm-accent);
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .115em;
+    text-transform: uppercase;
+}
+.finance-plan-modal .finance-plan-modal__dialog h2 {
+    margin: 8px 0 4px;
+    color: var(--pm-text);
+    font-size: clamp(1.35rem, 2.1vw, 1.65rem);
+    font-weight: 800;
+    letter-spacing: -.025em;
+    line-height: 1.22;
+}
+.finance-plan-modal .finance-plan-modal__dialog header p {
+    margin: 0;
+    color: var(--pm-muted);
+    font-size: .89rem;
+    line-height: 1.5;
+}
+
+.finance-plan-modal .finance-plan-modal__close {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid var(--pm-border);
+    border-radius: 11px;
+    background: var(--pm-subtle);
+    color: var(--pm-text);
+    font-size: 1.35rem;
+    line-height: 1;
+}
+.finance-plan-modal .finance-plan-modal__close:hover {
+    background: var(--pm-accent-soft);
+    color: var(--pm-accent);
+}
+.finance-plan-modal .finance-plan-modal__body {
+    box-sizing: border-box;
+    max-height: calc(min(860px, 100dvh - 36px) - 110px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 21px 24px 24px;
+    color: var(--pm-text);
+    scrollbar-color: var(--pm-border) transparent;
+}
+
+.finance-plan-modal .finance-plan-modal__presets {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 19px;
+}
+.finance-plan-modal .finance-plan-modal__presets > span {
+    color: var(--pm-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+.finance-plan-modal .finance-plan-modal__presets button {
+    min-height: 35px;
+    padding: 7px 12px;
+    border: 1px solid var(--pm-border);
+    border-radius: 9px;
+    background: var(--pm-surface);
+    color: var(--pm-text);
+    font-size: .8rem;
+    font-weight: 700;
+}
+.finance-plan-modal .finance-plan-modal__presets button:hover,
+.finance-plan-modal .finance-plan-modal__presets button:focus-visible {
+    border-color: var(--pm-accent);
+    background: var(--pm-accent-soft);
+    color: var(--pm-accent);
+}
+
+.finance-plan-modal .finance-plan-form {
+    gap: 17px;
+}
+.finance-plan-modal .finance-plan-form label {
+    min-width: 0;
+    gap: 7px;
+}
+.finance-plan-modal .finance-plan-form label > span {
+    color: var(--pm-muted);
+    font-size: .78rem;
+    font-weight: 750;
+    line-height: 1.3;
+}
+.finance-plan-modal .finance-plan-form__grid {
+    gap: 14px;
+}
+.finance-plan-modal .finance-plan-form__limits {
+    gap: 10px;
+}
+.finance-plan-modal .finance-plan-form input.form-control,
+.finance-plan-modal .finance-plan-form select.form-select,
+.finance-plan-modal .finance-plan-form textarea.form-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 13px;
+    border: 1px solid var(--pm-border);
+    border-radius: 11px;
+    background: var(--pm-field);
+    color: var(--pm-text);
+    font-family: inherit;
+    font-size: .91rem;
+    font-weight: 500;
+    line-height: 1.35;
+    box-shadow: 0 1px 2px rgba(10, 20, 35, .035);
+    caret-color: var(--pm-accent);
+    color-scheme: inherit;
+    opacity: 1;
+}
+.finance-plan-modal .finance-plan-form input.form-control::placeholder,
+.finance-plan-modal .finance-plan-form textarea.form-control::placeholder {
+    color: var(--pm-muted);
+    opacity: .85;
+}
+.finance-plan-modal .finance-plan-form select.form-select option {
+    background: var(--pm-field);
+    color: var(--pm-text);
+}
+.finance-plan-modal .finance-plan-form textarea.form-control {
+    min-height: 112px;
+    max-height: 280px;
+    resize: vertical;
+}
+.finance-plan-modal .finance-plan-form input.form-control:focus,
+.finance-plan-modal .finance-plan-form select.form-select:focus,
+.finance-plan-modal .finance-plan-form textarea.form-control:focus {
+    border-color: var(--pm-accent);
+    outline: 0;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pm-accent) 17%, transparent);
+}
+.finance-plan-modal .finance-plan-form :is(input, select, textarea):disabled {
+    background: var(--pm-subtle);
+    color: var(--pm-muted);
+    cursor: not-allowed;
+    opacity: .7;
+}
+.finance-plan-modal .finance-plan-form__section {
+    gap: 13px;
+    padding: 15px 16px;
+    border: 1px solid var(--pm-border);
+    border-radius: 14px;
+    background: var(--pm-subtle);
+}
+.finance-plan-modal .finance-plan-form__section > div:first-child strong {
+    color: var(--pm-text);
+    font-size: .94rem;
+    font-weight: 800;
+}
+.finance-plan-modal .finance-plan-form__section > div:first-child small {
+    margin-top: 4px;
+    color: var(--pm-muted);
+    font-size: .77rem;
+    line-height: 1.5;
+}
+.finance-plan-modal .finance-plan-form__notice {
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--pm-accent) 24%, var(--pm-border));
+    border-radius: 12px;
+    background: var(--pm-notice);
+    color: var(--pm-text);
+    font-size: .81rem;
+    line-height: 1.55;
+}
+.finance-plan-modal .finance-plan-form__notice svg {
+    width: 17px;
+    height: 17px;
+    color: var(--pm-accent);
+}
+.finance-plan-modal .finance-plan-form footer {
+    gap: 10px;
+    padding-top: 5px;
+}
+.finance-plan-modal .finance-plan-form footer .btn {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: .87rem;
+    font-weight: 750;
+}
+.finance-plan-modal .finance-plan-form footer .btn-outline-secondary {
+    border: 1px solid var(--pm-border);
+    background: var(--pm-surface);
+    color: var(--pm-text);
+}
+.finance-plan-modal .finance-plan-form footer .btn-outline-secondary:hover {
+    background: var(--pm-subtle);
+    border-color: var(--pm-accent);
+}
+.finance-plan-modal .finance-plan-form footer .btn-primary {
+    background: #2563eb;
+    border: 1px solid #2563eb;
+    color: #fff;
+}
+.finance-plan-modal .finance-plan-form footer .btn-primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+.finance-plan-modal :is(button, input, select, textarea):focus-visible {
+    outline: 2px solid var(--pm-accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+    .finance-plan-modal {
+        padding: 10px;
+    }
+    .finance-plan-modal .finance-plan-modal__dialog {
+        width: min(100%, calc(100vw - 20px));
+        max-height: calc(100dvh - 20px);
+        border-radius: 16px;
+    }
+    .finance-plan-modal .finance-plan-modal__dialog > header {
+        padding: 16px 16px 14px;
+    }
+    .finance-plan-modal .finance-plan-modal__body {
+        max-height: calc(100dvh - 120px);
+        padding: 16px;
+    }
+    .finance-plan-modal .finance-plan-form__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .finance-plan-modal .finance-plan-form__limits {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 470px) {
+    .finance-plan-modal .finance-plan-form__grid,
+    .finance-plan-modal .finance-plan-form__limits {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .finance-plan-modal .finance-plan-form footer {
+        flex-wrap: wrap;
+    }
+    .finance-plan-modal .finance-plan-form footer .btn {
+        flex: 1 1 150px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .finance-plan-modal .finance-plan-form :is(input, select, textarea) {
+        transition: none;
+    }
+}
