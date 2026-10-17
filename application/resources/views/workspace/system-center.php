@@ -36,7 +36,6 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
     </div>
     <?php if ($systemSection === 'auto-updater'): ?>
     <div class="bsys-update-header-right">
-      <div class="bsys-chip-row"><span class="bsys-chip">Barama Real Estate</span><span class="bsys-state bsys-state--neutral">v<?= e($systemVersion) ?></span></div>
       <div class="bsys-update-header-actions" aria-label="Update management actions">
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-updates')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
