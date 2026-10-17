@@ -45,6 +45,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         <?php if (!empty($systemUpdaterPresent)): ?><a class="bsys-button bsys-button--outline" href="<?= e(url('/updater/')) ?>">Open guarded updater <span aria-hidden="true">↗</span></a><?php endif; ?>
       </div>
       <small class="bsys-update-discovery-note">Discovery only · no automatic download or installation</small>
+      <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note bsys-note--feed-status bsys-update-header-feedback" role="status" aria-live="polite"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
     </div>
     <?php else: ?>
     <div class="bsys-chip-row"><span class="bsys-chip">Barama Real Estate</span><span class="bsys-state bsys-state--neutral">v<?= e($systemVersion) ?></span></div>
@@ -273,7 +274,6 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         <?php endforeach; ?>
         </tbody>
       </table></div>
-      <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note bsys-note--feed-status" role="status" aria-live="polite"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
       <div class="bsys-premium-footer-actions" aria-label="Staged release inspection">
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/inspect-staged-release')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
