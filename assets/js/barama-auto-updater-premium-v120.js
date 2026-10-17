@@ -58,14 +58,17 @@
   };
   const sync = () => {
     const name = (state.textContent || '').trim();
-    const verified = name === 'Active license verified' && host.dataset.verified === '1';
+    const installed = name === 'Installed license recognized';
+    const verified = (name === 'Active license verified' || installed) && host.dataset.verified === '1';
     const waiting = name === 'Wait before retrying' || name === 'Publisher temporarily unavailable';
     const text = tag.querySelector('[data-publisher-summary]');
-    if (text) text.textContent = verified ? 'Verified' : name || 'Not checked';
+    if (text) text.textContent = installed && verified ? 'Activated' : verified ? 'Verified' : name || 'Not checked';
     tag.classList.remove('bsys-premium-tag--good', 'bsys-premium-tag--needs', 'bsys-premium-tag--neutral');
     tag.classList.add(verified ? 'bsys-premium-tag--good' : waiting ? 'bsys-premium-tag--neutral' : 'bsys-premium-tag--needs');
-    // The publisher response is the authority: do not cache or invent a verified session.
-    const message = verified ? 'Publisher confirmed the current installation'
+    // Server-provided persisted evidence or a recognized installed activation
+    // is authoritative for display; the browser never caches license state.
+    const message = installed && verified ? 'Installed activation recognized; optional publisher check'
+      : verified ? 'Last publisher verification saved for this installation'
       : name === 'Not checked' ? 'Publisher validation not confirmed'
       : waiting ? 'Verification needs retry or connection review'
       : 'Publisher verification needs attention';
