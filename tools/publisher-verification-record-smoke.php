@@ -74,6 +74,14 @@ namespace {
         ['APP_URL' => 'https://other.example.test'], $id) === null, 'Other domain cannot inherit verification');
     $assert(PublisherVerificationRecord::fromState(Installation::$license, $runtime, str_repeat('b', 32)) === null,
         'Other installation cannot inherit verification');
+    $mixed = Installation::$license;
+    $mixed['publisher_v2_activation'] = ['version' => 1];
+    $assert(PublisherVerificationRecord::fromState($mixed, $runtime, $id) === null,
+        'Conflicting Publisher V2 activation cannot inherit V1 verification');
+    $assert(PublisherVerificationRecord::fromState(Installation::$license,
+        ['APP_URL' => 'http://barama.example.test'], $id) === null,
+        'Insecure runtime URL cannot inherit verification');
+
     $deactivated = Installation::$license;
     $deactivated['status'] = 'deactivated';
     $assert(PublisherVerificationRecord::fromState($deactivated, $runtime, $id) === null, 'Deactivation invalidates display');
