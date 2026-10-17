@@ -133,3 +133,15 @@
         transition: none;
     }
 }
+
+.barama-sys-v103.bsys-auto-premium .bsys-update-header-feedback {
+    width: min(560px, 100%);
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--bp-accent) 20%, var(--bp-line));
+    border-radius: 10px;
+    background: var(--bsys-inset);
+    color: var(--bp-text);
+    line-height: 1.45;
+    text-align: left;
+}
