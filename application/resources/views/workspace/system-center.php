@@ -55,11 +55,11 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
   $feedVersion = (string)($feedResult['version'] ?? '');
   $feedConfigured = !empty($feedReady['can_check']);
   $premiumRows = [
-    ['id'=>'license','icon'=>'shield','label'=>'Live license validation',
+    ['id'=>'license','icon'=>'shield','label'=>'Publisher verification record',
       'state'=>$publisherVerified ? 'Verified' : $publisherState,
       'tone'=>$publisherVerified ? 'good' : 'needs',
-      'summary'=>$publisherVerified ? 'Publisher confirmed the current installation' : 'Verify the active publisher license',
-      'detail'=>'The active license is checked with Ton Samith when an administrator submits Verify again. This is separate from update entitlement.',
+      'summary'=>$publisherVerified ? 'Last successful publisher check securely saved for this installation' : 'Publisher confirmation not recorded for this installation',
+      'detail'=>'The last trusted publisher result stays recorded across sessions until the installation binding changes or a new trusted verification replaces it. Verify again is optional; update entitlement is checked separately.',
       'priority'=>$publisherVerified ? 20 : 200],
     ['id'=>'domain','icon'=>'globe','label'=>'Bound domain authorization',
       'state'=>$boundOk ? 'Matched' : 'Review needed', 'tone'=>$boundOk ? 'good' : 'needs',
@@ -124,7 +124,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
       <div class="bsys-premium-hero-copy">
         <span class="bsys-license-eyebrow">License verification</span>
         <h2 data-publisher-hero-title><?= $publisherVerified ? 'License verified' : 'Verify your Barama license' ?></h2>
-        <p class="bsys-license-hero-detail" data-publisher-hero-detail><?= $publisherVerified ? 'Ton Samith confirmed an active license for this installation.' : 'Check your license securely with Ton Samith.' ?></p>
+        <p class="bsys-license-hero-detail" data-publisher-hero-detail><?= $publisherVerified ? 'Publisher verification saved for this installation. No repeat check is required to view the recorded result.' : 'Check your license securely with Ton Samith when you choose.' ?></p>
         <div class="bsys-license-last" role="status" aria-live="polite" aria-atomic="true">
           <span class="bsys-state <?= $publisherVerified ? 'bsys-state--good' : 'bsys-state--neutral' ?>" data-publisher-state><?= e($publisherState) ?></span>
           <small data-publisher-checked>Last checked: <?= e((string) ($systemPublisherCheck['checked_at'] ?? 'Never')) ?></small>
