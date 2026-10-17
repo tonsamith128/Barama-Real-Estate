@@ -145,3 +145,10 @@
     line-height: 1.45;
     text-align: left;
 }
+
+/* Production compatibility: older custom templates may retain the original
+   publisher-check flash below the overview table. Preserve that PHP markup
+   untouched; visually show only the new header feedback. */
+.barama-sys-v103.bsys-auto-premium .bsys-note--feed-status:not(.bsys-update-header-feedback) {
+    display: none;
+}
