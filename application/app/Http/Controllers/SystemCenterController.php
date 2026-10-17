@@ -230,24 +230,47 @@ final class SystemCenterController
         unset($_SESSION['_barama_publisher_license_flash_v112']);
         $publisherResult = $_SESSION['_barama_publisher_license_result_v111'] ?? null;
         $savedPublisherResult = null;
+        $installedActivation = null;
         if ($section === 'auto-updater') {
             try {
                 $savedPublisherResult = \Barama\Services\PublisherVerificationRecord::read();
+                $local = (new \Barama\Services\Licensing\UnifiedLicenseService())->localStatus();
+                if (!empty($local['installer_recognized'])
+                    && in_array($local['state'] ?? null, ['verified', 'pending'], true)) {
+                    $receipt = Installation::licenseState();
+                    $v2 = $receipt['publisher_v2_verification'] ?? null;
+                    $blocked = is_array($v2)
+                        && in_array($v2['blocked_reason'] ?? null,
+                            ['LICENSE_REVOKED', 'LICENSE_SUSPENDED', 'LICENSE_EXPIRED'], true)
+                        && \Barama\Services\LicenseManagerClient::canonicalDomain((string) ($v2['domain'] ?? ''))
+                            === \Barama\Services\LicenseManagerClient::canonicalDomain((string) ($receipt['domain'] ?? ''));
+                    $expiry = $receipt['expires_at'] ?? null;
+                    $expired = is_string($expiry) && trim($expiry) !== ''
+                        && ($expiresAt = strtotime($expiry)) !== false
+                        && $expiresAt <= time();
+                    if (!$blocked && !$expired) {
+                        $installedActivation = [
+                            'state' => 'Installed license recognized',
+                            'checked_at' => is_string($local['last_verified_at'] ?? null)
+                                ? $local['last_verified_at'] : 'Activation recorded',
+                        ];
+                    }
+                }
             } catch (Throwable) {
-                // Private license metadata is optional for rendering, never a GET-time write.
+                // A missing/invalid canonical receipt never creates a verified status.
             }
         }
         if (!is_array($publisherResult) || !isset($publisherResult['state'], $publisherResult['checked_at'])
             || !is_string($publisherResult['state']) || !is_string($publisherResult['checked_at'])
             || !preg_match('/^(Active license verified|Unable to verify|License not configured|License binding mismatch|Publisher settings not trusted|Wait before retrying|Publisher temporarily unavailable|Publisher confirmed revoked|Publisher confirmed suspended|Publisher confirmed expired)$/D', $publisherResult['state'])
         ) {
-            $publisherResult = $savedPublisherResult
+            $publisherResult = $savedPublisherResult ?? $installedActivation
                 ?? ['state' => 'Not checked', 'checked_at' => 'Never'];
         }
-        if ($savedPublisherResult !== null && !$publisherFlash) {
-            // Persisted publisher evidence outranks a stale session, including
-            // a newer revocation recorded from a different administrator.
-            $publisherResult = $savedPublisherResult;
+        if (!$publisherFlash && ($savedPublisherResult !== null || $installedActivation !== null)) {
+            // A persisted publisher decision takes priority over installed
+            // activation. A revoked result must never become locally "active".
+            $publisherResult = $savedPublisherResult ?? $installedActivation;
         } elseif ($savedPublisherResult === null
             && in_array($publisherResult['state'], [
                 'Active license verified',
@@ -255,9 +278,10 @@ final class SystemCenterController
                 'Publisher confirmed suspended',
                 'Publisher confirmed expired',
             ], true)) {
-            // Never resurrect an old session's green status after the
-            // installation token, domain, expiry or canonical state changed.
-            $publisherResult = ['state' => 'Not checked', 'checked_at' => 'Never'];
+            // A session is not evidence: never resurrect it after the license
+            // token, domain, installation ID or expiry changes.
+            $publisherResult = $installedActivation
+                ?? ['state' => 'Not checked', 'checked_at' => 'Never'];
         }
         $feedResult = $_SESSION['_barama_update_feed_result_v151'] ?? null;
         if (!is_array($feedResult) || !in_array(($feedResult['status'] ?? ''),
