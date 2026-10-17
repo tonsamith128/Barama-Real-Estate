@@ -120,7 +120,9 @@ final class SystemCenterController
             $_SESSION['_barama_update_feed_flash_v151'] = match ($result['status']) {
                 'available' => 'A newer publisher-signed release was found. No package was downloaded.',
                 'eligible' => 'Update entitlement confirmed. No newer signed release was published.',
-                'ineligible' => 'Publisher reports that this installation is not entitled to updates.',
+                'ineligible' => ($result['reason'] ?? '') === 'not_configured'
+                    ? 'Update entitlement has not been configured by the publisher. Contact License assistance; no update was downloaded.'
+                    : 'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
                 default => 'Update check completed.',
             };
         } catch (\Throwable) {
