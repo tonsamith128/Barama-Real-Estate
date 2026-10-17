@@ -180,6 +180,7 @@ $slugs = array_map(
 >
 <link rel="stylesheet" href="<?= e(asset('css/finance-plans-premium-white-v181.css') . '?v=181') ?>">
 <script src="<?= e(asset('js/finance-plans-actions-v181.js') . '?v=181') ?>" defer></script>
+<link rel="stylesheet" href="<?= e(asset('css/finance-plans-modal-theme-v182.css') . '?v=182') ?>">
 
 <section class="workspace-page finance-plans" data-plans-workspace>
     <!-- BARAMA_PLANS_VERTICAL_GLOBAL_OVERFLOW_V100 -->
