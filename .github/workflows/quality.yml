@@ -68,6 +68,10 @@ jobs:
           php -l application/app/Services/MediaStorageService.php
           php -l application/app/Services/MediaManagementService.php
           php tools/approved-company-media-policy-smoke.php
+          php -l application/app/Services/CompanyWorkflowNotificationService.php
+          php -l application/app/Services/DomainWorkflowService.php
+          php -l application/app/Http/Controllers/NotificationActionController.php
+          php tools/company-workflow-notification-smoke.php
 
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
