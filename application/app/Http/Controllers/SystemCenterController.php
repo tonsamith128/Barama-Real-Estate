@@ -243,13 +243,21 @@ final class SystemCenterController
         ) {
             $publisherResult = $savedPublisherResult
                 ?? ['state' => 'Not checked', 'checked_at' => 'Never'];
-        } elseif ($savedPublisherResult !== null && !$publisherFlash
-            && in_array($publisherResult['state'], [
-                'Unable to verify', 'Wait before retrying', 'Publisher temporarily unavailable',
-            ], true)) {
-            // On a later page load, preserve the last authenticated publisher
-            // result instead of requiring the administrator to check again.
+        }
+        if ($savedPublisherResult !== null && !$publisherFlash) {
+            // Persisted publisher evidence outranks a stale session, including
+            // a newer revocation recorded from a different administrator.
             $publisherResult = $savedPublisherResult;
+        } elseif ($savedPublisherResult === null
+            && in_array($publisherResult['state'], [
+                'Active license verified',
+                'Publisher confirmed revoked',
+                'Publisher confirmed suspended',
+                'Publisher confirmed expired',
+            ], true)) {
+            // Never resurrect an old session's green status after the
+            // installation token, domain, expiry or canonical state changed.
+            $publisherResult = ['state' => 'Not checked', 'checked_at' => 'Never'];
         }
         $feedResult = $_SESSION['_barama_update_feed_result_v151'] ?? null;
         if (!is_array($feedResult) || !in_array(($feedResult['status'] ?? ''),
