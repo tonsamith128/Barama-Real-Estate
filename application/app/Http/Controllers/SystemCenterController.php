@@ -248,7 +248,8 @@ final class SystemCenterController
                     $expired = is_string($expiry) && trim($expiry) !== ''
                         && ($expiresAt = strtotime($expiry)) !== false
                         && $expiresAt <= time();
-                    if (!$blocked && !$expired) {
+                    if (!$blocked && !$expired
+                        && ($receipt['publisher_v2_activation'] ?? null) === null) {
                         $installedActivation = [
                             'state' => 'Installed license recognized',
                             'checked_at' => is_string($local['last_verified_at'] ?? null)
