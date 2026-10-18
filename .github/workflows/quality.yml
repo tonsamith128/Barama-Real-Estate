@@ -91,6 +91,9 @@ jobs:
           php -l tools/auto-updater-simple-render-smoke.php
           php tools/auto-updater-header-actions-smoke.php
           php tools/auto-updater-simple-render-smoke.php
+          php -l application/app/Services/Updates/VerifiedReleaseFilePlanV2.php
+          php -l tools/verified-release-file-plan-smoke.php
+          php tools/verified-release-file-plan-smoke.php
           php tools/auto-updater-entitlement-results-smoke.php
 
       - name: Run localization contract smoke test
