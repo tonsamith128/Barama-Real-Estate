@@ -114,6 +114,12 @@ jobs:
           php -l tools/verified-update-snapshot-v2-smoke.php
           php tools/verified-update-snapshot-v2-smoke.php
 
+      - name: Rehearse isolated locked updater transaction and rollback
+        run: |
+          php -l application/app/Services/Updates/IsolatedUpdateTransactionV1.php
+          php -l tools/isolated-update-transaction-smoke.php
+          php tools/isolated-update-transaction-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
