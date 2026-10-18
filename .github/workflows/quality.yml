@@ -143,6 +143,14 @@ jobs:
           php -l tools/staging-signed-release-preflight-smoke.php
           php tools/staging-signed-release-preflight-smoke.php
 
+      - name: Bind publisher entitlement to exact staging ZIP without installing
+        run: |
+          php -l application/app/Services/Updates/StagingPublisherCandidateV1.php
+          php -l application/app/Services/Updates/TrustedReleaseFeed.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l tools/staging-publisher-candidate-smoke.php
+          php tools/staging-publisher-candidate-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
