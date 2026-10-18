@@ -131,6 +131,12 @@ jobs:
           BARAMA_CI_ISOLATED_MYSQL_RECOVERY: ALLOW_DISPOSABLE_TEST_SCHEMAS_ONLY
         run: php tools/isolated-mysql-recovery-smoke.php --ci
 
+      - name: Verify fail-closed staging update readiness gate
+        run: |
+          php -l application/app/Services/Updates/StagingUpdateReadinessV1.php
+          php -l tools/staging-update-readiness-smoke.php
+          php tools/staging-update-readiness-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
