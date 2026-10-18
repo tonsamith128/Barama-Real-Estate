@@ -164,6 +164,13 @@ jobs:
           php -l tools/publisher-delivery-cli-bootstrap-smoke.php
           php tools/publisher-delivery-cli-bootstrap-smoke.php
 
+      - name: Verify publisher public key trust bootstrap against pinned fingerprint
+        run: |
+          php -l application/app/Services/Updates/PublisherTrustBootstrapV1.php
+          php -l application/bin/publisher-trust-bootstrap.php
+          php -l tools/publisher-trust-bootstrap-smoke.php
+          sudo -E php tools/publisher-trust-bootstrap-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
