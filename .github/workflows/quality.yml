@@ -171,6 +171,11 @@ jobs:
           php -l tools/publisher-trust-bootstrap-smoke.php
           sudo -E php tools/publisher-trust-bootstrap-smoke.php
 
+      - name: Verify publisher public-key origin handoff is fail-closed
+        run: |
+          python3 -B tools/publisher-trust-handoff-smoke.py
+          python3 -m py_compile tools/publisher-trust-handoff.py
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
