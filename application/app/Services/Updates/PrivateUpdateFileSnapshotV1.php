@@ -268,9 +268,13 @@ final class PrivateUpdateFileSnapshotV1
     private static function safeLeaf(string $root, string $path): void
     {
         $at = $root;
-        foreach (explode('/', $path) as $component) {
+        $parts = explode('/', $path);
+        foreach ($parts as $index => $component) {
             $at .= '/'.$component;
             if (is_link($at)) throw new RuntimeException('FILE_SNAPSHOT_SYMLINK_DENIED');
+            if ($index < count($parts) - 1 && file_exists($at) && !is_dir($at)) {
+                throw new RuntimeException('FILE_SNAPSHOT_PARENT_NOT_DIRECTORY');
+            }
             if (file_exists($at) && !is_dir($at) && !is_file($at)) {
                 throw new RuntimeException('FILE_SNAPSHOT_SPECIAL_FILE_DENIED');
             }
