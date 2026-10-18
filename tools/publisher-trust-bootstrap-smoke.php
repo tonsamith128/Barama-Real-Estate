@@ -44,6 +44,26 @@ try {
     define('BASE_PATH',$site);
     define('APP_PATH',$site.'/application');
     require dirname(__DIR__).'/application/app/Services/Updates/PublisherTrustBootstrapV1.php';
+    // Execute actual CLI in the disposable site, catching bootstrap regressions.
+    $binDir=$site.'/application/bin';
+    $svcDir=$site.'/application/app/Services/Updates';
+    mkdir($binDir,0700,true);
+    mkdir($svcDir,0700,true);
+    copy(dirname(__DIR__).'/application/bin/publisher-trust-bootstrap.php',
+        $binDir.'/publisher-trust-bootstrap.php');
+    copy(dirname(__DIR__).'/application/app/Services/Updates/PublisherTrustBootstrapV1.php',
+        $svcDir.'/PublisherTrustBootstrapV1.php');
+    $pipes=[];
+    $process=proc_open([PHP_BINARY,$binDir.'/publisher-trust-bootstrap.php','--check'],
+        [1=>['pipe','w'],2=>['pipe','w']],$pipes,$site);
+    if(!is_resource($process))throw new RuntimeException('CLI_BOOTSTRAP_FIXTURE_FAILED');
+    $stdout=stream_get_contents($pipes[1]);fclose($pipes[1]);
+    $stderr=stream_get_contents($pipes[2]);fclose($pipes[2]);
+    $exit=proc_close($process);
+    $check($exit===0,'Standalone CLI missing-config readiness succeeds');
+    $check(str_contains($stdout,'TRUST_STATUS=PUBLISHER_TRUST_NOT_PROVISIONED'),'Correct CLI status');
+    $check(str_contains($stdout,'AUTO_INSTALL=DISABLED'),'Actual CLI cannot install update');
+    $check($stderr==='','No PHP fatal in standalone CLI');
     $klass=\Barama\Services\Updates\PublisherTrustBootstrapV1::class;
     $r=$klass::check($site);
     $check($r['status']==='PUBLISHER_TRUST_NOT_PROVISIONED','Missing settings visible');
