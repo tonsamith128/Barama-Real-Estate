@@ -117,6 +117,15 @@ final class SystemCenterController
                 Installation::licenseState(), Installation::runtimeConfig()
             );
             $_SESSION['_barama_update_feed_result_v151'] = $result;
+            // Reconcile this *fresh* authenticated publisher response against
+            // the signed ZIP on the structure-only staging site. Read-only.
+            // Production always returns STAGING_ONLY; no install is authorized.
+            $candidate = \Barama\Services\Updates\StagingPublisherCandidateV1::inspect(
+                defined('BASE_PATH') ? (string) BASE_PATH : '',
+                (string) APP_VERSION,
+                $result
+            );
+            $_SESSION['_barama_publisher_candidate_v1'] = $candidate;
             $_SESSION['_barama_update_feed_flash_v151'] = match ($result['status']) {
                 'available' => 'A newer publisher-signed release was found. No package was downloaded.',
                 'eligible' => 'Update entitlement confirmed. No newer signed release was published.',
@@ -125,7 +134,13 @@ final class SystemCenterController
                     : 'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
                 default => 'Update check completed.',
             };
+            if (($candidate['publisher_release_matched_to_staged_zip'] ?? false) === true) {
+                $_SESSION['_barama_update_feed_flash_v151'] =
+                    'Publisher release and staged signed ZIP match exactly. Verification only: database recovery, rollback and Update Now remain blocked.';
+            }
         } catch (\Throwable) {
+            // Do not retain a stale candidate result after a failed recheck.
+            unset($_SESSION['_barama_publisher_candidate_v1']);
             // Preserve the canonical license and suppress upstream network errors/secrets.
             $_SESSION['_barama_update_feed_result_v151'] = [
                 'status' => 'unavailable', 'entitlement' => 'Not checked',
