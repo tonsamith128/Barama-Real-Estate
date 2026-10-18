@@ -16,6 +16,8 @@ try {
     mkdir($site.'/application/app', 0700);
     mkdir($site.'/application/app/Services', 0700);
     mkdir($site.'/application/app/Services/Updates', 0700);
+    define('BASE_PATH', $site);
+    define('APP_PATH', $site.'/application');
     file_put_contents($site.'/VERSION', "0.9.22-dev\n");
     foreach (['SignedReleaseInspector.php','TrustedReleaseFeed.php','VerifiedReleaseFilePlanV2.php',
         'VerifiedUpdateBackupV2.php','PrivateDatabaseBackupV2.php','IsolatedUpdateTransactionV1.php',
