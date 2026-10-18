@@ -95,8 +95,8 @@ jobs:
           php -l tools/verified-release-file-plan-smoke.php
           php tools/verified-release-file-plan-smoke.php
           php -l application/app/Services/Updates/VerifiedUpdateBackupV2.php
-          php -l tools/verified-update-backup-v2-smoke.php
-          php tools/verified-update-backup-v2-smoke.php
+          php -l tools/verified-update-snapshot-v2-smoke.php
+          php tools/verified-update-snapshot-v2-smoke.php
           php tools/auto-updater-entitlement-results-smoke.php
 
       - name: Run localization contract smoke test
