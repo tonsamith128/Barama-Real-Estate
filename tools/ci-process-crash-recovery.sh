@@ -78,8 +78,16 @@ if [[ "$1" == --worker ]]; then
 fi
 if [[ "$1" == --recover ]]; then
  read_manifest "$@"
- [[ -f "$root/journal" && ! -L "$root/journal" &&
-    "$(tail -n 1 "$root/journal")" == fault_checkpoint ]] || stop RECOVERY_CHECKPOINT_MISSING
+ [[ -f "$root/journal" && ! -L "$root/journal" ]] || stop RECOVERY_JOURNAL_MISSING
+ checkpoint="$(tail -n 1 "$root/journal")"
+ if [[ "$checkpoint" == verified_rolled_back ]]; then
+   [[ "$(sha256sum "$root/live.php" | cut -d' ' -f1)" == "$code_sha" ]] || stop REPEAT_CODE_MISMATCH
+   php tools/ci-barama-schema-restore-compare.php --compare "$target" >/dev/null || stop REPEAT_DATABASE_MISMATCH
+   [[ "$(mysql_cli -D "$target" -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ci_update_fault'")" == 0 ]] || stop REPEAT_INJECTED_TABLE_PRESENT
+   echo "REPEAT_RECOVERY=VERIFIED_NOOP"
+   exit 0
+ fi
+ [[ "$checkpoint" == fault_checkpoint ]] || stop RECOVERY_CHECKPOINT_MISSING
  # Fail closed on tampering BEFORE touching the disposable target.
  journal recovery_started
  mysql_cli -e "DROP DATABASE IF EXISTS $target; CREATE DATABASE $target CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -109,7 +117,7 @@ cleanup(){
  rc=$?; trap - EXIT; set +e
  failure=0
  if [[ "$created" == 1 ]]; then mysql_cli -e "DROP DATABASE IF EXISTS $target" >/dev/null 2>&1 || failure=1; fi
- rm -f -- "$root"/baseline.sql "$root"/baseline.php "$root"/live.php "$root"/next.php "$root"/replacement.php "$root"/manifest "$root"/journal || failure=1
+ rm -f -- "$root"/baseline.sql "$root"/baseline.php "$root"/live.php "$root"/next.php "$root"/replacement.php "$root"/saved-baseline.php "$root"/manifest "$root"/journal || failure=1
  rmdir -- "$root" || failure=1
  [[ "$failure" == 0 ]] || { echo STOP=CLEANUP_FAILED >&2; exit 1; }
  exit "$rc"
@@ -140,9 +148,26 @@ set -e
 [[ "$(mysql_cli -D "$target" -e 'SELECT COUNT(*) FROM ci_update_fault')" == 1 ]] || stop DB_CHANGE_NOT_PERSISTED
 [[ "$(sha256sum "$root/live.php" | cut -d' ' -f1)" != "$code_sha" ]] || stop CODE_CHANGE_NOT_PERSISTED
 echo "UPDATER_PROCESS_SIGKILL=PASS"
+# Corrupted backup must be rejected before recovery can touch the target database.
+cp -- "$root/baseline.php" "$root/saved-baseline.php"
+printf '%s\n' 'corrupted backup sentinel' >> "$root/baseline.php"
+set +e
+bash "$0" --recover "$root" >/dev/null 2>&1
+tamper_rc=$?
+set -e
+[[ "$tamper_rc" != 0 ]] || stop CORRUPT_BACKUP_ACCEPTED
+[[ "$(tail -n 1 "$root/journal")" == fault_checkpoint ]] || stop CORRUPT_RECOVERY_CHANGED_JOURNAL
+[[ "$(mysql_cli -D "$target" -e 'SELECT COUNT(*) FROM ci_update_fault')" == 1 ]] || stop CORRUPT_RECOVERY_TOUCHED_DATABASE
+mv -T -- "$root/saved-baseline.php" "$root/baseline.php"
+[[ "$(sha256sum "$root/baseline.php" | cut -d' ' -f1)" == "$code_sha" ]] || stop BACKUP_REPAIR_FAILED
+echo "CORRUPT_BACKUP_PREWRITE_REJECTION=PASS"
 # An independently started shell recovers from the persisted journal + backups.
 bash "$0" --recover "$root"
 [[ "$(tail -n 1 "$root/journal")" == verified_rolled_back ]] || stop RECOVERY_INCOMPLETE
+journal_lines_before="$(wc -l < "$root/journal")"
+bash "$0" --recover "$root"
+[[ "$(wc -l < "$root/journal")" == "$journal_lines_before" ]] || stop REPEAT_RECOVERY_MUTATED_JOURNAL
+echo "REPEATED_RECOVERY_IDEMPOTENCY=PASS"
 echo "PROCESS_CRASH_RECOVERY_REHEARSAL=PASS"
 echo "POWER_LOSS_DURABILITY=NOT_TESTED"
 echo "PRODUCTION_ACCESSED=NO"; echo "AUTO_INSTALL=DISABLED"
