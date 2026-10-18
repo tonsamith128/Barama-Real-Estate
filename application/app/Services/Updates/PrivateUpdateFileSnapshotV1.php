@@ -54,6 +54,9 @@ final class PrivateUpdateFileSnapshotV1
             $count = 0;
             foreach ($paths as $path) {
                 $src = $site.'/'.$path;
+                if (is_dir($src) || (file_exists($src) && !is_file($src))) {
+                    throw new RuntimeException('FILE_SNAPSHOT_SOURCE_NOT_REGULAR');
+                }
                 if (!is_file($src)) {
                     $entries[] = ['path'=>$path, 'existed'=>false];
                     continue;
@@ -194,6 +197,9 @@ final class PrivateUpdateFileSnapshotV1
             self::safeLeaf($dest, $path);
             $target = $dest.'/'.$path;
             if ($entry['existed'] === false) {
+                if (file_exists($target) && !is_file($target)) {
+                    throw new RuntimeException('FILE_SNAPSHOT_FIXTURE_TARGET_UNSAFE');
+                }
                 if (is_file($target) && !unlink($target)) throw new RuntimeException('FILE_SNAPSHOT_FIXTURE_DELETE_FAILED');
                 $removed++;
                 continue;
