@@ -154,6 +154,12 @@ jobs:
           php -l tools/staging-signed-release-preflight-smoke.php
           php tools/staging-signed-release-preflight-smoke.php
 
+      - name: Verify owner-evidence-gated read-only staging release acceptance
+        run: |
+          php -l application/app/Services/Updates/StagingReleaseAcceptanceV1.php
+          php -l tools/staging-release-acceptance-smoke.php
+          php tools/staging-release-acceptance-smoke.php
+
       - name: Bind publisher entitlement to exact staging ZIP without installing
         run: |
           php -l application/app/Services/Updates/StagingPublisherCandidateV1.php
