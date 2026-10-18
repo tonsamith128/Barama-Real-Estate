@@ -205,6 +205,19 @@ jobs:
       - name: Verify migration replay is clean
         run: php tools/migrate.php
 
+      - name: Reject real Barama schema recovery outside disposable GitHub CI
+        run: |
+          bash -n tools/ci-barama-schema-restore.sh
+          php -l tools/ci-barama-schema-restore-compare.php
+          bash tools/ci-barama-schema-restore.sh --guard
+          php tools/ci-barama-schema-restore-compare.php --guard
+
+      - name: Restore and verify real Barama migration schema in disposable CI MySQL
+        env:
+          BARAMA_CI_REAL_SCHEMA_RECOVERY: ALLOW_MIGRATED_CI_DATABASE_COPY_ONLY
+          MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: bash tools/ci-barama-schema-restore.sh --ci
+
       - name: Run newsletter subscription smoke test
         run: php tools/newsletter-smoke.php
 
