@@ -137,6 +137,12 @@ jobs:
           php -l tools/staging-update-readiness-smoke.php
           php tools/staging-update-readiness-smoke.php
 
+      - name: Verify genuinely signed staged ZIP and fail-closed update blockers
+        run: |
+          php -l application/app/Services/Updates/StagingSignedReleasePreflightV1.php
+          php -l tools/staging-signed-release-preflight-smoke.php
+          php tools/staging-signed-release-preflight-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
