@@ -154,6 +154,11 @@ jobs:
           php -l tools/staging-signed-release-preflight-smoke.php
           php tools/staging-signed-release-preflight-smoke.php
 
+      - name: Verify offline Publisher V2 signing against real Barama PHP inspector
+        run: |
+          python3 -m py_compile tools/offline-release-envelope.py tools/offline-release-envelope-self-test.py
+          python3 tools/offline-release-envelope-self-test.py
+
       - name: Verify owner-evidence-gated read-only staging release acceptance
         run: |
           php -l application/app/Services/Updates/StagingReleaseAcceptanceV1.php
