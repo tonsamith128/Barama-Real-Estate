@@ -96,6 +96,12 @@ jobs:
           php -l tools/private-database-backup-safety-smoke.php
           php tools/private-database-backup-safety-smoke.php
 
+      - name: Verify private updater file snapshots and fixture-only rollback
+        run: |
+          php -l application/app/Services/Updates/PrivateUpdateFileSnapshotV1.php
+          php -l tools/private-update-file-snapshot-smoke.php
+          php tools/private-update-file-snapshot-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 

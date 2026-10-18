@@ -313,6 +313,8 @@ $approvedSemanticNames = [
     'assets/css/auth-copy-v117a34.css',
     'assets/js/auth-copy-v117a34.js',
     'application/database/migrations/0030_update_homepage_hero_copy.php',
+    // This is an intentional safety test, not a duplicate customer backup.
+    'tools/private-database-backup-safety-smoke.php',
 ];
 $forbidden = array_values(array_filter(
     $allFiles,

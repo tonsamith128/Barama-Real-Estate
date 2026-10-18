@@ -66,6 +66,18 @@ try {
     $check(PrivateDatabaseBackupV2::verify($job,$result['receipt_sha256']),'Receipt restored');
     $check(!file_exists($site.'/database.sql'),'No fixture SQL installed in site');
     $check(!file_exists($site.'/application'),'No application file modifications');
+    // A failed/incomplete export must never leave a partial SQL artifact behind.
+    $before = array_values(array_diff(scandir($vault) ?: [], ['.','..']));
+    $reject(static fn() => PrivateDatabaseBackupV2::prepare(
+        $config,
+        static function (callable $sink): void {
+            $sink("PARTIAL SQL NEVER ACCEPTED\n");
+            throw new RuntimeException('DB_BACKUP_SIMULATED_FAILURE');
+        }
+    ), 'DB_BACKUP_SIMULATED_FAILURE');
+    $after = array_values(array_diff(scandir($vault) ?: [], ['.','..']));
+    $check($after === $before, 'Failed export artifacts removed');
+    echo "FAILED_EXPORT_CLEANUP=PASS\n";
     echo "REHEARSAL_FIXTURE_ONLY=YES\n";
     echo "DISPOSABLE_DATABASE_BACKUP_AND_VERIFY=PASS\n";
     echo "UNSAFE_DATABASE_NAME_AND_TAMPER_REJECTION=PASS\n";
