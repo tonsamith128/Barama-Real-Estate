@@ -218,6 +218,18 @@ jobs:
           MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
         run: bash tools/ci-barama-schema-restore.sh --ci
 
+      - name: Reject coordinated recovery outside disposable GitHub CI
+        run: |
+          bash -n tools/ci-coordinated-code-db-rollback.sh
+          bash tools/ci-coordinated-code-db-rollback.sh --guard
+
+      - name: Rehearse coordinated code and database rollback after injected failure
+        env:
+          BARAMA_CI_COORDINATED_ROLLBACK: ALLOW_DISPOSABLE_COORDINATED_CI_ONLY
+          BARAMA_CI_REAL_SCHEMA_RECOVERY: ALLOW_MIGRATED_CI_DATABASE_COPY_ONLY
+          MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: bash tools/ci-coordinated-code-db-rollback.sh --ci
+
       - name: Run newsletter subscription smoke test
         run: php tools/newsletter-smoke.php
 
