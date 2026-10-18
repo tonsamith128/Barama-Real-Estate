@@ -91,6 +91,7 @@ try {
     $write($site.'/assets/real.txt','secret fixture'); symlink($site.'/assets/real.txt',$site.'/assets/link.php');
     $refuse(static fn()=>Snap::capture($site,$vault,['assets/link.php'],true),'FILE_SNAPSHOT_SYMLINK_DENIED');
     $refuse(static fn()=>Snap::capture($site,$vault,['assets/js'],true),'FILE_SNAPSHOT_SOURCE_NOT_REGULAR');
+    $refuse(static fn()=>Snap::capture($site,$vault,['assets/real.txt/nested.php'],true),'FILE_SNAPSHOT_PARENT_NOT_DIRECTORY');
     $refuse(static fn()=>Snap::rehearseRestore($result['job'],$result['receipt_sha256'],$vault),'FILE_SNAPSHOT_RESTORE_FIXTURE_ONLY');
     mkdir($target.'/assets/css/updater-new.css',0700);
     $refuse(static fn()=>Snap::rehearseRestore($result['job'],$result['receipt_sha256'],$target),'FILE_SNAPSHOT_FIXTURE_TARGET_UNSAFE');
