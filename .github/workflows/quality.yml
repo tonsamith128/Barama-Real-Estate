@@ -230,6 +230,18 @@ jobs:
           MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
         run: bash tools/ci-coordinated-code-db-rollback.sh --ci
 
+      - name: Reject process-crash recovery outside disposable GitHub CI
+        run: |
+          bash -n tools/ci-process-crash-recovery.sh
+          bash tools/ci-process-crash-recovery.sh --guard
+
+      - name: Rehearse updater SIGKILL and independent recovery process
+        env:
+          BARAMA_CI_PROCESS_CRASH: ALLOW_DISPOSABLE_SIGKILL_CI_ONLY
+          BARAMA_CI_REAL_SCHEMA_RECOVERY: ALLOW_MIGRATED_CI_DATABASE_COPY_ONLY
+          MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: bash tools/ci-process-crash-recovery.sh --ci
+
       - name: Run newsletter subscription smoke test
         run: php tools/newsletter-smoke.php
 
