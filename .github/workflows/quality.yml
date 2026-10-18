@@ -131,6 +131,17 @@ jobs:
           BARAMA_CI_ISOLATED_MYSQL_RECOVERY: ALLOW_DISPOSABLE_TEST_SCHEMAS_ONLY
         run: php tools/isolated-mysql-recovery-smoke.php --ci
 
+      - name: Verify full-object SQL recovery script refuses non-CI execution
+        run: |
+          bash -n tools/ci-full-object-mysql-recovery.sh
+          bash tools/ci-full-object-mysql-recovery.sh --guard
+
+      - name: Rehearse genuine MySQL full-object backup and restore in disposable CI service
+        env:
+          BARAMA_CI_FULL_OBJECT_MYSQL: ALLOW_DISPOSABLE_MYSQL8_SERVICE_ONLY
+          MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: bash tools/ci-full-object-mysql-recovery.sh --ci
+
       - name: Verify fail-closed staging update readiness gate
         run: |
           php -l application/app/Services/Updates/StagingUpdateReadinessV1.php
