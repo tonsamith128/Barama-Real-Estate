@@ -122,7 +122,7 @@ try {
     $signFixture = static function (array $modified) use ($secret): array {
         $canonical = $modified;
         ksort($canonical, SORT_STRING);
-        $payload = "TONSAMITH-RELEASE-MANIFEST-V2\\n"
+        $payload = "TONSAMITH-RELEASE-MANIFEST-V2\n"
             . json_encode($canonical, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         return [
             'manifest' => $modified,
