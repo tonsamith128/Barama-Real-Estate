@@ -90,6 +90,12 @@ jobs:
           php tools/auto-updater-header-actions-smoke.php
           php tools/auto-updater-entitlement-results-smoke.php
 
+      - name: Verify staging-only private database backup fixture
+        run: |
+          php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
+          php -l tools/private-database-backup-safety-smoke.php
+          php tools/private-database-backup-safety-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
