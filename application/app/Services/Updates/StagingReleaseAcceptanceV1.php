@@ -17,7 +17,7 @@ final class StagingReleaseAcceptanceV1
         $result = [
             'status' => 'RELEASE_ACCEPTANCE_BLOCKED',
             'site' => $ready['site'],
-            'independent_publisher_origin_verified' => false,
+            'catalog_matches_supplied_fingerprint' => false,
             'signed_release_verified' => false,
             'release_digest_verified' => false,
             'file_plan_verified' => false,
@@ -44,7 +44,7 @@ final class StagingReleaseAcceptanceV1
         } else {
             // Matches independently supplied bytes, not a claim that the source
             // of the expected fingerprint was independently authenticated.
-            $result['independent_publisher_origin_verified'] = true;
+            $result['catalog_matches_supplied_fingerprint'] = true;
         }
         foreach ($ready['blockers'] as $blocker) {
             if (!in_array($blocker, ['REAL_DATABASE_RESTORE_NOT_VERIFIED',
@@ -68,7 +68,7 @@ final class StagingReleaseAcceptanceV1
         $result['blockers'][] = 'STAGING_DATABASE_ROLLBACK_ACCEPTANCE_REQUIRED';
         $result['blockers'][] = 'LIVE_CODE_AND_DATABASE_UPDATE_ACCEPTANCE_REQUIRED';
         $result['blockers'] = array_values(array_unique($result['blockers']));
-        if ($result['independent_publisher_origin_verified']
+        if ($result['catalog_matches_supplied_fingerprint']
             && $result['signed_release_verified']
             && $result['release_digest_verified']
             && $result['file_plan_verified']
