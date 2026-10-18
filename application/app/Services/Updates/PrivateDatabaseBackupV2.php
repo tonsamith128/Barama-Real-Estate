@@ -79,7 +79,7 @@ final class PrivateDatabaseBackupV2
                 throw new RuntimeException('DB_BACKUP_CONNECTION_UNSAFE');
             }
         }
-        $id = 'db-' . gmdate('Ymd\THis\Z') . '-' . bin2hex(random_bytes(8));
+        $id = 'db-' . gmdate('Ymd\\THis\\Z') . '-' . bin2hex(random_bytes(8));
         $job = $vault.'/'.$id;
         if (!@mkdir($job, 0700)) {
             throw new RuntimeException('DB_BACKUP_PRIVATE_DIR_FAILED');
