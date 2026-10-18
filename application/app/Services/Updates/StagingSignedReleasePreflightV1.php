@@ -25,7 +25,10 @@ final class StagingSignedReleasePreflightV1
         if (is_link($siteRoot) || !is_dir($siteRoot) || realpath($siteRoot) !== $siteRoot) {
             throw new RuntimeException('SIGNED_PREFLIGHT_ROOT_UNTRUSTED');
         }
-        $fixture = preg_match('~^/tmp/barama-signed-stage-[a-f0-9]{12,32}/site$~D', $siteRoot) === 1;
+        $fixture = preg_match('~^/tmp/barama-signed-stage-[a-f0-9]{12,32}/site$~D', $siteRoot) === 1
+            || (getenv('GITHUB_ACTIONS') === 'true'
+                && getenv('GITHUB_REPOSITORY') === 'tonsamith128/Barama-Real-Estate'
+                && preg_match('~^/tmp/barama-release-acceptance-[a-f0-9]{16}/site$~D', $siteRoot) === 1);
         if ($siteRoot !== self::STAGING && !$fixture) {
             throw new RuntimeException('SIGNED_PREFLIGHT_STAGING_ONLY');
         }
