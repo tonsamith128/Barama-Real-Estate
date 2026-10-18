@@ -19,6 +19,11 @@ umask(0077);
 $base = dirname(__DIR__, 2);
 define('BASE_PATH', $base);
 define('APP_PATH', $base . '/application');
+// Match application/bootstrap/runtime.php: config/app.php reads APP_VERSION.
+// The standalone CLI intentionally avoids the web bootstrap and PHP sessions.
+$versionFile = BASE_PATH . '/VERSION';
+define('APP_VERSION', is_file($versionFile) && !is_link($versionFile)
+    ? trim((string) file_get_contents($versionFile)) : '0.0.0');
 define('BARAMA_BOOTSTRAP', true);
 
 spl_autoload_register(static function (string $class): void {

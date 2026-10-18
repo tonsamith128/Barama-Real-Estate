@@ -158,6 +158,12 @@ jobs:
           php -l tools/publisher-private-delivery-smoke.php
           sudo -E php tools/publisher-private-delivery-smoke.php
 
+      - name: Test standalone publisher delivery configuration bootstrap
+        run: |
+          php -l application/bin/publisher-private-delivery.php
+          php -l tools/publisher-delivery-cli-bootstrap-smoke.php
+          php tools/publisher-delivery-cli-bootstrap-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
