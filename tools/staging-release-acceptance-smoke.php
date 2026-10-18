@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+require dirname(__DIR__) . '/application/app/Services/Updates/StagingUpdateReadinessV1.php';
+require dirname(__DIR__) . '/application/app/Services/Updates/StagingSignedReleasePreflightV1.php';
 require dirname(__DIR__) . '/application/app/Services/Updates/StagingReleaseAcceptanceV1.php';
 use Barama\Services\Updates\StagingReleaseAcceptanceV1;
 use Barama\Services\Updates\StagingUpdateReadinessV1;
