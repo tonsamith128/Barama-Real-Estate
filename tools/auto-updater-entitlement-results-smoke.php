@@ -30,7 +30,9 @@ namespace {
     file_put_contents($dir.'/config/update-feed-v2.json', json_encode([
         'enabled'=>true,'contract'=>'tonsamith-signed-discovery-v2','channel'=>'stable',
     ]));
-    $key = sodium_crypto_sign_publickey(sodium_crypto_sign_keypair());
+    $keypair = sodium_crypto_sign_keypair();
+    $key = sodium_crypto_sign_publickey($keypair);
+    $secret = sodium_crypto_sign_secretkey($keypair);
     file_put_contents($dir.'/config/update-publisher-v2-keys.json', json_encode([
         'format'=>'tonsamith-publisher-keys-v2',
         'keys'=>['test-signing'=>['public'=>base64_encode($key),'status'=>'active']],
@@ -77,6 +79,43 @@ namespace {
         ]);
     $assert($result['status']==='eligible' && $result['entitlement']==='Eligible',
         'Authoritative entitlement success remains unchanged');
+    // A genuine signed Publisher V2 response must expose the verified ZIP hash.
+    $signedSha = hash('sha256', 'fixture-only-package-bytes');
+    $m = [
+        'schema'=>'tonsamith-commercial-release-v2',
+        'publisher'=>'tonsamith.com',
+        'key_id'=>'test-signing',
+        'release_id'=>'fixture-0.9.23',
+        'product_slug'=>'barama-real-estate',
+        'version'=>'0.9.23',
+        'channel'=>'stable',
+        'release_type'=>'update',
+        'release_status'=>'published',
+        'package_sha256'=>$signedSha,
+        'package_bytes'=>strlen('fixture-only-package-bytes'),
+        'min_php'=>'8.0.0',
+        'minimum_app_version'=>'0.9.0',
+        'migration_policy'=>'additive',
+        'published_at'=>gmdate('Y-m-d\TH:i:s\Z',time()-60),
+        'expires_at'=>gmdate('Y-m-d\TH:i:s\Z',time()+86400),
+    ];
+    $canonical=$m;ksort($canonical,SORT_STRING);
+    $message="TONSAMITH-RELEASE-MANIFEST-V2\n".json_encode($canonical,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+    $env=[
+        'manifest'=>$m,
+        'signature'=>['algorithm'=>'Ed25519','key_id'=>'test-signing',
+            'value'=>base64_encode(sodium_crypto_sign_detached($message,$secret))],
+    ];
+    $available=TrustedReleaseFeed::check('0.9.22-dev',$license,$runtime,
+        static fn(array $payload):array=>[
+            'http_status'=>200,
+            'body'=>['success'=>true,'schema'=>'tonsamith-signed-discovery-v2',
+                'entitled'=>true,'update_available'=>true,'envelope'=>$env],
+        ]);
+    $assert($available['status']==='available'
+        && $available['version']==='0.9.23'
+        && ($available['archive_sha256']??'')===$signedSha,
+        'Verified Publisher V2 SHA-256 available for local archive binding');
     unlink($dir.'/config/update-publisher-v2-keys.json');
     unlink($dir.'/config/update-feed-v2.json');
     rmdir($dir.'/config');rmdir($dir);

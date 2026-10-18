@@ -127,6 +127,9 @@ final class TrustedReleaseFeed
             throw new RuntimeException('UPDATE_RELEASE_METADATA_INVALID');
         }
         $result['version'] = self::verifyEnvelope($response['envelope'], $installedVersion, $channel);
+        // Publisher-signed digest is safe metadata, not an activation token.
+        // Bind the exact private staged ZIP to the authenticated discovery result.
+        $result['archive_sha256'] = $response['envelope']['manifest']['package_sha256'];
         $result['status'] = 'available';
         $result['feed'] = 'Signed release verified';
         return $result;
