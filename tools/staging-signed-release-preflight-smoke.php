@@ -117,6 +117,45 @@ try {
     $check(hash_file('sha256', $site . '/customer-fixture-data') === $customerHash, 'Customer marker untouched');
     $check(trim((string)file_get_contents($site . '/VERSION')) === '0.9.22-dev', 'Installed VERSION not replaced');
 
+    // A real signature cannot compensate for a wrong product, an expired release,
+    // or a publisher key absent from the independently trusted catalog.
+    $signFixture = static function (array $modified) use ($secret): array {
+        $canonical = $modified;
+        ksort($canonical, SORT_STRING);
+        $payload = "TONSAMITH-RELEASE-MANIFEST-V2\n"
+            . json_encode($canonical, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        return [
+            'manifest' => $modified,
+            'signature' => [
+                'algorithm' => 'Ed25519',
+                'key_id' => $modified['key_id'],
+                'value' => base64_encode(sodium_crypto_sign_detached($payload, $secret)),
+            ],
+        ];
+    };
+    $wrongProduct = $manifest;
+    $wrongProduct['product_slug'] = 'unrelated-product';
+    file_put_contents($envelopePath, json_encode($signFixture($wrongProduct), JSON_THROW_ON_ERROR));
+    $refused = $class::inspect($site);
+    $check(!$refused['publisher_signature_verified'] && !$refused['ready_to_install'],
+        'Correctly signed wrong-product release denied');
+
+    $expired = $manifest;
+    $expired['published_at'] = gmdate('Y-m-d\\TH:i:s\\Z', time() - 172800);
+    $expired['expires_at'] = gmdate('Y-m-d\\TH:i:s\\Z', time() - 86400);
+    file_put_contents($envelopePath, json_encode($signFixture($expired), JSON_THROW_ON_ERROR));
+    $refused = $class::inspect($site);
+    $check(!$refused['publisher_signature_verified'] && !$refused['ready_to_install'],
+        'Correctly signed expired release denied');
+
+    $unknownKey = $manifest;
+    $unknownKey['key_id'] = 'unknown-publisher-key';
+    file_put_contents($envelopePath, json_encode($signFixture($unknownKey), JSON_THROW_ON_ERROR));
+    $refused = $class::inspect($site);
+    $check(!$refused['publisher_signature_verified'] && !$refused['ready_to_install'],
+        'Untrusted publisher key denied');
+    file_put_contents($envelopePath, json_encode($envelope, JSON_THROW_ON_ERROR));
+
     $invalid = $envelope;
     $invalid['signature']['value'] = base64_encode(str_repeat("\x00", SODIUM_CRYPTO_SIGN_BYTES));
     file_put_contents($envelopePath, json_encode($invalid, JSON_THROW_ON_ERROR));
