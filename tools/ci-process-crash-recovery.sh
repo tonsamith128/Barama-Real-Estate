@@ -150,7 +150,7 @@ set -e
 echo "UPDATER_PROCESS_SIGKILL=PASS"
 # Corrupted backup must be rejected before recovery can touch the target database.
 cp -- "$root/baseline.php" "$root/saved-baseline.php"
-printf '%s\\n' 'corrupted backup sentinel' >> "$root/baseline.php"
+printf '%s\n' 'corrupted backup sentinel' >> "$root/baseline.php"
 set +e
 bash "$0" --recover "$root" >/dev/null 2>&1
 tamper_rc=$?
