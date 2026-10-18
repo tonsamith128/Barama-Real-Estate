@@ -53,7 +53,7 @@ try {
     $check($missing['automatic_update_enabled'] === false && !$missing['ready_to_install'], 'Installation disabled');
     $check($missing['database_connections'] === false && $missing['website_writes'] === false, 'No customer writes');
     $deny(static fn() => $class::inspect('/www/wwwroot/baramarealestate.tonsamith.com'),
-        'SIGNED_PREFLIGHT_STAGING_ONLY');
+        'SIGNED_PREFLIGHT_ROOT_UNTRUSTED');
     $deny(static fn() => $class::inspect('/tmp'), 'SIGNED_PREFLIGHT_STAGING_ONLY');
 
     $keypair = sodium_crypto_sign_keypair();
