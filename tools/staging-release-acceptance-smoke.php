@@ -33,7 +33,7 @@ try {
     $wrong=StagingReleaseAcceptanceV1::inspect($site, str_repeat('a',64));
     if (!in_array('INDEPENDENT_PUBLISHER_FINGERPRINT_MISMATCH',$wrong['blockers'],true)) throw new RuntimeException('MISMATCH_ACCEPTED');
     $matched=StagingReleaseAcceptanceV1::inspect($site, $sha);
-    if (!$matched['independent_publisher_origin_verified'] || $matched['ready_to_install']
+    if (!$matched['catalog_matches_supplied_fingerprint'] || $matched['ready_to_install']
         || $matched['automatic_update_enabled'] || $matched['database_connections']
         || $matched['website_writes'] || $matched['network_requests']) throw new RuntimeException('FAIL_OPEN');
     if (!in_array('SIGNED_RELEASE_NOT_STAGED',$matched['blockers'],true)
