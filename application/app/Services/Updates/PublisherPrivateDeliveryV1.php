@@ -138,6 +138,10 @@ final class PublisherPrivateDeliveryV1
 
         $vault = self::privateVault($site);
         $lockPath = $vault . '/.publisher-delivery.lock';
+        // Never follow a pre-existing symlink with fopen, even as root.
+        if (is_link($lockPath)) {
+            throw new RuntimeException('PUBLISHER_DELIVERY_LOCK_UNAVAILABLE');
+        }
         $lock = @fopen($lockPath, 'c');
         if ($lock === false || is_link($lockPath)) {
             if (is_resource($lock)) fclose($lock);
