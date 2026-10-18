@@ -87,6 +87,7 @@ final class PrivateDatabaseBackupV2
         $dump = $job.'/database.sql';
         $configPath = $job.'/.client.cnf';
         $stream = null;
+        $complete = false;
         try {
             $stream = @fopen($dump, 'xb');
             if ($stream === false || !chmod($dump, 0600)) {
@@ -119,7 +120,9 @@ final class PrivateDatabaseBackupV2
             if ($total === 0 || !fflush($stream)) {
                 throw new RuntimeException('DB_BACKUP_EMPTY_OR_INCOMPLETE');
             }
-            if (function_exists('fsync')) fsync($stream);
+            if (function_exists('fsync') && !fsync($stream)) {
+                throw new RuntimeException('DB_BACKUP_SYNC_FAILED');
+            }
             fclose($stream);
             $stream = null;
             $expected = hash_final($hash);
@@ -149,6 +152,7 @@ final class PrivateDatabaseBackupV2
             if (!is_string($receiptSha) || !self::verify($job, $receiptSha)) {
                 throw new RuntimeException('DB_BACKUP_RECEIPT_VERIFY_FAILED');
             }
+            $complete = true;
             return [
                 'status' => $fixture ? 'DISPOSABLE_DATABASE_FIXTURE_VERIFIED' : 'PRIVATE_DATABASE_BACKUP_VERIFIED_NOT_RESTORED',
                 'job_id' => $id,
@@ -160,7 +164,14 @@ final class PrivateDatabaseBackupV2
             ];
         } finally {
             if (is_resource($stream)) fclose($stream);
-            if (is_file($configPath)) @unlink($configPath);
+            if (is_file($configPath) || is_link($configPath)) @unlink($configPath);
+            if (!$complete) {
+                // Interrupted/failed exports are never evidence of a usable backup.
+                foreach ([$job.'/receipt.json', $dump] as $partial) {
+                    if (is_file($partial) || is_link($partial)) @unlink($partial);
+                }
+                @rmdir($job);
+            }
         }
     }
 
@@ -277,12 +288,22 @@ final class PrivateDatabaseBackupV2
     {
         $fp = @fopen($path, 'xb');
         if ($fp === false) throw new RuntimeException('DB_BACKUP_FILE_EXISTS');
-        chmod($path, 0600);
         try {
-            if (fwrite($fp, $contents) !== strlen($contents) || !fflush($fp)) {
-                throw new RuntimeException('DB_BACKUP_WRITE_FAILED');
+            if (!@chmod($path, 0600)) {
+                throw new RuntimeException('DB_BACKUP_CHMOD_FAILED');
             }
-            if (function_exists('fsync')) fsync($fp);
+            $length = strlen($contents);
+            $offset = 0;
+            while ($offset < $length) {
+                $written = fwrite($fp, substr($contents, $offset));
+                if (!is_int($written) || $written < 1) {
+                    throw new RuntimeException('DB_BACKUP_WRITE_FAILED');
+                }
+                $offset += $written;
+            }
+            if (!fflush($fp) || (function_exists('fsync') && !fsync($fp))) {
+                throw new RuntimeException('DB_BACKUP_SYNC_FAILED');
+            }
         } finally { fclose($fp); }
     }
 
