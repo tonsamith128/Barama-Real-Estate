@@ -151,6 +151,13 @@ jobs:
           php -l tools/staging-publisher-candidate-smoke.php
           php tools/staging-publisher-candidate-smoke.php
 
+      - name: Verify root-only authenticated private publisher delivery contract
+        run: |
+          php -l application/app/Services/Updates/PublisherPrivateDeliveryV1.php
+          php -l application/bin/publisher-private-delivery.php
+          php -l tools/publisher-private-delivery-smoke.php
+          sudo -E php tools/publisher-private-delivery-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
