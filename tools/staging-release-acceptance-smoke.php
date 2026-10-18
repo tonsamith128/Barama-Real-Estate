@@ -6,7 +6,7 @@ require dirname(__DIR__) . '/application/app/Services/Updates/StagingReleaseAcce
 use Barama\Services\Updates\StagingReleaseAcceptanceV1;
 use Barama\Services\Updates\StagingUpdateReadinessV1;
 use Barama\Services\Updates\StagingSignedReleasePreflightV1;
-$root = '/tmp/barama-staging-readiness-' . bin2hex(random_bytes(8));
+$root = '/tmp/barama-release-acceptance-' . bin2hex(random_bytes(8));
 $site = $root . '/site';
 try {
     mkdir($root, 0700);
