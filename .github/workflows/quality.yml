@@ -120,6 +120,17 @@ jobs:
           php -l tools/isolated-update-transaction-smoke.php
           php tools/isolated-update-transaction-smoke.php
 
+      - name: Verify MySQL recovery guard without DB access
+        run: |
+          php -l application/app/Services/Updates/IsolatedMysqlRecoveryV1.php
+          php -l tools/isolated-mysql-recovery-smoke.php
+          php tools/isolated-mysql-recovery-smoke.php --guard
+
+      - name: Export and restore disposable SQL into isolated CI MySQL schemas
+        env:
+          BARAMA_CI_ISOLATED_MYSQL_RECOVERY: ALLOW_DISPOSABLE_TEST_SCHEMAS_ONLY
+        run: php tools/isolated-mysql-recovery-smoke.php --ci
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
