@@ -108,6 +108,12 @@ jobs:
           php -l tools/verified-release-file-plan-smoke.php
           php tools/verified-release-file-plan-smoke.php
 
+      - name: Verify private signed-plan file backup and isolated recovery rehearsal
+        run: |
+          php -l application/app/Services/Updates/VerifiedUpdateBackupV2.php
+          php -l tools/verified-update-snapshot-v2-smoke.php
+          php tools/verified-update-snapshot-v2-smoke.php
+
       - name: Run localization contract smoke test
         run: php tools/localization-smoke.php
 
