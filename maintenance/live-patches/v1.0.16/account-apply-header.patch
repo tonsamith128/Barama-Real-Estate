@@ -1,0 +1,51 @@
+--- a/application/resources/views/account/index.php
++++ b/application/resources/views/account/index.php
+@@ -72,7 +72,13 @@
+             <h1><?= e($sectionTitle) ?></h1>
+             <p><?= e($sectionDescription) ?></p>
+         </div>
+-        <?php if ($activeSection === 'company' && auth_workspace_can('developer')): ?>
++        <?php if ($activeSection === 'apply'): ?>
++            <?php if (auth_workspace_can('developer')): ?>
++                <a class="barama-application-v116__header-action" href="<?= e(url('/developer')) ?>" aria-label="Open Business Workspace">
++                    <?= app_icon('building') ?> <span>Open Business Workspace</span> <span aria-hidden="true">→</span>
++                </a>
++            <?php endif; ?>
++        <?php elseif ($activeSection === 'company' && auth_workspace_can('developer')): ?>
+             <a class="barama-company-v114__header-action" href="<?= e(url('/developer')) ?>" aria-label="Open listing workspace">
+                 <?= app_icon('building') ?> <span>Open listing workspace</span> <span aria-hidden="true">→</span>
+             </a>
+@@ -523,7 +529,7 @@
+             <?php endif; ?>
+         </div>
+     <?php elseif ($activeSection === 'apply'): ?>
+-        <link rel="stylesheet" href="<?= e(asset('css/developer-application-v115.css') . '?v=115') ?>">
++        <link rel="stylesheet" href="<?= e(asset('css/developer-application-v115.css') . '?v=116') ?>">
+         <script src="<?= e(asset('js/developer-application-v115.js') . '?v=115') ?>" defer></script>
+         <?php
+         $pendingApplication = false;
+@@ -534,10 +540,9 @@
+         <div class="barama-application-v115">
+             <div class="barama-application-v115__intro">
+                 <div><strong>Become a verified business member</strong><p>Create a Developer or Company workspace after administrator approval. Existing customer activity is retained, but after promotion the customer workspace is no longer accessible.</p></div>
+-                <a href="<?= e(url('/account/company')) ?>" class="btn btn-outline-secondary">Back to Company Access</a>
+             </div>
+             <?php if (auth_workspace_can('developer')): ?>
+-                <div class="barama-application-v115__notice">Your account already has workspace access. <a href="<?= e(url('/developer')) ?>">Open business workspace</a>.</div>
++                <div class="barama-application-v115__notice">Your account already has business workspace access.</div>
+             <?php elseif (!$emailVerified): ?>
+                 <div class="barama-application-v115__notice">Verify your email before submitting an application. <a href="<?= e(url('/verify-email')) ?>">Verify email</a></div>
+             <?php elseif ($pendingApplication): ?>
+--- a/assets/css/developer-application-v115.css
++++ b/assets/css/developer-application-v115.css
+@@ -15,3 +15,10 @@
+ .barama-application-v115__cta h2{font-size:1.1rem;font-weight:700}
+ .barama-application-v115__cta p{color:var(--bs-secondary-color,#69768e)}
+ @media(max-width:680px){.barama-application-v115__kind{grid-template-columns:minmax(0,1fr)}.barama-application-v115__intro,.barama-application-v115__form{padding:16px}}
++/* v1.0.16: real workspace header action on Apply page only. */
++.barama-application-v116__header-action{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:45px;max-width:100%;padding:.65rem 1rem;background:#165dff;border:1px solid #165dff;border-radius:13px;color:#fff;font-size:.875rem;font-weight:750;line-height:1.35;text-decoration:none;box-shadow:0 5px 15px rgba(22,93,255,.16);transition:background .15s ease,box-shadow .15s ease;box-sizing:border-box}
++.barama-application-v116__header-action svg{width:18px;height:18px;flex-shrink:0}
++.barama-application-v116__header-action:hover{color:#fff;background:#0f4bd4;border-color:#0f4bd4;box-shadow:0 8px 18px rgba(22,93,255,.22)}
++.barama-application-v116__header-action:focus-visible{outline:3px solid #165dff;outline-offset:3px}
++@media(max-width:680px){.barama-application-v116__header-action{white-space:normal;text-align:center}}
++@media(prefers-reduced-motion:reduce){.barama-application-v116__header-action{transition:none}}
