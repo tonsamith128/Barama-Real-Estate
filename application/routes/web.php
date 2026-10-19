@@ -1116,6 +1116,8 @@ $router->get('/dashboard/system/auto-updater', [SystemCenterController::class, '
 $router->post('/dashboard/system/auto-updater/check-license', [SystemCenterController::class, 'validatePublisherLicense'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 $router->post('/dashboard/system/auto-updater/inspect-staged-release', [SystemCenterController::class, 'inspectStagedRelease'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 $router->post('/dashboard/system/auto-updater/check-updates', [SystemCenterController::class, 'checkUpdateEntitlement'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+// REVIEW ONLY: never authorizes or invokes a privileged installer.
+$router->post('/dashboard/system/auto-updater/request-review', [SystemCenterController::class, 'requestStagingInstallReview'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 
 /* BARAMA_PUBLIC_SYSTEM_STATUS_V1126 */
 $router->get('/health', [SystemHealthController::class, 'index']);
