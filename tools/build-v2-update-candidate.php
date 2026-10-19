@@ -165,11 +165,12 @@ if (!is_string($directory) || $directory === '/'
 $zip = new ZipArchive();
 if ($zip->open($out, ZipArchive::CREATE | ZipArchive::EXCL) !== true) $fail('OUTPUT_ZIP_CREATE_FAILED');
 $ok = false;
+$zipError = null;
 try {
     $payload = ['VERSION' => $recipe['target_version'] . "\n"];
     foreach ($files as $path => $absolute) {
         $body = file_get_contents($absolute);
-        if (!is_string($body) || strlen($body) > 10000000) $fail('SOURCE_READ_FAILED');
+        if (!is_string($body) || strlen($body) > 10000000) throw new RuntimeException('SOURCE_READ_FAILED');
         $payload[$path] = $body;
     }
     foreach ($payload as $path => $body) {
@@ -177,17 +178,20 @@ try {
             || !$zip->setMtimeName($path, 315532800)
             || !$zip->setCompressionName($path, ZipArchive::CM_DEFLATE, 9)
             || !$zip->setExternalAttributesName($path, ZipArchive::OPSYS_UNIX, 0100644 << 16)) {
-            $fail('OUTPUT_ZIP_ENTRY_FAILED');
+            throw new RuntimeException('OUTPUT_ZIP_ENTRY_FAILED');
         }
     }
-    if (!$zip->close()) $fail('OUTPUT_ZIP_CLOSE_FAILED');
+    if (!$zip->close()) throw new RuntimeException('OUTPUT_ZIP_CLOSE_FAILED');
     $ok = true;
+} catch (Throwable $e) {
+    $zipError = $e;
 } finally {
     if (!$ok) {
         @$zip->close();
         @unlink($out);
     }
 }
+if ($zipError !== null) $fail($zipError->getMessage());
 if (filesize($out) < 1 || filesize($out) > 536870912) {
     unlink($out); $fail('OUTPUT_ZIP_SIZE_INVALID');
 }
