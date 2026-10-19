@@ -387,7 +387,7 @@ final class SystemCenterController
             && BASE_PATH === '/www/wwwroot/baramastaging.tonsamith.com') {
             try {
                 $siteReadyForReview =
-                    BaramaServicesUpdatesDashboardUpdateRequestV1::inboxReady();
+                    \Barama\Services\Updates\DashboardUpdateRequestV1::inboxReady();
             } catch (Throwable) {
                 $siteReadyForReview = false;
             }
