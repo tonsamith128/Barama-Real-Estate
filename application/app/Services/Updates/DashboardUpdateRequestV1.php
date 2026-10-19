@@ -78,7 +78,8 @@ final class DashboardUpdateRequestV1
             && preg_match('~^/tmp/barama-ticket-fixture-[a-f0-9]{12,32}$~D', $parent) === 1;
         if (!$fixture && ($p['uid'] !== 0 || ($p['mode'] & 0777) !== 0711)) return false;
         if (!$fixture && (string)$parent !== self::PARENT) return false;
-        return (int)$i['uid'] === (int)getmyuid()
+        return function_exists('posix_geteuid')
+            && (int)$i['uid'] === (int)posix_geteuid()
             && (($i['mode'] & 0777) === 0700)
             && ($i['mode'] & 0007) === 0;
     }
