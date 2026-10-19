@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../application/app/Services/Updates/DashboardInstallHandoffV1.php';
+require __DIR__ . '/../application/app/Services/Updates/DashboardUpdateRequestV1.php';
 
 use Barama\Services\Updates\DashboardInstallHandoffV1 as Guard;
 
@@ -69,3 +70,58 @@ $c=$baseCandidate; $c['ready_to_install']=true; $c['auto_install_enabled']=true;
 $review=result(STAGING,'0.9.23',$baseFeed,$c);
 check(!$review['install_authorized'] && !$review['root_worker_invoked'],'ignore_untrusted_install_flags');
 echo 'DASHBOARD_HANDOFF_READ_ONLY_SMOKE=PASS' . "\n";
+
+echo "========== DISPOSABLE UNTRUSTED INBOX TESTS ==========\n";
+putenv('BARAMA_HANDOFF_TEST=1');
+$parent = '/tmp/barama-ticket-fixture-' . bin2hex(random_bytes(8));
+$inbox = $parent . '/inbox';
+$created = @mkdir($parent, 0711);
+if (!$created) throw new RuntimeException('FIXTURE_PARENT_FAILED');
+chmod($parent, 0711);
+if (!@mkdir($inbox, 0700)) throw new RuntimeException('FIXTURE_INBOX_FAILED');
+chmod($inbox, 0700);
+try {
+    $ticket = \Barama\Services\Updates\DashboardUpdateRequestV1::fixture(
+        $ok, '0.9.23', $parent, $inbox, $now
+    );
+    check($ticket['state'] === 'QUEUED_FOR_MANUAL_REVIEW_ONLY', 'ticket_is_not_install');
+    check(preg_match('/^[a-f0-9]{32}$/D', $ticket['request_id']) === 1, 'opaque_ticket_identifier');
+    $file = $inbox . '/' . $ticket['request_id'] . '.json';
+    check(is_file($file) && !is_link($file), 'ticket_regular_file');
+    check((fileperms($file) & 0777) === 0600, 'ticket_private_permissions');
+    $data = json_decode(file_get_contents($file), true, 8, JSON_THROW_ON_ERROR);
+    check($data['action'] === 'review_only' && $data['site'] === STAGING, 'ticket_staging_only');
+    check($data['expires_at'] === $now + 120, 'ticket_short_lived');
+    check(!isset($data['admin_password']) && !isset($data['activation_token'])
+        && !isset($data['install_command']), 'ticket_contains_no_credentials_or_commands');
+    try {
+        \Barama\Services\Updates\DashboardUpdateRequestV1::enqueue($ok, STAGING, '0.9.23');
+        throw new RuntimeException('CLI_ENQUEUE_UNEXPECTEDLY_ACCEPTED');
+    } catch (RuntimeException $e) {
+        check($e->getMessage() === 'STAGING_REVIEW_ONLY', 'no_cli_web_enqueue_bypass');
+    }
+    $modified = $ok;
+    $modified['install_authorized'] = true;
+    try {
+        \Barama\Services\Updates\DashboardUpdateRequestV1::fixture(
+            $modified, '0.9.23', $parent, $inbox, $now);
+        throw new RuntimeException('FORGED_INSTALL_UNEXPECTEDLY_ACCEPTED');
+    } catch (RuntimeException $e) {
+        check($e->getMessage() === 'REVIEW_CANDIDATE_INVALID', 'forged_install_authority_rejected');
+    }
+    chmod($inbox, 0777);
+    try {
+        \Barama\Services\Updates\DashboardUpdateRequestV1::fixture(
+            $ok, '0.9.23', $parent, $inbox, $now);
+        throw new RuntimeException('INSECURE_INBOX_ACCEPTED');
+    } catch (RuntimeException $e) {
+        check($e->getMessage() === 'INBOX_NOT_PROVISIONED', 'unsafe_inbox_mode_rejected');
+    }
+    chmod($inbox, 0700);
+} finally {
+    foreach (glob($inbox.'/*') ?: [] as $file) @unlink($file);
+    @rmdir($inbox);
+    @rmdir($parent);
+    putenv('BARAMA_HANDOFF_TEST');
+}
+echo "DASHBOARD_TICKET_DISPOSABLE_SMOKE=PASS\n";
