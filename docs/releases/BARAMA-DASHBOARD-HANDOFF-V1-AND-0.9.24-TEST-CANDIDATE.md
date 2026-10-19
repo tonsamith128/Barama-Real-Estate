@@ -13,9 +13,7 @@ inputs are expressly **untrusted** session/discovery hints; it refuses
 production roots, stale/invalid publisher results, inconsistent versions,
 unsigned/unmatched staged artifact hints, and fake install flags.
 
-The class is not wired to a route. Its `install_authorized`,
-`install_executed` and `root_worker_invoked` fields are **always false**.
-It performs no file, database, shell, network or root operations.
+The staging-only authenticated, CSRF-protected `POST /dashboard/system/auto-updater/request-review` now uses fresh publisher discovery and this guard before writing one short-lived, **untrusted** review ticket outside the web root. Its `install_authorized`, `install_executed` and `root_worker_invoked` fields are **always false**. The ticket writer changes no application code or database.
 
 A separately reviewed privileged worker still needs to implement:
 1. Independently authenticate the administrator's update consent, validate
@@ -30,15 +28,11 @@ A separately reviewed privileged worker still needs to implement:
 5. Keep ambiguous partial DB commits in recovery-review state; never silently
    restore only PHP files after the DB version has changed.
 
-No web route, cron/systemd service, sudo permission, queue consumer, signing
-key, publisher publication, existing staging update, or production site is
-changed by this PR.
+One staging-only review-request web route **is** added; it remains blocked on production and cannot start an installer. No sudo/root invocation, cron/systemd service, privileged queue consumer, signing key, publisher publication, existing staging update, or production site is changed by this PR.
 
 ## New isolated smoke and CI
 
-`php tools/dashboard-install-handoff-smoke.php` covers 34 positive/negative
-assertions. The dedicated CI workflow lints both PHP files and runs these
-assertions without production credentials, network or MySQL.
+`php tools/dashboard-install-handoff-smoke.php` checks the publisher review, staging-only route, private ticket fixture and denied cases. `python3 -B tools/oneclick-inbox-review-smoke.py` checks root-side read-only handling of stale, forged, oversized, symlinked and unsafe tickets. CI performs these disposable checks without production credentials, network or MySQL.
 
 ## Unsigned next-version **test candidate**, reviewed locally
 
@@ -71,3 +65,22 @@ acceptance requires a separately signed newer release, a verified root/web
 privilege boundary, and a successful single browser-triggered *staging* run
 including negative and recovery tests. No deployment of this branch is
 authorized by its CI passing.
+
+## Web-to-root staging review inbox (NOT an installer)
+
+The root-owned parent `/var/lib/barama-oneclick` is designed for mode 0711;
+its `staging-inbox` child is mode 0700 owned by the PHP-FPM runtime user
+(`www`). Both are outside the document root and must be provisioned
+separately after owner approval; neither exists merely because the code is
+merged. Until then, the staging review button is disabled.
+
+Tickets contain only an opaque request ID, pinned staging path, source and
+target versions, signed archive SHA-256, and a two-minute expiry. There are
+no passwords, tokens, arbitrary commands, URLs, or ZIP payloads. A compromised
+web worker could still forge or replay tickets; **tickets are never authority**.
+
+`tools/oneclick-inbox-review.py` is a root-side **read-only** inspector which
+rejects unsafe permissions, symlinks, expiry, invalid versions, and bogus
+installation actions. It cannot install or authorize any update. The fully
+independent privileged worker with publisher/license revalidation, backups,
+locks, native upgrade and rollback/recovery remains a separate release gate.
