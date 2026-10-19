@@ -8,6 +8,7 @@ on:
       - 'application/app/Services/Updates/DashboardUpdateRequestV1.php'
       - 'tools/oneclick-inbox-review.py'
       - 'tools/oneclick-inbox-review-smoke.py'
+      - 'tools/oneclick-inbox-provision.py'
       - '.github/workflows/dashboard-install-handoff-contract.yml'
   push:
     branches: [main]
@@ -34,3 +35,10 @@ jobs:
           php -l tools/dashboard-install-handoff-smoke.php
           php tools/dashboard-install-handoff-smoke.php
           python3 -B tools/oneclick-inbox-review-smoke.py
+          python3 -B tools/oneclick-inbox-provision.py --help >/dev/null
+          python3 -B - <<'PY'
+          import ast
+          from pathlib import Path
+          for name in ['tools/oneclick-inbox-review.py', 'tools/oneclick-inbox-review-smoke.py', 'tools/oneclick-inbox-provision.py']:
+              ast.parse(Path(name).read_text(encoding='utf-8'))
+          PY
