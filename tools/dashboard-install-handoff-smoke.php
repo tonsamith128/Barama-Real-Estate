@@ -125,3 +125,24 @@ try {
     putenv('BARAMA_HANDOFF_TEST');
 }
 echo "DASHBOARD_TICKET_DISPOSABLE_SMOKE=PASS\n";
+
+echo "========== DASHBOARD AUTHORIZED ROUTE AND UI CONTRACT ==========\n";
+$routes = file_get_contents(__DIR__ . '/../application/routes/web.php');
+$controller = file_get_contents(__DIR__ . '/../application/app/Http/Controllers/SystemCenterController.php');
+$view = file_get_contents(__DIR__ . '/../application/resources/views/workspace/system-center.php');
+check(is_string($routes) && strpos($routes,
+    "'/dashboard/system/auto-updater/request-review', [SystemCenterController::class, 'requestStagingInstallReview'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]") !== false,
+    'review_route_auth_permission_and_csrf');
+check(is_string($controller) && strpos($controller,'public function requestStagingInstallReview(') !== false,
+    'staging_review_handler_exists');
+check(is_string($controller) && strpos($controller,
+    '\\Barama\\Services\\Updates\\TrustedReleaseFeed::check(') !== false,
+    'request_handler_requires_fresh_publisher_verification');
+check(strpos($controller,"$site !== '/www/wwwroot/baramastaging.tonsamith.com'") !== false,
+    'request_handler_pinned_to_staging');
+check(is_string($view) && strpos($view,
+    "url('/dashboard/system/auto-updater/request-review')") !== false,
+    'staging_review_form_rendered');
+check(strpos($view, 'Staging review requests do not install updates') !== false,
+    'customer_feedback_not_an_install_claim');
+echo "DASHBOARD_REVIEW_ROUTE_CONTRACT=PASS\n";
