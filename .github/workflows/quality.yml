@@ -154,6 +154,12 @@ jobs:
           php -l tools/staging-signed-release-preflight-smoke.php
           php tools/staging-signed-release-preflight-smoke.php
 
+      - name: Verify reproducible reviewed code-only V2 update ZIP
+        run: |
+          php -l tools/build-v2-update-candidate.php
+          php -l tools/v2-update-candidate-smoke.php
+          php tools/v2-update-candidate-smoke.php
+
       - name: Verify offline Publisher V2 signing against real Barama PHP inspector
         run: |
           python3 -m py_compile tools/offline-release-envelope.py tools/offline-release-envelope-self-test.py
