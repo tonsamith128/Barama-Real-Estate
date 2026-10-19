@@ -152,6 +152,59 @@ final class SystemCenterController
         return Response::redirect(url('/dashboard/system/auto-updater'), 303);
     }
 
+    /**
+     * Explicit admin + CSRF-protected POST. Staging review ticket ONLY.
+     * Never executes a privileged process or authorizes an installation.
+     */
+    public function requestStagingInstallReview(Request $request): Response
+    {
+        $return = static function (string $notice): Response {
+            $_SESSION['_barama_staging_review_flash_v1'] = $notice;
+            return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+        };
+        $site = defined('BASE_PATH') ? (string) BASE_PATH : '';
+        if ($site !== '/www/wwwroot/baramastaging.tonsamith.com') {
+            return $return('Staging review is unavailable for this installation.');
+        }
+        $now = time();
+        $previous = (int)($_SESSION['_barama_staging_review_last_v1'] ?? 0);
+        if ($previous > 0 && $now - $previous < 90) {
+            return $return('Please wait before sending another review request.');
+        }
+        $_SESSION['_barama_staging_review_last_v1'] = $now;
+
+        try {
+            $metadata = Installation::metadata();
+            if (trim((string)($metadata['version'] ?? '')) !== (string)APP_VERSION) {
+                return $return('Staging version records must match before requesting review.');
+            }
+            // Always do a fresh authenticated publisher inquiry here. Never
+            // promote a cached session or user-supplied version into authority.
+            $license = Installation::licenseState();
+            $runtime = Installation::runtimeConfig();
+            $feed = \Barama\Services\Updates\TrustedReleaseFeed::check(
+                (string)APP_VERSION, $license, $runtime
+            );
+            $feed['at'] = $now;
+            $candidate = \Barama\Services\Updates\StagingPublisherCandidateV1::inspect(
+                $site, (string)APP_VERSION, $feed
+            );
+            $review = \Barama\Services\Updates\DashboardInstallHandoffV1::review(
+                $site, (string)APP_VERSION, $feed, $candidate, $now
+            );
+            if (($review['state'] ?? null) !== 'CANDIDATE_VERIFIED_FOR_REVIEW') {
+                return $return('No eligible, matched signed staging update is ready for review.');
+            }
+            \Barama\Services\Updates\DashboardUpdateRequestV1::enqueue(
+                $review, $site, (string)APP_VERSION
+            );
+            return $return('Staging review request saved. Installation was not started.');
+        } catch (\Throwable) {
+            // Never expose private paths, license tokens, or publisher responses.
+            return $return('Staging review is unavailable. No installation was started.');
+        }
+    }
+
     /** Server-session fingerprint: never store or render an activation token. */
     private static function feedBindingFingerprint(array $license, array $runtime): string
     {
@@ -314,6 +367,32 @@ final class SystemCenterController
                 'feed'=>'Not connected', 'version'=>'', 'checked_at'=>'Never'];
         }
         $feedFlash = $_SESSION['_barama_update_feed_flash_v151'] ?? '';
+        $stagingReviewFlash = $_SESSION['_barama_staging_review_flash_v1'] ?? '';
+        unset($_SESSION['_barama_staging_review_flash_v1']);
+        $allowedReviewMessages = [
+            'Staging review is unavailable for this installation.',
+            'Please wait before sending another review request.',
+            'Staging version records must match before requesting review.',
+            'No eligible, matched signed staging update is ready for review.',
+            'Staging review request saved. Installation was not started.',
+            'Staging review is unavailable. No installation was started.',
+        ];
+        if (!is_string($stagingReviewFlash)
+            || !in_array($stagingReviewFlash, $allowedReviewMessages, true)) {
+            $stagingReviewFlash = '';
+        }
+        $siteReadyForReview = false;
+        if ($section === 'auto-updater'
+            && defined('BASE_PATH')
+            && BASE_PATH === '/www/wwwroot/baramastaging.tonsamith.com') {
+            try {
+                $siteReadyForReview =
+                    BaramaServicesUpdatesDashboardUpdateRequestV1::inboxReady();
+            } catch (Throwable) {
+                $siteReadyForReview = false;
+            }
+        }
+
         unset($_SESSION['_barama_update_feed_flash_v151']);
         $allowedFeedFlashes = [
             'Please wait 90 seconds between checks.',
@@ -483,6 +562,9 @@ final class SystemCenterController
             'systemFeedReadiness' => $feedReady,
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
+            'systemHandoffInboxReady' => $section === 'auto-updater'
+                && $siteReadyForReview,
+            'systemHandoffRequestFlash' => $stagingReviewFlash,
             'systemReleaseInspection' => $releaseCheck,
             'systemLicenseBinding' => [
                 'current_domain' => 'baramarealestate.tonsamith.com',
