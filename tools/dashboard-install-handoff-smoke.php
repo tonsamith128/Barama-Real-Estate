@@ -138,7 +138,7 @@ check(is_string($controller) && strpos($controller,'public function requestStagi
 check(is_string($controller) && strpos($controller,
     '\\Barama\\Services\\Updates\\TrustedReleaseFeed::check(') !== false,
     'request_handler_requires_fresh_publisher_verification');
-check(strpos($controller,"$site !== '/www/wwwroot/baramastaging.tonsamith.com'") !== false,
+check(strpos($controller, '$site !== \'/www/wwwroot/baramastaging.tonsamith.com\'') !== false,
     'request_handler_pinned_to_staging');
 check(is_string($view) && strpos($view,
     "url('/dashboard/system/auto-updater/request-review')") !== false,
