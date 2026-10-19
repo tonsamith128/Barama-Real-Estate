@@ -41,9 +41,17 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
           <button class="bsys-button bsys-button--primary" type="submit" <?= !empty($systemFeedReadiness['can_check']) ? '' : 'disabled title="Author must configure the trusted publisher public key and release-feed contract"' ?>>Check for updates</button>
         </form>
+        <?php if (defined('BASE_PATH') && BASE_PATH === '/www/wwwroot/baramastaging.tonsamith.com'): ?>
+        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/request-review')) ?>" class="bsys-inline-action">
+          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+          <button class="bsys-button bsys-button--outline" type="submit" <?= !empty($systemHandoffInboxReady) && (($systemFeedResult['status'] ?? '') === 'available') && (($systemFeedResult['feed'] ?? '') === 'Signed release verified') ? '' : 'disabled title="Requires an independently verified newer publisher release and private review inbox"' ?>>Submit staging review</button>
+        </form>
+        <?php endif; ?>
         <?php if (!empty($systemUpdaterPresent)): ?><a class="bsys-button bsys-button--outline" href="<?= e(url('/updater/')) ?>">Open guarded updater <span aria-hidden="true">↗</span></a><?php endif; ?>
       </div>
       <small class="bsys-update-discovery-note">Discovery only · no automatic download or installation</small>
+      <?php if (isset($systemHandoffRequestFlash) && $systemHandoffRequestFlash !== ''): ?><p class="bsys-note" role="status" aria-live="polite"><?= e((string)$systemHandoffRequestFlash) ?></p><?php endif; ?>
+      <?php if (defined('BASE_PATH') && BASE_PATH === '/www/wwwroot/baramastaging.tonsamith.com'): ?><small class="bsys-update-discovery-note">Staging review requests do not install updates or start a root worker.</small><?php endif; ?>
       <?php if (!empty($systemFeedFlash)): ?><p class="bsys-note bsys-note--feed-status bsys-update-header-feedback" role="status" aria-live="polite"><?= e((string)$systemFeedFlash) ?></p><?php endif; ?>
     </div>
     <?php else: ?>
