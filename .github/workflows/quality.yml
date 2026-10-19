@@ -179,6 +179,12 @@ jobs:
           php -l tools/staging-publisher-candidate-smoke.php
           php tools/staging-publisher-candidate-smoke.php
 
+      - name: Refuse deleting racing root-private updater artifacts on transfer failure
+        run: |
+          php -l application/app/Services/Updates/PrivateArtifactReceiverV2.php
+          php -l tools/private-artifact-receiver-race-smoke.php
+          sudo -E php tools/private-artifact-receiver-race-smoke.php
+
       - name: Verify root-only authenticated private publisher delivery contract
         run: |
           php -l application/app/Services/Updates/PublisherPrivateDeliveryV1.php
