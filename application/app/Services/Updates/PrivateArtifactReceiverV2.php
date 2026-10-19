@@ -51,6 +51,11 @@ final class PrivateArtifactReceiverV2
         chmod($part, 0600);
         $total = 0;
         $ctx = hash_init('sha256');
+        // Own only paths created by this transfer. A racing transfer or
+        // owner may create the final name after the initial existence check.
+        // Failure cleanup must never delete someone else's archive/receipt.
+        $createdArchive = false;
+        $createdReceipt = false;
         try {
             $transfer(static function (string $chunk) use (&$total, $ctx, $handle, $size): void {
                 $n = strlen($chunk);
@@ -67,12 +72,14 @@ final class PrivateArtifactReceiverV2
             }
             // Atomic no-clobber: never replace a staged archive, even during a race.
             if (!link($part, $archive)) throw new RuntimeException('TRANSFER_STAGE_CONFLICT');
+            $createdArchive = true;
             unlink($part);
             // Keep receipt strictly non-sensitive: never store activation credentials.
             $record = ['schema'=>'barama-private-v2-artifact-v1','release_id'=>$id,
                 'sha256'=>$sha,'bytes'=>$total,'status'=>'verified-not-installed'];
             $rh = @fopen($receipt, 'xb');
             if ($rh === false) throw new RuntimeException('TRANSFER_RECEIPT_CONFLICT');
+            $createdReceipt = true;
             try {
                 chmod($receipt, 0600);
                 $json = json_encode($record, JSON_THROW_ON_ERROR) . "\n";
@@ -83,7 +90,9 @@ final class PrivateArtifactReceiverV2
             return ['archive'=>$archive,'receipt'=>$receipt,'bytes'=>$total,'sha256'=>$sha];
         } catch (\Throwable $e) {
             if (is_resource($handle)) fclose($handle);
-            @unlink($part); @unlink($archive); @unlink($receipt);
+            @unlink($part);
+            if ($createdReceipt) @unlink($receipt);
+            if ($createdArchive) @unlink($archive);
             throw $e;
         }
     }
