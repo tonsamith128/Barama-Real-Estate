@@ -127,11 +127,11 @@ final class SystemCenterController
             );
             $_SESSION['_barama_publisher_candidate_v1'] = $candidate;
             $_SESSION['_barama_update_feed_flash_v151'] = match ($result['status']) {
-                'available' => 'A newer publisher-signed release was found. No package was downloaded.',
-                'eligible' => 'Update entitlement confirmed. No newer signed release was published.',
+                'available' => 'New version found. Your website has not been changed.',
+                'eligible' => 'You have the latest available version.',
                 'ineligible' => ($result['reason'] ?? '') === 'not_configured'
-                    ? 'Update entitlement has not been configured by the publisher. Contact License assistance; no update was downloaded.'
-                    : 'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
+                    ? 'Updates are not enabled for this installation. Contact support.'
+                    : 'Updates are unavailable for this installation. Contact support.',
                 default => 'Update check completed.',
             };
             if (($candidate['publisher_release_matched_to_staged_zip'] ?? false) === true) {
@@ -147,7 +147,7 @@ final class SystemCenterController
                 'feed' => 'Unavailable', 'version' => '',
                 'checked_at' => gmdate('Y-m-d H:i').' UTC', 'at' => $now,
             ];
-            $_SESSION['_barama_update_feed_flash_v151'] = 'Unable to confirm update entitlement or a trusted release. The installed license was not changed.';
+            $_SESSION['_barama_update_feed_flash_v151'] = 'Unable to check for updates right now. Please try again later.';
         }
         return Response::redirect(url('/dashboard/system/auto-updater'), 303);
     }
@@ -322,6 +322,11 @@ final class SystemCenterController
             'Publisher reports that this installation is not entitled to updates.',
             'Update entitlement has not been configured by the publisher. Contact License assistance; no update was downloaded.',
             'Publisher denied update entitlement for this installation. Contact License assistance for a review; the active license is unchanged.',
+            'New version found. Your website has not been changed.',
+            'You have the latest available version.',
+            'Updates are not enabled for this installation. Contact support.',
+            'Updates are unavailable for this installation. Contact support.',
+            'Unable to check for updates right now. Please try again later.',
             'Update check completed.',
             'Unable to confirm update entitlement or a trusted release. The installed license was not changed.',
         ];

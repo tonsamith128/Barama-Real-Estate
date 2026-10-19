@@ -1,6 +1,11 @@
 <?php
 /** Scoped admin System Center view. Values are supplied by read-only controller. */
 $systemSection = (string) ($systemSection ?? 'about');
+// Keep the customer Auto Updater simple; publisher diagnostics are not a customer workflow.
+if ($systemSection === 'auto-updater') {
+    require __DIR__ . '/auto-updater-simple.php';
+    return;
+}
 $systemTitle = (string) ($systemTitle ?? 'System');
 $systemVersion = (string) ($systemVersion ?? 'Unknown');
 $systemInstalledVersion = (string) ($systemInstalledVersion ?? 'Unknown');
