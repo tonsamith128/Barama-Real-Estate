@@ -1,0 +1,41 @@
+name: R1p13 isolated repository runtime
+
+on:
+  pull_request:
+    paths:
+      - 'tools/r1p13/**'
+      - '.github/workflows/r1p13-isolated-runtime.yml'
+      - 'application/**'
+      - 'index.php'
+      - 'VERSION'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-http-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Bash syntax preflight
+        run: bash -n tools/r1p13/run-ci.sh
+      - name: Offline PHP lint and fail-closed smoke
+        run: |
+          php -l tools/r1p13/guard.php
+          php -l tools/r1p13/router.php
+          php -l tools/r1p13/http-auth-smoke.php
+          if BARAMA_R1P13_ISOLATED=0 php tools/r1p13/guard.php > /dev/null 2>&1; then
+            echo "STOP=R1P13_GUARD_ACCEPTED_UNSAFE_CONTEXT"
+            exit 1
+          fi
+          if BARAMA_R1P13_ISOLATED=0 php tools/r1p13/http-auth-smoke.php > /dev/null 2>&1; then
+            echo "STOP=R1P13_HTTP_TEST_ACCEPTED_UNSAFE_CONTEXT"
+            exit 1
+          fi
+          echo "R1P13_UNSAFE_CONTEXT_REJECTION=PASS"
+      - name: Execute disposable network-isolated HTTP and auth checks
+        run: bash tools/r1p13/run-ci.sh

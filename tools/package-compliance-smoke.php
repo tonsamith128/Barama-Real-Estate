@@ -349,6 +349,8 @@ $allowedHosts = [
     'dash.cloudflare.com', // Host-linked admin setup guidance for Turnstile.
     'api.mapbox.com', // Barama's first-party Mapbox location search integration.
     'cdn.jsdelivr.net',
+    // Turnstile server-side Siteverify: exact hostname only.
+    'challenges.cloudflare.com',
     'codecanyon.net',
     'getbootstrap.com',
     'github.com',
@@ -464,7 +466,10 @@ foreach ($entries as $entry) {
         foreach ($allowedHosts as $allowedHost) {
             if (
                 $host === $allowedHost
-                || str_ends_with($host, '.' . $allowedHost)
+                || (
+                    $allowedHost !== 'challenges.cloudflare.com'
+                    && str_ends_with($host, '.' . $allowedHost)
+                )
             ) {
                 $allowed = true;
                 break;

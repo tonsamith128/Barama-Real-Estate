@@ -22,6 +22,20 @@ The customer package does not modify or relicense Bootstrap as Barama Real Estat
 
 jsDelivr is used only as the public CDN delivery service for the Bootstrap stylesheet referenced by Barama Real Estate. jsDelivr is not bundled as executable source code in the customer ZIP.
 
+## Cloudflare Turnstile (optional integration)
+
+Barama includes an optional first-party PHP adapter for Cloudflare Turnstile.
+When the feature is configured and enabled by a site administrator, Barama
+sends a submitted challenge token to Cloudflare's server-side verification
+endpoint at https://challenges.cloudflare.com/turnstile/v0/siteverify.
+Cloudflare Turnstile is a third-party service and is not bundled in this ZIP.
+A separate site key and secret key are required for each customer deployment;
+no customer's keys are distributed with the product.
+
+The adapter is currently a pre-release foundation and is not yet wired to
+public forms or enabled by default. Consult Cloudflare's current Turnstile
+service terms and privacy guidance before enabling it.
+
 ## Envato / CodeCanyon
 
 Envato Market and CodeCanyon are marketplace/licensing services and are not bundled software dependencies. A CodeCanyon purchase may be validated through the Ton Samith License Manager in accordance with the applicable marketplace license and terms.
