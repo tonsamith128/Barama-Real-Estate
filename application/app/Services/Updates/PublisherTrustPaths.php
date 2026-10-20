@@ -7,8 +7,11 @@ namespace Barama\Services\Updates;
 use RuntimeException;
 
 /**
- * Staging-only immutable publisher trust paths. No request/config/env override.
- * Customer installations retain their legacy layout pending a separate migration.
+ * Staging-only root-controlled publisher trust path. Never accepts a request,
+ * application config, or environment override of the authoritative location.
+ *
+ * Existing third-party/customer installations keep legacy path handling until
+ * they receive a separately reviewed migration with a compatible installer.
  */
 final class PublisherTrustPaths
 {
@@ -24,7 +27,9 @@ final class PublisherTrustPaths
 
     public static function directory(): string
     {
-        return self::isProtectedStaging() ? self::ROOT : APP_PATH . '/config';
+        return self::isProtectedStaging()
+            ? self::ROOT
+            : APP_PATH . '/config';
     }
 
     public static function keys(): string
@@ -39,10 +44,11 @@ final class PublisherTrustPaths
 
     public static function protectedDirectoryReady(): bool
     {
-        return self::isProtectedStaging() && self::rootControlledDirectory(self::ROOT);
+        if (!self::isProtectedStaging()) return false;
+        return self::rootControlledDirectory(self::ROOT);
     }
 
-    /** Reject symlinks, missing ancestors, and non-root-writable directory chains. */
+    /** Check the entire fixed absolute directory chain; never follow a symlink. */
     public static function rootControlledDirectory(string $directory): bool
     {
         if ($directory === '' || $directory[0] !== '/' || $directory === '/'
@@ -50,11 +56,11 @@ final class PublisherTrustPaths
             || str_contains($directory, '/./') || str_contains($directory, '/../')) {
             return false;
         }
-        // The narrow staging open_basedir permits the pinned trust leaf, but
-        // deliberately denies PHP stat/lstat on /etc and its parent chain.
-        // That full chain is checked by the root-only provisioning tool.
-        // During HTTP/CLI runtime, validate the real, unsymlinked root-owned
-        // leaf and files without broadening PHP access to unrelated /etc data.
+        // Under staging's deliberately narrow open_basedir, PHP can inspect
+        // the pinned leaf but cannot stat /etc or intermediate ancestors.
+        // The independent root-only provisioner has already verified the full
+        // directory chain. At runtime, check the exact, unsymlinked, root-owned
+        // leaf and its files without exposing all of /etc to the web process.
         if ($directory === self::ROOT && self::isProtectedStaging()
             && (string) ini_get('open_basedir') !== '') {
             clearstatcache(true, $directory);
@@ -78,7 +84,10 @@ final class PublisherTrustPaths
         return true;
     }
 
-    /** Called by all consumers of public publisher key and feed configuration. */
+    /**
+     * The staging key/feed cannot be trusted if any path component is replaceable
+     * by the PHP runtime. The web process only needs read access, not write access.
+     */
     public static function safeTrustFile(string $path, int $max): bool
     {
         if ($max < 1 || $max > 65536) return false;
@@ -97,7 +106,7 @@ final class PublisherTrustPaths
 
     public static function assertProtectedDirectory(): void
     {
-        if (!self::protectedDirectoryReady()) {
+        if (!self::isProtectedStaging() || !self::protectedDirectoryReady()) {
             throw new RuntimeException('PUBLISHER_TRUST_PROTECTED_DIRECTORY_UNAVAILABLE');
         }
     }
