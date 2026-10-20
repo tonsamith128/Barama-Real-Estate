@@ -159,6 +159,15 @@ jobs:
           php -l tools/oneclick-owner-consent-and-workflow-smoke.php
           php tools/oneclick-owner-consent-and-workflow-smoke.php
 
+      - name: Ensure root recovery vault bootstrap requires explicit approval
+        run: |
+          bash -n tools/oneclick-staging-vault-bootstrap.sh
+          bash tools/oneclick-staging-vault-bootstrap.sh --guard
+          if bash tools/oneclick-staging-vault-bootstrap.sh --provision UNAPPROVED; then
+            echo 'FAIL_OPEN_ROOT_VAULT_PROVISION' >&2
+            exit 1
+          fi
+
       - name: Verify private full-site snapshot contents and staging-only guard
         run: |
           php -l application/app/Services/Updates/OneClickFullSiteSnapshotV1.php
