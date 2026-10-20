@@ -74,7 +74,7 @@ Create a current files/database backup before upgrading. The updater requires ad
 
 ### Auto Updater and signed-release inspection
 
-The admin **System → Auto Updater** page offers a guarded, administrator-initiated publisher update check when the publisher feed and trusted public keys are configured. It can inspect a privately staged, publisher-signed release and display a time-bounded inspection result. These are read-only operations and never install a release.
+The admin **System → Auto Updater** page offers a guarded, administrator-initiated publisher update check when the publisher feed and trusted public keys are configured. It can inspect a privately staged, publisher-signed release and display a time-bounded inspection result. An administrator may use **Preview signed changes** to see up to 40 validated file paths, counts of new/replaced/unchanged files, and the source/target versions. These are read-only operations and never install a release.
 
 The existing `/updater/` page is the supported package-upgrade workflow: a newer package must already have been supplied to the installed application, and the authorized administrator confirms the required files/database backup before applying migrations.
 
