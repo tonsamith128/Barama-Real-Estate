@@ -10,6 +10,7 @@ $systemEnvironment = is_array($systemEnvironment ?? null) ? $systemEnvironment :
 $systemRequirements = is_array($systemRequirements ?? null) ? $systemRequirements : [];
 $systemUpdateSummary = is_array($systemUpdateSummary ?? null) ? $systemUpdateSummary : [];
 $systemAutoUpdater = is_array($systemAutoUpdater ?? null) ? $systemAutoUpdater : [];
+$systemOneClickWorkflow = is_array($systemOneClickWorkflow ?? null) ? $systemOneClickWorkflow : ['install_enabled' => false, 'steps' => [], 'status' => 'Unavailable'];
 $systemReleaseReadiness = is_array($systemReleaseReadiness ?? null) ? $systemReleaseReadiness : [];
 $systemReleaseInspection = is_array($systemReleaseInspection ?? null) ? $systemReleaseInspection : ['status'=>'Not inspected','checked_at'=>'Never'];
 $systemPublisherCheck = is_array($systemPublisherCheck ?? null) ? $systemPublisherCheck : ['state' => 'Not checked', 'checked_at' => 'Never'];
@@ -257,6 +258,34 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
 
 
   <?php elseif ($systemSection === 'auto-updater'): ?>
+    <section class="bsys-panel" aria-labelledby="bsys-oneclick-title">
+      <div class="bsys-section-title">
+        <div><h2 id="bsys-oneclick-title">One-click Update workflow</h2><p>Installation requirements and verified progress, without running an update.</p></div>
+        <span class="bsys-state bsys-state--warn">Installation disabled</span>
+      </div>
+      <div class="bsys-table-wrap">
+        <table aria-label="One-click updater stages">
+          <thead><tr><th scope="col">Stage</th><th scope="col">Status</th><th scope="col">Verification boundary</th></tr></thead>
+          <tbody>
+            <?php foreach ((array) ($systemOneClickWorkflow['steps'] ?? []) as $index => $step): ?>
+              <?php if (!is_array($step)) continue; ?>
+              <tr>
+                <th scope="row"><?= e((string) ((int) $index + 1)) ?>. <?= e((string) ($step['label'] ?? 'Check')) ?></th>
+                <td><span class="bsys-state bsys-state--neutral"><?= e((string) ($step['status'] ?? 'Not checked')) ?></span></td>
+                <td><?= e((string) ($step['detail'] ?? 'No evidence recorded')) ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <div class="bsys-section-body">
+        <div class="bsys-actions">
+          <button type="button" class="bsys-button bsys-button--primary" disabled aria-disabled="true" data-oneclick-install-disabled title="An independently authorized installer and tested recovery workflow are not implemented">Install update · unavailable</button>
+          <?php if ($updaterFound): ?><a class="bsys-button" href="<?= e(url('/updater/')) ?>">Open existing guarded updater ↗</a><?php endif; ?>
+        </div>
+        <p class="bsys-note">The publisher feed and signed-package inspector are read-only. A verified license or staged ZIP never authorizes installation. The native guarded updater requires a separately uploaded package, administrator authentication, and backup confirmation.</p>
+      </div>
+    </section>
     <section class="bsys-premium-overview" aria-labelledby="bsys-premium-overview-title">
       <div class="bsys-premium-table-header"><div><h2 id="bsys-premium-overview-title">Updater overview</h2><p>Items requiring setup or review appear first.</p></div><a class="bsys-premium-refresh" href="<?= e(url('/dashboard/system/auto-updater')) ?>" aria-label="Refresh updater readiness"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg>Refresh</a></div>
       <div class="bsys-premium-table-scroll"><table class="bsys-premium-table" data-premium-table>
