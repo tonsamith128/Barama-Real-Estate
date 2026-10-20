@@ -26,6 +26,10 @@ final class OneClickSignedFixtureBridgeV1
         string $archivePath, string $installedVersion, ?int $crashAfter = null
     ): array {
         self::fixtureRoots($site, $vault);
+        // Report a pending crashed file transaction before a signed-plan
+        // inspection can fail on the partially replaced code baseline.
+        // apply() still performs the authoritative locked recheck.
+        OneClickAtomicTransactionV1::assertNoPendingFixture($site, $vault);
         if (!class_exists(ZipArchive::class) || !extension_loaded('sodium')) {
             throw new RuntimeException('SIGNED_BRIDGE_RUNTIME_MISSING');
         }
