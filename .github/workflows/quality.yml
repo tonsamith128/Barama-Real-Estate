@@ -181,6 +181,12 @@ jobs:
           php -l tools/oneclick-full-site-restore-rehearsal-smoke.php
           php tools/oneclick-full-site-restore-rehearsal-smoke.php
 
+      - name: Verify unsigned publisher source and read-only staging baseline workflows
+        run: |
+          python3 -m py_compile tools/oneclick-release-source-inventory.py tools/oneclick-staging-baseline-comparison.py
+          python3 tools/oneclick-release-source-inventory-smoke.py
+          python3 tools/oneclick-staging-baseline-comparison-smoke.py
+
       - name: Verify root-only independent staging owner approval and recovery binding
         run: |
           php -l application/app/Services/Updates/OneClickStagingOwnerApprovalV1.php
