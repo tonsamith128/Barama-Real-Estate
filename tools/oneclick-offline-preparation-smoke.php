@@ -61,6 +61,39 @@ try {
     if (file_exists($tmp.'/receipt.json') || is_link($tmp.'/receipt.json')) unlink($tmp.'/receipt.json');
     rmdir($tmp);
 }
+$coverage = $ref->getMethod('codeReceiptMatchesPlan');
+$plan = [
+    'archive_sha256' => str_repeat('a', 64),
+    'target_version' => '0.9.23',
+    'targets' => [
+        ['path' => 'VERSION', 'archive_sha256' => str_repeat('b', 64), 'installed_sha256' => str_repeat('c', 64)],
+        ['path' => 'assets/css/app.css', 'archive_sha256' => str_repeat('d', 64), 'installed_sha256' => null],
+    ],
+];
+$receipt = [
+    'release_archive_sha256' => str_repeat('a', 64),
+    'installed_version' => '0.9.22-dev',
+    'target_version' => '0.9.23',
+    'state' => 'prepared_not_installed',
+    'files' => [
+        ['path' => 'VERSION', 'baseline' => str_repeat('c', 64), 'new_sha256' => str_repeat('b', 64), 'exists' => true],
+        ['path' => 'assets/css/app.css', 'baseline' => null, 'new_sha256' => str_repeat('d', 64), 'exists' => false],
+    ],
+];
+assertCase($coverage->invoke(null, $receipt, $plan, '0.9.22-dev') === true, 'complete_signed_plan_coverage');
+$mutants = [];
+$t = $receipt; $t['release_archive_sha256'] = str_repeat('e', 64); $mutants['wrong_archive'] = $t;
+$t = $receipt; $t['target_version'] = '0.9.24'; $mutants['wrong_target_version'] = $t;
+$t = $receipt; $t['files'][0]['baseline'] = str_repeat('e', 64); $mutants['wrong_installed_baseline'] = $t;
+$t = $receipt; $t['files'][1]['new_sha256'] = str_repeat('e', 64); $mutants['wrong_target_hash'] = $t;
+$t = $receipt; $t['files'][1]['exists'] = true; $mutants['false_existing_file'] = $t;
+$t = $receipt; $t['files'][1]['path'] = 'assets/css/foreign.css'; $mutants['foreign_target'] = $t;
+$t = $receipt; $t['files'][] = $t['files'][0]; $mutants['duplicate_extra_target'] = $t;
+$t = $receipt; array_pop($t['files']); $mutants['missing_target'] = $t;
+$t = $receipt; $t['files'][1] = $t['files'][0]; $mutants['duplicate_target'] = $t;
+foreach ($mutants as $name => $mutant) {
+    assertCase($coverage->invoke(null, $mutant, $plan, '0.9.22-dev') === false, $name.'_rejected');
+}
 $src = file_get_contents(dirname(__DIR__).'/application/app/Services/Updates/OneClickOfflinePreparationV1.php');
 assertCase(is_string($src) && str_contains($src, "'installation_enabled' => false")
     && str_contains($src, "'root_worker_started' => false")
