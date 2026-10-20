@@ -185,6 +185,100 @@ final class OneClickRecoverySnapshotPairV1
     }
 
     /**
+     * Reverify previously prepared pair bytes under the pinned staging root.
+     * Root CLI only. Does NOT establish a successful SQL restore or authorize
+     * a deployment. An existing receipt can never override a changed release.
+     *
+     * @return array<string,mixed> No private paths or credentials returned.
+     */
+    public static function verifyStagingPair(
+        string $site, string $pairId, string $expectedPairReceiptSha256
+    ): array {
+        self::guard($site, self::APPROVAL);
+        $vault = self::vault();
+        if (preg_match('/^pair-[a-f0-9]{32}$/D', $pairId) !== 1
+            || !self::sha($expectedPairReceiptSha256)) {
+            throw new RuntimeException('RECOVERY_PAIR_REFERENCE_INVALID');
+        }
+        $run = $vault . '/' . $pairId;
+        if (is_link($run) || !is_dir($run) || realpath($run) !== $run) {
+            throw new RuntimeException('RECOVERY_PAIR_DIRECTORY_UNTRUSTED');
+        }
+        $stat = stat($run);
+        if (!is_array($stat) || $stat['uid'] !== 0
+            || ($stat['mode'] & 0777) !== 0700) {
+            throw new RuntimeException('RECOVERY_PAIR_DIRECTORY_UNTRUSTED');
+        }
+        $file = $run . '/pair.json';
+        if (is_link($file) || !is_file($file)
+            || (fileperms($file) & 0777) !== 0600
+            || filesize($file) < 30 || filesize($file) > 8192
+            || !hash_equals($expectedPairReceiptSha256, (string) hash_file('sha256', $file))) {
+            throw new RuntimeException('RECOVERY_PAIR_RECEIPT_UNTRUSTED');
+        }
+        try {
+            $receipt = json_decode((string) file_get_contents($file), true, 16, JSON_THROW_ON_ERROR);
+        } catch (\Throwable) {
+            throw new RuntimeException('RECOVERY_PAIR_RECEIPT_UNTRUSTED');
+        }
+        $runtime = Installation::runtimeConfig();
+        $installed = Installation::metadata()['version'] ?? null;
+        if (!is_array($receipt)
+            || ($receipt['schema'] ?? null) !== 'barama-oneclick-recovery-pair-v1'
+            || ($receipt['state'] ?? null) !== 'paired_snapshots_not_restored'
+            || ($receipt['site'] ?? null) !== self::SITE
+            || !is_string($installed) || !defined('APP_VERSION')
+            || $installed !== APP_VERSION || ($receipt['installed_version'] ?? null) !== $installed
+            || ($receipt['code_scope'] ?? null) !== 'signed_plan_targets_only'
+            || ($receipt['database_restore_tested'] ?? null) !== false
+            || ($receipt['full_site_backup_verified'] ?? null) !== false
+            || ($receipt['consistent_recovery_point_verified'] ?? null) !== false
+            || ($receipt['installation_enabled'] ?? null) !== false
+            || !is_string($runtime['DB_DATABASE'] ?? null)
+            || !hash_equals(hash('sha256', $runtime['DB_DATABASE']),
+                (string) ($receipt['database_name_sha256'] ?? ''))
+            || !self::job($receipt['code_job_id'] ?? null)
+            || !self::job($receipt['db_job_id'] ?? null)
+            || !self::sha($receipt['code_receipt_sha256'] ?? null)
+            || !self::sha($receipt['db_receipt_sha256'] ?? null)
+            || !self::sha($receipt['release_archive_sha256'] ?? null)) {
+            throw new RuntimeException('RECOVERY_PAIR_BINDING_INVALID');
+        }
+
+        // Reevaluate the pinned publisher signature, archive digest and full
+        // read-only file plan rather than trusting a previously stored SHA.
+        $loc = SignedReleaseInspector::locations();
+        $plan = VerifiedReleaseFilePlanV2::inspect(
+            $loc['manifest'], $loc['archive'], $installed
+        );
+        if (($plan['archive_sha256'] ?? null) !== $receipt['release_archive_sha256']
+            || ($plan['target_version'] ?? null) !== ($receipt['target_version'] ?? null)
+            || ($plan['installed_version'] ?? null) !== $installed
+            || ($plan['status'] ?? null) !== 'verified_plan_only') {
+            throw new RuntimeException('RECOVERY_PAIR_SIGNED_RELEASE_CHANGED');
+        }
+
+        $codeDir = $run . '/code/' . $receipt['code_job_id'];
+        $dbDir = $run . '/database/' . $receipt['db_job_id'];
+        if (!VerifiedUpdateBackupV2::verify($codeDir, $receipt['code_receipt_sha256'])
+            || !PrivateDatabaseBackupV2::verify($dbDir, $receipt['db_receipt_sha256'])) {
+            throw new RuntimeException('RECOVERY_PAIR_BACKUP_TAMPERED');
+        }
+        return [
+            'status' => 'PRIVATE_CODE_AND_SQL_SNAPSHOTS_VERIFIED_NOT_RESTORED',
+            'pair_id' => $pairId,
+            'pair_receipt_sha256' => $expectedPairReceiptSha256,
+            'code_receipt_sha256' => $receipt['code_receipt_sha256'],
+            'db_receipt_sha256' => $receipt['db_receipt_sha256'],
+            'signed_release_sha256' => $plan['archive_sha256'],
+            'full_site_backup_verified' => false,
+            'database_restore_tested' => false,
+            'consistent_recovery_point_verified' => false,
+            'installation_enabled' => false,
+        ];
+    }
+
+    /**
      * Deliberately returns NO installation consent even if every receipt
      * matches. A separate root worker must later recheck actual DB identity,
      * complete recovery and operator consent under an exclusive update lock.
