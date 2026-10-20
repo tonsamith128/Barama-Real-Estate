@@ -34,6 +34,7 @@ foreach ([
     'application/database/migrations/0010_release_security_hardening.php',
     'application/app/Services/Updates/OneClickDashboardGateV1.php',
     'application/app/Services/Updates/OneClickInspectionFreshnessV1.php',
+    'application/app/Services/Updates/OneClickInstalledDomainV1.php',
 ] as $required) {
     if ($zip->locateName($required) === false) {
         throw new RuntimeException(
@@ -59,6 +60,7 @@ $contracts = [
     'application/app/Http/Controllers/SystemCenterController.php' => [
         'OneClickDashboardGateV1::assess',
         'OneClickInspectionFreshnessV1::display',
+        'OneClickInstalledDomainV1::fromRuntimeConfig',
     ],
     'application/resources/views/updater/index.php' => [
         'Return to Update Center',
