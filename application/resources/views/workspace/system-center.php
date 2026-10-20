@@ -13,6 +13,8 @@ $systemAutoUpdater = is_array($systemAutoUpdater ?? null) ? $systemAutoUpdater :
 $systemOneClickWorkflow = is_array($systemOneClickWorkflow ?? null) ? $systemOneClickWorkflow : ['install_enabled' => false, 'steps' => [], 'status' => 'Unavailable'];
 $systemReleaseReadiness = is_array($systemReleaseReadiness ?? null) ? $systemReleaseReadiness : [];
 $systemReleaseInspection = is_array($systemReleaseInspection ?? null) ? $systemReleaseInspection : ['status'=>'Not inspected','checked_at'=>'Never'];
+$systemSignedPlanPreview = is_array($systemSignedPlanPreview ?? null) ? $systemSignedPlanPreview : null;
+$systemSignedPlanFlash = is_string($systemSignedPlanFlash ?? null) ? $systemSignedPlanFlash : '';
 $systemPublisherCheck = is_array($systemPublisherCheck ?? null) ? $systemPublisherCheck : ['state' => 'Not checked', 'checked_at' => 'Never'];
 $systemCheckedAt = (string) ($systemCheckedAt ?? 'Not checked');
 $systemPublisherFlash = !empty($systemPublisherFlash);
@@ -302,6 +304,36 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         <?php endforeach; ?>
         </tbody>
       </table></div>
+      <section class="bsys-panel" aria-labelledby="bsys-signed-plan-preview-title">
+        <div class="bsys-section-title">
+          <div><h2 id="bsys-signed-plan-preview-title">Signed release change preview</h2><p>Compare only the files listed in a locally staged, publisher-signed update package.</p></div>
+          <span class="bsys-state bsys-state--neutral">Review only</span>
+        </div>
+        <div class="bsys-section-body">
+          <form method="post" action="<?= e(url('/dashboard/system/auto-updater/preview-signed-changes')) ?>" class="bsys-inline-action">
+            <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+            <button class="bsys-button" type="submit" <?= !empty($systemReleaseReadiness['inspect_enabled']) ? '' : 'disabled title="No locally staged and publisher-signed package available"' ?>>Preview signed changes</button>
+          </form>
+          <?php if ($systemSignedPlanFlash !== ''): ?><p class="bsys-note" role="status"><?= e($systemSignedPlanFlash) ?></p><?php endif; ?>
+          <?php if (is_array($systemSignedPlanPreview)): ?>
+            <p class="bsys-note">Verified for review: v<?= e((string) ($systemSignedPlanPreview['installed_version'] ?? '')) ?> → v<?= e((string) ($systemSignedPlanPreview['target_version'] ?? '')) ?>. <?= (int) ($systemSignedPlanPreview['file_count'] ?? 0) ?> signed file targets; <?= (int) ($systemSignedPlanPreview['changed_files'] ?? 0) ?> replacements; <?= (int) ($systemSignedPlanPreview['new_files'] ?? 0) ?> new files; <?= (int) ($systemSignedPlanPreview['unchanged_files'] ?? 0) ?> unchanged. Package metadata does not certify SQL migration or recovery.</p>
+            <div class="bsys-table-wrap">
+              <table aria-label="Signed release file change preview">
+                <thead><tr><th scope="col">File</th><th scope="col">Change</th></tr></thead>
+                <tbody>
+                  <?php foreach ((array) ($systemSignedPlanPreview['listed_paths'] ?? []) as $item): ?>
+                    <tr><td><code><?= e((string) ($item['path'] ?? '')) ?></code></td><td><?= e((string) ($item['change'] ?? '')) ?></td></tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+            <?php if (!empty($systemSignedPlanPreview['paths_truncated'])): ?><p class="bsys-note">Showing the first 40 file paths. No updates were installed.</p><?php endif; ?>
+          <?php else: ?>
+            <p class="bsys-note">No fresh signed file-plan preview is available. Inspect the signed staged release, then preview its changes.</p>
+          <?php endif; ?>
+          <p class="bsys-note">No installation is triggered by preview. Automatic replacement and database migration remain disabled without verified recovery and independent authorization.</p>
+        </div>
+      </section>
       <div class="bsys-premium-footer-actions" aria-label="Staged release inspection">
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/inspect-staged-release')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
