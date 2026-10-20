@@ -140,6 +140,12 @@ jobs:
           php -l tools/oneclick-mandatory-recovery-pair-smoke.php
           php tools/oneclick-mandatory-recovery-pair-smoke.php
 
+      - name: Execute isolated real file updates and crash recovery
+        run: |
+          php -l application/app/Services/Updates/OneClickAtomicTransactionV1.php
+          php -l tools/oneclick-atomic-transaction-smoke.php
+          php tools/oneclick-atomic-transaction-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
