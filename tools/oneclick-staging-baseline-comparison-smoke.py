@@ -3,17 +3,18 @@
 import hashlib
 import json
 import os
+import secrets
+import shutil
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 
 TOOL=Path(__file__).resolve().with_name("oneclick-staging-baseline-comparison.py")
-with tempfile.TemporaryDirectory(prefix="barama-release-baseline-fixture-") as tmp:
-    # The tool allows a strict 16-hex random temporary clone path, never user-selected live roots.
-    root=Path(tmp)
-    if len(root.name.split("-")[-1]) != 16:
-        raise RuntimeError("FIXTURE_ROOT_FORMAT_CHANGED")
+# The tool permits only an exact random 16-hex root directly under /tmp.
+root=Path("/tmp")/("barama-release-baseline-fixture-"+secrets.token_hex(8))
+root.mkdir(mode=0o700)
+try:
     site=root/"site"
     site.mkdir()
     (site/"VERSION").write_text("0.9.22-dev\n",encoding="utf-8")
@@ -71,4 +72,6 @@ with tempfile.TemporaryDirectory(prefix="barama-release-baseline-fixture-") as t
     file.symlink_to("/etc/passwd")
     assert check().returncode!=0
     print("SYMLINKED_INSTALLED_FILE_DENIED=PASS")
+finally:
+    shutil.rmtree(root)
 print("ONECLICK_STAGING_BASELINE_COMPARISON_SMOKE=PASS")
