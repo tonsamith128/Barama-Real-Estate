@@ -74,31 +74,52 @@ final class OneClickUpdateQueueV1
         return false;
     }
 
-    /**
-     * Root-owned service heartbeat (read-only). Never grants authorization;
-     * the worker must independently authenticate every queued request.
-     */
+    /** Read root-owned signals from the existing protected publisher trust directory. */
+    private static function protectedSignal(string $name, int $max): ?array
+    {
+        if (!defined('BASE_PATH') || BASE_PATH!==self::SITE
+            || !PublisherTrustPaths::protectedDirectoryReady()) return null;
+        if (!in_array($name,['oneclick-worker-readiness.json','oneclick-worker-result.json'],true)) return null;
+        $path=PublisherTrustPaths::directory().'/'.$name;
+        if (is_link($path)||!is_file($path)||!is_readable($path)
+            ||filesize($path)<1||filesize($path)>$max) return null;
+        $st=@lstat($path);
+        if (!is_array($st)||$st['uid']!==0||($st['mode'] & 0022)!==0) return null;
+        try { $v=json_decode((string)file_get_contents($path),true,12,JSON_THROW_ON_ERROR); }
+        catch (\Throwable) { return null; }
+        return is_array($v) && !array_is_list($v) ? $v : null;
+    }
+
     public static function workerReady(): bool
     {
-        $dir='/run/barama-oneclick-staging';
-        $path=$dir.'/heartbeat.json';
-        foreach ([$dir,$path] as $p) {
-            if (is_link($p) || !file_exists($p)) return false;
-            $st=@stat($p);
-            if (!is_array($st) || $st['uid'] !== 0 || ($st['mode'] & 0022)!==0) return false;
+        $r=self::protectedSignal('oneclick-worker-readiness.json',512);
+        return is_array($r)
+            &&($r['schema']??null)==='barama-oneclick-root-worker-v1'
+            &&($r['site']??null)==='STAGING_ONLY'
+            &&($r['status']??null)==='accepting_jobs'
+            &&is_int($r['expires_at']??null)
+            &&$r['expires_at']>time()
+            &&$r['expires_at']<=time()+120;
+    }
+
+    /** Reports only root-owned, allowlisted progress without exposing credentials. */
+    public static function status(string $site): array
+    {
+        self::guard($site);
+        $r=self::protectedSignal('oneclick-worker-result.json',1024);
+        $state=$r['state']??null;
+        if (!is_string($state)||!in_array($state,[
+            'checking','backing_up','installing','verifying',
+            'completed','blocked','failed','recovery_review_required'],true)
+            ||($r['schema']??null)!=='barama-oneclick-root-result-v1'
+            ||!is_string($r['job_id']??null)
+            ||preg_match('/^job-[a-f0-9]{32}$/D',$r['job_id'])!==1
+            ||!is_int($r['updated_at']??null)
+            ||$r['updated_at']>time()+60
+            ||$r['updated_at']<time()-604800) {
+            return ['state'=>'not_started','updated_at'=>null];
         }
-        if (!is_dir($dir) || !is_file($path) || filesize($path)>512) return false;
-        $raw=@file_get_contents($path);
-        if (!is_string($raw)) return false;
-        try { $record=json_decode($raw,true,8,JSON_THROW_ON_ERROR); }
-        catch (\Throwable) { return false; }
-        return is_array($record)
-            && ($record['schema']??null)==='barama-oneclick-root-worker-v1'
-            && ($record['site']??null)==='STAGING_ONLY'
-            && ($record['status']??null)==='accepting_jobs'
-            && is_int($record['expires_at']??null)
-            && $record['expires_at']>time()
-            && $record['expires_at']<=time()+120;
+        return ['state'=>$state,'updated_at'=>$r['updated_at']];
     }
 
     private static function guard(string $site):void
