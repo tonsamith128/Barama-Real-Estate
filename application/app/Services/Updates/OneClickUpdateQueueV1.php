@@ -41,6 +41,16 @@ final class OneClickUpdateQueueV1
                     throw new RuntimeException('ONECLICK_PENDING_JOB_REQUIRES_REVIEW');
                 }
             }
+            // A writable queue file is never proof of a real admin click.
+            // Persist a separate DB audit record bound to the authenticated
+            // administrator, signed release digest, versions, and job nonce.
+            $auth=new \Barama\Services\AuthService();
+            $actor=$auth->user();
+            $actorId=is_array($actor) ? (int)($actor['id']??0) : 0;
+            if ($actorId<1 || (!$auth->hasRole('administrator')
+                && !$auth->hasRole('super-administrator'))) {
+                throw new RuntimeException('ONECLICK_ADMINISTRATOR_REQUIRED');
+            }
             $id='job-'.bin2hex(random_bytes(16));
             $json=json_encode([
               'schema'=>'barama-oneclick-untrusted-intent-v1',
@@ -50,6 +60,24 @@ final class OneClickUpdateQueueV1
               'package_sha256'=>$feed['archive_sha256'],
               'authorized_to_install'=>false
             ],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES)."\n";
+            $audit=json_encode([
+                'schema'=>'barama-oneclick-admin-intent-v1',
+                'job_id'=>$id,'package_sha256'=>$feed['archive_sha256'],
+                'installed_version'=>$installed,'target_version'=>$feed['version'],
+                'created_at'=>time(),'expires_at'=>time()+900,
+            ],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES);
+            $pdo=\Barama\Core\Database::connection();
+            $statement=$pdo->prepare(
+                'INSERT INTO security_audit_events
+                 (actor_user_id,subject_user_id,event_type,metadata_json)
+                 VALUES (:actor,:subject,:event,:metadata)'
+            );
+            $statement->execute([
+                'actor'=>$actorId,'subject'=>$actorId,
+                'event'=>'system.oneclick_update_requested','metadata'=>$audit,
+            ]);
+            if($statement->rowCount()!==1)
+                throw new RuntimeException('ONECLICK_ADMIN_AUDIT_NOT_SAVED');
             $path=$dir.'/'.$id.'.json';
             $file=@fopen($path,'xb');
             if(!$file)throw new RuntimeException('ONECLICK_QUEUE_WRITE_FAILED');
