@@ -51,9 +51,9 @@ final class OneClickDashboardGateV1
                     : 'No independently verified package is ready for installation.',
             ],
             [
-                'label' => 'Backup and database recovery',
+                'label' => 'Automatic recovery snapshots',
                 'status' => 'Not proven',
-                'detail' => 'A consistent code and SQL backup, isolated restoration, and crash recovery are required.',
+                'detail' => 'Every future Install Update run must first create verified private code and SQL snapshots. Full-site restore, isolated SQL recovery, and crash safety are still required.',
             ],
             [
                 'label' => 'Administrator and worker authorization',
