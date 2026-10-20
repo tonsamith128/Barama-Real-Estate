@@ -59,6 +59,38 @@ try {
     must($result['status']==='ISOLATED_FILE_INSTALL_COMMITTED' && $result['database_writes']===false,'real_atomic_file_application_disposable_site');
     foreach($new as $p=>$b)must(file_get_contents($site.'/'.$p)===$b,'result_hash_'.$p);
     blocked(fn()=>T::recover($site,$vault,$result['transaction_id']),'RECOVERY_NOT_FILE_ONLY_OR_NOT_PENDING','completed_transaction_cannot_rollback_implicitly');
+    blocked(fn()=>T::recoverCommittedAfterSqlFixture($site,$vault,$result['transaction_id'],'FORGED'),
+        'COMMITTED_RECOVERY_OPERATOR_AND_SQL_PROOF_REQUIRED','unverified_sql_recovery_denied');
+    $completed = T::recoverCommittedAfterSqlFixture(
+        $site,$vault,$result['transaction_id'],'DISPOSABLE_SQL_RESTORED_AND_VERSION_VERIFIED');
+    must($completed['status']==='ISOLATED_COMPLETED_CODE_RESTORED_AFTER_SQL',
+        'completed_transaction_restored_from_verified_journal');
+    must(file_get_contents($site.'/VERSION')==="0.9.22-dev\n"
+        && file_get_contents($site.'/assets/css/app.css')==="before\n"
+        && !file_exists($site.'/assets/js/new.js'),
+        'completed_transaction_exact_baseline_recovered');
+    blocked(fn()=>T::recoverCommittedAfterSqlFixture($site,$vault,$result['transaction_id'],
+        'DISPOSABLE_SQL_RESTORED_AND_VERSION_VERIFIED'),
+        'COMMITTED_RECOVERY_NOT_ELIGIBLE','completed_recovery_replay_denied');
+
+    [$root,$site,$vault,$plan,$new]=makeFixture();$fixtures[]=$root;
+    $committed = T::apply($site,$vault,$plan,$new);
+    blocked(fn()=>T::recoverCommittedAfterSqlFixture($site,$vault,$committed['transaction_id'],
+        'DISPOSABLE_SQL_RESTORED_AND_VERSION_VERIFIED',1),
+        'COMMITTED_RECOVERY_INJECTED_CRASH:', 'completed_recovery_crash_injected');
+    must(file_get_contents($site.'/VERSION')==="0.9.23\n",
+        'completed_recovery_preserves_new_version_until_files_restored');
+    blocked(fn()=>T::apply($site,$vault,$plan,$new),
+        'FIXTURE_INTERRUPTED_UPDATE_REQUIRES_RECOVERY',
+        'competing_update_denied_during_completed_recovery');
+    $resumed = T::recoverCommittedAfterSqlFixture($site,$vault,$committed['transaction_id'],
+        'DISPOSABLE_SQL_RESTORED_AND_VERSION_VERIFIED');
+    must($resumed['status']==='ISOLATED_COMPLETED_CODE_RESTORED_AFTER_SQL',
+        'completed_recovery_resumes_after_crash');
+    must(file_get_contents($site.'/VERSION')==="0.9.22-dev\n"
+        && file_get_contents($site.'/assets/css/app.css')==="before\n"
+        && !file_exists($site.'/assets/js/new.js'),
+        'completed_recovery_exact_baseline_after_resume');
 
     [$root,$site,$vault,$plan,$new]=makeFixture();$fixtures[]=$root;
     $tx='';
