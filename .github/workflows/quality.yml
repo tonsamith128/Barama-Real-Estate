@@ -98,6 +98,12 @@ jobs:
           php -l tools/oneclick-dashboard-gate-smoke.php
           php tools/oneclick-dashboard-gate-smoke.php
 
+      - name: Prove signed-plan backup evidence cannot authorize one-click installation
+        run: |
+          php -l application/app/Services/Updates/OneClickOfflinePreparationV1.php
+          php -l tools/oneclick-offline-preparation-smoke.php
+          php tools/oneclick-offline-preparation-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
