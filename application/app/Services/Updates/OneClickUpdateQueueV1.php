@@ -14,6 +14,7 @@ final class OneClickUpdateQueueV1
     public static function enqueue(string $site,string $installed,array $feed): array
     {
         self::guard($site);
+        if (!self::workerReady()) throw new RuntimeException('ONECLICK_TRUSTED_WORKER_NOT_READY');
         if (($feed['status']??null)!=='available'
             ||($feed['entitlement']??null)!=='Eligible'
             ||($feed['feed']??null)!=='Signed release verified'
@@ -71,6 +72,33 @@ final class OneClickUpdateQueueV1
             if(preg_match('/^job-[a-f0-9]{32}\.json$/D',$item->getFilename()))return true;
         }
         return false;
+    }
+
+    /**
+     * Root-owned service heartbeat (read-only). Never grants authorization;
+     * the worker must independently authenticate every queued request.
+     */
+    public static function workerReady(): bool
+    {
+        $dir='/run/barama-oneclick-staging';
+        $path=$dir.'/heartbeat.json';
+        foreach ([$dir,$path] as $p) {
+            if (is_link($p) || !file_exists($p)) return false;
+            $st=@stat($p);
+            if (!is_array($st) || $st['uid'] !== 0 || ($st['mode'] & 0022)!==0) return false;
+        }
+        if (!is_dir($dir) || !is_file($path) || filesize($path)>512) return false;
+        $raw=@file_get_contents($path);
+        if (!is_string($raw)) return false;
+        try { $record=json_decode($raw,true,8,JSON_THROW_ON_ERROR); }
+        catch (\Throwable) { return false; }
+        return is_array($record)
+            && ($record['schema']??null)==='barama-oneclick-root-worker-v1'
+            && ($record['site']??null)==='STAGING_ONLY'
+            && ($record['status']??null)==='accepting_jobs'
+            && is_int($record['expires_at']??null)
+            && $record['expires_at']>time()
+            && $record['expires_at']<=time()+120;
     }
 
     private static function guard(string $site):void
