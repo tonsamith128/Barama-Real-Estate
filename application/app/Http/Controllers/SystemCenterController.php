@@ -186,6 +186,31 @@ final class SystemCenterController
         return Response::redirect(url('/dashboard/system/auto-updater'), 303);
     }
 
+    /** Administrator-only, no-store job status. Never returns tokens, paths or SQL. */
+    public function oneClickStatus(Request $request): Response
+    {
+        $auth=new \Barama\Services\AuthService();
+        if (!$auth->hasRole('administrator') && !$auth->hasRole('super-administrator')) {
+            return Response::html('Forbidden',403);
+        }
+        try {
+            $status=\Barama\Services\Updates\OneClickUpdateQueueV1::status((string)BASE_PATH);
+            $pending=\Barama\Services\Updates\OneClickUpdateQueueV1::pending((string)BASE_PATH);
+            $ready=\Barama\Services\Updates\OneClickUpdateQueueV1::workerReady();
+        } catch (\Throwable) {
+            $status=['state'=>'unavailable','updated_at'=>null];$pending=false;$ready=false;
+        }
+        return new Response(json_encode([
+            'schema'=>'barama-oneclick-dashboard-status-v1',
+            'state'=>$status['state'],'updated_at'=>$status['updated_at'],
+            'pending'=>$pending,'worker_ready'=>$ready,
+        ],JSON_THROW_ON_ERROR),200,[
+            'Content-Type'=>'application/json; charset=UTF-8',
+            'Cache-Control'=>'no-store, no-cache, must-revalidate',
+            'X-Content-Type-Options'=>'nosniff',
+        ]);
+    }
+
     /** Server-session fingerprint: never store or render an activation token. */
     private static function feedBindingFingerprint(array $license, array $runtime): string
     {
@@ -522,6 +547,10 @@ final class SystemCenterController
             'systemReleaseInspection' => $releaseCheck,
             'systemOneClickFlash' => is_string($oneClickFlash) ? $oneClickFlash : '',
             'systemOneClickWorkerReady' => \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady(),
+            'systemOneClickStatus' => (static function (): array {
+                try { return \Barama\Services\Updates\OneClickUpdateQueueV1::status((string) BASE_PATH); }
+                catch (\Throwable) { return ['state'=>'unavailable','updated_at'=>null]; }
+            })(),
             'systemOneClickPending' => (static function (): bool {
                 try {
                     return \Barama\Services\Updates\OneClickUpdateQueueV1::pending((string) BASE_PATH);
