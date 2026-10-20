@@ -446,6 +446,32 @@ final class SystemCenterController
             'Inspection unavailable or rejected','Please wait before checking again'
         ],true)) $releaseCheck=['status'=>'Not inspected','checked_at'=>'Never'];
 
+        // Read-only progress model. It cannot authorize an update, and none
+        // of these browser/session observations is trusted by a root worker.
+        $oneClickWorkflow = ['install_enabled' => false, 'status' => 'Unavailable',
+            'steps' => [], 'blockers' => ['WORKFLOW_RENDER_UNAVAILABLE']];
+        if ($section === 'auto-updater') {
+            try {
+                $candidateVersion = (string) ($feedResult['version'] ?? '');
+                $inspectedVersion = $releaseCheck['version'] ?? '';
+                $oneClickWorkflow = \Barama\Services\Updates\OneClickDashboardGateV1::assess([
+                    'version_match' => $versionMatches,
+                    'license_recorded' => $recordedStatus === 'active',
+                    'feed_ready' => ($feedReady['can_check'] ?? null) === true,
+                    'entitlement' => $feedResult['entitlement'] ?? null,
+                    'feed_state' => $feedResult['feed'] ?? null,
+                    'newer_version' => $candidateVersion !== ''
+                        && version_compare($candidateVersion, (string) APP_VERSION, '>'),
+                    'archive_inspected' => ($releaseReady['inspect_enabled'] ?? null) === true
+                        && ($releaseCheck['status'] ?? '') === 'Signed package verified (not installed)'
+                        && is_string($inspectedVersion) && $inspectedVersion !== ''
+                        && version_compare($inspectedVersion, (string) APP_VERSION, '>'),
+                ]);
+            } catch (Throwable) {
+                // Dashboard must fail closed, never turn a display error into authorization.
+            }
+        }
+
         $html = View::render('workspace/system-center', [
             'pageTitle' => $titles[$section] . ' · Admin Control Center',
             'metaRobots' => 'noindex,nofollow,noarchive',
@@ -484,6 +510,7 @@ final class SystemCenterController
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
+            'systemOneClickWorkflow' => $oneClickWorkflow,
             'systemLicenseBinding' => [
                 'current_domain' => 'baramarealestate.tonsamith.com',
                 'recorded_domain' => (static function (mixed $value): string {
