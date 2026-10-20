@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Barama\Services\Updates;
 
+// Also supports isolated CLI/CI smoke tests that load this service directly.
+require_once __DIR__ . '/PublisherTrustPaths.php';
+
 use Barama\Core\Installation;
 use Barama\Services\LicenseManagerClient;
 use Closure;
