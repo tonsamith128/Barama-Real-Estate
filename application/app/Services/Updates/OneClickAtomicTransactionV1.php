@@ -137,8 +137,9 @@ final class OneClickAtomicTransactionV1
             }
             $journal['status'] = 'recovery_required';
             self::journal($job, $journal);
-            // Reverse for nested code paths. All destinations already validated.
-            foreach (array_reverse($entries) as $entry) {
+            // Restore VERSION last, including after an interrupted final write.
+            // Entries from the verified plan are already VERSION-last.
+            foreach ($entries as $entry) {
                 $dest = self::destination($site, $entry['path']);
                 if ($entry['old_sha256'] === null) {
                     if (self::actualSha($dest) === $entry['new_sha256']) {
@@ -169,6 +170,121 @@ final class OneClickAtomicTransactionV1
         }
     }
 
+    /**
+     * Restore a previously committed FILE-ONLY fixture after the surrounding
+     * disposable SQL controller has independently restored its DB baseline.
+     * This does not verify SQL, and is NEVER a customer rollback API.
+     * The caller proof string has NO AUTHORITY outside this /tmp fixture.
+     * No automatic rollback of a completed transaction is ever performed.
+     */
+    public static function recoverCommittedAfterSqlFixture(
+        string $site, string $vault, string $id, string $proof,
+        ?int $failAfter = null
+    ): array {
+        [$site, $vault] = self::roots($site, $vault);
+        if (!preg_match('/^tx-[a-f0-9]{24}$/D', $id)
+            || $proof !== 'DISPOSABLE_SQL_RESTORED_AND_VERSION_VERIFIED'
+            || ($failAfter !== null && $failAfter < 1)) {
+            throw new RuntimeException('COMMITTED_RECOVERY_OPERATOR_AND_SQL_PROOF_REQUIRED');
+        }
+        $lock = self::lock($vault);
+        try {
+            $job = $vault . '/' . $id;
+            $file = $job . '/journal.json';
+            if (is_link($job) || !is_dir($job) || realpath($job) !== $job
+                || is_link($file) || !is_file($file)
+                || (fileperms($file) & 0077) !== 0
+                || filesize($file) > 1048576) {
+                throw new RuntimeException('COMMITTED_RECOVERY_JOURNAL_UNTRUSTED');
+            }
+            try {
+                $journal = json_decode((string) file_get_contents($file), true, 32, JSON_THROW_ON_ERROR);
+            } catch (\Throwable) {
+                throw new RuntimeException('COMMITTED_RECOVERY_JOURNAL_UNTRUSTED');
+            }
+            if (!is_array($journal)
+                || ($journal['schema'] ?? null) !== 'barama-oneclick-transaction-fixture-v1'
+                || ($journal['database_writes'] ?? null) !== false
+                || ($journal['worker_authorized_for_live_site'] ?? null) !== false
+                || !in_array($journal['status'] ?? null,
+                    ['files_committed_fixture_only', 'completed_recovery_required'], true)
+                || !is_array($journal['entries'] ?? null)
+                || count($journal['entries']) < 2 || count($journal['entries']) > self::MAX_FILES) {
+                throw new RuntimeException('COMMITTED_RECOVERY_NOT_ELIGIBLE');
+            }
+            $entries = $journal['entries'];
+            $seen = [];
+            $versionIndex = count($entries) - 1;
+            foreach ($entries as $i => $entry) {
+                if (!self::validEntry($entry) || isset($seen[strtolower($entry['path'])])) {
+                    throw new RuntimeException('COMMITTED_RECOVERY_TARGET_INVALID');
+                }
+                if ($entry['path'] === 'VERSION' && $i !== $versionIndex) {
+                    throw new RuntimeException('COMMITTED_RECOVERY_VERSION_NOT_LAST');
+                }
+                $seen[strtolower($entry['path'])] = true;
+                $dest = self::destination($site, $entry['path']);
+                $current = self::actualSha($dest);
+                if ($current !== $entry['old_sha256'] && $current !== $entry['new_sha256']) {
+                    throw new RuntimeException('COMMITTED_RECOVERY_EXTERNAL_CHANGE');
+                }
+                if ($entry['old_sha256'] !== null) {
+                    $backup = $job . '/files/' . hash('sha256', $entry['path']) . '.bin';
+                    if (is_link($backup) || !is_file($backup)
+                        || (fileperms($backup) & 0077) !== 0
+                        || self::actualSha($backup) !== $entry['old_sha256']) {
+                        throw new RuntimeException('COMMITTED_RECOVERY_BACKUP_INVALID');
+                    }
+                }
+            }
+            if (!isset($seen['version']) || $entries[$versionIndex]['path'] !== 'VERSION') {
+                throw new RuntimeException('COMMITTED_RECOVERY_VERSION_NOT_LAST');
+            }
+            if ($failAfter !== null && $failAfter > count($entries)) {
+                throw new RuntimeException('COMMITTED_RECOVERY_INJECTION_INVALID');
+            }
+            // Write-ahead before ANY change. Once this state is persisted,
+            // a second update is blocked until recovery completes.
+            $journal['status'] = 'completed_recovery_required';
+            self::journal($job, $journal);
+            $count = 0;
+            // VERSION last: recovering files cannot prematurely present old VERSION.
+            foreach ($entries as $entry) {
+                $dest = self::destination($site, $entry['path']);
+                $current = self::actualSha($dest);
+                if ($current !== $entry['old_sha256']) {
+                    if ($entry['old_sha256'] === null) {
+                        if (!unlink($dest)) throw new RuntimeException('COMMITTED_RECOVERY_REMOVE_FAILED');
+                    } else {
+                        $data = file_get_contents($job . '/files/' . hash('sha256', $entry['path']) . '.bin');
+                        if (!is_string($data) || hash('sha256', $data) !== $entry['old_sha256']) {
+                            throw new RuntimeException('COMMITTED_RECOVERY_BACKUP_CHANGED');
+                        }
+                        self::save($dest, $data, true);
+                    }
+                }
+                self::assertCurrent($dest, $entry['old_sha256']);
+                $count++;
+                if ($failAfter === $count) {
+                    throw new RuntimeException('COMMITTED_RECOVERY_INJECTED_CRASH:' . $id);
+                }
+            }
+            $journal['status'] = 'completed_recovered_fixture_only';
+            $journal['changed_count'] = 0;
+            unset($journal['pending_index']);
+            self::journal($job, $journal);
+            return [
+                'status' => 'ISOLATED_COMPLETED_CODE_RESTORED_AFTER_SQL',
+                'transaction_id' => $id,
+                'files_restored' => $count,
+                'database_writes' => false,
+                'live_installation' => false,
+            ];
+        } finally {
+            self::unlock($lock);
+        }
+    }
+
     /** Prevent an interrupted transaction from being bypassed by a new update. */
     private static function noPending(string $vault): void
     {
@@ -189,7 +305,7 @@ final class OneClickAtomicTransactionV1
                 throw new RuntimeException('FIXTURE_PENDING_JOURNAL_UNTRUSTED');
             }
             if (!is_array($record) || !in_array($record['status'] ?? null,
-                    ['files_committed_fixture_only', 'recovered_fixture_only'], true)) {
+                    ['files_committed_fixture_only', 'recovered_fixture_only', 'completed_recovered_fixture_only'], true)) {
                 throw new RuntimeException('FIXTURE_INTERRUPTED_UPDATE_REQUIRES_RECOVERY');
             }
         }
