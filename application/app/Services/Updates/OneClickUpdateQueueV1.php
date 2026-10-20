@@ -24,12 +24,7 @@ final class OneClickUpdateQueueV1
             ||preg_match('/^[a-f0-9]{64}$/D',$feed['archive_sha256'])!==1) {
             throw new RuntimeException('ONECLICK_PUBLISHER_APPROVAL_MISSING');
         }
-        $candidate=StagingPublisherCandidateV1::inspect($site,$installed,$feed);
-        if (($candidate['publisher_release_matched_to_staged_zip']??false)!==true
-            ||($candidate['signed_zip_verified']??false)!==true) {
-            throw new RuntimeException('ONECLICK_STAGED_RELEASE_NOT_VERIFIED');
-        }
-        $dir=self::directory($site,true);
+        // Signed ZIP is fetched by the independently verified privileged worker.\n        // A web-user-staged ZIP cannot authorize an update.\n        $dir=self::directory($site,true);
         $lock=$dir.'/.submit.lock';
         if(is_link($lock))throw new RuntimeException('ONECLICK_LOCK_UNSAFE');
         $h=@fopen($lock,'c+b');
@@ -125,6 +120,7 @@ final class OneClickUpdateQueueV1
             &&($r['schema']??null)==='barama-oneclick-root-worker-v1'
             &&($r['site']??null)==='STAGING_ONLY'
             &&($r['status']??null)==='accepting_jobs'
+            &&($r['delivery']??null)==='publisher_authenticated_v2'
             &&is_int($r['expires_at']??null)
             &&$r['expires_at']>time()
             &&$r['expires_at']<=time()+120;
