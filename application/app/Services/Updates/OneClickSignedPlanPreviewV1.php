@@ -120,17 +120,37 @@ final class OneClickSignedPlanPreviewV1
             || !is_array($preview['listed_paths'] ?? null)
             || count($preview['listed_paths']) > self::MAX_LISTED_PATHS
             || !is_int($preview['file_count'] ?? null)
-            || $preview['file_count'] < 1
-            || $preview['file_count'] > 8000) {
+            || $preview['file_count'] < 1 || $preview['file_count'] > 8000
+            || !is_string($preview['installed_version'] ?? null)
+            || !is_string($preview['target_version'] ?? null)
+            || $preview['installed_version'] !== APP_VERSION
+            || !preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', $preview['target_version'])
+            || version_compare($preview['target_version'], APP_VERSION, '<=')
+            || !is_int($preview['changed_files'] ?? null) || $preview['changed_files'] < 0
+            || !is_int($preview['new_files'] ?? null) || $preview['new_files'] < 0
+            || !is_int($preview['unchanged_files'] ?? null) || $preview['unchanged_files'] < 0
+            || $preview['changed_files'] + $preview['new_files']
+                + $preview['unchanged_files'] !== $preview['file_count']
+            || !is_int($preview['bytes'] ?? null) || $preview['bytes'] < 1
+            || !is_bool($preview['paths_truncated'] ?? null)
+            || count($preview['listed_paths']) !== min($preview['file_count'], self::MAX_LISTED_PATHS)
+            || $preview['paths_truncated'] !== ($preview['file_count'] > self::MAX_LISTED_PATHS)) {
             return null;
         }
         $safe = [];
+        $seen = [];
         foreach ($preview['listed_paths'] as $item) {
             if (!is_array($item) || !is_string($item['path'] ?? null)
                 || !preg_match('~^[A-Za-z0-9_./-]{1,512}$~D', $item['path'])
                 || !in_array($item['change'] ?? null, ['New', 'Replace', 'Unchanged'], true)) {
                 return null;
             }
+            foreach (explode('/', $item['path']) as $part) {
+                if ($part === '' || $part === '.' || $part === '..') return null;
+            }
+            $key = strtolower($item['path']);
+            if (isset($seen[$key])) return null;
+            $seen[$key] = true;
             $safe[] = ['path' => $item['path'], 'change' => $item['change']];
         }
         // Do not pass raw session data through to the template.
