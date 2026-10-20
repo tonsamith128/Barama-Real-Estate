@@ -480,6 +480,8 @@ final class SystemCenterController
             'Inspection unavailable or rejected','Please wait before checking again'
         ],true)) $releaseCheck=['status'=>'Not inspected','checked_at'=>'Never'];
 
+        $oneClickFlash = $_SESSION['_barama_oneclick_request_flash'] ?? '';
+        unset($_SESSION['_barama_oneclick_request_flash']);
         $html = View::render('workspace/system-center', [
             'pageTitle' => $titles[$section] . ' · Admin Control Center',
             'metaRobots' => 'noindex,nofollow,noarchive',
@@ -518,7 +520,7 @@ final class SystemCenterController
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
-            'systemOneClickFlash' => $_SESSION['_barama_oneclick_request_flash'] ?? '',
+            'systemOneClickFlash' => is_string($oneClickFlash) ? $oneClickFlash : '',
             'systemOneClickWorkerReady' => \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady(),
             'systemOneClickPending' => (static function (): bool {
                 try {
