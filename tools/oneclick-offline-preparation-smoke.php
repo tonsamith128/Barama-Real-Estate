@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/OneClickOfflinePreparationV1.php';
+require_once dirname(__DIR__) . '/application/app/Services/Updates/OneClickOfflinePreparationV1.php';
 
 use Barama\Services\Updates\OneClickOfflinePreparationV1;
 
@@ -61,7 +61,7 @@ try {
     if (file_exists($tmp.'/receipt.json') || is_link($tmp.'/receipt.json')) unlink($tmp.'/receipt.json');
     rmdir($tmp);
 }
-$src = file_get_contents(__DIR__.'/OneClickOfflinePreparationV1.php');
+$src = file_get_contents(dirname(__DIR__).'/application/app/Services/Updates/OneClickOfflinePreparationV1.php');
 assertCase(is_string($src) && str_contains($src, "'installation_enabled' => false")
     && str_contains($src, "'root_worker_started' => false")
     && str_contains($src, "'restore_rehearsal_verified' => false"),
