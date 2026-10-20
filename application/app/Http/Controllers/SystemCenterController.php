@@ -84,9 +84,25 @@ final class SystemCenterController
             $_SESSION['_barama_signed_release_check_last_v150']=$now;
             try {
                 $verified=\Barama\Services\Updates\SignedReleaseInspector::inspect((string)APP_VERSION);
+                // Session is a display snapshot only; it never authorizes updates.
+                // Bind the snapshot to exact bytes and the pinned public key catalog.
+                $location = \Barama\Services\Updates\SignedReleaseInspector::locations();
+                $keyPath = $location['key'];
+                if (is_link($keyPath) || !is_file($keyPath) || !is_readable($keyPath)) {
+                    throw new \RuntimeException('INSPECTION_KEY_CATALOG_UNAVAILABLE');
+                }
+                $keyDigest = hash_file('sha256', $keyPath);
+                if (!is_string($keyDigest) || !preg_match('/^[a-f0-9]{64}$/D', $keyDigest)) {
+                    throw new \RuntimeException('INSPECTION_KEY_CATALOG_UNAVAILABLE');
+                }
                 $result['status']='Signed package verified (not installed)';
+                $result['site_version']=(string)APP_VERSION;
                 $result['version']=$verified['version'];
+                $result['channel']=$verified['channel'];
                 $result['files']=$verified['files'];
+                $result['archive_sha256']=$verified['archive_sha256'];
+                $result['trusted_keys_sha256']=$keyDigest;
+                $result['verified_at']=$now;
             } catch (\RuntimeException $exception) {
                 // Only allowlisted, non-sensitive codes are shown to administrators.
                 $result['status']='Inspection unavailable or rejected';
@@ -96,6 +112,33 @@ final class SystemCenterController
         }
         $_SESSION['_barama_signed_release_result_v150']=$result;
         return Response::redirect(url('/dashboard/system/auto-updater'),303);
+    }
+
+    /**
+     * Administrator + CSRF protected, read-only signed package change preview.
+     * A session summary is NEVER an update ticket or worker authorization.
+     */
+    public function previewStagedRelease(Request $request): Response
+    {
+        $now = time();
+        $last = (int) ($_SESSION['_barama_oneclick_plan_preview_last_v1'] ?? 0);
+        unset($_SESSION['_barama_oneclick_plan_preview_v1']);
+        $_SESSION['_barama_oneclick_plan_preview_flash_v1'] = 'Signed release plan unavailable or rejected.';
+        if ($last > 0 && $now - $last < 45) {
+            $_SESSION['_barama_oneclick_plan_preview_flash_v1'] = 'Wait 45 seconds before repeating the signed plan preview.';
+            return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+        }
+        $_SESSION['_barama_oneclick_plan_preview_last_v1'] = $now;
+        try {
+            $preview = \Barama\Services\Updates\OneClickSignedPlanPreviewV1::inspect();
+            $preview['verified_at'] = $now;
+            $preview['site_version'] = (string) APP_VERSION;
+            $_SESSION['_barama_oneclick_plan_preview_v1'] = $preview;
+            $_SESSION['_barama_oneclick_plan_preview_flash_v1'] = 'Signed release changes verified for review only; no files were installed.';
+        } catch (Throwable) {
+            // Do not expose filesystem paths, ZIP contents, key data, or errors.
+        }
+        return Response::redirect(url('/dashboard/system/auto-updater'), 303);
     }
 
     /** Owner-approved user interaction: remote request only on admin+CSRF POST. */
@@ -440,11 +483,83 @@ final class SystemCenterController
             try { $releaseReady=\Barama\Services\Updates\SignedReleaseInspector::readiness(); }
             catch (\Throwable) { /* Never block the dashboard on readiness. */ }
         }
-        $releaseCheck=$_SESSION['_barama_signed_release_result_v150']??null;
-        if(!is_array($releaseCheck) || !in_array(($releaseCheck['status']??''),[
-            'Not inspected','Signed package verified (not installed)',
-            'Inspection unavailable or rejected','Please wait before checking again'
-        ],true)) $releaseCheck=['status'=>'Not inspected','checked_at'=>'Never'];
+        $storedInspection = $_SESSION['_barama_signed_release_result_v150'] ?? null;
+        $currentArchiveDigest = null;
+        $currentTrustedKeysDigest = null;
+        // Historical success stays visible only while the exact signed ZIP and
+        // trusted-key catalog remain unchanged and the 10-minute window is fresh.
+        // This is NOT a re-verification or an install authorization.
+        $now = time();
+        if ($section === 'auto-updater'
+            && !empty($releaseReady['inspect_enabled'])
+            && is_array($storedInspection)
+            && ($storedInspection['status'] ?? null) === 'Signed package verified (not installed)'
+            && is_int($storedInspection['verified_at'] ?? null)
+            && $storedInspection['verified_at'] <= $now
+            && $now - $storedInspection['verified_at'] <= 600) {
+            try {
+                $locations = \Barama\Services\Updates\SignedReleaseInspector::locations();
+                if (!is_link($locations['archive']) && is_file($locations['archive'])
+                    && !is_link($locations['key']) && is_file($locations['key'])) {
+                    $archiveHash = hash_file('sha256', $locations['archive']);
+                    $keyHash = hash_file('sha256', $locations['key']);
+                    $currentArchiveDigest = is_string($archiveHash) ? $archiveHash : null;
+                    $currentTrustedKeysDigest = is_string($keyHash) ? $keyHash : null;
+                }
+            } catch (Throwable) {
+                // Invalid local stage always makes the displayed snapshot stale.
+            }
+        }
+        $releaseCheck = \Barama\Services\Updates\OneClickInspectionFreshnessV1::display(
+            $storedInspection, $now, (string) APP_VERSION,
+            !empty($releaseReady['inspect_enabled']),
+            $currentArchiveDigest, $currentTrustedKeysDigest
+        );
+
+        // Never show a stale signed-plan summary after archive/key changes.
+        // The signed inspection has a separate 10-minute, archive+key-bound gate.
+        $signedPlanPreview = null;
+        $signedPlanFlash = $_SESSION['_barama_oneclick_plan_preview_flash_v1'] ?? '';
+        unset($_SESSION['_barama_oneclick_plan_preview_flash_v1']);
+        if (!is_string($signedPlanFlash) || !in_array($signedPlanFlash, [
+            'Signed release plan unavailable or rejected.',
+            'Wait 45 seconds before repeating the signed plan preview.',
+            'Signed release changes verified for review only; no files were installed.',
+        ], true)) $signedPlanFlash = '';
+        if ($section === 'auto-updater'
+            && ($releaseCheck['verified'] ?? false) === true
+            && is_string($currentArchiveDigest)) {
+            $signedPlanPreview = \Barama\Services\Updates\OneClickSignedPlanPreviewV1::display(
+                $_SESSION['_barama_oneclick_plan_preview_v1'] ?? null, $now,
+                $currentArchiveDigest
+            );
+        }
+
+        // Read-only progress model. It cannot authorize an update, and none
+        // of these browser/session observations is trusted by a root worker.
+        $oneClickWorkflow = ['install_enabled' => false, 'status' => 'Unavailable',
+            'steps' => [], 'blockers' => ['WORKFLOW_RENDER_UNAVAILABLE']];
+        if ($section === 'auto-updater') {
+            try {
+                $candidateVersion = (string) ($feedResult['version'] ?? '');
+                $inspectedVersion = $releaseCheck['version'] ?? '';
+                $oneClickWorkflow = \Barama\Services\Updates\OneClickDashboardGateV1::assess([
+                    'version_match' => $versionMatches,
+                    'license_recorded' => $recordedStatus === 'active',
+                    'feed_ready' => ($feedReady['can_check'] ?? null) === true,
+                    'entitlement' => $feedResult['entitlement'] ?? null,
+                    'feed_state' => $feedResult['feed'] ?? null,
+                    'newer_version' => $candidateVersion !== ''
+                        && version_compare($candidateVersion, (string) APP_VERSION, '>'),
+                    'archive_inspected' => ($releaseReady['inspect_enabled'] ?? null) === true
+                        && ($releaseCheck['status'] ?? '') === 'Signed package verified (not installed)'
+                        && is_string($inspectedVersion) && $inspectedVersion !== ''
+                        && version_compare($inspectedVersion, (string) APP_VERSION, '>'),
+                ]);
+            } catch (Throwable) {
+                // Dashboard must fail closed, never turn a display error into authorization.
+            }
+        }
 
         $html = View::render('workspace/system-center', [
             'pageTitle' => $titles[$section] . ' · Admin Control Center',
@@ -484,8 +599,11 @@ final class SystemCenterController
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
+            'systemSignedPlanPreview' => $signedPlanPreview,
+            'systemSignedPlanFlash' => $signedPlanFlash,
+            'systemOneClickWorkflow' => $oneClickWorkflow,
             'systemLicenseBinding' => [
-                'current_domain' => 'baramarealestate.tonsamith.com',
+                'current_domain' => \Barama\Services\Updates\OneClickInstalledDomainV1::fromRuntimeConfig(Installation::runtimeConfig()),
                 'recorded_domain' => (static function (mixed $value): string {
                     if (!is_string($value) || strlen($value) > 255) return 'Not recorded';
                     $domain = \Barama\Services\LicenseManagerClient::canonicalDomain($value);

@@ -89,6 +89,109 @@ jobs:
           php -l application/app/Services/Updates/TrustedReleaseFeed.php
           php tools/auto-updater-header-actions-smoke.php
           php tools/auto-updater-entitlement-results-smoke.php
+          
+      - name: Reject premature One-click installation from dashboard
+        run: |
+          php -l application/app/Services/Updates/OneClickDashboardGateV1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/resources/views/workspace/system-center.php
+          php -l tools/oneclick-dashboard-gate-smoke.php
+          php tools/oneclick-dashboard-gate-smoke.php
+
+      - name: Prove signed-plan backup evidence cannot authorize one-click installation
+        run: |
+          php -l application/app/Services/Updates/OneClickOfflinePreparationV1.php
+          php -l tools/oneclick-offline-preparation-smoke.php
+          php tools/oneclick-offline-preparation-smoke.php
+
+      - name: Classify updater crash states without privileged recovery
+        run: |
+          php -l application/app/Services/Updates/OneClickRecoveryJournalV1.php
+          php -l tools/oneclick-recovery-journal-smoke.php
+          php tools/oneclick-recovery-journal-smoke.php
+
+      - name: Reject stale signed-inspection snapshots before displaying verified release
+        run: |
+          php -l application/app/Services/Updates/OneClickInspectionFreshnessV1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/resources/views/workspace/system-center.php
+          php -l tools/oneclick-signed-inspection-freshness-smoke.php
+          php tools/oneclick-signed-inspection-freshness-smoke.php
+
+      - name: Verify customer domain binding uses trusted installed APP_URL
+        run: |
+          php -l application/app/Services/Updates/OneClickInstalledDomainV1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l tools/oneclick-configured-domain-smoke.php
+          php tools/oneclick-configured-domain-smoke.php
+
+      - name: Verify signed file changes preview cannot authorize installation
+        run: |
+          php -l application/app/Services/Updates/OneClickSignedPlanPreviewV1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/resources/views/workspace/system-center.php
+          php -l application/routes/web.php
+          php -l tools/oneclick-signed-change-preview-smoke.php
+          php tools/oneclick-signed-change-preview-smoke.php
+
+      - name: Verify mandatory recovery snapshot preparation is root-only and not install authorization
+        run: |
+          php -l application/app/Services/Updates/OneClickRecoverySnapshotPairV1.php
+          php -l tools/oneclick-mandatory-recovery-pair-smoke.php
+          php tools/oneclick-mandatory-recovery-pair-smoke.php
+
+      - name: Execute isolated real file updates and crash recovery
+        run: |
+          php -l application/app/Services/Updates/OneClickAtomicTransactionV1.php
+          php -l tools/oneclick-atomic-transaction-smoke.php
+          php tools/oneclick-atomic-transaction-smoke.php
+
+      - name: Exercise genuine signed publisher V2 ZIP through disposable atomic worker
+        run: |
+          php -l application/app/Services/Updates/OneClickSignedFixtureBridgeV1.php
+          php -l tools/oneclick-signed-fixture-integration-smoke.php
+          php tools/oneclick-signed-fixture-integration-smoke.php
+
+      - name: Require independent single-use owner signature before isolated signed install
+        run: |
+          php -l application/app/Services/Updates/OneClickOwnerConsentFixtureV1.php
+          php -l application/app/Services/Updates/OneClickAuthorizedFixtureInstallV1.php
+          php -l tools/oneclick-owner-consent-and-workflow-smoke.php
+          php tools/oneclick-owner-consent-and-workflow-smoke.php
+
+      - name: Ensure root recovery vault bootstrap requires explicit approval
+        run: |
+          bash -n tools/oneclick-staging-vault-bootstrap.sh
+          bash tools/oneclick-staging-vault-bootstrap.sh --self-test
+          bash tools/oneclick-staging-vault-bootstrap.sh --guard
+          if bash tools/oneclick-staging-vault-bootstrap.sh --provision UNAPPROVED; then
+            echo 'FAIL_OPEN_ROOT_VAULT_PROVISION' >&2
+            exit 1
+          fi
+
+      - name: Verify private full-site snapshot contents and staging-only guard
+        run: |
+          php -l application/app/Services/Updates/OneClickFullSiteSnapshotV1.php
+          php -l tools/oneclick-full-site-snapshot-smoke.php
+          php tools/oneclick-full-site-snapshot-smoke.php
+
+      - name: Verify private full-site restoration into disposable clone
+        run: |
+          php -l application/app/Services/Updates/OneClickFullSiteRestoreRehearsalV1.php
+          php -l tools/oneclick-full-site-restore-rehearsal-smoke.php
+          php tools/oneclick-full-site-restore-rehearsal-smoke.php
+
+      - name: Verify unsigned publisher source and read-only staging baseline workflows
+        run: |
+          python3 -m py_compile tools/oneclick-release-source-inventory.py tools/oneclick-staging-baseline-comparison.py
+          python3 tools/oneclick-release-source-inventory-smoke.py
+          python3 tools/oneclick-staging-baseline-comparison-smoke.py
+
+      - name: Verify root-only independent staging owner approval and recovery binding
+        run: |
+          php -l application/app/Services/Updates/OneClickStagingOwnerApprovalV1.php
+          php -l tools/oneclick-staging-owner-approval-smoke.php
+          php tools/oneclick-staging-owner-approval-smoke.php
 
       - name: Verify staging-only private database backup fixture
         run: |
@@ -141,6 +244,17 @@ jobs:
           BARAMA_CI_FULL_OBJECT_MYSQL: ALLOW_DISPOSABLE_MYSQL8_SERVICE_ONLY
           MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
         run: bash tools/ci-full-object-mysql-recovery.sh --ci
+
+      - name: Require CI-only MySQL migration rehearsal to reject aaPanel or customer servers
+        run: |
+          bash -n tools/ci-oneclick-migration-recovery.sh
+          bash tools/ci-oneclick-migration-recovery.sh --guard
+
+      - name: Verify MySQL DDL interruption and isolated SQL restoration
+        env:
+          BARAMA_CI_ONECLICK_MIGRATION: ALLOW_MYSQL8_TEMP_SCHEMAS_ONLY
+          MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: bash tools/ci-oneclick-migration-recovery.sh --ci
 
       - name: Verify fail-closed staging update readiness gate
         run: |

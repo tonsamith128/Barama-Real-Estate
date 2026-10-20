@@ -10,8 +10,11 @@ $systemEnvironment = is_array($systemEnvironment ?? null) ? $systemEnvironment :
 $systemRequirements = is_array($systemRequirements ?? null) ? $systemRequirements : [];
 $systemUpdateSummary = is_array($systemUpdateSummary ?? null) ? $systemUpdateSummary : [];
 $systemAutoUpdater = is_array($systemAutoUpdater ?? null) ? $systemAutoUpdater : [];
+$systemOneClickWorkflow = is_array($systemOneClickWorkflow ?? null) ? $systemOneClickWorkflow : ['install_enabled' => false, 'steps' => [], 'status' => 'Unavailable'];
 $systemReleaseReadiness = is_array($systemReleaseReadiness ?? null) ? $systemReleaseReadiness : [];
 $systemReleaseInspection = is_array($systemReleaseInspection ?? null) ? $systemReleaseInspection : ['status'=>'Not inspected','checked_at'=>'Never'];
+$systemSignedPlanPreview = is_array($systemSignedPlanPreview ?? null) ? $systemSignedPlanPreview : null;
+$systemSignedPlanFlash = is_string($systemSignedPlanFlash ?? null) ? $systemSignedPlanFlash : '';
 $systemPublisherCheck = is_array($systemPublisherCheck ?? null) ? $systemPublisherCheck : ['state' => 'Not checked', 'checked_at' => 'Never'];
 $systemCheckedAt = (string) ($systemCheckedAt ?? 'Not checked');
 $systemPublisherFlash = !empty($systemPublisherFlash);
@@ -257,6 +260,34 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
 
 
   <?php elseif ($systemSection === 'auto-updater'): ?>
+    <section class="bsys-panel" aria-labelledby="bsys-oneclick-title">
+      <div class="bsys-section-title">
+        <div><h2 id="bsys-oneclick-title">One-click Update workflow</h2><p>Installation requirements and verified progress, without running an update.</p></div>
+        <span class="bsys-state bsys-state--warn">Installation disabled</span>
+      </div>
+      <div class="bsys-table-wrap">
+        <table aria-label="One-click updater stages">
+          <thead><tr><th scope="col">Stage</th><th scope="col">Status</th><th scope="col">Verification boundary</th></tr></thead>
+          <tbody>
+            <?php foreach ((array) ($systemOneClickWorkflow['steps'] ?? []) as $index => $step): ?>
+              <?php if (!is_array($step)) continue; ?>
+              <tr>
+                <th scope="row"><?= e((string) ((int) $index + 1)) ?>. <?= e((string) ($step['label'] ?? 'Check')) ?></th>
+                <td><span class="bsys-state bsys-state--neutral"><?= e((string) ($step['status'] ?? 'Not checked')) ?></span></td>
+                <td><?= e((string) ($step['detail'] ?? 'No evidence recorded')) ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <div class="bsys-section-body">
+        <div class="bsys-actions">
+          <button type="button" class="bsys-button bsys-button--primary" disabled aria-disabled="true" data-oneclick-install-disabled title="An independently authorized installer and tested recovery workflow are not implemented">Install update · unavailable</button>
+          <?php if ($updaterFound): ?><a class="bsys-button" href="<?= e(url('/updater/')) ?>">Open existing guarded updater ↗</a><?php endif; ?>
+        </div>
+        <p class="bsys-note">The publisher feed and signed-package inspector are read-only. A verified license or staged ZIP never authorizes installation. The native guarded updater requires a separately uploaded package, administrator authentication, and backup confirmation.</p>
+      </div>
+    </section>
     <section class="bsys-premium-overview" aria-labelledby="bsys-premium-overview-title">
       <div class="bsys-premium-table-header"><div><h2 id="bsys-premium-overview-title">Updater overview</h2><p>Items requiring setup or review appear first.</p></div><a class="bsys-premium-refresh" href="<?= e(url('/dashboard/system/auto-updater')) ?>" aria-label="Refresh updater readiness"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg>Refresh</a></div>
       <div class="bsys-premium-table-scroll"><table class="bsys-premium-table" data-premium-table>
@@ -273,13 +304,50 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         <?php endforeach; ?>
         </tbody>
       </table></div>
+      <section class="bsys-panel" aria-labelledby="bsys-signed-plan-preview-title">
+        <div class="bsys-section-title">
+          <div><h2 id="bsys-signed-plan-preview-title">Signed release change preview</h2><p>Compare only the files listed in a locally staged, publisher-signed update package.</p></div>
+          <span class="bsys-state bsys-state--neutral">Review only</span>
+        </div>
+        <div class="bsys-section-body">
+          <form method="post" action="<?= e(url('/dashboard/system/auto-updater/preview-signed-changes')) ?>" class="bsys-inline-action">
+            <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+            <button class="bsys-button" type="submit" <?= !empty($systemReleaseReadiness['inspect_enabled']) ? '' : 'disabled title="No locally staged and publisher-signed package available"' ?>>Preview signed changes</button>
+          </form>
+          <?php if ($systemSignedPlanFlash !== ''): ?><p class="bsys-note" role="status"><?= e($systemSignedPlanFlash) ?></p><?php endif; ?>
+          <?php if (is_array($systemSignedPlanPreview)): ?>
+            <p class="bsys-note">Verified for review: v<?= e((string) ($systemSignedPlanPreview['installed_version'] ?? '')) ?> → v<?= e((string) ($systemSignedPlanPreview['target_version'] ?? '')) ?>. <?= (int) ($systemSignedPlanPreview['file_count'] ?? 0) ?> signed file targets; <?= (int) ($systemSignedPlanPreview['changed_files'] ?? 0) ?> replacements; <?= (int) ($systemSignedPlanPreview['new_files'] ?? 0) ?> new files; <?= (int) ($systemSignedPlanPreview['unchanged_files'] ?? 0) ?> unchanged. Package metadata does not certify SQL migration or recovery.</p>
+            <div class="bsys-table-wrap">
+              <table aria-label="Signed release file change preview">
+                <thead><tr><th scope="col">File</th><th scope="col">Change</th></tr></thead>
+                <tbody>
+                  <?php foreach ((array) ($systemSignedPlanPreview['listed_paths'] ?? []) as $item): ?>
+                    <tr><td><code><?= e((string) ($item['path'] ?? '')) ?></code></td><td><?= e((string) ($item['change'] ?? '')) ?></td></tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+            <?php if (!empty($systemSignedPlanPreview['paths_truncated'])): ?><p class="bsys-note">Showing the first 40 file paths. No updates were installed.</p><?php endif; ?>
+          <?php else: ?>
+            <p class="bsys-note">No fresh signed file-plan preview is available. Inspect the signed staged release, then preview its changes.</p>
+          <?php endif; ?>
+          <p class="bsys-note">No installation is triggered by preview. Automatic replacement and database migration remain disabled without verified recovery and independent authorization.</p>
+        </div>
+      </section>
       <div class="bsys-premium-footer-actions" aria-label="Staged release inspection">
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/inspect-staged-release')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
           <button class="bsys-button" type="submit" <?= !empty($systemReleaseReadiness['inspect_enabled']) ? '' : 'disabled title="Stage a signed release and provision the trusted public key first"' ?>>Inspect signed staged release</button>
         </form>
-        <?php if (($systemReleaseInspection['status']??'')==='Signed package verified (not installed)'): ?><span class="bsys-state bsys-state--good" role="status">Signed package verified · not installed</span><?php endif; ?>
-        <span class="bsys-note">Staged inspection only · never installs a package</span>
+        <?php if (($systemReleaseInspection['verified'] ?? false) === true): ?>
+          <span class="bsys-state bsys-state--good" role="status">Verified snapshot · not installed</span>
+          <span class="bsys-note">v<?= e((string) $systemReleaseInspection['version']) ?> · <?= e((string) $systemReleaseInspection['channel']) ?> · <?= (int) $systemReleaseInspection['files'] ?> files · SHA-256 <?= e(substr((string) $systemReleaseInspection['archive_sha256'], 0, 16)) ?>… · checked <?= e((string) $systemReleaseInspection['checked_at']) ?></span>
+        <?php elseif (($systemReleaseInspection['status'] ?? '') === 'Reinspection required'): ?>
+          <span class="bsys-state bsys-state--warn" role="status">Inspection expired or package changed · inspect again</span>
+        <?php elseif (($systemReleaseInspection['status'] ?? '') === 'Inspection unavailable or rejected'): ?>
+          <span class="bsys-state bsys-state--warn" role="status">Inspection rejected · no update installed</span>
+        <?php endif; ?>
+        <span class="bsys-note">Historical inspection only · verification is not installation authorization</span>
       </div>
     </section>
 
