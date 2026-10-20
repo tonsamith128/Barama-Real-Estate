@@ -30,6 +30,7 @@ try {
     mkdir($base,0700);mkdir($site,0700);mkdir($vault,0700);
     mkdir($site.'/storage',0700);
     mkdir($site.'/storage/uploads',0700);
+    mkdir($site.'/storage/empty-directory',0700);
     file_put_contents($site.'/VERSION',"0.9.22-dev\n");
     file_put_contents($site.'/storage/uploads/customer.txt',"Customer payload\n");
     file_put_contents($site.'/storage/environment.php',"secret-config-private\n");
@@ -47,6 +48,11 @@ try {
         'snapshot_does_not_claim_sql_or_install_authorization');
     must(S::verify($site,$vault,$r['snapshot_id'],$r['receipt_sha256']),
         'whole_copy_reverified');
+    must($r['directory_count']===3, 'empty_and_nested_directories_recorded');
+    $record=json_decode((string)file_get_contents($vault.'/'.$r['snapshot_id'].'/receipt.json'),true,16,JSON_THROW_ON_ERROR);
+    must(in_array('storage/empty-directory',array_column($record['directories'],'path'),true),
+        'empty_directory_is_preserved_in_inventory');
+
     must(hash_file('sha256',$site.'/storage/environment.php') === $before,
         'website_never_changed');
     reject(fn()=>S::verify($site,$vault,$r['snapshot_id'],str_repeat('f',64)),
