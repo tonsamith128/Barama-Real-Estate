@@ -271,9 +271,10 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
         </p>
         <form method="post" action="<?= e(url('/dashboard/system/auto-updater/update-now')) ?>" class="bsys-inline-action">
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-          <button type="submit" class="bsys-button bsys-button--primary" <?= !empty($systemOneClickPending) || ($systemFeedResult['status'] ?? '') !== 'available' ? 'disabled' : '' ?>>Update Now</button>
+          <button type="submit" class="bsys-button bsys-button--primary" <?= !empty($systemOneClickPending) || empty($systemOneClickWorkerReady) || ($systemFeedResult['status'] ?? '') !== 'available' ? 'disabled' : '' ?>>Update Now</button>
           <a class="bsys-button" href="<?= e(url('/dashboard/system/auto-updater')) ?>">Refresh status</a>
         </form>
+        <?php if (empty($systemOneClickWorkerReady)): ?><p class="bsys-note" role="status">Trusted installation worker is not installed. One-click installation remains disabled.</p><?php endif; ?>
         <p class="bsys-note">Submitting a request does not mean installation succeeded. A separate trusted worker must confirm completion.</p>
       </div>
     </section>
