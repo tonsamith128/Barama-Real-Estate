@@ -50,6 +50,20 @@ final class PublisherTrustPaths
             || str_contains($directory, '/./') || str_contains($directory, '/../')) {
             return false;
         }
+        // The narrow staging open_basedir permits the pinned trust leaf, but
+        // deliberately denies PHP stat/lstat on /etc and its parent chain.
+        // That full chain is checked by the root-only provisioning tool.
+        // During HTTP/CLI runtime, validate the real, unsymlinked root-owned
+        // leaf and files without broadening PHP access to unrelated /etc data.
+        if ($directory === self::ROOT && self::isProtectedStaging()
+            && (string) ini_get('open_basedir') !== '') {
+            clearstatcache(true, $directory);
+            if (is_link($directory) || !is_dir($directory)
+                || realpath($directory) !== $directory) return false;
+            $leaf = @lstat($directory);
+            return is_array($leaf) && $leaf['uid'] === 0
+                && (($leaf['mode'] & 0022) === 0);
+        }
         $cursor = '';
         foreach (explode('/', ltrim($directory, '/')) as $component) {
             if ($component === '' || $component === '.' || $component === '..') return false;
