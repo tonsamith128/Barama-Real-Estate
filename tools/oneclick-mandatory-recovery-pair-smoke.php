@@ -84,6 +84,23 @@ try {
         'invalid_approval_denied');
 }
 
+foreach ([
+    'path_traversal' => '../pair-' . str_repeat('a', 32),
+    'forged_pair_id' => 'pair-' . str_repeat('A', 32),
+    'foreign_pair' => 'db-' . str_repeat('a', 32),
+] as $name => $pairId) {
+    try {
+        Recovery::verifyStagingPair(
+            '/www/wwwroot/baramastaging.tonsamith.com',
+            $pairId,
+            str_repeat('a', 64)
+        );
+        expectRecovery(false, $name . '_accepted');
+    } catch (RuntimeException $e) {
+        expectRecovery($e->getMessage() === 'RECOVERY_STAGING_ROOT_APPROVAL_REQUIRED',
+            $name . '_root_boundary_denied');
+    }
+}
 $path = dirname(__DIR__) . '/application/app/Services/Updates/OneClickRecoverySnapshotPairV1.php';
 $source = file_get_contents($path);
 expectRecovery(is_string($source)
@@ -92,6 +109,9 @@ expectRecovery(is_string($source)
     && str_contains($source, 'VerifiedUpdateBackupV2::verify(')
     && str_contains($source, 'PrivateDatabaseBackupV2::prepare(')
     && str_contains($source, 'PrivateDatabaseBackupV2::verify(')
+    && str_contains($source, 'OneClickOfflinePreparationV1::inspect(')
+    && str_contains($source, 'RECOVERY_INSTALLED_DATABASE_BINDING_MISMATCH')
+    && str_contains($source, 'public static function verifyStagingPair(')
     && str_contains($source, 'paired_snapshots_not_restored')
     && !str_contains($source, 'UpgradeService::upgrade(')
     && !preg_match('/\b(?:exec|shell_exec|proc_open|system|passthru|eval|curl_exec)\s*\(/i', $source),
