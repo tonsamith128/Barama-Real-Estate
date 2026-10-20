@@ -165,6 +165,12 @@ jobs:
           php -l tools/oneclick-full-site-snapshot-smoke.php
           php tools/oneclick-full-site-snapshot-smoke.php
 
+      - name: Verify root-only independent staging owner approval and recovery binding
+        run: |
+          php -l application/app/Services/Updates/OneClickStagingOwnerApprovalV1.php
+          php -l tools/oneclick-staging-owner-approval-smoke.php
+          php tools/oneclick-staging-owner-approval-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
