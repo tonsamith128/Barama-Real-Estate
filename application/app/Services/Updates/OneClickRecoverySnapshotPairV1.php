@@ -52,6 +52,33 @@ final class OneClickRecoverySnapshotPairV1
             throw new RuntimeException('RECOVERY_DATABASE_CONFIG_INVALID');
         }
 
+        // Refuse an operator-supplied database that does not match the
+        // installed, private runtime config. Never send a backup to another DB.
+        // Matching config fields is not an independent SQL identity/restore test.
+        $runtime = Installation::runtimeConfig();
+        $configuredPort = $runtime['DB_PORT'] ?? null;
+        if (is_string($configuredPort) && ctype_digit($configuredPort)) {
+            $configuredPort = (int) $configuredPort;
+        }
+        foreach ([
+            'DB_DATABASE' => 'database',
+            'DB_HOST' => 'host',
+            'DB_USERNAME' => 'user',
+            'DB_PASSWORD' => 'password',
+        ] as $configKey => $inputKey) {
+            $actual = $runtime[$configKey] ?? null;
+            $provided = $database[$inputKey] ?? null;
+            if (!is_string($actual) || !is_string($provided)
+                || !hash_equals($actual, $provided)) {
+                throw new RuntimeException('RECOVERY_INSTALLED_DATABASE_BINDING_MISMATCH');
+            }
+        }
+        if (!is_int($configuredPort)
+            || !is_int($database['port'] ?? null)
+            || $configuredPort !== $database['port']) {
+            throw new RuntimeException('RECOVERY_INSTALLED_DATABASE_BINDING_MISMATCH');
+        }
+
         // Reinspect the actual staged Ed25519 signed archive and the complete
         // file plan immediately before preparing either private snapshot.
         $loc = SignedReleaseInspector::locations();
