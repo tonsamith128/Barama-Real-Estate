@@ -46,6 +46,8 @@ final class OneClickFullSiteSnapshotV1
             throw new RuntimeException('FULL_SITE_PRIVATE_JOB_CREATE_FAILED');
         }
         // Failure retains an untrusted partial private job for operator review.
+        // Capture empty directories as well as file data, including permissions.
+        $folders = self::folders($site);
         $list = [];
         $total = 0;
         foreach (self::walk($site) as $rel => $original) {
@@ -68,15 +70,10 @@ final class OneClickFullSiteSnapshotV1
             $total += $size;
         }
         usort($list, static fn(array $a, array $b): int => strcmp($a['path'], $b['path']));
-        // New/deleted/modified source files during enumeration MUST invalidate
-        // the snapshot, rather than silently accepting an incomplete website.
-        $seen = 0;
-        foreach (self::walk($site) as $rel => $original) {
-            if (!isset($list[$seen]) || $list[$seen]['path'] !== $rel) {
-                // Walk traversal order is unspecified; compare sorted map below.
-                break;
-            }
-            $seen++;
+        // New/deleted/modified source files or directories during copying
+        // MUST invalidate the snapshot rather than accept an incomplete site.
+        if (self::folders($site) !== $folders) {
+            throw new RuntimeException('FULL_SITE_CHANGED_DURING_COPY');
         }
         $current = [];
         foreach (self::walk($site) as $rel => $original) {
@@ -101,6 +98,8 @@ final class OneClickFullSiteSnapshotV1
             'file_count' => count($list),
             'total_bytes' => $total,
             'files' => $list,
+            'directories' => $folders,
+            'directory_count' => count($folders),
             'full_site_file_inventory_verified' => true,
             'database_included' => false,
             'consistent_db_checkpoint_verified' => false,
@@ -119,6 +118,7 @@ final class OneClickFullSiteSnapshotV1
             'snapshot_id' => $id,
             'receipt_sha256' => $digest,
             'file_count' => count($list),
+            'directory_count' => count($folders),
             'total_bytes' => $total,
             'database_included' => false,
             'consistent_db_checkpoint_verified' => false,
@@ -162,8 +162,25 @@ final class OneClickFullSiteSnapshotV1
             || ($data['fixture'] ?? null) !== str_starts_with($site, '/tmp/')
             || !is_array($data['files'] ?? null)
             || count($data['files']) > self::MAX_FILES
-            || ($data['file_count'] ?? -1) !== count($data['files'])) {
+            || ($data['file_count'] ?? -1) !== count($data['files'])
+            || !is_array($data['directories'] ?? null)
+            || count($data['directories']) > self::MAX_FILES
+            || ($data['directory_count'] ?? -1) !== count($data['directories'])) {
             throw new RuntimeException('FULL_SITE_RECEIPT_INVALID');
+        }
+        $dirNames = [];
+        foreach ($data['directories'] as $folder) {
+            if (!is_array($folder) || !is_string($folder['path'] ?? null)
+                || $folder['path'] === '' || strlen($folder['path']) > 2048
+                || str_starts_with($folder['path'], '/')
+                || str_contains($folder['path'], "\0")
+                || preg_match('~(?:^|/)\.\.?(?:/|$)~', $folder['path'])
+                || !is_int($folder['mode'] ?? null)
+                || ($folder['mode'] & ~0777) !== 0
+                || isset($dirNames[$folder['path']])) {
+                throw new RuntimeException('FULL_SITE_RECEIPT_FOLDER_INVALID');
+            }
+            $dirNames[$folder['path']] = true;
         }
         $sum = 0; $paths = [];
         foreach ($data['files'] as $item) {
@@ -205,6 +222,38 @@ final class OneClickFullSiteSnapshotV1
             $count++;
         }
         return $count === count($data['files']);
+    }
+
+    /** @return list<array{path:string,mode:int}> */
+    private static function folders(string $site): array
+    {
+        $out = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($site, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($iterator as $entry) {
+            $path = $entry->getPathname();
+            if ($entry->isLink() || is_link($path)) {
+                throw new RuntimeException('FULL_SITE_SYMLINK_OR_SPECIAL_FILE');
+            }
+            if (!$entry->isDir()) continue;
+            $relative = substr($path, strlen($site) + 1);
+            if ($relative === '' || str_contains($relative, "\0")) {
+                throw new RuntimeException('FULL_SITE_PATH_INVALID');
+            }
+            clearstatcache(true, $path);
+            $st = lstat($path);
+            if (!is_array($st) || ($st['mode'] & 0170000) !== 0040000) {
+                throw new RuntimeException('FULL_SITE_DIRECTORY_CHANGED');
+            }
+            $out[] = ['path' => $relative, 'mode' => $st['mode'] & 0777];
+            if (count($out) > self::MAX_FILES) {
+                throw new RuntimeException('FULL_SITE_DIRECTORY_COUNT_LIMIT');
+            }
+        }
+        usort($out, static fn(array $a, array $b): int => strcmp($a['path'], $b['path']));
+        return $out;
     }
 
     /** @return iterable<string,string> */
@@ -319,8 +368,7 @@ final class OneClickFullSiteSnapshotV1
         if (!$fixture && !$staging) throw new RuntimeException('FULL_SITE_ROOT_DENIED');
         self::privateDir($site, false);
         if ($fixture) self::privateDir($base);
-        if ($staging) self::privateDir($vault);
-        else self::privateDir($vault);
+        self::privateDir($vault);
         if (str_starts_with($vault.'/', $site.'/')
             || str_starts_with($site.'/', $vault.'/')) {
             throw new RuntimeException('FULL_SITE_OVERLAPPING_ROOTS');
