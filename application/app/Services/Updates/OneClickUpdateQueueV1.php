@@ -110,7 +110,13 @@ final class OneClickUpdateQueueV1
     private static function directory(string $site,bool $create):string
     {
         $parent=$site.'/application/storage/app/updates';
-        if(is_link($parent)||!is_dir($parent))throw new RuntimeException('ONECLICK_PARENT_UNSAFE');
+        $cursor=$site;
+        foreach (['application','storage','app','updates'] as $part) {
+            $cursor.='/'.$part;
+            if(is_link($cursor)||!is_dir($cursor))
+                throw new RuntimeException('ONECLICK_PARENT_COMPONENT_UNSAFE');
+        }
+        if($parent!==$cursor)throw new RuntimeException('ONECLICK_PARENT_CHANGED');
         $dir=$site.self::PATH;
         if(!is_dir($dir)){
             if(!$create)return '';
