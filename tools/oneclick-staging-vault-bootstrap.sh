@@ -6,9 +6,9 @@ set +x
 umask 077
 ROOT=/root/Barama-OneClick-Recovery
 stop(){ echo "STOP=$1" >&2; exit 1; }
-// Ancestor /root may grant read/traverse to other users; that alone is safe
-// because each recovery vault is independently root-owned and mode 0700.
-// Non-root WRITE permission on /root is never accepted.
+# Ancestor /root may grant read/traverse to other users; that alone is safe
+# because each recovery vault is independently root-owned and mode 0700.
+# Non-root WRITE permission on /root is never accepted.
 rootHomeModeSafe(){
   local mode="${1:-}"
   [[ "$mode" =~ ^[0-7]{3,4}$ ]] || return 1
