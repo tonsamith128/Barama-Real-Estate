@@ -25,8 +25,7 @@ final class OneClickInstalledDomainV1
             || !in_array(strtolower((string) ($url['scheme'] ?? '')), ['https','http'], true)
             || !is_string($url['host'] ?? null)
             || isset($url['user']) || isset($url['pass'])
-            || isset($url['query']) || isset($url['fragment'])
-            || (isset($url['path']) && !in_array($url['path'], ['', '/'], true))) {
+            || isset($url['query']) || isset($url['fragment'])) {
             return 'Not recorded';
         }
         $domain = LicenseManagerClient::canonicalDomain($raw);
