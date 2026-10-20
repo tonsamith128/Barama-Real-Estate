@@ -263,7 +263,17 @@ final class OneClickAtomicTransactionV1
         if (!$versionSeen || count($result) !== count($seen)) {
             throw new RuntimeException('FIXTURE_VERSION_TARGET_REQUIRED');
         }
-        return $result;
+        // VERSION must be the FINAL published file, never the first entry in
+        // the ZIP. Otherwise a crash can advertise a new version while the
+        // executable files still contain the old application.
+        foreach ($result as $index => $entry) {
+            if ($entry['path'] === 'VERSION') {
+                unset($result[$index]);
+                $result[] = $entry;
+                break;
+            }
+        }
+        return array_values($result);
     }
 
     private static function validEntry(mixed $item): bool
