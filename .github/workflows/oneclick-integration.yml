@@ -17,6 +17,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           php -l application/app/Services/Updates/OneClickUpdateQueueV1.php
+          php -l application/app/Services/Updates/PublisherPrivateDeliveryV1.php
+          php -l application/bin/oneclick-publisher-delivery.php
           php -l application/app/Http/Controllers/SystemCenterController.php
           php -l application/routes/web.php
           php -l application/resources/views/workspace/system-center.php
@@ -39,5 +41,14 @@ jobs:
           assert "authorized_to_install'=>false" in queue
           assert "empty($systemOneClickWorkerReady)" in html
           assert "One-click Update" in html
+          delivery=Path('application/bin/oneclick-publisher-delivery.php').read_text()
+          private_download=Path('application/app/Services/Updates/PublisherPrivateDeliveryV1.php').read_text()
+          assert "posix_geteuid() !== 0" in delivery
+          assert "PHP_SAPI !== 'cli'" in delivery
+          assert "PublisherPrivateDeliveryV1::download" in delivery
+          assert "oneclick-publisher-delivery" in delivery or "private-delivery-v1" in delivery
+          assert "signed_envelope" in private_download
+          assert "INSTALLATION_EXECUTED" not in delivery
+          print('ONECLICK_PRIVATE_DELIVERY_BOUNDARY=PASS')
           print('ONECLICK_WEB_BOUNDARY=PASS')
           PY
