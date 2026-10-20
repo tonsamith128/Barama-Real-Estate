@@ -1,0 +1,49 @@
+name: Barama protected publisher trust checks
+
+on:
+  push:
+    branches:
+      - feature/one-click-updater-secure-trust-plan-20261020
+    paths:
+      - 'application/app/Services/Updates/PublisherTrustPaths.php'
+      - 'application/app/Services/Updates/TrustedReleaseFeed.php'
+      - 'application/app/Services/Updates/PublisherPrivateDeliveryV1.php'
+      - 'application/app/Services/Updates/PublisherTrustBootstrapV1.php'
+      - 'application/app/Services/Updates/SignedReleaseInspector.php'
+      - 'tests/security/PublisherTrustPathsTest.php'
+      - '.github/workflows/protected-publisher-trust.yml'
+  pull_request:
+    paths:
+      - 'application/app/Services/Updates/PublisherTrustPaths.php'
+      - 'application/app/Services/Updates/TrustedReleaseFeed.php'
+      - 'application/app/Services/Updates/PublisherPrivateDeliveryV1.php'
+      - 'application/app/Services/Updates/PublisherTrustBootstrapV1.php'
+      - 'application/app/Services/Updates/SignedReleaseInspector.php'
+      - 'tests/security/PublisherTrustPathsTest.php'
+      - '.github/workflows/protected-publisher-trust.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-trust-path-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: PHP syntax and trust path policies
+        run: |
+          set -Eeuo pipefail
+          php -v
+          for file in \
+            application/app/Services/Updates/PublisherTrustPaths.php \
+            application/app/Services/Updates/TrustedReleaseFeed.php \
+            application/app/Services/Updates/PublisherPrivateDeliveryV1.php \
+            application/app/Services/Updates/PublisherTrustBootstrapV1.php \
+            application/app/Services/Updates/SignedReleaseInspector.php \
+            tests/security/PublisherTrustPathsTest.php
+          do
+            php -l "$file"
+          done
+          php tests/security/PublisherTrustPathsTest.php
