@@ -152,6 +152,40 @@ final class SystemCenterController
         return Response::redirect(url('/dashboard/system/auto-updater'), 303);
     }
 
+    /**
+     * Admin-initiated request only; an independently trusted root worker
+     * verifies all security and recovery gates before any installation.
+     */
+    public function requestOneClickUpdate(Request $request): Response
+    {
+        $auth = new \Barama\Services\AuthService();
+        if (!$auth->hasRole('administrator') && !$auth->hasRole('super-administrator')) {
+            return Response::html('Forbidden', 403);
+        }
+        $last = (int)($_SESSION['_barama_oneclick_request_at'] ?? 0);
+        if ($last > 0 && time() - $last < 90) {
+            $_SESSION['_barama_oneclick_request_flash'] = 'Wait before submitting another update request.';
+            return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+        }
+        $_SESSION['_barama_oneclick_request_at'] = time();
+        try {
+            $site = defined('BASE_PATH') ? (string) BASE_PATH : '';
+            $feed = \Barama\Services\Updates\TrustedReleaseFeed::check(
+                (string) APP_VERSION, Installation::licenseState(), Installation::runtimeConfig()
+            );
+            $queued = \Barama\Services\Updates\OneClickUpdateQueueV1::enqueue(
+                $site, (string) APP_VERSION, $feed
+            );
+            $_SESSION['_barama_oneclick_request_flash'] =
+                'Update request queued for worker verification. Installation is not complete.';
+            $_SESSION['_barama_oneclick_job_id'] = $queued['id'];
+        } catch (\Throwable) {
+            $_SESSION['_barama_oneclick_request_flash'] =
+                'Update request blocked. Check publisher publication, entitlement, signed package and worker readiness.';
+        }
+        return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+    }
+
     /** Server-session fingerprint: never store or render an activation token. */
     private static function feedBindingFingerprint(array $license, array $runtime): string
     {
@@ -484,6 +518,14 @@ final class SystemCenterController
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
+            'systemOneClickFlash' => $_SESSION['_barama_oneclick_request_flash'] ?? '',
+            'systemOneClickPending' => (static function (): bool {
+                try {
+                    return \Barama\Services\Updates\OneClickUpdateQueueV1::pending((string) BASE_PATH);
+                } catch (\Throwable) {
+                    return false;
+                }
+            })(),
             'systemLicenseBinding' => [
                 'current_domain' => 'baramarealestate.tonsamith.com',
                 'recorded_domain' => (static function (mixed $value): string {
