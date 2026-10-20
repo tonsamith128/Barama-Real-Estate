@@ -167,8 +167,6 @@ final class PublisherPrivateDeliveryV1
             }
             return [
                 'status' => 'AUTHENTICATED_ROOT_PRIVATE_ARTIFACT_RECEIVED',
-                // Signed manifest and signature are public metadata, not credentials.
-                'signed_envelope' => $envelope,
                 'archive' => $receipt['archive'],
                 'receipt' => $receipt['receipt'],
                 'bytes' => $receipt['bytes'],
