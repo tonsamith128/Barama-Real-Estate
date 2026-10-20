@@ -53,6 +53,29 @@ def read_regular(path,maxsize):
     finally:
         os.close(fd)
 
+def sha_regular(path,maxsize):
+    if path.is_symlink() or not path.is_file():
+        raise Refused("UNTRUSTED_OR_MISSING_FILE")
+    fd=os.open(path,os.O_RDONLY|getattr(os,"O_NOFOLLOW",0))
+    try:
+        before=os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode) or before.st_size<0 or before.st_size>maxsize:
+            raise Refused("FILE_TYPE_OR_SIZE_INVALID")
+        size=0
+        digest=hashlib.sha256()
+        while True:
+            chunk=os.read(fd,1024*1024)
+            if not chunk: break
+            digest.update(chunk)
+            size+=len(chunk)
+            if size>maxsize: raise Refused("FILE_TOO_LARGE")
+        after=os.fstat(fd)
+        if size!=before.st_size or after.st_size!=before.st_size or after.st_mtime_ns!=before.st_mtime_ns:
+            raise Refused("FILE_CHANGED_DURING_HASH")
+        return digest.hexdigest()
+    finally:
+        os.close(fd)
+
 def main():
     parser=argparse.ArgumentParser(description="Staging read-only baseline digests, no release approval")
     parser.add_argument("--inventory",required=True,help="Exact JSON output from read-only source inventory")
@@ -117,8 +140,7 @@ def main():
             entries.append({"path":rel,"source_sha256":item["source_sha256"],
                "bytes":item["bytes"],"installed_sha256":None,"staging_status":"FILE_ABSENT_BUILDER_UNSUPPORTED"})
             continue
-        data=read_regular(target,2147483648)
-        digest=hashlib.sha256(data).hexdigest()
+        digest=sha_regular(target,2147483648)
         entries.append({"path":rel,"source_sha256":item["source_sha256"],
             "bytes":item["bytes"],"installed_sha256":digest,
             "staging_status":("NO_CONTENT_CHANGE" if digest==item["source_sha256"]
