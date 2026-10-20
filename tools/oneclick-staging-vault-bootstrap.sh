@@ -6,6 +6,14 @@ set +x
 umask 077
 ROOT=/root/Barama-OneClick-Recovery
 stop(){ echo "STOP=$1" >&2; exit 1; }
+// Ancestor /root may grant read/traverse to other users; that alone is safe
+// because each recovery vault is independently root-owned and mode 0700.
+// Non-root WRITE permission on /root is never accepted.
+rootHomeModeSafe(){
+  local mode="${1:-}"
+  [[ "$mode" =~ ^[0-7]{3,4}$ ]] || return 1
+  (( (8#$mode & 0022) == 0 ))
+}
 secure(){
   local path="$1" owner mode
   [[ ! -L "$path" && -d "$path" ]] || stop PRIVATE_DIRECTORY_UNTRUSTED
@@ -15,7 +23,10 @@ secure(){
 }
 preflight(){
   [[ ! -L /root && -d /root && "$(stat -c %u -- /root)" == 0 ]] || stop ROOT_HOME_UNTRUSTED
-  [[ "$(( 8#$(stat -c %a -- /root) & 0077 ))" == 0 ]] || stop ROOT_HOME_MODE_UNSAFE
+  local root_mode
+  root_mode="$(stat -c %a -- /root)" || stop ROOT_HOME_STAT_FAILED
+  rootHomeModeSafe "$root_mode" || stop ROOT_HOME_WRITABLE_BY_NON_ROOT
+  echo "ROOT_HOME_MODE=$root_mode ROOT_HOME_NONROOT_WRITE=NO"
   local path
   for path in "$ROOT" "$ROOT/full-site" "$ROOT/owner-approvals" "$ROOT/owner-approvals/used-nonces"; do
     if [[ -e "$path" || -L "$path" ]]; then
@@ -26,7 +37,17 @@ preflight(){
     fi
   done
 }
-case "$1" in
+case "${1:-}" in
+ --self-test)
+   [[ $# == 1 ]] || stop INVALID_ARGUMENTS
+   for mode in 700 750 755 711 500 2750; do
+     rootHomeModeSafe "$mode" || stop SAFE_ANCESTOR_MODE_REJECTED
+   done
+   for mode in 722 733 770 775 777 1777 2780 12345 abc; do
+     if rootHomeModeSafe "$mode"; then stop UNSAFE_ANCESTOR_MODE_ACCEPTED; fi
+   done
+   echo ROOT_ANCESTOR_PERMISSION_POLICY=PASS
+   ;;
  --check)
    [[ $# == 1 ]] || stop INVALID_ARGUMENTS
    echo MODE=READ_ONLY_VAULT_PREFLIGHT
