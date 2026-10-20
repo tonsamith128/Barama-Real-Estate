@@ -121,33 +121,8 @@ final class OneClickOfflinePreparationV1
                 throw new RuntimeException('CODE_BACKUP_UNVERIFIED');
             }
             $receipt = self::readReceipt($codeBackupDir);
-            if (($receipt['release_archive_sha256'] ?? null) !== $plan['archive_sha256']
-                || ($receipt['installed_version'] ?? null) !== $version
-                || ($receipt['target_version'] ?? null) !== $plan['target_version']
-                || ($receipt['state'] ?? null) !== 'prepared_not_installed'
-                || !is_array($receipt['files'] ?? null)
-                || count($receipt['files']) !== count($plan['targets'])) {
-                throw new RuntimeException('CODE_BACKUP_WRONG_RELEASE');
-            }
-            $expected = [];
-            foreach ($plan['targets'] as $target) {
-                $expected[$target['path']] = $target;
-            }
-            foreach ($receipt['files'] as $entry) {
-                if (!is_array($entry) || !is_string($entry['path'] ?? null)
-                    || !array_key_exists($entry['path'], $expected)) {
-                    throw new RuntimeException('CODE_BACKUP_COVERAGE_CHANGED');
-                }
-                $target = $expected[$entry['path']];
-                if (($entry['baseline'] ?? null) !== $target['installed_sha256']
-                    || ($entry['new_sha256'] ?? null) !== $target['archive_sha256']
-                    || ($entry['exists'] ?? null) !== ($target['installed_sha256'] !== null)) {
-                    throw new RuntimeException('CODE_BACKUP_BASELINE_MISMATCH');
-                }
-                unset($expected[$entry['path']]);
-            }
-            if ($expected !== []) {
-                throw new RuntimeException('CODE_BACKUP_COVERAGE_INCOMPLETE');
+            if (!self::codeReceiptMatchesPlan($receipt, $plan, $version)) {
+                throw new RuntimeException('CODE_BACKUP_WRONG_RELEASE_OR_COVERAGE');
             }
             $result['code_backup_receipt_verified'] = true;
         } catch (Throwable) {
@@ -176,6 +151,42 @@ final class OneClickOfflinePreparationV1
 
         $result['blockers'] = array_values(array_unique($blockers));
         return $result;
+    }
+
+    /**
+     * Compare the entire independently verified code receipt to the freshly
+     * verified, signed target list. This method does not authenticate inputs;
+     * callers MUST use the two existing verifiers before invoking it.
+     *
+     * @param array<string,mixed> $receipt
+     * @param array<string,mixed> $plan
+     */
+    private static function codeReceiptMatchesPlan(array $receipt, array $plan, string $version): bool
+    {
+        if (($receipt['release_archive_sha256'] ?? null) !== ($plan['archive_sha256'] ?? null)
+            || ($receipt['installed_version'] ?? null) !== $version
+            || ($receipt['target_version'] ?? null) !== ($plan['target_version'] ?? null)
+            || ($receipt['state'] ?? null) !== 'prepared_not_installed'
+            || !is_array($receipt['files'] ?? null) || !is_array($plan['targets'] ?? null)
+            || count($receipt['files']) !== count($plan['targets'])) {
+            return false;
+        }
+        $expected = [];
+        foreach ($plan['targets'] as $target) {
+            if (!is_array($target) || !is_string($target['path'] ?? null)
+                || array_key_exists($target['path'], $expected)) return false;
+            $expected[$target['path']] = $target;
+        }
+        foreach ($receipt['files'] as $entry) {
+            if (!is_array($entry) || !is_string($entry['path'] ?? null)
+                || !array_key_exists($entry['path'], $expected)) return false;
+            $target = $expected[$entry['path']];
+            if (($entry['baseline'] ?? null) !== ($target['installed_sha256'] ?? null)
+                || ($entry['new_sha256'] ?? null) !== ($target['archive_sha256'] ?? null)
+                || ($entry['exists'] ?? null) !== (($target['installed_sha256'] ?? null) !== null)) return false;
+            unset($expected[$entry['path']]);
+        }
+        return $expected === [];
     }
 
     private static function sha(mixed $value): bool
