@@ -118,6 +118,13 @@ jobs:
           php -l tools/oneclick-signed-inspection-freshness-smoke.php
           php tools/oneclick-signed-inspection-freshness-smoke.php
 
+      - name: Verify customer domain binding uses trusted installed APP_URL
+        run: |
+          php -l application/app/Services/Updates/OneClickInstalledDomainV1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l tools/oneclick-configured-domain-smoke.php
+          php tools/oneclick-configured-domain-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
