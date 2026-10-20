@@ -84,9 +84,25 @@ final class SystemCenterController
             $_SESSION['_barama_signed_release_check_last_v150']=$now;
             try {
                 $verified=\Barama\Services\Updates\SignedReleaseInspector::inspect((string)APP_VERSION);
+                // Session is a display snapshot only; it never authorizes updates.
+                // Bind the snapshot to exact bytes and the pinned public key catalog.
+                $location = \Barama\Services\Updates\SignedReleaseInspector::locations();
+                $keyPath = $location['key'];
+                if (is_link($keyPath) || !is_file($keyPath) || !is_readable($keyPath)) {
+                    throw new \RuntimeException('INSPECTION_KEY_CATALOG_UNAVAILABLE');
+                }
+                $keyDigest = hash_file('sha256', $keyPath);
+                if (!is_string($keyDigest) || !preg_match('/^[a-f0-9]{64}$/D', $keyDigest)) {
+                    throw new \RuntimeException('INSPECTION_KEY_CATALOG_UNAVAILABLE');
+                }
                 $result['status']='Signed package verified (not installed)';
+                $result['site_version']=(string)APP_VERSION;
                 $result['version']=$verified['version'];
+                $result['channel']=$verified['channel'];
                 $result['files']=$verified['files'];
+                $result['archive_sha256']=$verified['archive_sha256'];
+                $result['trusted_keys_sha256']=$keyDigest;
+                $result['verified_at']=$now;
             } catch (\RuntimeException $exception) {
                 // Only allowlisted, non-sensitive codes are shown to administrators.
                 $result['status']='Inspection unavailable or rejected';
@@ -440,11 +456,38 @@ final class SystemCenterController
             try { $releaseReady=\Barama\Services\Updates\SignedReleaseInspector::readiness(); }
             catch (\Throwable) { /* Never block the dashboard on readiness. */ }
         }
-        $releaseCheck=$_SESSION['_barama_signed_release_result_v150']??null;
-        if(!is_array($releaseCheck) || !in_array(($releaseCheck['status']??''),[
-            'Not inspected','Signed package verified (not installed)',
-            'Inspection unavailable or rejected','Please wait before checking again'
-        ],true)) $releaseCheck=['status'=>'Not inspected','checked_at'=>'Never'];
+        $storedInspection = $_SESSION['_barama_signed_release_result_v150'] ?? null;
+        $currentArchiveDigest = null;
+        $currentTrustedKeysDigest = null;
+        // Historical success stays visible only while the exact signed ZIP and
+        // trusted-key catalog remain unchanged and the 10-minute window is fresh.
+        // This is NOT a re-verification or an install authorization.
+        $now = time();
+        if ($section === 'auto-updater'
+            && !empty($releaseReady['inspect_enabled'])
+            && is_array($storedInspection)
+            && ($storedInspection['status'] ?? null) === 'Signed package verified (not installed)'
+            && is_int($storedInspection['verified_at'] ?? null)
+            && $storedInspection['verified_at'] <= $now
+            && $now - $storedInspection['verified_at'] <= 600) {
+            try {
+                $locations = \Barama\Services\Updates\SignedReleaseInspector::locations();
+                if (!is_link($locations['archive']) && is_file($locations['archive'])
+                    && !is_link($locations['key']) && is_file($locations['key'])) {
+                    $archiveHash = hash_file('sha256', $locations['archive']);
+                    $keyHash = hash_file('sha256', $locations['key']);
+                    $currentArchiveDigest = is_string($archiveHash) ? $archiveHash : null;
+                    $currentTrustedKeysDigest = is_string($keyHash) ? $keyHash : null;
+                }
+            } catch (Throwable) {
+                // Invalid local stage always makes the displayed snapshot stale.
+            }
+        }
+        $releaseCheck = \Barama\Services\Updates\OneClickInspectionFreshnessV1::display(
+            $storedInspection, $now, (string) APP_VERSION,
+            !empty($releaseReady['inspect_enabled']),
+            $currentArchiveDigest, $currentTrustedKeysDigest
+        );
 
         // Read-only progress model. It cannot authorize an update, and none
         // of these browser/session observations is trusted by a root worker.
