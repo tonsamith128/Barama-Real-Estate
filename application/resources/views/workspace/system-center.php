@@ -257,6 +257,26 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
 
 
   <?php elseif ($systemSection === 'auto-updater'): ?>
+    <section class="bsys-panel" aria-label="One-click update installation">
+      <div class="bsys-section-title"><div><h2>One-click Update</h2>
+        <p>Administrator-initiated signed updates with independent worker verification.</p></div>
+        <span class="bsys-state bsys-state--neutral"><?= !empty($systemOneClickPending) ? 'Request pending' : 'Ready to check' ?></span>
+      </div>
+      <div class="bsys-section-body">
+        <?php if (!empty($systemOneClickFlash)): ?>
+        <p class="bsys-note" role="status" aria-live="polite"><?= e((string)$systemOneClickFlash) ?></p>
+        <?php endif; ?>
+        <p class="bsys-note">Installed version: <strong><?= e((string)$systemVersion) ?></strong>.
+          <?= !empty($systemOneClickPending) ? 'A request already exists and must be resolved before resubmission.' : 'The publisher must have an eligible published release, a matching signed package, and a trusted worker before an update can complete.' ?>
+        </p>
+        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/update-now')) ?>" class="bsys-inline-action">
+          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+          <button type="submit" class="bsys-button bsys-button--primary" <?= !empty($systemOneClickPending) || ($systemFeedResult['status'] ?? '') !== 'available' ? 'disabled' : '' ?>>Update Now</button>
+          <a class="bsys-button" href="<?= e(url('/dashboard/system/auto-updater')) ?>">Refresh status</a>
+        </form>
+        <p class="bsys-note">Submitting a request does not mean installation succeeded. A separate trusted worker must confirm completion.</p>
+      </div>
+    </section>
     <section class="bsys-premium-overview" aria-labelledby="bsys-premium-overview-title">
       <div class="bsys-premium-table-header"><div><h2 id="bsys-premium-overview-title">Updater overview</h2><p>Items requiring setup or review appear first.</p></div><a class="bsys-premium-refresh" href="<?= e(url('/dashboard/system/auto-updater')) ?>" aria-label="Refresh updater readiness"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg>Refresh</a></div>
       <div class="bsys-premium-table-scroll"><table class="bsys-premium-table" data-premium-table>
