@@ -66,7 +66,10 @@ try {
         must(str_starts_with($e->getMessage(),'FIXTURE_INJECTED_PROCESS_CRASH:'),'injected_after_two_files');
         $tx=substr($e->getMessage(),strlen('FIXTURE_INJECTED_PROCESS_CRASH:'));
     }
-    must(file_get_contents($site.'/VERSION')==="0.9.23\n",'partial_app_detected');
+    must(file_get_contents($site.'/VERSION')==="0.9.22-dev\n"
+        && file_get_contents($site.'/assets/css/app.css')==="after\n"
+        && file_get_contents($site.'/assets/js/new.js')==="hello\n",
+        'version_stays_old_until_all_code_files_are_written');
     blocked(fn()=>T::apply($site,$vault,$plan,$new),'FIXTURE_INTERRUPTED_UPDATE_REQUIRES_RECOVERY','competing_update_blocked_after_crash');
     $recovered=T::recover($site,$vault,$tx);
     must($recovered['status']==='ISOLATED_FILE_CRASH_RECOVERED','power_loss_recovered_using_private_journal');
