@@ -1115,6 +1115,7 @@ $router->get('/dashboard/system/health', [SystemCenterController::class, 'health
 $router->get('/dashboard/system/auto-updater', [SystemCenterController::class, 'autoUpdater'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 $router->post('/dashboard/system/auto-updater/check-license', [SystemCenterController::class, 'validatePublisherLicense'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 $router->post('/dashboard/system/auto-updater/inspect-staged-release', [SystemCenterController::class, 'inspectStagedRelease'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->post('/dashboard/system/auto-updater/preview-signed-changes', [SystemCenterController::class, 'previewStagedRelease'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 $router->post('/dashboard/system/auto-updater/check-updates', [SystemCenterController::class, 'checkUpdateEntitlement'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 
 /* BARAMA_PUBLIC_SYSTEM_STATUS_V1126 */
