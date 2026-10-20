@@ -21,7 +21,7 @@ final class SignedReleaseInspector
     public static function locations(): array
     {
         return [
-            'key' => APP_PATH . '/config/update-publisher-v2-keys.json',
+            'key' => PublisherTrustPaths::keys(),
             'manifest' => APP_PATH . '/storage/app/updates/staged/envelope.json',
             'archive' => APP_PATH . '/storage/app/updates/staged/release.zip',
         ];
@@ -30,7 +30,7 @@ final class SignedReleaseInspector
     public static function readiness(): array
     {
         $p = self::locations();
-        $key = self::safeFile($p['key'], 65536);
+        $key = PublisherTrustPaths::safeTrustFile($p['key'], 65536);
         $staged = self::safeFile($p['manifest'], 16384)
             && self::safeFile($p['archive'], self::MAX_BYTES);
         $runtime = extension_loaded('sodium') && class_exists(ZipArchive::class);
