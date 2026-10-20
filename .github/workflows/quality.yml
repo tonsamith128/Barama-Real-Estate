@@ -159,6 +159,12 @@ jobs:
           php -l tools/oneclick-owner-consent-and-workflow-smoke.php
           php tools/oneclick-owner-consent-and-workflow-smoke.php
 
+      - name: Verify private full-site snapshot contents and staging-only guard
+        run: |
+          php -l application/app/Services/Updates/OneClickFullSiteSnapshotV1.php
+          php -l tools/oneclick-full-site-snapshot-smoke.php
+          php tools/oneclick-full-site-snapshot-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
