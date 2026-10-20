@@ -17,7 +17,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           php -l application/app/Services/Updates/OneClickUpdateQueueV1.php
-          php -l application/app/Services/Updates/PublisherPrivateDeliveryV1.php
+          php -l application/app/Services/Updates/TrustedReleaseFeed.php
+          php -l application/bin/oneclick-unprivileged-delivery.php
           php -l application/app/Http/Controllers/SystemCenterController.php
           php -l application/routes/web.php
           php -l application/resources/views/workspace/system-center.php
@@ -35,7 +36,18 @@ jobs:
           assert routes.count("/dashboard/system/auto-updater/status'")==1
           assert "new CsrfMiddleware()" in next(l for l in routes.splitlines() if "/dashboard/system/auto-updater/update-now'" in l)
           assert "hasRole('administrator')" in ctl and "hasRole('super-administrator')" in ctl
-          assert "TrustedReleaseFeed::check" in ctl and "StagingPublisherCandidateV1::inspect" in queue
+          assert "TrustedReleaseFeed::check" in ctl
+          assert "publisher_authenticated_v2" in queue
+          assert "StagingPublisherCandidateV1::inspect" not in queue
+          downloader=Path('application/bin/oneclick-unprivileged-delivery.php').read_text()
+          assert "posix_geteuid() === 0" in downloader
+          assert "PHP_SAPI !== 'cli'" in downloader
+          assert "TrustedReleaseFeed::check" in downloader
+          assert "verifyEnvelope" not in downloader or "hash_file" in downloader
+          assert "https://tonsamith.com/license/v2/update/artifact" in downloader
+          assert "CURLOPT_SSL_VERIFYPEER => true" in downloader
+          assert "oneclick-delivery" in downloader
+          assert "INSTALL_VERSION" not in downloader
           assert "protectedSignal(" in queue and "PublisherTrustPaths::protectedDirectoryReady()" in queue
           assert "authorized_to_install'=>false" in queue
           assert "empty($systemOneClickWorkerReady)" in html
