@@ -211,6 +211,17 @@ jobs:
           MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
         run: bash tools/ci-full-object-mysql-recovery.sh --ci
 
+      - name: Require CI-only MySQL migration rehearsal to reject aaPanel or customer servers
+        run: |
+          bash -n tools/ci-oneclick-migration-recovery.sh
+          bash tools/ci-oneclick-migration-recovery.sh --guard
+
+      - name: Verify MySQL DDL interruption and isolated SQL restoration
+        env:
+          BARAMA_CI_ONECLICK_MIGRATION: ALLOW_MYSQL8_TEMP_SCHEMAS_ONLY
+          MYSQL_SERVICE_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: bash tools/ci-oneclick-migration-recovery.sh --ci
+
       - name: Verify fail-closed staging update readiness gate
         run: |
           php -l application/app/Services/Updates/StagingUpdateReadinessV1.php
