@@ -162,6 +162,7 @@ jobs:
       - name: Ensure root recovery vault bootstrap requires explicit approval
         run: |
           bash -n tools/oneclick-staging-vault-bootstrap.sh
+          bash tools/oneclick-staging-vault-bootstrap.sh --self-test
           bash tools/oneclick-staging-vault-bootstrap.sh --guard
           if bash tools/oneclick-staging-vault-bootstrap.sh --provision UNAPPROVED; then
             echo 'FAIL_OPEN_ROOT_VAULT_PROVISION' >&2
