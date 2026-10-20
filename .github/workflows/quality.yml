@@ -146,6 +146,12 @@ jobs:
           php -l tools/oneclick-atomic-transaction-smoke.php
           php tools/oneclick-atomic-transaction-smoke.php
 
+      - name: Exercise genuine signed publisher V2 ZIP through disposable atomic worker
+        run: |
+          php -l application/app/Services/Updates/OneClickSignedFixtureBridgeV1.php
+          php -l tools/oneclick-signed-fixture-integration-smoke.php
+          php tools/oneclick-signed-fixture-integration-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
