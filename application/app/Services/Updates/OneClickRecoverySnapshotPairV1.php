@@ -142,6 +142,19 @@ final class OneClickRecoverySnapshotPairV1
             throw new RuntimeException('RECOVERY_SQL_BACKUP_NOT_VERIFIED');
         }
 
+        // Verify exact code-target coverage and SQL receipt binding through
+        // the existing independent read-only signed-plan acceptance service.
+        $review = OneClickOfflinePreparationV1::inspect(
+            $site, $codePath, $code['receipt_sha256'],
+            $dbPath, $sql['receipt_sha256'], hash('sha256', $dbName)
+        );
+        if (($review['signed_file_plan_verified'] ?? null) !== true
+            || ($review['code_backup_receipt_verified'] ?? null) !== true
+            || ($review['db_backup_receipt_verified'] ?? null) !== true
+            || ($review['installation_enabled'] ?? null) !== false) {
+            throw new RuntimeException('RECOVERY_PAIR_INDEPENDENT_RECEIPT_RECHECK_FAILED');
+        }
+
         // Persist only non-secret, SHA-bound references. The two snapshots
         // are NOT a coherent full-site/SQL recovery checkpoint until an
         // independent restore/consistency test proves that.
@@ -263,6 +276,17 @@ final class OneClickRecoverySnapshotPairV1
         if (!VerifiedUpdateBackupV2::verify($codeDir, $receipt['code_receipt_sha256'])
             || !PrivateDatabaseBackupV2::verify($dbDir, $receipt['db_receipt_sha256'])) {
             throw new RuntimeException('RECOVERY_PAIR_BACKUP_TAMPERED');
+        }
+        $review = OneClickOfflinePreparationV1::inspect(
+            $site, $codeDir, $receipt['code_receipt_sha256'],
+            $dbDir, $receipt['db_receipt_sha256'],
+            hash('sha256', $runtime['DB_DATABASE'])
+        );
+        if (($review['signed_file_plan_verified'] ?? null) !== true
+            || ($review['code_backup_receipt_verified'] ?? null) !== true
+            || ($review['db_backup_receipt_verified'] ?? null) !== true
+            || ($review['installation_enabled'] ?? null) !== false) {
+            throw new RuntimeException('RECOVERY_PAIR_INDEPENDENT_RECEIPT_RECHECK_FAILED');
         }
         return [
             'status' => 'PRIVATE_CODE_AND_SQL_SNAPSHOTS_VERIFIED_NOT_RESTORED',
