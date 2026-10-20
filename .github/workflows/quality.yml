@@ -134,6 +134,12 @@ jobs:
           php -l tools/oneclick-signed-change-preview-smoke.php
           php tools/oneclick-signed-change-preview-smoke.php
 
+      - name: Verify mandatory recovery snapshot preparation is root-only and not install authorization
+        run: |
+          php -l application/app/Services/Updates/OneClickRecoverySnapshotPairV1.php
+          php -l tools/oneclick-mandatory-recovery-pair-smoke.php
+          php tools/oneclick-mandatory-recovery-pair-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
