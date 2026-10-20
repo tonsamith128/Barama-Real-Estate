@@ -55,7 +55,7 @@ final class TrustedReleaseFeed
      * @param ?Closure(array<string,mixed>):array<string,mixed> $transport TEST ONLY; simulates HTTP reply {http_status,body}
      * @return array{status:string,entitlement:string,feed:string,version:string,checked_at:string}
      */
-    public static function check(string $installedVersion, array $license, array $runtime, ?Closure $transport = null): array
+    public static function check(string $installedVersion, array $license, array $runtime, ?Closure $transport = null, bool $includeSignedEnvelope = false): array
     {
         $ready = self::readiness();
         if (!$ready['configured'] || !$ready['publisher_key']
@@ -133,6 +133,8 @@ final class TrustedReleaseFeed
         // Publisher-signed digest is safe metadata, not an activation token.
         // Bind the exact private staged ZIP to the authenticated discovery result.
         $result['archive_sha256'] = $response['envelope']['manifest']['package_sha256'];
+        // Internal CLI downloader only. Existing callers receive no extra fields.
+        if ($includeSignedEnvelope) $result['signed_envelope'] = $response['envelope'];
         $result['status'] = 'available';
         $result['feed'] = 'Signed release verified';
         return $result;
