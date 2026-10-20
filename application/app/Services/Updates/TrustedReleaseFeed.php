@@ -255,7 +255,7 @@ final class TrustedReleaseFeed
 
     private static function settings(): array
     {
-        $path = APP_PATH . self::CONFIG_FILE;
+        $path = PublisherTrustPaths::feed();
         if (!self::safeFile($path, 4096)) throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED');
         try { $value = json_decode((string)file_get_contents($path), true, 8, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED'); }
@@ -271,7 +271,7 @@ final class TrustedReleaseFeed
     /** Publisher-format key catalog, independently pinned by the author; never fetched at runtime. */
     private static function trustedKeys(): array
     {
-        $path = APP_PATH . self::KEYS_FILE;
+        $path = PublisherTrustPaths::keys();
         if (!self::safeFile($path, 65536) || !extension_loaded('sodium')) return [];
         try { $value = json_decode((string)file_get_contents($path), true, 16, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { return []; }
@@ -294,8 +294,6 @@ final class TrustedReleaseFeed
 
     private static function safeFile(string $path, int $max): bool
     {
-        if (is_link($path) || !is_file($path) || !is_readable($path)) return false;
-        $st = @stat($path);
-        return is_array($st) && $st['size'] > 0 && $st['size'] <= $max && (($st['mode'] & 0022) === 0);
+        return PublisherTrustPaths::safeTrustFile($path, $max);
     }
 }
