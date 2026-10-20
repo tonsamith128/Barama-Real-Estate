@@ -114,6 +114,33 @@ final class SystemCenterController
         return Response::redirect(url('/dashboard/system/auto-updater'),303);
     }
 
+    /**
+     * Administrator + CSRF protected, read-only signed package change preview.
+     * A session summary is NEVER an update ticket or worker authorization.
+     */
+    public function previewStagedRelease(Request $request): Response
+    {
+        $now = time();
+        $last = (int) ($_SESSION['_barama_oneclick_plan_preview_last_v1'] ?? 0);
+        unset($_SESSION['_barama_oneclick_plan_preview_v1']);
+        $_SESSION['_barama_oneclick_plan_preview_flash_v1'] = 'Signed release plan unavailable or rejected.';
+        if ($last > 0 && $now - $last < 45) {
+            $_SESSION['_barama_oneclick_plan_preview_flash_v1'] = 'Wait 45 seconds before repeating the signed plan preview.';
+            return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+        }
+        $_SESSION['_barama_oneclick_plan_preview_last_v1'] = $now;
+        try {
+            $preview = \Barama\Services\Updates\OneClickSignedPlanPreviewV1::inspect();
+            $preview['verified_at'] = $now;
+            $preview['site_version'] = (string) APP_VERSION;
+            $_SESSION['_barama_oneclick_plan_preview_v1'] = $preview;
+            $_SESSION['_barama_oneclick_plan_preview_flash_v1'] = 'Signed release changes verified for review only; no files were installed.';
+        } catch (Throwable) {
+            // Do not expose filesystem paths, ZIP contents, key data, or errors.
+        }
+        return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+    }
+
     /** Owner-approved user interaction: remote request only on admin+CSRF POST. */
     public function checkUpdateEntitlement(Request $request): Response
     {
@@ -489,6 +516,25 @@ final class SystemCenterController
             $currentArchiveDigest, $currentTrustedKeysDigest
         );
 
+        // Never show a stale signed-plan summary after archive/key changes.
+        // The signed inspection has a separate 10-minute, archive+key-bound gate.
+        $signedPlanPreview = null;
+        $signedPlanFlash = $_SESSION['_barama_oneclick_plan_preview_flash_v1'] ?? '';
+        unset($_SESSION['_barama_oneclick_plan_preview_flash_v1']);
+        if (!is_string($signedPlanFlash) || !in_array($signedPlanFlash, [
+            'Signed release plan unavailable or rejected.',
+            'Wait 45 seconds before repeating the signed plan preview.',
+            'Signed release changes verified for review only; no files were installed.',
+        ], true)) $signedPlanFlash = '';
+        if ($section === 'auto-updater'
+            && ($releaseCheck['verified'] ?? false) === true
+            && is_string($currentArchiveDigest)) {
+            $signedPlanPreview = \Barama\Services\Updates\OneClickSignedPlanPreviewV1::display(
+                $_SESSION['_barama_oneclick_plan_preview_v1'] ?? null, $now,
+                $currentArchiveDigest
+            );
+        }
+
         // Read-only progress model. It cannot authorize an update, and none
         // of these browser/session observations is trusted by a root worker.
         $oneClickWorkflow = ['install_enabled' => false, 'status' => 'Unavailable',
@@ -553,6 +599,8 @@ final class SystemCenterController
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
+            'systemSignedPlanPreview' => $signedPlanPreview,
+            'systemSignedPlanFlash' => $signedPlanFlash,
             'systemOneClickWorkflow' => $oneClickWorkflow,
             'systemLicenseBinding' => [
                 'current_domain' => \Barama\Services\Updates\OneClickInstalledDomainV1::fromRuntimeConfig(Installation::runtimeConfig()),
