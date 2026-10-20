@@ -152,6 +152,13 @@ jobs:
           php -l tools/oneclick-signed-fixture-integration-smoke.php
           php tools/oneclick-signed-fixture-integration-smoke.php
 
+      - name: Require independent single-use owner signature before isolated signed install
+        run: |
+          php -l application/app/Services/Updates/OneClickOwnerConsentFixtureV1.php
+          php -l application/app/Services/Updates/OneClickAuthorizedFixtureInstallV1.php
+          php -l tools/oneclick-owner-consent-and-workflow-smoke.php
+          php tools/oneclick-owner-consent-and-workflow-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
