@@ -307,8 +307,15 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
           <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
           <button class="bsys-button" type="submit" <?= !empty($systemReleaseReadiness['inspect_enabled']) ? '' : 'disabled title="Stage a signed release and provision the trusted public key first"' ?>>Inspect signed staged release</button>
         </form>
-        <?php if (($systemReleaseInspection['status']??'')==='Signed package verified (not installed)'): ?><span class="bsys-state bsys-state--good" role="status">Signed package verified · not installed</span><?php endif; ?>
-        <span class="bsys-note">Staged inspection only · never installs a package</span>
+        <?php if (($systemReleaseInspection['verified'] ?? false) === true): ?>
+          <span class="bsys-state bsys-state--good" role="status">Verified snapshot · not installed</span>
+          <span class="bsys-note">v<?= e((string) $systemReleaseInspection['version']) ?> · <?= e((string) $systemReleaseInspection['channel']) ?> · <?= (int) $systemReleaseInspection['files'] ?> files · SHA-256 <?= e(substr((string) $systemReleaseInspection['archive_sha256'], 0, 16)) ?>… · checked <?= e((string) $systemReleaseInspection['checked_at']) ?></span>
+        <?php elseif (($systemReleaseInspection['status'] ?? '') === 'Reinspection required'): ?>
+          <span class="bsys-state bsys-state--warn" role="status">Inspection expired or package changed · inspect again</span>
+        <?php elseif (($systemReleaseInspection['status'] ?? '') === 'Inspection unavailable or rejected'): ?>
+          <span class="bsys-state bsys-state--warn" role="status">Inspection rejected · no update installed</span>
+        <?php endif; ?>
+        <span class="bsys-note">Historical inspection only · verification is not installation authorization</span>
       </div>
     </section>
 
