@@ -285,6 +285,25 @@ final class OneClickAtomicTransactionV1
         }
     }
 
+    /**
+     * Fail closed BEFORE signed-plan baseline inspection: a partially written
+     * file may no longer match its original digest. The caller must report the
+     * pending journal, not misdiagnose the signed release as untrusted.
+     *
+     * This is a fixture-only guard. apply() rechecks under its own lock,
+     * so this early check is never a substitute for the atomic preflight.
+     */
+    public static function assertNoPendingFixture(string $site, string $vault): void
+    {
+        [, $vault] = self::roots($site, $vault);
+        $lock = self::lock($vault);
+        try {
+            self::noPending($vault);
+        } finally {
+            self::unlock($lock);
+        }
+    }
+
     /** Prevent an interrupted transaction from being bypassed by a new update. */
     private static function noPending(string $vault): void
     {
