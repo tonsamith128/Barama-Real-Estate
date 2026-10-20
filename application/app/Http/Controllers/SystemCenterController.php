@@ -519,6 +519,7 @@ final class SystemCenterController
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
             'systemOneClickFlash' => $_SESSION['_barama_oneclick_request_flash'] ?? '',
+            'systemOneClickWorkerReady' => \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady(),
             'systemOneClickPending' => (static function (): bool {
                 try {
                     return \Barama\Services\Updates\OneClickUpdateQueueV1::pending((string) BASE_PATH);
