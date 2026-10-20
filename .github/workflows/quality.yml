@@ -110,6 +110,14 @@ jobs:
           php -l tools/oneclick-recovery-journal-smoke.php
           php tools/oneclick-recovery-journal-smoke.php
 
+      - name: Reject stale signed-inspection snapshots before displaying verified release
+        run: |
+          php -l application/app/Services/Updates/OneClickInspectionFreshnessV1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/resources/views/workspace/system-center.php
+          php -l tools/oneclick-signed-inspection-freshness-smoke.php
+          php tools/oneclick-signed-inspection-freshness-smoke.php
+
       - name: Verify staging-only private database backup fixture
         run: |
           php -l application/app/Services/Updates/PrivateDatabaseBackupV2.php
