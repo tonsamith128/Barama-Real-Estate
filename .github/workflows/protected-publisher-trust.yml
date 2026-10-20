@@ -11,6 +11,8 @@ on:
       - 'application/app/Services/Updates/PublisherTrustBootstrapV1.php'
       - 'application/app/Services/Updates/SignedReleaseInspector.php'
       - 'tests/security/PublisherTrustPathsTest.php'
+      - 'application/app/Services/PublisherLicenseStatus.php'
+      - 'tools/publisher-license-binding-alignment-smoke.php'
       - '.github/workflows/protected-publisher-trust.yml'
   pull_request:
     paths:
@@ -20,6 +22,8 @@ on:
       - 'application/app/Services/Updates/PublisherTrustBootstrapV1.php'
       - 'application/app/Services/Updates/SignedReleaseInspector.php'
       - 'tests/security/PublisherTrustPathsTest.php'
+      - 'application/app/Services/PublisherLicenseStatus.php'
+      - 'tools/publisher-license-binding-alignment-smoke.php'
       - '.github/workflows/protected-publisher-trust.yml'
   workflow_dispatch:
 
@@ -42,8 +46,11 @@ jobs:
             application/app/Services/Updates/PublisherPrivateDeliveryV1.php \
             application/app/Services/Updates/PublisherTrustBootstrapV1.php \
             application/app/Services/Updates/SignedReleaseInspector.php \
-            tests/security/PublisherTrustPathsTest.php
+            tests/security/PublisherTrustPathsTest.php \
+            application/app/Services/PublisherLicenseStatus.php \
+            tools/publisher-license-binding-alignment-smoke.php
           do
             php -l "$file"
           done
           php tests/security/PublisherTrustPathsTest.php
+          php tools/publisher-license-binding-alignment-smoke.php
