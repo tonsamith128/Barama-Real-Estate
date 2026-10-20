@@ -35,6 +35,7 @@ foreach ([
     'application/app/Services/Updates/OneClickDashboardGateV1.php',
     'application/app/Services/Updates/OneClickInspectionFreshnessV1.php',
     'application/app/Services/Updates/OneClickInstalledDomainV1.php',
+    'application/app/Services/Updates/OneClickSignedPlanPreviewV1.php',
 ] as $required) {
     if ($zip->locateName($required) === false) {
         throw new RuntimeException(
@@ -56,11 +57,18 @@ $contracts = [
         'data-oneclick-install-disabled',
         'One-click Update workflow',
         'Inspection expired or package changed',
+        'Preview signed changes',
     ],
     'application/app/Http/Controllers/SystemCenterController.php' => [
         'OneClickDashboardGateV1::assess',
         'OneClickInspectionFreshnessV1::display',
         'OneClickInstalledDomainV1::fromRuntimeConfig',
+        'OneClickSignedPlanPreviewV1::inspect',
+        'OneClickSignedPlanPreviewV1::display',
+    ],
+    'application/routes/web.php' => [
+        '/dashboard/system/auto-updater/preview-signed-changes',
+        'new CsrfMiddleware()',
     ],
     'application/resources/views/updater/index.php' => [
         'Return to Update Center',
