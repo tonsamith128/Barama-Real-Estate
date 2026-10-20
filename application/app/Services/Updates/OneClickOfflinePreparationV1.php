@@ -220,6 +220,9 @@ final class OneClickOfflinePreparationV1
     private static function readReceipt(string $directory): array
     {
         $file = $directory . '/receipt.json';
+        // Never trust PHP's cached stat results for a security-sensitive
+        // receipt: chmod or replacement in this same process must be seen.
+        clearstatcache(true, $file);
         if (is_link($file) || !is_file($file) || filesize($file) > 1048576
             || (fileperms($file) & 0077) !== 0) {
             throw new RuntimeException('ONECLICK_RECEIPT_UNTRUSTED');
