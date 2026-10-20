@@ -555,7 +555,7 @@ final class SystemCenterController
             'systemReleaseInspection' => $releaseCheck,
             'systemOneClickWorkflow' => $oneClickWorkflow,
             'systemLicenseBinding' => [
-                'current_domain' => 'baramarealestate.tonsamith.com',
+                'current_domain' => \Barama\Services\Updates\OneClickInstalledDomainV1::fromRuntimeConfig(Installation::runtimeConfig()),
                 'recorded_domain' => (static function (mixed $value): string {
                     if (!is_string($value) || strlen($value) > 255) return 'Not recorded';
                     $domain = \Barama\Services\LicenseManagerClient::canonicalDomain($value);
