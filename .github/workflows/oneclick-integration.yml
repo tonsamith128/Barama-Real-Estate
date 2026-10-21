@@ -19,6 +19,9 @@ jobs:
           php -l application/app/Services/Updates/OneClickUpdateQueueV1.php
           php -l application/app/Services/Updates/TrustedReleaseFeed.php
           php -l application/bin/oneclick-unprivileged-delivery.php
+          php -l application/bin/oneclick-production-delivery.php
+          php -l application/app/Services/Updates/PublisherTrustPaths.php
+          php -l tests/security/OneClickProductionBoundaryTest.php
           php -l application/app/Http/Controllers/SystemCenterController.php
           php -l application/routes/web.php
           php -l application/resources/views/workspace/system-center.php
@@ -122,4 +125,29 @@ jobs:
           assert 'SITE_IDENTITY_CHANGED' in source
           assert not any(s in source for s in ('systemctl', 'subprocess', 'sudo', 'ssh'))
           print('PORTABLE_SANDBOX_PROVISIONER=PASS_NON_EXECUTABLE')
+          PY
+
+      - name: Exact production trust and independent readiness contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          php tests/security/OneClickProductionBoundaryTest.php
+          python3 - <<'PY'
+          from pathlib import Path
+          queue=Path('application/app/Services/Updates/OneClickUpdateQueueV1.php').read_text()
+          trust=Path('application/app/Services/Updates/PublisherTrustPaths.php').read_text()
+          downloader=Path('application/bin/oneclick-production-delivery.php').read_text()
+          assert "private const SITE='/www/wwwroot/baramastaging.tonsamith.com'" in queue
+          assert "private const PRODUCTION_SITE='/www/wwwroot/baramarealestate.tonsamith.com'" in queue
+          assert "'id'=>$id,'site'=>self::scope($site)" in queue
+          assert "self::scope(BASE_PATH)" in queue
+          assert "PRODUCTION_ONLY" in queue and "STAGING_ONLY" in queue
+          assert "'authorized_to_install'=>false" in queue
+          assert "private const PRODUCTION_ROOT = '/etc/barama/production/publisher-trust'" in trust
+          assert "self::isProtectedInstallation()" in trust
+          assert "$root = '/www/wwwroot/baramarealestate.tonsamith.com'" in downloader
+          assert "$domain !== 'baramarealestate.tonsamith.com'" in downloader
+          assert "posix_geteuid() === 0" in downloader
+          assert "CURLOPT_SSL_VERIFYPEER => true" in downloader
+          print('PRODUCTION_SOURCE_BOUNDARY=PASS_INSTALL_DISABLED_UNTIL_TRUST_READY')
           PY
