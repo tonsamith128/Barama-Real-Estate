@@ -1,4 +1,11 @@
 <?php
+/* BARAMA_AUTO_UPDATER_UNIFIED_VIEW_V100: Auto Updater only; other System pages retain original code. */
+if ((string)($systemSection ?? '') === 'auto-updater') {
+    require __DIR__ . '/auto-updater-unified-v100.php';
+    return;
+}
+?>
+<?php
 /** Scoped admin System Center view. Values are supplied by read-only controller. */
 $systemSection = (string) ($systemSection ?? 'about');
 $systemTitle = (string) ($systemTitle ?? 'System');
