@@ -283,6 +283,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
           data-oneclick-endpoint="<?= e(url('/dashboard/system/auto-updater/status')) ?>">
           Update job status: <strong data-oneclick-state><?= e(str_replace('_',' ',(string)($systemOneClickStatus['state']??'not_started'))) ?></strong>
           <span data-oneclick-worker><?= empty($systemOneClickWorkerReady) ? ' · Trusted worker offline' : ' · Trusted worker online' ?></span>
+          <p class="bsys-note" data-oneclick-stage-message>Waiting for trusted status refresh.</p>
         </div>
         <p class="bsys-note">Submitting a request does not mean installation succeeded. A separate trusted worker must confirm completion.</p>
       </div>
@@ -344,4 +345,4 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
   <?php if ($systemSection !== 'auto-updater'): ?><aside class="bsys-readonly" role="note">Read-only administrative overview. License and support fields are displayed from existing local records when available; no private credentials are shown. No update, migration, outbound email or payment action is triggered by these pages.</aside><?php endif; ?>
 </section>
 
-<?php if ($systemSection === 'auto-updater'): ?><script defer src="<?= e(asset('js/barama-publisher-license-ux-v112.js') . '?v=113') ?>"></script><script defer src="<?= e(asset('js/barama-auto-updater-premium-v120.js') . '?v=121') ?>"></script><script defer src="<?= e(asset('js/barama-oneclick-status-v100.js') . '?v=101') ?>"></script><?php endif; ?>
+<?php if ($systemSection === 'auto-updater'): ?><script defer src="<?= e(asset('js/barama-publisher-license-ux-v112.js') . '?v=113') ?>"></script><script defer src="<?= e(asset('js/barama-auto-updater-premium-v120.js') . '?v=121') ?>"></script><script defer src="<?= e(asset('js/barama-oneclick-status-v100.js') . '?v=102') ?>"></script><?php endif; ?>
