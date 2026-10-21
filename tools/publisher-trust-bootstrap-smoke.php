@@ -53,6 +53,8 @@ try {
         $binDir.'/publisher-trust-bootstrap.php');
     copy(dirname(__DIR__).'/application/app/Services/Updates/PublisherTrustBootstrapV1.php',
         $svcDir.'/PublisherTrustBootstrapV1.php');
+    copy(dirname(__DIR__).'/application/app/Services/Updates/PublisherTrustPaths.php',
+        $svcDir.'/PublisherTrustPaths.php');
     $pipes=[];
     $process=proc_open([PHP_BINARY,$binDir.'/publisher-trust-bootstrap.php','--check'],
         [1=>['pipe','w'],2=>['pipe','w']],$pipes,$site);

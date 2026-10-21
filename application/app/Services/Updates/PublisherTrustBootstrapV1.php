@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Barama\Services\Updates;
 
+// Also supports isolated CLI/CI smoke tests that load this service directly.
+require_once __DIR__ . '/PublisherTrustPaths.php';
+
 use RuntimeException;
 
 /**
@@ -23,8 +26,8 @@ final class PublisherTrustBootstrapV1
     public static function check(string $site): array
     {
         self::guard($site);
-        $keys = APP_PATH . '/config/update-publisher-v2-keys.json';
-        $feed = APP_PATH . '/config/update-feed-v2.json';
+        $keys = PublisherTrustPaths::keys();
+        $feed = PublisherTrustPaths::feed();
         $status = [
             'status'=>'PUBLISHER_TRUST_NOT_PROVISIONED',
             'missing'=>[],
@@ -95,7 +98,10 @@ final class PublisherTrustBootstrapV1
         if ($approval !== self::APPROVAL) {
             throw new RuntimeException('PUBLISHER_TRUST_EXPLICIT_OWNER_APPROVAL_REQUIRED');
         }
-        $directory=APP_PATH . '/config';
+        $directory=PublisherTrustPaths::directory();
+        if (PublisherTrustPaths::isProtectedStaging()) {
+            PublisherTrustPaths::assertProtectedDirectory();
+        }
         if (!is_dir($directory) || is_link($directory)
             || realpath($directory)!==$directory || is_link(APP_PATH)) {
             throw new RuntimeException('PUBLISHER_TRUST_CONFIG_DIRECTORY_UNTRUSTED');
@@ -195,8 +201,7 @@ final class PublisherTrustBootstrapV1
     {
         if (is_link($path) || !is_file($path) || !is_readable($path))return false;
         $stat=@stat($path);
-        return is_array($stat) && $stat['size']>0 && $stat['size']<=$max
-            && (($stat['mode'] & 0022)===0);
+        return PublisherTrustPaths::safeTrustFile($path, $max);
     }
 
     private static function noSymlinkAncestors(string $path):void

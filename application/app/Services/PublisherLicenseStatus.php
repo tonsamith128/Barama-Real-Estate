@@ -21,9 +21,17 @@ final class PublisherLicenseStatus
             || !is_string($installation) || preg_match('/^[a-f0-9]{32}$/D', $installation) !== 1) {
             return ['state' => 'License not configured'];
         }
-        $domain = LicenseManagerClient::canonicalDomain((string) ($runtime['APP_URL'] ?? ''));
+        // Match the canonical installed domain, not the author's production demo
+        // hostname. Staging and customer installations use their own bindings.
+        $url = parse_url((string) ($runtime['APP_URL'] ?? ''));
+        if (!is_array($url) || ($url['scheme'] ?? null) !== 'https'
+            || !is_string($url['host'] ?? null) || $url['host'] === ''
+            || isset($url['user']) || isset($url['pass']) || isset($url['port'])) {
+            return ['state' => 'License binding mismatch'];
+        }
+        $domain = LicenseManagerClient::canonicalDomain($url['host']);
         $storedDomain = LicenseManagerClient::canonicalDomain((string) ($local['domain'] ?? ''));
-        if ($domain !== 'baramarealestate.tonsamith.com' || $storedDomain !== $domain
+        if ($domain === '' || !hash_equals($domain, $storedDomain)
             || ($local['product_slug'] ?? null) !== 'barama-real-estate') {
             return ['state' => 'License binding mismatch'];
         }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Barama\Services\Updates;
 
+// Also supports isolated CLI/CI smoke tests that load this service directly.
+require_once __DIR__ . '/PublisherTrustPaths.php';
+
 use Barama\Core\Installation;
 use Barama\Services\LicenseManagerClient;
 use RuntimeException;
@@ -29,12 +32,16 @@ final class PublisherPrivateDeliveryV1
             'version' => $site . '/VERSION',
             'installation' => Installation::installationIdPath(),
             'license' => Installation::licensePath(),
-            'publisher_feed' => APP_PATH . '/config/update-feed-v2.json',
-            'trusted_keys' => APP_PATH . '/config/update-publisher-v2-keys.json',
+            'publisher_feed' => PublisherTrustPaths::feed(),
+            'trusted_keys' => PublisherTrustPaths::keys(),
         ];
         $missing = [];
         foreach ($paths as $name => $path) {
-            if (is_link($path) || !is_file($path) || !is_readable($path)) $missing[] = $name;
+            if (in_array($name, ['publisher_feed', 'trusted_keys'], true)
+                ? !PublisherTrustPaths::safeTrustFile($path, $name === 'publisher_feed' ? 4096 : 65536)
+                : (is_link($path) || !is_file($path) || !is_readable($path))) {
+                $missing[] = $name;
+            }
         }
         $trust = TrustedReleaseFeed::readiness();
         return [
@@ -214,9 +221,8 @@ final class PublisherPrivateDeliveryV1
 
     private static function channel(): string
     {
-        $path = APP_PATH . '/config/update-feed-v2.json';
-        if (is_link($path) || !is_file($path) || !is_readable($path)
-            || filesize($path) > 4096) {
+        $path = PublisherTrustPaths::feed();
+        if (!PublisherTrustPaths::safeTrustFile($path, 4096)) {
             throw new RuntimeException('PUBLISHER_DELIVERY_CHANNEL_UNAVAILABLE');
         }
         try {
