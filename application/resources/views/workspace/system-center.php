@@ -4,6 +4,10 @@ if ((string)($systemSection ?? '') === 'auto-updater') {
     require __DIR__ . '/auto-updater-unified-v100.php';
     return;
 }
+if ((string)($systemSection ?? '') === 'updates') {
+    require __DIR__ . '/system-updates-moved-v101.php';
+    return;
+}
 ?>
 <?php
 /** Scoped admin System Center view. Values are supplied by read-only controller. */
