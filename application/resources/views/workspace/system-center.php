@@ -281,7 +281,7 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
           data-oneclick-initial-pending="<?= !empty($systemOneClickPending) ? '1' : '0' ?>"
           data-oneclick-initial-state="<?= e((string)($systemOneClickStatus['state'] ?? 'not_started')) ?>"
           data-oneclick-endpoint="<?= e(url('/dashboard/system/auto-updater/status')) ?>">
-          Installation: <strong data-oneclick-state><?= e(str_replace('_',' ',(string)($systemOneClickStatus['state']??'not_started'))) ?></strong>
+          Update job status: <strong data-oneclick-state><?= e(str_replace('_',' ',(string)($systemOneClickStatus['state']??'not_started'))) ?></strong>
           <span data-oneclick-worker><?= empty($systemOneClickWorkerReady) ? ' · Trusted worker offline' : ' · Trusted worker online' ?></span>
         </div>
         <p class="bsys-note">Submitting a request does not mean installation succeeded. A separate trusted worker must confirm completion.</p>
