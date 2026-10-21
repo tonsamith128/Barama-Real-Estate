@@ -446,6 +446,18 @@ final class SystemCenterController
             'Inspection unavailable or rejected','Please wait before checking again'
         ],true)) $releaseCheck=['status'=>'Not inspected','checked_at'=>'Never'];
 
+        // CUSTOMER_DOMAIN_DISPLAY_V101: only installer-owned APP_URL and saved license
+        // binding are compared. Never use untrusted HTTP_HOST to establish identity.
+        $domainDisplay = static function (mixed $value): string {
+            if (!is_string($value) || trim($value) === '' || strlen($value) > 2048) {
+                return 'Not recorded';
+            }
+            $domain = \Barama\Services\LicenseManagerClient::canonicalDomain($value);
+            if (preg_match('/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $domain) !== 1) {
+                return 'Not recorded';
+            }
+            return $domain;
+        };
         $html = View::render('workspace/system-center', [
             'pageTitle' => $titles[$section] . ' · Admin Control Center',
             'metaRobots' => 'noindex,nofollow,noarchive',
@@ -485,12 +497,8 @@ final class SystemCenterController
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
             'systemLicenseBinding' => [
-                'current_domain' => 'baramarealestate.tonsamith.com',
-                'recorded_domain' => (static function (mixed $value): string {
-                    if (!is_string($value) || strlen($value) > 255) return 'Not recorded';
-                    $domain = \Barama\Services\LicenseManagerClient::canonicalDomain($value);
-                    return preg_match('/^(?:[a-z0-9-]+\.)+[a-z]{2,24}$/D', $domain) ? $domain : 'Not recorded';
-                })($license['domain'] ?? null),
+                'current_domain' => $domainDisplay(Installation::runtimeConfig()['APP_URL'] ?? null),
+                'recorded_domain' => $domainDisplay($license['domain'] ?? null),
                 'recorded_status' => $safeStatuses[$recordedStatus] ?? 'Not recorded',
             ],
             'systemAutoUpdater' => [
