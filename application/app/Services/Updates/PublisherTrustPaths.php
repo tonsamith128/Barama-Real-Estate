@@ -17,6 +17,8 @@ final class PublisherTrustPaths
 {
     private const STAGING = '/www/wwwroot/baramastaging.tonsamith.com';
     private const ROOT = '/etc/barama/staging/publisher-trust';
+    private const PRODUCTION = '/www/wwwroot/baramarealestate.tonsamith.com';
+    private const PRODUCTION_ROOT = '/etc/barama/production/publisher-trust';
     private const KEY_NAME = 'update-publisher-v2-keys.json';
     private const FEED_NAME = 'update-feed-v2.json';
 
@@ -25,11 +27,22 @@ final class PublisherTrustPaths
         return defined('BASE_PATH') && BASE_PATH === self::STAGING;
     }
 
+    public static function isProtectedProduction(): bool
+    {
+        return defined('BASE_PATH') && BASE_PATH === self::PRODUCTION;
+    }
+
+    public static function isProtectedInstallation(): bool
+    {
+        return self::isProtectedStaging() || self::isProtectedProduction();
+    }
+
     public static function directory(): string
     {
-        return self::isProtectedStaging()
-            ? self::ROOT
-            : APP_PATH . '/config';
+        if (self::isProtectedStaging()) return self::ROOT;
+        if (self::isProtectedProduction()) return self::PRODUCTION_ROOT;
+        // Preserve existing handling for unrelated/customer installations.
+        return APP_PATH . '/config';
     }
 
     public static function keys(): string
@@ -44,8 +57,8 @@ final class PublisherTrustPaths
 
     public static function protectedDirectoryReady(): bool
     {
-        if (!self::isProtectedStaging()) return false;
-        return self::rootControlledDirectory(self::ROOT);
+        if (!self::isProtectedInstallation()) return false;
+        return self::rootControlledDirectory(self::directory());
     }
 
     /** Check the entire fixed absolute directory chain; never follow a symlink. */
@@ -61,7 +74,8 @@ final class PublisherTrustPaths
         // The independent root-only provisioner has already verified the full
         // directory chain. At runtime, check the exact, unsymlinked, root-owned
         // leaf and its files without exposing all of /etc to the web process.
-        if ($directory === self::ROOT && self::isProtectedStaging()
+        if (($directory === self::ROOT && self::isProtectedStaging()
+            || $directory === self::PRODUCTION_ROOT && self::isProtectedProduction())
             && (string) ini_get('open_basedir') !== '') {
             clearstatcache(true, $directory);
             if (is_link($directory) || !is_dir($directory)
@@ -91,22 +105,22 @@ final class PublisherTrustPaths
     public static function safeTrustFile(string $path, int $max): bool
     {
         if ($max < 1 || $max > 65536) return false;
-        if (self::isProtectedStaging()) {
+        if (self::isProtectedInstallation()) {
             if (!in_array($path, [self::keys(), self::feed()], true)
-                || !self::rootControlledDirectory(self::ROOT)) return false;
+                || !self::rootControlledDirectory(self::directory())) return false;
         }
         clearstatcache(true, $path);
         if (is_link($path) || !is_file($path) || !is_readable($path)) return false;
         $st = @lstat($path);
         if (!is_array($st) || $st['size'] < 1 || $st['size'] > $max
             || (($st['mode'] & 0022) !== 0)) return false;
-        if (self::isProtectedStaging() && $st['uid'] !== 0) return false;
+        if (self::isProtectedInstallation() && $st['uid'] !== 0) return false;
         return true;
     }
 
     public static function assertProtectedDirectory(): void
     {
-        if (!self::isProtectedStaging() || !self::protectedDirectoryReady()) {
+        if (!self::isProtectedInstallation() || !self::protectedDirectoryReady()) {
             throw new RuntimeException('PUBLISHER_TRUST_PROTECTED_DIRECTORY_UNAVAILABLE');
         }
     }
