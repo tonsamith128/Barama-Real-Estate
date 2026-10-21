@@ -38,6 +38,12 @@ jobs:
           assert "hasRole('administrator')" in ctl and "hasRole('super-administrator')" in ctl
           assert "TrustedReleaseFeed::check" in ctl
           assert "publisher_authenticated_v2" in queue
+          # Regression: literal escaped comment separators must not comment out
+          # the queue path assignment while still passing PHP syntax.
+          assert r'worker.\n        // A web-user-staged ZIP' not in queue
+          assert r'update.\n        $dir=' not in queue
+          assert queue.count('$dir=self::directory($site,true);') == 1
+          assert any(l.strip()=='$dir=self::directory($site,true);' for l in queue.splitlines())
           assert "StagingPublisherCandidateV1::inspect" not in queue
           downloader=Path('application/bin/oneclick-unprivileged-delivery.php').read_text()
           assert "posix_geteuid() === 0" in downloader
