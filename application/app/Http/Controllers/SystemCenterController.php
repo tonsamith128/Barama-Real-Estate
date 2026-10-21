@@ -194,7 +194,10 @@ final class SystemCenterController
             return Response::html('Forbidden',403);
         }
         try {
-            $status=\Barama\Services\Updates\OneClickUpdateQueueV1::status((string)BASE_PATH);
+            $jobId = $_SESSION['_barama_oneclick_job_id'] ?? null;
+            $status=\Barama\Services\Updates\OneClickUpdateQueueV1::status(
+                (string)BASE_PATH, is_string($jobId) ? $jobId : null
+            );
             $pending=\Barama\Services\Updates\OneClickUpdateQueueV1::pending((string)BASE_PATH);
             $ready=\Barama\Services\Updates\OneClickUpdateQueueV1::workerReady();
         } catch (\Throwable) {
@@ -548,7 +551,12 @@ final class SystemCenterController
             'systemOneClickFlash' => is_string($oneClickFlash) ? $oneClickFlash : '',
             'systemOneClickWorkerReady' => \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady(),
             'systemOneClickStatus' => (static function (): array {
-                try { return \Barama\Services\Updates\OneClickUpdateQueueV1::status((string) BASE_PATH); }
+                try {
+                    $jobId = $_SESSION['_barama_oneclick_job_id'] ?? null;
+                    return \Barama\Services\Updates\OneClickUpdateQueueV1::status(
+                        (string) BASE_PATH, is_string($jobId) ? $jobId : null
+                    );
+                }
                 catch (\Throwable) { return ['state'=>'unavailable','updated_at'=>null]; }
             })(),
             'systemOneClickPending' => (static function (): bool {
