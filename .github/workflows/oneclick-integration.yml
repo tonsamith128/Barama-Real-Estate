@@ -105,3 +105,21 @@ jobs:
           assert "$root = '/www/wwwroot/baramastaging.tonsamith.com'" in delivery
           print('CUSTOMER_PORTABLE_PROFILE=FAIL_CLOSED_CANDIDATE_ONLY')
           PY
+
+      - name: Sandbox provisioning simulation (49 tests, no actual worker)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -p test_portable_provisioning.py -v
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('tools/oneclick/portable_provisioning.py').read_text()
+          assert 'Not a production provisioner' in source
+          assert 'PROFILE_ALREADY_PROVISIONED' in source
+          assert "'update_enabled':False" in source
+          assert "'worker_executable_installed':False" in source
+          assert 'NOT_A_DISPOSABLE_FIXTURE' in source
+          assert 'SITE_IDENTITY_CHANGED' in source
+          assert not any(s in source for s in ('systemctl', 'subprocess', 'sudo', 'ssh'))
+          print('PORTABLE_SANDBOX_PROVISIONER=PASS_NON_EXECUTABLE')
+          PY
