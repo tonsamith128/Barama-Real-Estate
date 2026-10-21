@@ -56,6 +56,10 @@ jobs:
           assert "INSTALL_VERSION" not in downloader
           assert "protectedSignal(" in queue and "PublisherTrustPaths::protectedDirectoryReady()" in queue
           assert "authorized_to_install'=>false" in queue
+          assert "hash_equals($jobId, $r['job_id'])" in queue
+          assert "status(string $site, ?string $jobId = null)" in queue
+          assert ctl.count("$_SESSION['_barama_oneclick_job_id'] ?? null") == 2
+          assert ctl.count("is_string($jobId) ? $jobId : null") == 2
           assert "empty($systemOneClickWorkerReady)" in html
           assert "One-click Update" in html
 
