@@ -1,0 +1,44 @@
+name: One-click dashboard handoff contract
+
+on:
+  pull_request:
+    paths:
+      - 'application/app/Services/Updates/DashboardInstallHandoffV1.php'
+      - 'tools/dashboard-install-handoff-smoke.php'
+      - 'application/app/Services/Updates/DashboardUpdateRequestV1.php'
+      - 'tools/oneclick-inbox-review.py'
+      - 'tools/oneclick-inbox-review-smoke.py'
+      - 'tools/oneclick-inbox-provision.py'
+      - '.github/workflows/dashboard-install-handoff-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'application/app/Services/Updates/DashboardInstallHandoffV1.php'
+      - 'tools/dashboard-install-handoff-smoke.php'
+      - '.github/workflows/dashboard-install-handoff-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review-only-handoff:
+    name: Read-only contract and negative cases
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PHP syntax and fail-closed staging handoff
+        run: |
+          php -l application/app/Services/Updates/DashboardInstallHandoffV1.php
+          php -l application/app/Services/Updates/DashboardUpdateRequestV1.php
+          php -l tools/dashboard-install-handoff-smoke.php
+          php tools/dashboard-install-handoff-smoke.php
+          python3 -B tools/oneclick-inbox-review-smoke.py
+          python3 -B tools/oneclick-inbox-provision.py --help >/dev/null
+          python3 -B - <<'PY'
+          import ast
+          from pathlib import Path
+          for name in ['tools/oneclick-inbox-review.py', 'tools/oneclick-inbox-review-smoke.py', 'tools/oneclick-inbox-provision.py']:
+              ast.parse(Path(name).read_text(encoding='utf-8'))
+          PY
