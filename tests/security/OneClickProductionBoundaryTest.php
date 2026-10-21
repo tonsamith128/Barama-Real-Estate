@@ -21,9 +21,14 @@ expect(T::feed()==='/etc/barama/production/publisher-trust/update-feed-v2.json',
 // request may succeed merely because the production domain string matches.
 expect(!T::protectedDirectoryReady(),'missing_production_trust_denied');
 expect(!Q::workerReady(),'missing_worker_denied');
-expect(Q::status(BASE_PATH,'bad-job')['state']==='not_started','malformed_job_denied');
+try {
+    Q::status(BASE_PATH,'bad-job');
+    expect(false,'cli_status_rejected');
+} catch (RuntimeException $e) {
+    expect($e->getMessage()==='ONECLICK_STAGING_WEB_ONLY','cli_guard_denied');
+}
 $queue=file_get_contents(dirname(__DIR__,2).'/application/app/Services/Updates/OneClickUpdateQueueV1.php');
-expect(str_contains($queue,"if ($site===self::SITE) return 'STAGING_ONLY';"),'staging_scope_preserved');
-expect(str_contains($queue,"if ($site===self::PRODUCTION_SITE) return 'PRODUCTION_ONLY';"),'prod_scope_pinned');
+expect(str_contains($queue,'if ($site===self::SITE) return \'STAGING_ONLY\';'),'staging_scope_preserved');
+expect(str_contains($queue,'if ($site===self::PRODUCTION_SITE) return \'PRODUCTION_ONLY\';'),'prod_scope_pinned');
 expect(str_contains($queue,"'authorized_to_install'=>false"),'queue_does_not_authorize_installation');
 echo "PRODUCTION_BOUNDARY_CI=PASS_FAIL_CLOSED\n";
