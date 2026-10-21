@@ -86,3 +86,22 @@ jobs:
           assert "?v=102" in view
           print('STAGING_WORKER_BOUNDARY=STILL_FAIL_CLOSED_FOR_CUSTOMERS')
           PY
+
+      - name: Portable worker profile contract (candidate-only, no installation)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -p test_portable_profile.py -v
+          python3 - <<'PY'
+          from pathlib import Path
+          profile=Path('tools/oneclick/portable_profile.py').read_text()
+          queue=Path('application/app/Services/Updates/OneClickUpdateQueueV1.php').read_text()
+          delivery=Path('application/bin/oneclick-unprivileged-delivery.php').read_text()
+          assert "auto_install_enabled" in profile and "'PROFILE_INSTALL_MUST_STAY_DISABLED'" in profile
+          assert "managed_vps_candidate" in profile
+          assert "def read_profile(profile_id" in profile
+          assert "STAGING_PROFILE_FORBIDDEN" in profile
+          assert "private const SITE='/www/wwwroot/baramastaging.tonsamith.com'" in queue
+          assert "$root = '/www/wwwroot/baramastaging.tonsamith.com'" in delivery
+          print('CUSTOMER_PORTABLE_PROFILE=FAIL_CLOSED_CANDIDATE_ONLY')
+          PY
