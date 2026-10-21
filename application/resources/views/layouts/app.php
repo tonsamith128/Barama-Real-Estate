@@ -679,7 +679,6 @@ $appJsVersion = is_file($appJsFile)
                     <div class="workspace-nav__section-label" data-barama-system-center-nav>System</div>
                     <?php foreach ([
                         ['About', '/dashboard/system/about', 'server'],
-                        ['System Updates', '/dashboard/system/updates', 'clock'],
                         ['Auto Updater', '/dashboard/system/auto-updater', 'clock'], // barama-system-auto-updater-v110
                         ['System Health', '/dashboard/system/health', 'check'],
                     ] as $sysItem): ?>
