@@ -18,7 +18,11 @@ $uVersionAvailable = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Z
 $uCanCheck = !empty($uReady['can_check']);
 $uLicenseActive = in_array((string)($uLicense['state'] ?? ''), ['Active license verified', 'Installed license recognized'], true);
 $uDomain = (string)($uBinding['recorded_domain'] ?? '');
-$uDomainOk = $uDomain !== '' && $uDomain !== 'Not recorded' && $uDomain === (string)($uBinding['current_domain'] ?? '');
+$uCurrentDomain = (string)($uBinding['current_domain'] ?? 'Not recorded');
+$uDomainOk = $uDomain !== '' && $uDomain !== 'Not recorded' && $uCurrentDomain !== 'Not recorded'
+    && hash_equals($uCurrentDomain, $uDomain);
+$uDomainTitle = $uDomainOk ? 'Installed website: ' . $uCurrentDomain
+    : 'Configured website: ' . $uCurrentDomain . ' | Saved license domain: ' . $uDomain;
 $uStaged = !empty($uRelease['staged_release']);
 $uStagedVerified = ($uInspect['status'] ?? '') === 'Signed package verified (not installed)';
 $uStorage = !empty($uSystem['storage_writable']);
@@ -54,12 +58,12 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
  <section class="bau-versions" aria-label="Software versions">
   <div><span class="bau-kicker">Current installed version</span><strong>v<?= e($uVersion) ?></strong></div>
   <span class="bau-versus" aria-hidden="true">→</span>
-  <div><span class="bau-kicker">Latest verified signed release</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : 'Not confirmed' ?></strong><small><?= $uVersionAvailable ? 'Fresh publisher signature verified' : 'Select Check for updates to request signed release details' ?></small></div>
-  <span class="bau-pill <?= $uVersionAvailable ? 'bau-pill--good' : '' ?>"><?= $uVersionAvailable ? 'Update discovered' : 'Discovery pending' ?></span>
+  <div><span class="bau-kicker">Latest verified signed release</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : (($uFeedStatus === 'eligible' && $uFresh) ? 'No newer release' : 'Not confirmed') ?></strong><small><?= $uVersionAvailable ? 'Fresh publisher signature verified' : (($uFeedStatus === 'eligible' && $uFresh) ? 'Publisher confirmed no newer signed release' : 'Select Check for updates to request signed release details') ?></small></div>
+  <span class="bau-pill <?= $uVersionAvailable ? 'bau-pill--good' : '' ?>"><?= $uVersionAvailable ? 'Update discovered' : (($uFeedStatus === 'eligible' && $uFresh) ? 'No update required' : 'Discovery pending') ?></span>
  </section>
  <div class="bau-readiness" aria-label="Update prerequisites">
   <span><b class="<?= $uLicenseActive ? 'bau-icon-good' : '' ?>">✓</b> License <?= $uLicenseActive ? 'recognized' : 'not verified' ?></span>
-  <span><b class="<?= $uDomainOk ? 'bau-icon-good' : '' ?>">⌁</b> Domain <?= $uDomainOk ? 'matched' : 'not confirmed' ?></span>
+  <span title="<?= e($uDomainTitle) ?>"><b class="<?= $uDomainOk ? 'bau-icon-good' : '' ?>">⌁</b> Domain <?= $uDomainOk ? 'matched' : 'not confirmed' ?></span>
   <span><b class="<?= $uCanCheck ? 'bau-icon-good' : '' ?>">◉</b> Signed feed <?= $uCanCheck ? 'ready' : 'not ready' ?></span>
   <span><b class="<?= $uStorage ? 'bau-icon-good' : '' ?>">▣</b> Storage <?= $uStorage ? 'writable' : 'not ready' ?></span>
   <a href="<?= e(url('/dashboard/license')) ?>">Manage license ↗</a>
@@ -74,7 +78,7 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
   <aside class="bau-panel bau-aside" aria-labelledby="bau-release-title"><div class="bau-panel-heading"><div><h2 id="bau-release-title">Release &amp; installation</h2><p>Only verified facts can unlock the next action.</p></div></div>
    <div class="bau-mini"><span>Installed</span><strong>v<?= e($uVersion) ?></strong></div>
    <div class="bau-mini"><span>Signed candidate</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : 'None verified' ?></strong></div>
-   <div class="bau-mini"><span>Update entitlement</span><strong><?= $uEligible && $uFresh ? 'Eligible' : ($uFeedStatus === 'ineligible' ? 'Denied / not configured' : 'Not confirmed') ?></strong></div>
+   <div class="bau-mini"><span>Update entitlement</span><strong><?= $uEligible && $uFresh ? 'Eligible' : ($uFeedStatus === 'ineligible' ? (($uFeed['entitlement'] ?? '') === 'Not configured' ? 'Not configured' : 'Not entitled') : 'Not confirmed') ?></strong></div>
    <div class="bau-mini"><span>Staged release ZIP</span><strong><?= $uStagedVerified ? 'Verified' : ($uStaged ? 'Present · unverified' : 'Not staged') ?></strong></div>
    <div class="bau-mini"><span>Backup and rollback</span><strong>Not verified in this session</strong></div>
    <div class="bau-aside-actions">
