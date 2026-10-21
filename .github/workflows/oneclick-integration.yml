@@ -65,3 +65,24 @@ jobs:
 
           print('ONECLICK_WEB_BOUNDARY=PASS')
           PY
+
+      - name: Read-only dashboard progress and fail-closed customer boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node --check assets/js/barama-oneclick-status-v100.js
+          node --test tests/security/OneClickDashboardStatusTest.cjs
+          python3 - <<'PY'
+          from pathlib import Path
+          queue = Path('application/app/Services/Updates/OneClickUpdateQueueV1.php').read_text()
+          downloader = Path('application/bin/oneclick-unprivileged-delivery.php').read_text()
+          view = Path('application/resources/views/workspace/system-center.php').read_text()
+          assert "private const SITE='/www/wwwroot/baramastaging.tonsamith.com'" in queue
+          assert "$root = '/www/wwwroot/baramastaging.tonsamith.com'" in downloader
+          assert "ONECLICK_STAGING_WEB_ONLY" in queue
+          assert "ONECLICK_TRUSTED_WORKER_NOT_READY" in queue
+          assert "data-oneclick-stage-message" in view
+          assert "data-oneclick-initial-state" in view
+          assert "?v=102" in view
+          print('STAGING_WORKER_BOUNDARY=STILL_FAIL_CLOSED_FOR_CUSTOMERS')
+          PY
