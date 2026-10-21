@@ -24,7 +24,9 @@ final class OneClickUpdateQueueV1
             ||preg_match('/^[a-f0-9]{64}$/D',$feed['archive_sha256'])!==1) {
             throw new RuntimeException('ONECLICK_PUBLISHER_APPROVAL_MISSING');
         }
-        // Signed ZIP is fetched by the independently verified privileged worker.\n        // A web-user-staged ZIP cannot authorize an update.\n        $dir=self::directory($site,true);
+        // Signed ZIP is fetched by the independently verified privileged worker.
+        // A web-user-staged ZIP cannot authorize an update.
+        $dir=self::directory($site,true);
         $lock=$dir.'/.submit.lock';
         if(is_link($lock))throw new RuntimeException('ONECLICK_LOCK_UNSAFE');
         $h=@fopen($lock,'c+b');
