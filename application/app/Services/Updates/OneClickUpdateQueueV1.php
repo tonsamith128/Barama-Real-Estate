@@ -129,9 +129,13 @@ final class OneClickUpdateQueueV1
     }
 
     /** Reports only root-owned, allowlisted progress without exposing credentials. */
-    public static function status(string $site): array
+    public static function status(string $site, ?string $jobId = null): array
     {
         self::guard($site);
+        // A previous worker result must never be displayed as this session's update.
+        if (!is_string($jobId) || preg_match('/^job-[a-f0-9]{32}$/D', $jobId) !== 1) {
+            return ['state'=>'not_started','updated_at'=>null];
+        }
         $r=self::protectedSignal('oneclick-worker-result.json',1024);
         $state=$r['state']??null;
         if (!is_string($state)||!in_array($state,[
@@ -140,6 +144,7 @@ final class OneClickUpdateQueueV1
             ||($r['schema']??null)!=='barama-oneclick-root-result-v1'
             ||!is_string($r['job_id']??null)
             ||preg_match('/^job-[a-f0-9]{32}$/D',$r['job_id'])!==1
+            ||!hash_equals($jobId, $r['job_id'])
             ||!is_int($r['updated_at']??null)
             ||$r['updated_at']>time()+60
             ||$r['updated_at']<time()-604800) {
