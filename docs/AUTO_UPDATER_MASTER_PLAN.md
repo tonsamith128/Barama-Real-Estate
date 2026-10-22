@@ -1,12 +1,27 @@
 # Barama Auto Updater — Canonical Delivery Plan and Status
 
-**Status:** IN PROGRESS / NOT END-TO-END COMPLETE  
+**Status:** REAL STAGING CORE INSTALLATION VERIFIED / AUTOMATED DATABASE ROLLBACK, CUSTOMER PORTABILITY, AND PRODUCTION ROLLOUT OPEN  
 **Recorded:** 2026-10-22 (Day 6 review)  
 **Owner:** Ton Samith  
 **Authoritative branch:** `main`; proposed features are **not shipped** merely because they appear on a draft branch.  
 **Scope:** **Auto Updater only**. This is the single current delivery/status document. Earlier updater design, phase and acceptance documents are *historical evidence*, **not** instructions to resurrect their code or claims that a feature is deployed.
 
 > **North star:** A verified administrator can check entitlement and see a genuinely offered, correctly signed, installation-specific release, request **Update Now**, observe honest progress, and finish with the *actual* installed version updated and a verified recovery path. A CodeCanyon customer install must ultimately support this without root/server-owner privileges.
+
+## Accepted real Staging installation — 2026-10-22 (owner-verified, supersedes older pending claims)
+
+**Actual administrator Update Now installation: PASS.** Starting from Staging 0.9.23, the signed barama-0.9.24-staging-pilot request was queued through the real dashboard and processed by the previously pinned root-owned worker. Owner terminal reported:
+
+- WORKER_STATE=completed, STAGING_VERSION=0.9.24, STAGING_HTTP_BEFORE_AFTER=200/200 and STAGING_UPDATE_NOW_SESSION=COMPLETED_AND_WORKER_STOPPED.
+- Post-install exact file SHA-256 checks passed: VERSION c9e75dc8129553646c44f2d1d35dcccae884bcab82610369b358b98dee424e02 and PrivateArtifactReceiverV2.php 66a8112132aae407fd4094fb64e42bf8d1b34dd6d5994a5c0b6aaf5f0c690097; PHP syntax passed.
+- Trusted root-owned completion receipt matched job-dd99c0e7660b51104a7f7126a1369d5b; the job recovery vault contained 7 files, including one SQL dump candidate; PENDING_MIGRATIONS=0; Staging HTTPS returned 200; worker is inactive/disabled and enable marker removed.
+- October 22 private recovery snapshot's 731 website files and 61 InnoDB tables were actually restored and read in a separate isolated environment **before installation**.
+- **Remaining risk:** a SQL dump candidate and a successful isolated pre-update snapshot restore do **not** establish the worker's automatic *full database* rollback under crash/partial-commit faults. That remains an independent acceptance gate.
+- Only one current active stable-channel grant was observed in the publisher entitlement registry, bound to Staging activation #19. Production's non-target request was denied by entitlement, so direct positive-entitled non-target audience isolation remains inconclusive. No general-customer release approval is implied.
+- The premium layout was previously accepted on Staging and Production, but post-install browser state/notification synchronization needs separate review. Do not reinstall v0.9.24 as a UI test.
+- GitHub changes on a separate branch are reviewable source only; no GitHub commit modifies the owner's aaPanel sites. Earlier sections below describe historical pre-installation states and must not override this result.
+
+**Next stage:** align the UI's completed-job lifecycle to trusted root signals and the installed version, then prove worker failure/rollback behavior using an isolated database fixture, followed by portable non-root customer execution. Never grant Production the Staging license or implicitly initiate a Production update.
 
 ## Protected Staging Auto Updater core — GitHub parity work (2026-10-22)
 
