@@ -9,12 +9,6 @@ use RuntimeException;
 final class OneClickUpdateQueueV1
 {
     private const SITE='/www/wwwroot/baramastaging.tonsamith.com';
-    // This implementation is staging-only until a separate, portable worker contract
-    // is provisioned, reviewed, and accepted for each customer installation.
-    private static function scope(string $site): ?string
-    {
-        return $site===self::SITE ? 'STAGING_ONLY' : null;
-    }
     private const PATH='/application/storage/app/updates/one-click-queue';
 
     public static function enqueue(string $site,string $installed,array $feed): array
@@ -57,7 +51,7 @@ final class OneClickUpdateQueueV1
             $id='job-'.bin2hex(random_bytes(16));
             $json=json_encode([
               'schema'=>'barama-oneclick-untrusted-intent-v1',
-              'id'=>$id,'site'=>self::scope($site),
+              'id'=>$id,'site'=>'STAGING_ONLY',
               'created_at'=>time(),'expires_at'=>time()+900,
               'installed_version'=>$installed,'target_version'=>$feed['version'],
               'package_sha256'=>$feed['archive_sha256'],
@@ -108,7 +102,7 @@ final class OneClickUpdateQueueV1
     /** Read root-owned signals from the existing protected publisher trust directory. */
     private static function protectedSignal(string $name, int $max): ?array
     {
-        if (!defined('BASE_PATH') || self::scope(BASE_PATH)===null
+        if (!defined('BASE_PATH') || BASE_PATH!==self::SITE
             || !PublisherTrustPaths::protectedDirectoryReady()) return null;
         if (!in_array($name,['oneclick-worker-readiness.json','oneclick-worker-result.json'],true)) return null;
         $path=PublisherTrustPaths::directory().'/'.$name;
@@ -126,7 +120,7 @@ final class OneClickUpdateQueueV1
         $r=self::protectedSignal('oneclick-worker-readiness.json',512);
         return is_array($r)
             &&($r['schema']??null)==='barama-oneclick-root-worker-v1'
-            &&($r['site']??null)===self::scope(BASE_PATH)
+            &&($r['site']??null)==='STAGING_ONLY'
             &&($r['status']??null)==='accepting_jobs'
             &&($r['delivery']??null)==='publisher_authenticated_v2'
             &&is_int($r['expires_at']??null)
@@ -161,7 +155,7 @@ final class OneClickUpdateQueueV1
 
     private static function guard(string $site):void
     {
-        if(self::scope($site)===null||is_link($site)||!is_dir($site)
+        if($site!==self::SITE||is_link($site)||!is_dir($site)
           ||realpath($site)!==$site||!defined('BASE_PATH')||BASE_PATH!==$site
           ||PHP_SAPI==='cli')throw new RuntimeException('ONECLICK_STAGING_WEB_ONLY');
     }
