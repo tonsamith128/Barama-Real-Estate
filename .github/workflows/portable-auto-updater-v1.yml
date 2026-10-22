@@ -8,6 +8,8 @@ on:
     paths:
       - 'application/app/Services/Updates/PortableUpdateArchiveV1.php'
       - 'tests/portable_update_archive_v1.php'
+      - 'application/app/Services/Updates/PortableUpdateBackupV1.php'
+      - 'tests/portable_update_backup_v1.php'
       - '.github/workflows/portable-auto-updater-v1.yml'
 
 jobs:
@@ -27,5 +29,9 @@ jobs:
         run: |
           php -l application/app/Services/Updates/PortableUpdateArchiveV1.php
           php -l tests/portable_update_archive_v1.php
+          php -l application/app/Services/Updates/PortableUpdateBackupV1.php
+          php -l tests/portable_update_backup_v1.php
       - name: Signed portable ZIP fixtures
         run: php tests/portable_update_archive_v1.php
+      - name: Portable private backup and integrity fixtures
+        run: php tests/portable_update_backup_v1.php
