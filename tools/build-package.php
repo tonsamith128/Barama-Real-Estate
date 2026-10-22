@@ -18,12 +18,52 @@ foreach ([
     'application/app/Services/Updates/SignedReleaseInspector.php',
     'application/app/Services/Updates/PrivateArtifactHttpClientV2.php',
     'application/app/Services/Updates/PrivateArtifactReceiverV2.php',
+    'application/app/Services/Updates/PortableUpdateArchiveV1.php',
+    'application/app/Services/Updates/PortableUpdateBackupV1.php',
+    'application/app/Services/Updates/PortableUpdateFileTransactionV1.php',
+    'application/app/Services/Updates/PortableUpdateDownloadV1.php',
+    'application/app/Services/Updates/PortableCustomerUpdateV1.php',
+    'application/config/update-publisher-v2-keys.json',
+    'application/config/update-feed-v2.json',
+    'assets/js/barama-portable-auto-updater-v1.js',
     'application/app/Http/Controllers/SystemCenterController.php',
 ] as $updateComponent) {
     if (!is_file($root . '/' . $updateComponent)) {
         throw new RuntimeException('V2 updater component missing from customer source: ' . $updateComponent);
     }
 }
+// Do not distribute a customer updater with missing, substituted or test
+// publisher trust. These are PUBLIC signing keys, never private signing keys.
+$catalog = json_decode(
+    (string) file_get_contents($root.'/application/config/update-publisher-v2-keys.json'),
+    true, 12, JSON_THROW_ON_ERROR
+);
+$feedConfig = json_decode(
+    (string) file_get_contents($root.'/application/config/update-feed-v2.json'),
+    true, 8, JSON_THROW_ON_ERROR
+);
+$expectedFingerprints = [
+    'barama-prod-2026-10' => ['retired', 'a79735b477a56e942330277d4988f4ab3359705ee6aaa0ddf1a0e822f4d5bfdf'],
+    'barama-prod-2026-10-r2' => ['active', 'e8e345dfa2af3f6746afb881d2e67a896da68c64db9839ca35bd528e99c97148'],
+];
+if (!is_array($catalog) || ($catalog['format']??null)!=='tonsamith-publisher-keys-v2'
+    || !is_array($catalog['keys']??null)
+    || array_keys($catalog['keys'])!==array_keys($expectedFingerprints)
+    || $feedConfig!==[
+        'enabled'=>true,'contract'=>'tonsamith-signed-discovery-v2','channel'=>'stable'
+    ]) {
+    throw new RuntimeException('Customer V2 publisher trust configuration is invalid.');
+}
+foreach ($expectedFingerprints as $id=>[$state,$fingerprint]) {
+    $entry=$catalog['keys'][$id]??null;
+    $decoded=is_array($entry) ? base64_decode((string)($entry['public']??''),true) : false;
+    if (($entry['status']??null)!==$state || !is_string($decoded)
+        || strlen($decoded)!==32
+        || !hash_equals($fingerprint,hash('sha256',$decoded))) {
+        throw new RuntimeException('Customer V2 publisher public key fingerprint mismatch.');
+    }
+}
+
 $version = trim((string) file_get_contents($root . '/VERSION'));
 
 if ($version === '' || !class_exists(ZipArchive::class)) {
