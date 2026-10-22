@@ -85,7 +85,7 @@ final class PrivateArtifactHttpClientV2
                     if ($ok !== true || $status !== 200 || !str_starts_with(strtolower($type), 'application/zip')) {
                         throw new RuntimeException('PUBLISHER_ARTIFACT_HTTP_NOT_ACCEPTED');
                     }
-                } finally { curl_close($curl); }
+                } finally { unset($curl); } // PHP 8+ releases CurlHandle automatically; curl_close() is deprecated in 8.5.
             });
     }
 }
