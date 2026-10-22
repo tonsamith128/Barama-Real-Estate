@@ -125,6 +125,10 @@ try {
     $env=envelope(hash_file('sha256',$archive),filesize($archive),'',sodium_crypto_sign_secretkey($keys));
     rejects(fn()=>Archive::inspect($site,$archive,'0.9.23',$env,'stable'),'target_mismatch_denied');
 
+    zipFixture($archive,['VERSION'=>"0.9.24\n",'assets/js/app.js'=>"before\n"]);
+    $env=envelope(hash_file('sha256',$archive),filesize($archive),'',sodium_crypto_sign_secretkey($keys));
+    rejects(fn()=>Archive::inspect($site,$archive,'0.9.23',$env,'stable'),'version_only_update_denied');
+
     symlink($temp,$site.'/assets/js/link');
     zipFixture($archive,['VERSION'=>"0.9.24\n",'assets/js/link/x.php'=>"bad\n"]);
     $env=envelope(hash_file('sha256',$archive),filesize($archive),'',sodium_crypto_sign_secretkey($keys));
