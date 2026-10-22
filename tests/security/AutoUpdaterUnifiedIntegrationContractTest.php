@@ -67,6 +67,9 @@ try {
     $must(str_contains($queue, 'hash_equals($jobId, $r[\'job_id\'])'), 'RESULT_BOUND_TO_JOB');
     $must(str_contains($trust, "/etc/barama/staging/publisher-trust"), 'ROOT_SIGNAL_PATH');
     $must(str_contains($feed, 'bool $includeSignedEnvelope = false'), 'NO_DEFAULT_ENVELOPE_EXPOSURE');
+    $must(str_contains($feed, 'PublisherTrustPaths::isProtectedStaging()'), 'PINNED_STAGING_TRUST_SOURCE');
+    $must(str_contains($feed, 'PublisherTrustPaths::feed() : APP_PATH . self::CONFIG_FILE'), 'PRODUCTION_FEED_FILE_PRESERVED');
+    $must(str_contains($feed, 'PublisherTrustPaths::keys() : APP_PATH . self::KEYS_FILE'), 'PRODUCTION_PUBLIC_KEYS_PRESERVED');
     $must(str_contains($download, "posix_geteuid() === 0"), 'ROOT_DOWNLOADER_REJECTED');
     $must(str_contains($download, "CURLOPT_SSL_VERIFYPEER => true"), 'TLS_MANDATORY');
     $must(str_contains($download, "DOWNLOAD_UNPRIVILEGED_CLI_REQUIRED"), 'CLI_ONLY');
