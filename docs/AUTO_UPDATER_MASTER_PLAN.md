@@ -21,6 +21,14 @@
 - The accepted live controller, root-owned trust paths, queue, downloader, routes and status JS were preserved. **Do not overwrite accepted Staging files with the prototype #110 or draft #115 full-file payloads.** PR #115 remains integration/reference work; reconcile git source from accepted live hashes first.
 - **Next exact acceptance:** inspect the Staging dashboard's disabled/active state, then independently verify that a *newer, Staging-audience-bound, currently signed release* is legitimately published. Only afterward execute a separately authorized, recoverable dashboard-submitted job under the protected worker; capture exact-job result, version change, and recovery receipts. Do not run Production or change tester grants automatically.
 
+## UI Experience v1.0.2 — Source prepared, live deployment pending (2026-10-22)
+
+- GitHub [PR #117](https://github.com/tonsamith128/Barama-Real-Estate/pull/117) adds **append-only** presentation improvements to the currently accepted updater theme stylesheet (`assets/css/barama-auto-updater-theme-v101.css`) and existing browser script (`assets/js/barama-auto-updater-unified-v100.js`).
+- Lifecycle-first layout, versions/readiness below workflow, premium Manage license link, and a non-blocking, dismissible Check for updates notification. Existing exact publisher message text, check form, server result, worker status and install-button disabled state are not modified.
+- A scoped Node DOM behavior test checks order, popup dismissal, license action, idempotence and unchanged disabled button. Explicit light/dark, mobile and focus styles are preserved.
+- Owner-operated aaPanel ZIP: `Barama-AutoUpdater-PremiumUX-BothSites-aaPanel-v1.0.0.zip`, SHA-256 `ae65c1c4844815e6ad7bb59f4536f56a6a4bc9707e2b02fdad81a602d58da9d1`; exact source and Git blob guards, separate Staging/Production backups and rollback; *not deployed by GitHub merge*.
+- **Live site status:** Not yet installed on Staging or Production. Do not report visual acceptance or successful remote update installation. Production's tester entitlement #8 remains NOT CONFIGURED; Staging worker remains governed by independent real worker readiness. A discovered v0.9.24 signature **is not** authorization to install.
+
 ## 1. What "done" means — executable acceptance, not a UI mockup
 
 The Auto Updater is complete **only** when all of these pass against the *exact* candidate and current source SHA:
