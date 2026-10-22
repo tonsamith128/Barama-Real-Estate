@@ -14,6 +14,12 @@ on:
       - 'tests/portable_update_transaction_v1.php'
       - 'application/app/Services/Updates/PortableUpdateDownloadV1.php'
       - 'tests/portable_update_download_v1.php'
+      - 'application/app/Services/Updates/PortableCustomerUpdateV1.php'
+      - 'tests/portable_customer_flow_v1.php'
+      - 'application/app/Http/Controllers/SystemCenterController.php'
+      - 'application/routes/web.php'
+      - 'application/resources/views/workspace/auto-updater-unified-v100.php'
+      - 'assets/js/barama-portable-auto-updater-v1.js'
       - '.github/workflows/portable-auto-updater-v1.yml'
 
 jobs:
@@ -39,6 +45,11 @@ jobs:
           php -l tests/portable_update_transaction_v1.php
           php -l application/app/Services/Updates/PortableUpdateDownloadV1.php
           php -l tests/portable_update_download_v1.php
+          php -l application/app/Services/Updates/PortableCustomerUpdateV1.php
+          php -l tests/portable_customer_flow_v1.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/routes/web.php
+          php -l application/resources/views/workspace/auto-updater-unified-v100.php
       - name: Signed portable ZIP fixtures
         run: php tests/portable_update_archive_v1.php
       - name: Portable private backup and integrity fixtures
@@ -47,3 +58,5 @@ jobs:
         run: php tests/portable_update_transaction_v1.php
       - name: Authenticated private ZIP download fixtures
         run: php tests/portable_update_download_v1.php
+      - name: Portable administrator coordinator and recovery status
+        run: php tests/portable_customer_flow_v1.php
