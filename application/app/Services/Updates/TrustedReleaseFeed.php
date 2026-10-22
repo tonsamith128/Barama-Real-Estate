@@ -255,9 +255,27 @@ final class TrustedReleaseFeed
         catch (RuntimeException) { return false; }
     }
 
+    /**
+     * Preserve the original release-feed contract for ordinary installations
+     * and standalone CI tests that load this class without an autoloader.
+     * The exact protected staging deployment always requires its root-pinned
+     * trust class. Do not fall back to a web-writable catalog on that site.
+     */
+    private static function protectedStaging(): bool
+    {
+        if (!defined('BASE_PATH')
+            || BASE_PATH !== '/www/wwwroot/baramastaging.tonsamith.com') {
+            return false;
+        }
+        if (!class_exists(PublisherTrustPaths::class)) {
+            throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED');
+        }
+        return PublisherTrustPaths::isProtectedStaging();
+    }
+
     private static function settings(): array
     {
-        $path = PublisherTrustPaths::isProtectedStaging()
+        $path = self::protectedStaging()
             ? PublisherTrustPaths::feed() : APP_PATH . self::CONFIG_FILE;
         if (!self::safeFile($path, 4096)) throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED');
         try { $value = json_decode((string)file_get_contents($path), true, 8, JSON_THROW_ON_ERROR); }
@@ -274,7 +292,7 @@ final class TrustedReleaseFeed
     /** Publisher-format key catalog, independently pinned by the author; never fetched at runtime. */
     private static function trustedKeys(): array
     {
-        $path = PublisherTrustPaths::isProtectedStaging()
+        $path = self::protectedStaging()
             ? PublisherTrustPaths::keys() : APP_PATH . self::KEYS_FILE;
         if (!self::safeFile($path, 65536) || !extension_loaded('sodium')) return [];
         try { $value = json_decode((string)file_get_contents($path), true, 16, JSON_THROW_ON_ERROR); }
@@ -298,7 +316,7 @@ final class TrustedReleaseFeed
 
     private static function safeFile(string $path, int $max): bool
     {
-        if (PublisherTrustPaths::isProtectedStaging()) {
+        if (self::protectedStaging()) {
             return PublisherTrustPaths::safeTrustFile($path, $max);
         }
         if (is_link($path) || !is_file($path) || !is_readable($path)) return false;
