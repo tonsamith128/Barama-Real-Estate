@@ -178,3 +178,150 @@ html[data-bs-theme="dark"] #barama-unified-auto-updater .bau-ring {
       #20334c 290deg, #477eff 360deg);
 }
 /* BARAMA_UNIFIED_AUTO_UPDATER_THEME_V101_END */
+
+/* BARAMA_AUTO_UPDATER_EXPERIENCE_V102 — presentation only; no entitlement or install override.
+   Explicit light/dark theme is set by html[data-bs-theme]. Existing v101 rules remain authoritative. */
+#barama-unified-auto-updater .bau-columns {
+  margin-top: 2px;
+  margin-bottom: 18px;
+}
+#barama-unified-auto-updater .bau-versions {
+  margin: 0 0 12px;
+  border-radius: 20px;
+  padding: 22px 26px;
+}
+#barama-unified-auto-updater .bau-readiness {
+  margin: 0 0 18px;
+  padding: 13px 15px;
+  gap: 12px;
+  border-radius: 18px;
+}
+#barama-unified-auto-updater .bau-readiness > span {
+  flex: 1 1 142px;
+  min-width: 0;
+  line-height: 1.45;
+}
+#barama-unified-auto-updater .bau-panel {
+  border-radius: 20px;
+}
+#barama-unified-auto-updater .bau-columns > .bau-panel {
+  box-shadow: 0 12px 38px color-mix(in srgb, #102b50 8%, transparent);
+}
+#barama-unified-auto-updater .bau-license-action.bau-button {
+  margin-left: auto;
+  min-width: 153px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--bau-blue) 60%, var(--bau-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bau-blue) 11%, var(--card-bg));
+  color: var(--bau-blue);
+  font-weight: 750;
+  font-size: 12px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--bau-blue) 10%, transparent);
+}
+#barama-unified-auto-updater .bau-license-action.bau-button::before {
+  content: '⚙';
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 400;
+}
+#barama-unified-auto-updater .bau-license-action.bau-button:hover,
+#barama-unified-auto-updater .bau-license-action.bau-button:focus-visible {
+  background: color-mix(in srgb, var(--bau-blue) 19%, var(--card-bg));
+  border-color: var(--bau-blue);
+  color: var(--bau-blue);
+}
+#barama-unified-auto-updater .bau-feedback-stack {
+  position: fixed;
+  z-index: 1150;
+  top: clamp(74px, 10vh, 112px);
+  right: clamp(12px, 3vw, 44px);
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(65vh, 530px);
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+#barama-unified-auto-updater .bau-feedback-stack .bau-flash {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 17px 45px 17px 52px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--bau-blue) 35%, var(--bau-border));
+  background: color-mix(in srgb, var(--bau-blue) 6%, var(--card-bg));
+  color: var(--bau-ink);
+  box-shadow: 0 16px 48px color-mix(in srgb, #091d42 19%, transparent), 0 0 0 1px color-mix(in srgb, var(--bau-blue) 5%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.65;
+  pointer-events: auto;
+}
+#barama-unified-auto-updater .bau-feedback-stack .bau-flash::before {
+  content: '✓';
+  display: grid;
+  place-items: center;
+  position: absolute;
+  left: 16px;
+  top: 17px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  background: #11a87a;
+  font-size: 13px;
+  font-weight: 800;
+}
+#barama-unified-auto-updater .bau-feedback-stack .bau-flash.bau-feedback-info::before {
+  content: 'i';
+  background: #286cf0;
+}
+#barama-unified-auto-updater .bau-feedback-stack .bau-flash.bau-feedback-warning::before {
+  content: '!';
+  background: #b98223;
+}
+#barama-unified-auto-updater .bau-feedback-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 27px;
+  height: 27px;
+  border: 0;
+  background: transparent;
+  color: var(--bau-muted);
+  border-radius: 8px;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+#barama-unified-auto-updater .bau-feedback-close:hover,
+#barama-unified-auto-updater .bau-feedback-close:focus-visible {
+  color: var(--bau-ink);
+  background: var(--bau-soft);
+  outline-offset: 2px;
+}
+html[data-bs-theme="dark"] #barama-unified-auto-updater .bau-feedback-stack .bau-flash {
+  background: color-mix(in srgb, #13283f 90%, var(--card-bg));
+  border-color: #335b8f;
+}
+@media (max-width: 720px) {
+  #barama-unified-auto-updater .bau-feedback-stack {
+    top: 72px;
+    right: 12px;
+  }
+  #barama-unified-auto-updater .bau-readiness > span { flex: 1 1 43%; }
+  #barama-unified-auto-updater .bau-license-action.bau-button { width: 100%; margin-left: 0; }
+  #barama-unified-auto-updater .bau-versions { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #barama-unified-auto-updater .bau-feedback-stack .bau-flash { scroll-behavior: auto; }
+}
+/* BARAMA_AUTO_UPDATER_EXPERIENCE_V102_END */
