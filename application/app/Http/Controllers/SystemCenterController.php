@@ -152,6 +152,79 @@ final class SystemCenterController
         return Response::redirect(url('/dashboard/system/auto-updater'), 303);
     }
 
+    /**
+     * Staging-only administrator intent; CSRF is required on the route.
+     * The independent worker rechecks entitlement, audience, ZIP and recovery.
+     */
+    public function requestOneClickUpdate(Request $request): Response
+    {
+        if (!\Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) {
+            return Response::html('Not Found', 404);
+        }
+        $auth = new \Barama\Services\AuthService();
+        if (!$auth->hasRole('administrator') && !$auth->hasRole('super-administrator')) {
+            return Response::html('Forbidden', 403);
+        }
+        $last = (int) ($_SESSION['_barama_oneclick_request_at'] ?? 0);
+        if ($last > 0 && time() - $last < 90) {
+            $_SESSION['_barama_oneclick_request_flash'] = 'Wait before submitting another update request.';
+            return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+        }
+        // Throttle attempted submissions, including rejected/failed ones.
+        $_SESSION['_barama_oneclick_request_at'] = time();
+        try {
+            $site = defined('BASE_PATH') ? (string) BASE_PATH : '';
+            $feed = \Barama\Services\Updates\TrustedReleaseFeed::check(
+                (string) APP_VERSION, Installation::licenseState(), Installation::runtimeConfig()
+            );
+            $queued = \Barama\Services\Updates\OneClickUpdateQueueV1::enqueue(
+                $site, (string) APP_VERSION, $feed
+            );
+            $_SESSION['_barama_oneclick_job_id'] = $queued['id'];
+            $_SESSION['_barama_oneclick_request_flash'] =
+                'Update request queued for independent worker verification. Installation has not yet completed.';
+        } catch (\Throwable) {
+            $_SESSION['_barama_oneclick_request_flash'] =
+                'Update request blocked. Verify publisher entitlement, release audience, trusted worker and recovery readiness.';
+        }
+        return Response::redirect(url('/dashboard/system/auto-updater'), 303);
+    }
+
+    /** Exact-session, administrator-only, read-only job status. No credentials. */
+    public function oneClickStatus(Request $request): Response
+    {
+        if (!\Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) {
+            return Response::html('Not Found', 404);
+        }
+        $auth = new \Barama\Services\AuthService();
+        if (!$auth->hasRole('administrator') && !$auth->hasRole('super-administrator')) {
+            return Response::html('Forbidden', 403);
+        }
+        try {
+            $jobId = $_SESSION['_barama_oneclick_job_id'] ?? null;
+            $status = \Barama\Services\Updates\OneClickUpdateQueueV1::status(
+                (string) BASE_PATH, is_string($jobId) ? $jobId : null
+            );
+            $pending = \Barama\Services\Updates\OneClickUpdateQueueV1::pending((string) BASE_PATH);
+            $ready = \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady();
+        } catch (\Throwable) {
+            $status = ['state' => 'unavailable', 'updated_at' => null];
+            $pending = false;
+            $ready = false;
+        }
+        return new Response(json_encode([
+            'schema' => 'barama-oneclick-dashboard-status-v1',
+            'state' => $status['state'],
+            'updated_at' => $status['updated_at'],
+            'pending' => $pending,
+            'worker_ready' => $ready,
+        ], JSON_THROW_ON_ERROR), 200, [
+            'Content-Type' => 'application/json; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     /** Server-session fingerprint: never store or render an activation token. */
     private static function feedBindingFingerprint(array $license, array $runtime): string
     {
@@ -458,6 +531,28 @@ final class SystemCenterController
             }
             return $domain;
         };
+        // Status signals are root-owned and only used on the fixed staging site.
+        $oneClickFlash = '';
+        $oneClickWorkerReady = false;
+        $oneClickPending = false;
+        $oneClickStatus = ['state' => 'not_started', 'updated_at' => null];
+        if ($section === 'auto-updater'
+            && \Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) {
+            $oneClickFlash = (string) ($_SESSION['_barama_oneclick_request_flash'] ?? '');
+            unset($_SESSION['_barama_oneclick_request_flash']);
+            try {
+                $oneClickWorkerReady = \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady();
+                $oneClickPending = \Barama\Services\Updates\OneClickUpdateQueueV1::pending((string) BASE_PATH);
+                $sessionJob = $_SESSION['_barama_oneclick_job_id'] ?? null;
+                $oneClickStatus = \Barama\Services\Updates\OneClickUpdateQueueV1::status(
+                    (string) BASE_PATH, is_string($sessionJob) ? $sessionJob : null
+                );
+            } catch (\Throwable) {
+                $oneClickStatus = ['state' => 'unavailable', 'updated_at' => null];
+                $oneClickWorkerReady = false;
+                $oneClickPending = false;
+            }
+        }
         $html = View::render('workspace/system-center', [
             'pageTitle' => $titles[$section] . ' · Admin Control Center',
             'metaRobots' => 'noindex,nofollow,noarchive',
@@ -496,6 +591,10 @@ final class SystemCenterController
             'systemFeedResult' => $feedResult,
             'systemFeedFlash' => $feedFlash,
             'systemReleaseInspection' => $releaseCheck,
+            'systemOneClickFlash' => $oneClickFlash,
+            'systemOneClickWorkerReady' => $oneClickWorkerReady,
+            'systemOneClickPending' => $oneClickPending,
+            'systemOneClickStatus' => $oneClickStatus,
             'systemLicenseBinding' => [
                 'current_domain' => $domainDisplay(Installation::runtimeConfig()['APP_URL'] ?? null),
                 'recorded_domain' => $domainDisplay($license['domain'] ?? null),
