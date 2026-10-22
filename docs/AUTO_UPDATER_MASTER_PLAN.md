@@ -8,6 +8,19 @@
 
 > **North star:** A verified administrator can check entitlement and see a genuinely offered, correctly signed, installation-specific release, request **Update Now**, observe honest progress, and finish with the *actual* installed version updated and a verified recovery path. A CodeCanyon customer install must ultimately support this without root/server-owner privileges.
 
+## Accepted Staging integration — 2026-10-22 (operator verified)
+
+**Status: Staging unified Auto Updater *view-only* integration INSTALLED / PASS; Auto Updater end-to-end completion remains OPEN.**
+
+- Operator verified and installed exact-package `Barama-AutoUpdater-Staging-UnifiedView-Integration-v1.0.0.zip` (SHA-256 `c83e5b5afee063992c3f6dfb605232dda35e14440f2a995bb87848257bc7fd7c`).
+- `sha256sum -c SHA256SUMS.txt` passed every bundled file; `php tests/view-render-smoke.php` passed all 10 checks. `python3 -B deploy.py --check` confirmed **all eight** pinned live source identities and PHP syntax.
+- Explicit owner-run Staging-only command: `python3 -B deploy.py --deploy --confirm INSTALL_STAGING_UNIFIED_VIEW_ONLY_NO_UPDATE`, result `STAGING_VIEW_INSTALL=PASS`.
+- Exact **one changed application file**: `application/resources/views/workspace/auto-updater-unified-v100.php`, accepted SHA-256 `224c140a3842e02f548d6afcd233a88729575a30300bbd19ea7202a509567e13` → installed payload `e0adbc9c05f8b3b535fced6564d0a09667a5c11ae50a3b4ac478b42f6cce864c`.
+- Root-private backup: `/root/Barama-AutoUpdater-Staging-View-Backups/20261022T022701Z-8f334a6a`. Rollback from extracted package: `python3 -B deploy.py --rollback 20261022T022701Z-8f334a6a --confirm ROLLBACK_STAGING_VIEW_ONLY` if independently warranted; not executed.
+- Staging `VERSION=0.9.23`. `ROOT_WORKER_STARTED=NO`; `UPDATE_JOB_SUBMITTED=NO`; database, Production, and application release version unchanged. **This accepted result does not certify a dashboard-initiated update.**
+- The accepted live controller, root-owned trust paths, queue, downloader, routes and status JS were preserved. **Do not overwrite accepted Staging files with the prototype #110 or draft #115 full-file payloads.** PR #115 remains integration/reference work; reconcile git source from accepted live hashes first.
+- **Next exact acceptance:** inspect the Staging dashboard's disabled/active state, then independently verify that a *newer, Staging-audience-bound, currently signed release* is legitimately published. Only afterward execute a separately authorized, recoverable dashboard-submitted job under the protected worker; capture exact-job result, version change, and recovery receipts. Do not run Production or change tester grants automatically.
+
 ## 1. What "done" means — executable acceptance, not a UI mockup
 
 The Auto Updater is complete **only** when all of these pass against the *exact* candidate and current source SHA:
