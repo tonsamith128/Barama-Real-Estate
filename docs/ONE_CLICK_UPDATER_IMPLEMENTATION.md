@@ -1,5 +1,8 @@
 # Barama One-Click Updater — Implementation Gates
 
+> **Historical phase reference; not the current implementation status.** The authoritative scope, latest evidence, branch reconciliation, acceptance tests and next work are now in [AUTO_UPDATER_MASTER_PLAN.md](AUTO_UPDATER_MASTER_PLAN.md). Do not revive or deploy historical phase code without reconciling it against current `main`, accepted site changes and the master plan.
+
+
 Status: **development/inactive**. GitHub source is not deployed by this pull request.
 
 ## Components currently present
