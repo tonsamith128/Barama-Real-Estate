@@ -14,7 +14,9 @@ $uEligible = $uEligible && ($uFeed['entitlement'] ?? '') === 'Eligible';
 $uSigned = $uFeedStatus === 'available' && $uEligible && ($uFeed['feed'] ?? '') === 'Signed release verified';
 $uFresh = isset($uFeed['at']) && is_int($uFeed['at']) && $uFeed['at'] <= time()+30 && $uFeed['at'] > time()-600;
 $uSigned = $uSigned && $uFresh;
-$uVersionAvailable = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', (string)($uFeed['version'] ?? '')) === 1;
+$uSignedCandidateFormat = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', (string)($uFeed['version'] ?? '')) === 1;
+$uVersionAvailable = $uSignedCandidateFormat && version_compare((string)$uFeed['version'], $uVersion, '>');
+$uSignedAlreadyInstalled = $uSignedCandidateFormat && hash_equals($uVersion, (string)$uFeed['version']);
 $uCanCheck = !empty($uReady['can_check']);
 $uLicenseActive = in_array((string)($uLicense['state'] ?? ''), ['Active license verified', 'Installed license recognized'], true);
 $uDomain = (string)($uBinding['recorded_domain'] ?? '');
@@ -39,6 +41,15 @@ $uStagingQueueSupported = $uStaging
     && is_bool($systemOneClickWorkerReady)
     && is_bool($systemOneClickPending)
     && is_array($systemOneClickStatus);
+// Only an exact-session root-owned result may progress installation stages.
+// This projection never authorizes an update or reads an untrusted queue job.
+$uOneClick = ['phase'=>'','note'=>'','completed'=>false,'verified'=>false,'needs_review'=>false,'in_progress'=>false];
+if ($uStagingQueueSupported) {
+    $uExpected = is_string($systemOneClickTargetVersion ?? null) ? $systemOneClickTargetVersion : null;
+    $uOneClick = \Barama\Services\Updates\OneClickLifecycleV1::project(
+        $systemOneClickStatus, $uVersion, $uExpected, $systemOneClickPending
+    );
+}
 $uStagingAdministrator = false;
 if ($uStagingQueueSupported) {
     try {
@@ -57,14 +68,20 @@ if (isset($_SESSION['_barama_portable_update_flash_v102'])) unset($_SESSION['_ba
 $uSteps = [
  ['Entitlement', $uEligible && $uFresh ? 'Confirmed' : ($uFeedStatus === 'ineligible' ? 'Not eligible' : 'Not checked'), $uEligible && $uFresh ? 'done' : ($uFeedStatus === 'ineligible' ? 'warn' : 'pending')],
  ['Signed feed', $uCanCheck ? 'Configured' : 'Unavailable', $uCanCheck ? 'done' : 'warn'],
- ['Release signature', $uVersionAvailable ? 'Verified manifest' : 'Not verified', $uVersionAvailable ? 'done' : 'pending'],
- ['Package staging', $uStaged ? 'Package detected' : 'Not staged', $uStaged ? 'done' : 'pending'],
- ['Package inspection', $uStagedVerified ? 'Verified ZIP' : 'Not inspected', $uStagedVerified ? 'done' : 'pending'],
- ['Backup & installation', 'Not executed', 'pending'],
- ['Final verification', 'Not executed', 'pending'],
+ ['Release signature', $uSignedCandidateFormat ? 'Verified manifest' : 'Not verified', $uSignedCandidateFormat ? 'done' : 'pending'],
+ ['Package staging', $uOneClick['completed'] ? 'Worker confirmed' : ($uStaged ? 'Package detected' : 'Not staged'), $uOneClick['completed'] || $uStaged ? 'done' : 'pending'],
+ ['Package inspection', $uOneClick['completed'] ? 'Worker verified' : ($uStagedVerified ? 'Verified ZIP' : 'Not inspected'), $uOneClick['completed'] || $uStagedVerified ? 'done' : 'pending'],
+ ['Backup & installation', $uOneClick['completed'] ? 'Worker completed' : 'Not executed', $uOneClick['completed'] ? 'done' : 'pending'],
+ ['Final verification', $uOneClick['verified'] ? 'Installed version matched' : ($uOneClick['completed'] ? 'Version binding not confirmed' : 'Not executed'), $uOneClick['verified'] ? 'done' : 'pending'],
 ];
-$uCompleted = ($uEligible && $uFresh ? 1 : 0) + ($uCanCheck ? 1 : 0) + ($uVersionAvailable ? 1 : 0) + ($uStaged ? 1 : 0) + ($uStagedVerified ? 1 : 0);
-$uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligible' ? 'No newer release' : ($uFeedStatus === 'ineligible' ? 'Update not authorized' : ($uCanCheck ? 'Ready to check' : 'Setup required')));
+$uCompleted = count(array_filter($uSteps, static fn(array $step): bool => $step[2] === 'done'));
+$uPhase = $uOneClick['phase'] !== '' ? $uOneClick['phase'] :
+    ($uVersionAvailable ? 'Signed release found' :
+     ($uSignedAlreadyInstalled ? 'Current signed release installed' :
+      ($uFeedStatus === 'eligible' ? 'No newer release' :
+       ($uFeedStatus === 'ineligible' ? 'Update not authorized' : ($uCanCheck ? 'Ready to check' : 'Setup required')))));
+$uLifecycleNote = $uOneClick['note'] !== '' ? $uOneClick['note'] :
+    'No download, backup, or installation has been started on this page.';
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-unified-v100.css') . '?v=100') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-theme-v101.css') . '?v=103') ?>">
@@ -86,16 +103,16 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
  <div class="bau-columns">
   <section class="bau-panel bau-mainpanel" aria-labelledby="bau-workflow-title">
    <div class="bau-panel-heading"><div><h2 id="bau-workflow-title">Update lifecycle</h2><p>Progress is based on confirmed server results. No installation starts during discovery.</p></div><span class="bau-pill">Step <?= (int)$uCompleted ?> of 7 confirmed</span></div>
-   <div class="bau-progress-layout"><div class="bau-ring-wrap"><div class="bau-ring" data-bau-ring role="status" aria-live="polite" aria-label="<?= e($uPhase) ?>"><div class="bau-ring-inner"><span class="bau-ring-symbol">↻</span><strong data-bau-ring-title><?= e($uPhase) ?></strong><small data-bau-ring-desc><?= $uVersionAvailable ? 'Release metadata signed by the trusted publisher' : 'Awaiting verified update discovery' ?></small></div></div><p class="bau-ring-note" data-bau-live-message>No download, backup, or installation has been started on this page.</p></div>
+   <div class="bau-progress-layout"><div class="bau-ring-wrap"><div class="bau-ring" data-bau-ring role="status" aria-live="polite" aria-label="<?= e($uPhase) ?>"><div class="bau-ring-inner"><span class="bau-ring-symbol"><?= $uOneClick['verified'] ? '✓' : ($uOneClick['needs_review'] ? '!' : '↻') ?></span><strong data-bau-ring-title><?= e($uPhase) ?></strong><small data-bau-ring-desc><?= $uOneClick['completed'] ? 'Trusted worker completion received' : ($uVersionAvailable ? 'Release metadata signed by the trusted publisher' : 'Awaiting verified update discovery') ?></small></div></div><p class="bau-ring-note" data-bau-live-message><?= e($uLifecycleNote) ?></p></div>
     <ol class="bau-steps"><?php foreach ($uSteps as $uIndex=>$uStep): ?><li class="bau-step bau-step--<?= e($uStep[2]) ?>"><span class="bau-step-num"><?= $uStep[2] === 'done' ? '✓' : (string)($uIndex+1) ?></span><div><strong><?= e($uStep[0]) ?></strong><small><?= e($uStep[1]) ?></small></div></li><?php endforeach; ?></ol>
    </div>
   </section>
   <aside class="bau-panel bau-aside" aria-labelledby="bau-release-title"><div class="bau-panel-heading"><div><h2 id="bau-release-title">Release &amp; installation</h2><p>Only verified facts can unlock the next action.</p></div></div>
    <div class="bau-mini"><span>Installed</span><strong>v<?= e($uVersion) ?></strong></div>
-   <div class="bau-mini"><span>Signed candidate</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : 'None verified' ?></strong></div>
+   <div class="bau-mini"><span>Signed candidate</span><strong><?= $uSignedCandidateFormat ? 'v'.e((string)$uFeed['version']) : 'None verified' ?></strong></div>
    <div class="bau-mini"><span>Update entitlement</span><strong><?= $uEligible && $uFresh ? 'Eligible' : ($uFeedStatus === 'ineligible' ? (($uFeed['entitlement'] ?? '') === 'Not configured' ? 'Not configured' : 'Not entitled') : 'Not confirmed') ?></strong></div>
-   <div class="bau-mini"><span>Staged release ZIP</span><strong><?= $uStagedVerified ? 'Verified' : ($uStaged ? 'Present · unverified' : 'Not staged') ?></strong></div>
-   <div class="bau-mini"><span>Backup and rollback</span><strong>Not verified in this session</strong></div>
+   <div class="bau-mini"><span>Staged release ZIP</span><strong><?= $uOneClick['completed'] ? 'Verified by trusted worker' : ($uStagedVerified ? 'Verified' : ($uStaged ? 'Present · unverified' : 'Not staged')) ?></strong></div>
+   <div class="bau-mini"><span>Backup and rollback</span><strong><?= $uOneClick['completed'] ? 'Worker completed · rollback not independently proven' : 'Not verified in this session' ?></strong></div>
    <div class="bau-aside-actions">
     <?php if ($uStaging): ?>
       <div class="bau-safe-note">Staging installations require a separate, protected, root-owned worker. Discovery alone never starts installation.</div>
@@ -139,8 +156,8 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
  <section class="bau-versions" aria-label="Software versions">
   <div><span class="bau-kicker">Current installed version</span><strong>v<?= e($uVersion) ?></strong></div>
   <span class="bau-versus" aria-hidden="true">→</span>
-  <div><span class="bau-kicker">Latest verified signed release</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : (($uFeedStatus === 'eligible' && $uFresh) ? 'No newer release' : 'Not confirmed') ?></strong><small><?= $uVersionAvailable ? 'Fresh publisher signature verified' : (($uFeedStatus === 'eligible' && $uFresh) ? 'Publisher confirmed no newer signed release' : 'Select Check for updates to request signed release details') ?></small></div>
-  <span class="bau-pill <?= $uVersionAvailable ? 'bau-pill--good' : '' ?>"><?= $uVersionAvailable ? 'Update discovered' : (($uFeedStatus === 'eligible' && $uFresh) ? 'No update required' : 'Discovery pending') ?></span>
+  <div><span class="bau-kicker">Latest verified signed release</span><strong><?= $uSignedCandidateFormat ? 'v'.e((string)$uFeed['version']) : (($uFeedStatus === 'eligible' && $uFresh) ? 'No newer release' : 'Not confirmed') ?></strong><small><?= $uSignedAlreadyInstalled ? 'This signed version is already installed' : ($uVersionAvailable ? 'Fresh publisher signature verified' : (($uFeedStatus === 'eligible' && $uFresh) ? 'Publisher confirmed no newer signed release' : 'Select Check for updates to request signed release details')) ?></small></div>
+  <span class="bau-pill <?= $uVersionAvailable ? 'bau-pill--good' : '' ?>"><?= $uSignedAlreadyInstalled ? 'Already installed' : ($uVersionAvailable ? 'Update discovered' : (($uFeedStatus === 'eligible' && $uFresh) ? 'No update required' : 'Discovery pending')) ?></span>
  </section>
  <div class="bau-readiness" aria-label="Update prerequisites">
   <span><b class="<?= $uLicenseActive ? 'bau-icon-good' : '' ?>">✓</b> License <?= $uLicenseActive ? 'recognized' : 'not verified' ?></span>
@@ -151,7 +168,7 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
  </div>
  <section class="bau-panel bau-bottom" aria-labelledby="bau-overview-title"><div class="bau-panel-heading"><div><h2 id="bau-overview-title">Updater overview</h2><p>Transparent status of each required step. Pending steps are not simulated.</p></div><a class="bau-button bau-refresh" href="<?= e(url('/dashboard/system/auto-updater')) ?>">↻ Refresh</a></div>
   <div class="bau-tablewrap"><table class="bau-table"><thead><tr><th>Check</th><th>Status</th><th>Explanation</th></tr></thead><tbody>
-  <?php foreach ($uSteps as $uStep): ?><tr><td><?= e($uStep[0]) ?></td><td><span class="bau-pill <?= $uStep[2] === 'done' ? 'bau-pill--good' : ($uStep[2] === 'warn' ? 'bau-pill--warn' : '') ?>"><?= e($uStep[1]) ?></span></td><td><?= $uStep[2] === 'done' ? 'Confirmed by the current website state' : 'Awaiting an authenticated result or safe update execution' ?></td></tr><?php endforeach; ?>
+  <?php foreach ($uSteps as $uIndex => $uStep): ?><tr><td><?= e($uStep[0]) ?></td><td><span class="bau-pill <?= $uStep[2] === 'done' ? 'bau-pill--good' : ($uStep[2] === 'warn' ? 'bau-pill--warn' : '') ?>"><?= e($uStep[1]) ?></span></td><td><?= $uStep[2] === 'done' ? ($uIndex > 2 && $uOneClick['completed'] ? 'Confirmed by trusted worker; database rollback is not independently proven' : 'Confirmed by the current website state') : 'Awaiting an authenticated result or safe update execution' ?></td></tr><?php endforeach; ?>
   </tbody></table></div></section>
 </main>
 <script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=103') ?>"></script>
