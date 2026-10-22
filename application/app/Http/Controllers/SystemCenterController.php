@@ -180,7 +180,10 @@ final class SystemCenterController
             $queued = \Barama\Services\Updates\OneClickUpdateQueueV1::enqueue(
                 $site, (string) APP_VERSION, $feed
             );
+            // Keep the expected version bound to this administrator's exact queued job.
+            // The root-owned completion signal remains independently authoritative.
             $_SESSION['_barama_oneclick_job_id'] = $queued['id'];
+            $_SESSION['_barama_oneclick_target_version'] = (string) $feed['version'];
             $_SESSION['_barama_oneclick_request_flash'] =
                 'Update request queued for independent worker verification. Installation has not yet completed.';
         } catch (\Throwable) {
@@ -536,6 +539,7 @@ final class SystemCenterController
         $oneClickWorkerReady = false;
         $oneClickPending = false;
         $oneClickStatus = ['state' => 'not_started', 'updated_at' => null];
+        $oneClickTargetVersion = null;
         if ($section === 'auto-updater'
             && \Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) {
             $oneClickFlash = (string) ($_SESSION['_barama_oneclick_request_flash'] ?? '');
@@ -544,6 +548,10 @@ final class SystemCenterController
                 $oneClickWorkerReady = \Barama\Services\Updates\OneClickUpdateQueueV1::workerReady();
                 $oneClickPending = \Barama\Services\Updates\OneClickUpdateQueueV1::pending((string) BASE_PATH);
                 $sessionJob = $_SESSION['_barama_oneclick_job_id'] ?? null;
+                if (is_string($sessionJob) && preg_match('/^job-[a-f0-9]{32}$/D', $sessionJob) === 1) {
+                    $sessionTarget = $_SESSION['_barama_oneclick_target_version'] ?? null;
+                    $oneClickTargetVersion = is_string($sessionTarget) ? $sessionTarget : null;
+                }
                 $oneClickStatus = \Barama\Services\Updates\OneClickUpdateQueueV1::status(
                     (string) BASE_PATH, is_string($sessionJob) ? $sessionJob : null
                 );
@@ -595,6 +603,7 @@ final class SystemCenterController
             'systemOneClickWorkerReady' => $oneClickWorkerReady,
             'systemOneClickPending' => $oneClickPending,
             'systemOneClickStatus' => $oneClickStatus,
+            'systemOneClickTargetVersion' => $oneClickTargetVersion,
             'systemLicenseBinding' => [
                 'current_domain' => $domainDisplay(Installation::runtimeConfig()['APP_URL'] ?? null),
                 'recorded_domain' => $domainDisplay($license['domain'] ?? null),
