@@ -32,6 +32,15 @@ try {
     checkIt(!str_starts_with($vault,$site.'/') && !is_dir($vault),'sibling_private_vault_planned');
     $actual=Flow::vault(true);
     checkIt(is_dir($actual)&& (fileperms($actual)&0077)===0,'vault_created_mode_0700');
+    // Most shared hosts cannot let web PHP create directories beside the
+    // document root; the hosting account can safely pre-provision a private
+    // 0700 sibling without granting write permission to the parent.
+    chmod($dir,0555);
+    try {
+        checkIt(Flow::ready(),'preprovisioned_vault_usable_when_parent_read_only');
+        checkIt(Flow::vault(false)===$actual,'existing_vault_reused_without_parent_write');
+    } finally { chmod($dir,0700); }
+
     checkIt(Flow::status()['state']==='not_started','no_fake_success');
     file_put_contents($actual.'/current.json',json_encode(['schema'=>'not-trusted','state'=>'completed'])."\n");
     checkIt(Flow::status()['state']==='recovery_review_required','unknown_journal_denied');
