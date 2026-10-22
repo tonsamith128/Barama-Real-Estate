@@ -45,7 +45,7 @@ jobs:
           c=Path('application/app/Http/Controllers/SystemCenterController.php').read_text()
           v=Path('application/resources/views/workspace/auto-updater-unified-v100.php').read_text()
           assert 'PRODUCTION_ONLY' not in q
-          assert "return $site===self::SITE ? 'STAGING_ONLY' : null;" in q
+          assert "if($site!==self::SITE||is_link($site)" in q
           assert 'authorized_to_install' in q
           assert 'PublisherTrustPaths::isProtectedStaging()' in c
           assert 'systemOneClickWorkerReady' in v
