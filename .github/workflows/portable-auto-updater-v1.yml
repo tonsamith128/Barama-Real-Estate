@@ -93,3 +93,13 @@ jobs:
           PACKAGE="${RUNNER_TEMP}/Barama-AutoUpdater-Customer-Smoke.zip"
           php tools/build-package.php "$PACKAGE"
           php tests/portable_customer_package_v1.php "$PACKAGE"
+      - name: Publish private QA customer ZIP and checksum
+        if: matrix.php == '8.3'
+        uses: actions/upload-artifact@v4
+        with:
+          name: barama-auto-updater-qa-customer-zip-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/Barama-AutoUpdater-Customer-Smoke.zip
+            ${{ runner.temp }}/Barama-AutoUpdater-Customer-Smoke.zip.sha256
