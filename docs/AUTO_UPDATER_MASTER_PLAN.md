@@ -8,6 +8,16 @@
 
 > **North star:** A verified administrator can check entitlement and see a genuinely offered, correctly signed, installation-specific release, request **Update Now**, observe honest progress, and finish with the *actual* installed version updated and a verified recovery path. A CodeCanyon customer install must ultimately support this without root/server-owner privileges.
 
+## Premium UI browser-visibility correction v1.0.2 — 2026-10-22 (source ready; live not yet deployed)
+
+- Owner screenshots at 10:00 Cambodia time show **both** Staging and Production still displayed the old layout despite successful v1.0.1 CSS/JS disk installation receipts. **The UI visual outcome of v1.0.1 was not accepted.**
+- Root cause in verified GitHub and prior Staging view: server-rendered PHP still places versions/readiness **above** Update Lifecycle and keeps stale cache-identifiable v100/v101 stylesheet/script URLs. Dynamic JS-only DOM reordering is not a reliable primary layout contract.
+- [PR #120](https://github.com/tonsamith128/Barama-Real-Estate/pull/120) reorders the actual PHP view for GitHub `main`, creates fresh v103 CSS/JS asset filenames, and includes CI PHP syntax and section order checks; it **does not change installer authorization**.
+- Owner-operated **`Barama-AutoUpdater-Premium-Visible-Fix-aaPanel-v1.0.2.zip`**, SHA-256 `e3afa2a8ffd0d690c4cff61f45ddb51eb65dd3aa67f261706dea3cdd40ab2bf1`, patches each site's **current** PHP view only by exact source anchors. Staging also requires accepted current view SHA256 `e0adbc9c05f8b3b535fced6564d0a09667a5c11ae50a3b4ac478b42f6cce864c`; both sites require accepted previous CSS/JS Git blobs. New filenames ensure no prior asset URL is reused. The original Staging authenticated Update Now / status contract remains intact.
+- Local offline acceptance: PHP syntax and structural checks, simulated Staging-style and Production-style installation and private rollback **PASSED**, with no website files contacted. **Production's actual live PHP view has not been fetched; its source-guarded read-only preflight must pass before any deploy.**
+- **Current live state:** only prior v1.0.1 CSS/JS are on Staging and Production; v1.0.2 **is not yet deployed**. Wait for owner preflight and browser screenshots before marking visual UX accepted.
+- **Core completion remains OPEN:** the independently authorized, recoverable Staging v0.9.23→v0.9.24 Update Now workflow is not executed by this presentation-only patch.
+
 ## Accepted two-site Premium Auto Updater UI deployment — 2026-10-22 (operator verified)
 
 **Milestone: UI-only deployment PASS on Staging and Production. Auto Updater end-to-end installation remains OPEN.**
