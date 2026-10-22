@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Barama\Services\Updates;
 
 use RuntimeException;
+use Closure;
 
 /**
  * Customer PHP shared-hosting file-only update coordinator.
@@ -78,8 +79,9 @@ final class PortableCustomerUpdateV1
     }
 
     /** One POST = one verified download, NO website file replacements. */
-    public static function begin(): array
+    public static function begin(?Closure $fixtureFeed=null, ?Closure $fixtureTransfer=null): array
     {
+        self::fixtureGate($fixtureFeed,$fixtureTransfer);
         self::gate();
         $vault=self::vault(true);
         $lock=self::lock($vault);
@@ -89,7 +91,7 @@ final class PortableCustomerUpdateV1
                 throw new RuntimeException('PORTABLE_PREVIOUS_TRANSACTION_REQUIRES_REVIEW');
             }
             $download=PortableUpdateDownloadV1::fetch(
-                (string)BASE_PATH,$vault,(string)APP_VERSION
+                (string)BASE_PATH,$vault,(string)APP_VERSION,$fixtureFeed,$fixtureTransfer
             );
             self::save($vault.'/current.json',[
                 'schema'=>'barama-portable-customer-current-v1',
@@ -106,8 +108,9 @@ final class PortableCustomerUpdateV1
     }
 
     /** A second independent POST: revalidates entitlement and applies files. */
-    public static function install(): array
+    public static function install(?Closure $fixtureFeed=null): array
     {
+        self::fixtureGate($fixtureFeed);
         self::gate();
         $vault=self::vault(true);
         $lock=self::lock($vault);
@@ -133,7 +136,7 @@ final class PortableCustomerUpdateV1
             }
             $result=PortableUpdateFileTransactionV1::apply(
                 (string)BASE_PATH,$d['archive'],$vault,(string)APP_VERSION,
-                $envelope,(string)($envelope['manifest']['channel']??'')
+                $envelope,(string)($envelope['manifest']['channel']??''),$fixtureFeed
             );
             // If a process terminates before saving the new current state, the
             // transaction's independent active.json still blocks all restarts.
@@ -280,6 +283,16 @@ final class PortableCustomerUpdateV1
             ];
         } catch (\Throwable) {
             return ['state'=>'unavailable','pending'=>true];
+        }
+    }
+
+    /** Test dependencies never permitted from web SAPI or configuration. */
+    private static function fixtureGate(?Closure $first,?Closure $second=null): void
+    {
+        if (($first!==null || $second!==null)
+            && (PHP_SAPI!=='cli' || !defined('BARAMA_PORTABLE_FIXTURE_ONLY')
+                || BARAMA_PORTABLE_FIXTURE_ONLY!==true)) {
+            throw new RuntimeException('PORTABLE_TEST_DEPENDENCY_FORBIDDEN');
         }
     }
 
