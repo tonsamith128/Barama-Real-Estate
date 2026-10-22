@@ -46,7 +46,8 @@ $uCompleted = ($uEligible && $uFresh ? 1 : 0) + ($uCanCheck ? 1 : 0) + ($uVersio
 $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligible' ? 'No newer release' : ($uFeedStatus === 'ineligible' ? 'Update not authorized' : ($uCanCheck ? 'Ready to check' : 'Setup required')));
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-unified-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-theme-v101.css') . '?v=101') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-theme-v101.css') . '?v=103') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-experience-v103.css') . '?v=103') ?>">
 <main class="bau" id="barama-unified-auto-updater" aria-labelledby="bau-title">
  <nav class="bau-breadcrumb" aria-label="Breadcrumb">Administration / System / Auto Updater</nav>
  <header class="bau-heading"><div><h1 id="bau-title">Auto Updater</h1><p>Discover and verify publisher-signed Barama releases in one place.</p></div>
@@ -54,21 +55,12 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
    <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
    <button class="bau-button bau-primary" type="submit" <?= $uCanCheck ? '' : 'disabled' ?> data-bau-check>↻ &nbsp; Check for updates</button>
   </form></header>
+ <div class="bau-feedback-stack bau-feedback-v103" aria-label="Updater notifications">
  <?php if ($uFlash !== ''): ?><div class="bau-flash" role="status"><?= e($uFlash) ?></div><?php endif; ?>
  <?php if (is_string($uInstallFlash) && $uInstallFlash !== ''): ?><div class="bau-flash" role="status"><?= e($uInstallFlash) ?></div><?php endif; ?>
- <section class="bau-versions" aria-label="Software versions">
-  <div><span class="bau-kicker">Current installed version</span><strong>v<?= e($uVersion) ?></strong></div>
-  <span class="bau-versus" aria-hidden="true">→</span>
-  <div><span class="bau-kicker">Latest verified signed release</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : (($uFeedStatus === 'eligible' && $uFresh) ? 'No newer release' : 'Not confirmed') ?></strong><small><?= $uVersionAvailable ? 'Fresh publisher signature verified' : (($uFeedStatus === 'eligible' && $uFresh) ? 'Publisher confirmed no newer signed release' : 'Select Check for updates to request signed release details') ?></small></div>
-  <span class="bau-pill <?= $uVersionAvailable ? 'bau-pill--good' : '' ?>"><?= $uVersionAvailable ? 'Update discovered' : (($uFeedStatus === 'eligible' && $uFresh) ? 'No update required' : 'Discovery pending') ?></span>
- </section>
- <div class="bau-readiness" aria-label="Update prerequisites">
-  <span><b class="<?= $uLicenseActive ? 'bau-icon-good' : '' ?>">✓</b> License <?= $uLicenseActive ? 'recognized' : 'not verified' ?></span>
-  <span title="<?= e($uDomainTitle) ?>"><b class="<?= $uDomainOk ? 'bau-icon-good' : '' ?>">⌁</b> Domain <?= $uDomainOk ? 'matched' : 'not confirmed' ?></span>
-  <span><b class="<?= $uCanCheck ? 'bau-icon-good' : '' ?>">◉</b> Signed feed <?= $uCanCheck ? 'ready' : 'not ready' ?></span>
-  <span><b class="<?= $uStorage ? 'bau-icon-good' : '' ?>">▣</b> Storage <?= $uStorage ? 'writable' : 'not ready' ?></span>
-  <a href="<?= e(url('/dashboard/license')) ?>">Manage license ↗</a>
  </div>
+ 
+ 
  <div class="bau-columns">
   <section class="bau-panel bau-mainpanel" aria-labelledby="bau-workflow-title">
    <div class="bau-panel-heading"><div><h2 id="bau-workflow-title">Update lifecycle</h2><p>Progress is based on confirmed server results. No installation starts during discovery.</p></div><span class="bau-pill">Step <?= (int)$uCompleted ?> of 7 confirmed</span></div>
@@ -94,9 +86,23 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
    </div>
   </aside>
  </div>
+ <section class="bau-versions" aria-label="Software versions">
+  <div><span class="bau-kicker">Current installed version</span><strong>v<?= e($uVersion) ?></strong></div>
+  <span class="bau-versus" aria-hidden="true">→</span>
+  <div><span class="bau-kicker">Latest verified signed release</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : (($uFeedStatus === 'eligible' && $uFresh) ? 'No newer release' : 'Not confirmed') ?></strong><small><?= $uVersionAvailable ? 'Fresh publisher signature verified' : (($uFeedStatus === 'eligible' && $uFresh) ? 'Publisher confirmed no newer signed release' : 'Select Check for updates to request signed release details') ?></small></div>
+  <span class="bau-pill <?= $uVersionAvailable ? 'bau-pill--good' : '' ?>"><?= $uVersionAvailable ? 'Update discovered' : (($uFeedStatus === 'eligible' && $uFresh) ? 'No update required' : 'Discovery pending') ?></span>
+ </section>
+ <div class="bau-readiness" aria-label="Update prerequisites">
+  <span><b class="<?= $uLicenseActive ? 'bau-icon-good' : '' ?>">✓</b> License <?= $uLicenseActive ? 'recognized' : 'not verified' ?></span>
+  <span title="<?= e($uDomainTitle) ?>"><b class="<?= $uDomainOk ? 'bau-icon-good' : '' ?>">⌁</b> Domain <?= $uDomainOk ? 'matched' : 'not confirmed' ?></span>
+  <span><b class="<?= $uCanCheck ? 'bau-icon-good' : '' ?>">◉</b> Signed feed <?= $uCanCheck ? 'ready' : 'not ready' ?></span>
+  <span><b class="<?= $uStorage ? 'bau-icon-good' : '' ?>">▣</b> Storage <?= $uStorage ? 'writable' : 'not ready' ?></span>
+  <a class="bau-button bau-license-action" href="<?= e(url('/dashboard/license')) ?>">Manage license</a>
+ </div>
  <section class="bau-panel bau-bottom" aria-labelledby="bau-overview-title"><div class="bau-panel-heading"><div><h2 id="bau-overview-title">Updater overview</h2><p>Transparent status of each required step. Pending steps are not simulated.</p></div><a class="bau-button bau-refresh" href="<?= e(url('/dashboard/system/auto-updater')) ?>">↻ Refresh</a></div>
   <div class="bau-tablewrap"><table class="bau-table"><thead><tr><th>Check</th><th>Status</th><th>Explanation</th></tr></thead><tbody>
   <?php foreach ($uSteps as $uStep): ?><tr><td><?= e($uStep[0]) ?></td><td><span class="bau-pill <?= $uStep[2] === 'done' ? 'bau-pill--good' : ($uStep[2] === 'warn' ? 'bau-pill--warn' : '') ?>"><?= e($uStep[1]) ?></span></td><td><?= $uStep[2] === 'done' ? 'Confirmed by the current website state' : 'Awaiting an authenticated result or safe update execution' ?></td></tr><?php endforeach; ?>
   </tbody></table></div></section>
 </main>
-<script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=100') ?>"></script>
+<script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=103') ?>"></script>
+<script defer src="<?= e(asset('js/barama-auto-updater-experience-v103.js') . '?v=103') ?>"></script>
