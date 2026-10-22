@@ -84,6 +84,14 @@
 - Owner-operated aaPanel ZIP: `Barama-AutoUpdater-PremiumUX-BothSites-aaPanel-v1.0.0.zip`, SHA-256 `ae65c1c4844815e6ad7bb59f4536f56a6a4bc9707e2b02fdad81a602d58da9d1`; exact source and Git blob guards, separate Staging/Production backups and rollback; *not deployed by GitHub merge*.
 - **Live site status:** Not yet installed on Staging or Production. Do not report visual acceptance or successful remote update installation. Production's tester entitlement #8 remains NOT CONFIGURED; Staging worker remains governed by independent real worker readiness. A discovered v0.9.24 signature **is not** authorization to install.
 
+## Current engineering handoff — core Staging worker integration (2026-10-22)
+
+- The premium PHP-first UI is **visually accepted** on Staging and Production. **No further UI reconstruction** is on the critical path.
+- **[PR #123](https://github.com/tonsamith128/Barama-Real-Estate/pull/123)** reconciles the previously owner-accepted Staging-only admin POST/CSRF route, protected queue, publisher trust, internal signed downloader, worker readiness and exact-session job progress against the current `main` v103 layout. It is **source parity, not a deployed new release**; do not overwrite the accepted live controller/view with a wholesale old branch.
+- The independent Staging root worker **already exists**: `barama-oneclick-staging.service` and `/root/Barama-OneClick-Worker/worker-v1.0.1`. The exact worker and bridge fingerprints, existing owner approval session script, read-only `--check` and non-root `--probe` are captured in [AUTO_UPDATER_STAGING_0924_EXECUTION.md](AUTO_UPDATER_STAGING_0924_EXECUTION.md). **Do not invent a second worker architecture.**
+- **Blocking gate:** verify current Staging bridge `feed_status=available`, `entitlement=Eligible`, `pending_migrations=0`; use an owner-approved single Staging v0.9.24 session with exact new administrator job ID and worker/recovery result, **never a fake queue item**. An earlier v0.9.24 signature is not proof of current publication/audience.
+- Production tester activation #8 is **not** eligible without distinct exact authorization. No production worker, signing key, license change or customer root privilege.
+
 ## 1. What "done" means — executable acceptance, not a UI mockup
 
 The Auto Updater is complete **only** when all of these pass against the *exact* candidate and current source SHA:
