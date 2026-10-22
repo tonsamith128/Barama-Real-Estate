@@ -5,6 +5,8 @@ namespace Barama\Services\Updates;
 
 use RuntimeException;
 use ZipArchive;
+use Closure;
+use Barama\Core\Installation;
 
 /**
  * Shared-hosting compatible, bounded FILE-ONLY transaction.
@@ -18,12 +20,35 @@ final class PortableUpdateFileTransactionV1
 {
     public static function apply(
         string $site, string $zipPath, string $vault,
-        string $installedVersion, array $signedEnvelope, string $channel
+        string $installedVersion, array $signedEnvelope, string $channel,
+        ?Closure $testDiscovery = null
     ): array {
         if (PublisherTrustPaths::isProtectedStaging())
             throw new RuntimeException('PORTABLE_STAGING_ROOT_WORKER_ONLY');
+        if ($testDiscovery !== null && (PHP_SAPI !== 'cli'
+            || !defined('BARAMA_PORTABLE_FIXTURE_ONLY')
+            || BARAMA_PORTABLE_FIXTURE_ONLY !== true))
+            throw new RuntimeException('PORTABLE_TEST_DISCOVERY_FORBIDDEN');
+        if (is_link($site.'/VERSION') || !is_file($site.'/VERSION')
+            || trim((string)file_get_contents($site.'/VERSION'))!==$installedVersion)
+            throw new RuntimeException('PORTABLE_INSTALLED_VERSION_CHANGED');
+        // Do not equate possession of a signed manifest with ENTITLEMENT.
+        // The live publisher must independently grant this installation the
+        // exact release at the moment of applying files.
+        $live = $testDiscovery !== null ? $testDiscovery($installedVersion)
+            : TrustedReleaseFeed::check(
+                $installedVersion, Installation::licenseState(),
+                Installation::runtimeConfig(), null, true
+            );
+        if (!is_array($live)
+            || ($live['status']??null)!=='available'
+            || ($live['entitlement']??null)!=='Eligible'
+            || ($live['feed']??null)!=='Signed release verified'
+            || !is_array($live['signed_envelope']??null)
+            || $live['signed_envelope'] !== $signedEnvelope)
+            throw new RuntimeException('PORTABLE_LIVE_AUDIENCE_OR_RELEASE_DENIED');
         $plan = PortableUpdateArchiveV1::inspect(
-            $site, $zipPath, $installedVersion, $signedEnvelope, $channel
+            $site, $zipPath, $installedVersion, $live['signed_envelope'], $channel
         );
         $lock = self::lock($vault);
         try {
