@@ -39,6 +39,22 @@ No green CI fixture, source merge, dashboard design, signed manifest, key additi
 | Current GitHub UI | `auto-updater-unified-v100.php` is active. Its staging branch says discovery only; current `main` has no `/update-now` route | Missing functional staging Update Now is a **real integration gap**, not a CSS bug. |
 | Tested components | Signature/ZIP preflights, private delivery, backup/recovery *fixtures*, and CI exist across main and draft branches | Pieces present != a demonstrated real installer. Avoid repeating passing audits without changed code or a failing gate. |
 
+### Accepted live receipts: do not silently overwrite
+
+These are **operator-reported 2026-10-22 hashes**, not substitutes for checking the current live file just before an approved patch:
+
+| Accepted deployed artifact | SHA-256 / protected backup |
+| --- | --- |
+| Unified updater PHP view (both sites, after theme link) | `224c140a3842e02f548d6afcd233a88729575a30300bbd19ea7202a509567e13` |
+| Unified original base CSS (both sites) | `a0d4cc5b36a2fbaf071c70aa4adc0a9ef8847f45df3419404c81e2623278ec96` |
+| Scoped theme CSS (both sites) | `466410814f40b7abd09e1a8349dfbbd53691113f37163f9965ea67caf7d03109` |
+| Staging theme rollback | `/root/Barama-AutoUpdater-Theme-Backups/staging-v101-rokzbdis` |
+| Production theme rollback | `/root/Barama-AutoUpdater-Theme-Backups/production-v101-sbom8rak` |
+| Production additive R2 public catalog | `94d6f3909d55e17f33291fa124031d6692af4d1673f1e3c0f68f7f1dcd8fc1be` |
+| Production R2 public-trust rollback | `/root/Barama-Production-R2-PublicTrust-Backups/r2-additive-20261022T004659Z-a7e70905` |
+
+Do not promote an older GitHub file over these accepted deployed changes or equate the Git blob hash with a disk SHA-256. Every deployment must compare actual current local hashes, review the intended delta and stop on drift. Never write production from a staging-specific artifact.
+
 **Important boundaries:** The Production tester grant is a product/licensing decision, **not a reason to modify signing keys**. A tester grant, if approved, must have independently verified installation/license binding, expiry and the applicable audience; it must not confer staging-only release access. The already working staging entitlement must not be copied to production.
 
 ## 3. GitHub branch/PR reconciliation — no blind merges
