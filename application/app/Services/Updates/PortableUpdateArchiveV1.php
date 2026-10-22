@@ -73,6 +73,7 @@ final class PortableUpdateArchiveV1
             $files = [];
             $total = 0;
             $versionFound = false;
+            $changedCode = false;
             foreach (range(0, $zip->numFiles - 1) as $i) {
                 $st = $zip->statIndex($i);
                 if (!is_array($st) || !is_string($st['name'] ?? null))
@@ -135,13 +136,18 @@ final class PortableUpdateArchiveV1
                         throw new RuntimeException('PORTABLE_VERSION_MISMATCH');
                     $versionFound = true;
                 }
+                $newSha = hash_final($digest);
+                $baseline = is_file($destination) ? hash_file('sha256', $destination) : null;
+                if ($baseline === false)
+                    throw new RuntimeException('PORTABLE_BASELINE_UNREADABLE');
+                if ($name !== 'VERSION' && ($baseline === null
+                    || !hash_equals($baseline, $newSha))) $changedCode = true;
                 $files[] = [
-                    'path' => $name, 'bytes' => $size, 'sha256' => hash_final($digest),
-                    'baseline' => is_file($destination) ?
-                        hash_file('sha256', $destination) : null,
+                    'path' => $name, 'bytes' => $size, 'sha256' => $newSha,
+                    'baseline' => $baseline,
                 ];
             }
-            if (!$versionFound || count($files) < 2)
+            if (!$versionFound || count($files) < 2 || !$changedCode)
                 throw new RuntimeException('PORTABLE_NO_CODE_CHANGE');
             return [
                 'archive_sha256' => $m['package_sha256'],
