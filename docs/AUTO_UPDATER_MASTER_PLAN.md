@@ -10,7 +10,7 @@
 
 ## Accepted v1.0.2 server-side layout deployment — 2026-10-22 (operator verified)
 
-**Staging and Production deployment receipts: PASS. Browser rendering still awaiting screenshots. This is a UI-only milestone, NOT a completed Auto Updater installation.**
+**Staging and Production deployment receipts: PASS; user screenshots confirm premium server-rendered layout visually WORKING on both sites (2026-10-22). This UI milestone is complete, but the Auto Updater installation workflow remains OPEN.**
 
 - Exact aaPanel package: `Barama-AutoUpdater-Premium-Visible-Fix-aaPanel-v1.0.2.zip`, SHA-256 `e3afa2a8ffd0d690c4cff61f45ddb51eb65dd3aa67f261706dea3cdd40ab2bf1`.
 - Owner-reported package: outer ZIP checksum, `unzip -tq`, every internal `SHA256SUMS.txt` file and offline Staging/Production installation+rollback fixture **PASS**. Fixtures explicitly showed `NO_LIVE_WEBSITE_FILES_WRITTEN=YES`.
@@ -20,7 +20,7 @@
 - New asset Git blobs on both sites: CSS `8bac3d28430e60d5e633d26382e06281445caf2d`, JS `f3e37d1d9846a3e7e6ca259aae1ecce9dee17399`; installed view links these cache-distinct filenames. GitHub [PR #120](https://github.com/tonsamith128/Barama-Real-Estate/pull/120) already merged the canonical source implementation.
 - A separate attempt from `/root` initially invoked the wrong `deploy.py` and failed with `unrecognized arguments: --site production`; this caused **no production view install**, and the corrected command from the extracted package subsequently succeeded.
 - Scope and safety: `VERSION_CHANGED=NO; DATABASE_CHANGED=NO; WORKER_STARTED=NO; UPDATE_JOB_SUBMITTED=NO`. No license-entitlement or signing-key change. Both application versions remain as previously recorded; no new release was installed by this UI package.
-- **Next acceptance:** visually confirm both pages show lifecycle above versions/readiness, premium Manage license action, and dismissible floating feedback after a genuine Check for updates. Then return to one genuine, independently authorized, recoverable Staging Update Now run. Do not repeat previous general baseline audits or revive old UI packages.
+- **UI accepted:** owner provided screenshots verifying both Staging and Production render the new lifecycle-first layout. Do not reopen UI work unless a new reproducible defect appears. **Next exact engineering acceptance:** a real, independently authorized, recoverable Staging Update Now run; no routine re-audits of accepted CSS/JS.
 
 ## Premium UI browser-visibility correction v1.0.2 — 2026-10-22 (installed on both sites; visual confirmation pending)
 
