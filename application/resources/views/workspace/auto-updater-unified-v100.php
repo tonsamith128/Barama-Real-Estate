@@ -66,9 +66,9 @@ $uFlash = is_string($systemFeedFlash ?? null) ? $systemFeedFlash : '';
 $uInstallFlash = $_SESSION['_barama_portable_update_flash_v102'] ?? null;
 if (isset($_SESSION['_barama_portable_update_flash_v102'])) unset($_SESSION['_barama_portable_update_flash_v102']);
 $uSteps = [
- ['Entitlement', $uEligible && $uFresh ? 'Confirmed' : ($uFeedStatus === 'ineligible' ? 'Not eligible' : 'Not checked'), $uEligible && $uFresh ? 'done' : ($uFeedStatus === 'ineligible' ? 'warn' : 'pending')],
- ['Signed feed', $uCanCheck ? 'Configured' : 'Unavailable', $uCanCheck ? 'done' : 'warn'],
- ['Release signature', $uSignedCandidateFormat ? 'Verified manifest' : 'Not verified', $uSignedCandidateFormat ? 'done' : 'pending'],
+ ['Entitlement', $uOneClick['completed'] ? 'Verified for completed job' : ($uEligible && $uFresh ? 'Confirmed' : ($uFeedStatus === 'ineligible' ? 'Not eligible' : 'Not checked')), $uOneClick['completed'] || ($uEligible && $uFresh) ? 'done' : ($uFeedStatus === 'ineligible' ? 'warn' : 'pending')],
+ ['Signed feed', $uOneClick['completed'] ? 'Worker confirmed' : ($uCanCheck ? 'Configured' : 'Unavailable'), $uOneClick['completed'] || $uCanCheck ? 'done' : 'warn'],
+ ['Release signature', $uOneClick['completed'] ? 'Worker verified' : ($uSignedCandidateFormat ? 'Verified manifest' : 'Not verified'), $uOneClick['completed'] || $uSignedCandidateFormat ? 'done' : 'pending'],
  ['Package staging', $uOneClick['completed'] ? 'Worker confirmed' : ($uStaged ? 'Package detected' : 'Not staged'), $uOneClick['completed'] || $uStaged ? 'done' : 'pending'],
  ['Package inspection', $uOneClick['completed'] ? 'Worker verified' : ($uStagedVerified ? 'Verified ZIP' : 'Not inspected'), $uOneClick['completed'] || $uStagedVerified ? 'done' : 'pending'],
  ['Backup & installation', $uOneClick['completed'] ? 'Worker completed' : 'Not executed', $uOneClick['completed'] ? 'done' : 'pending'],
