@@ -143,7 +143,7 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
       <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>"
             data-bau-install-form data-bau-portable-flow data-portable-start="not_started">
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-       <button type="submit" class="bau-button bau-install">Update Now</button>
+       <button type="submit" class="bau-button bau-install">Install verified update</button>
       </form><small>Administrator-only: signed download, private backup, file-only installation and independent verification. No DB migrations.</small>
     <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button>
       <small><?= !$uPortable ? 'Private vault, writable code and PHP extensions are required.' : (!$uCanCheck ? 'Publisher trust must be available.' : 'A fresh newer eligible signed release is required.') ?></small>
