@@ -30,6 +30,25 @@ $uStaging = class_exists(\Barama\Services\Updates\PublisherTrustPaths::class) &&
 $uPortable = false;
 try { $uPortable = class_exists(\Barama\Services\Updates\PortableCustomerUpdateV1::class) && \Barama\Services\Updates\PortableCustomerUpdateV1::ready(); } catch (\Throwable) { /* Unknown => disabled */ }
 $uReadyInstall = !$uStaging && $uPortable && $uVersionAvailable;
+// A staging action is visible only when the separately reviewed one-click
+// controller, queue, and root-worker status contract have all been supplied.
+// This view never grants update authorization or creates update jobs.
+$uStagingQueueSupported = $uStaging
+    && class_exists(\Barama\Services\Updates\OneClickUpdateQueueV1::class)
+    && isset($systemOneClickWorkerReady, $systemOneClickPending, $systemOneClickStatus)
+    && is_bool($systemOneClickWorkerReady)
+    && is_bool($systemOneClickPending)
+    && is_array($systemOneClickStatus);
+$uStagingAdministrator = false;
+if ($uStagingQueueSupported) {
+    try {
+        $uAuth = new \Barama\Services\AuthService();
+        $uStagingAdministrator = $uAuth->hasRole('administrator')
+            || $uAuth->hasRole('super-administrator');
+    } catch (\Throwable) { /* Fail closed. */ }
+}
+$uCanRequestStagingUpdate = $uStagingQueueSupported && $uStagingAdministrator
+    && $uVersionAvailable && $systemOneClickWorkerReady && !$systemOneClickPending;
 $uFlash = is_string($systemFeedFlash ?? null) ? $systemFeedFlash : '';
 $uInstallFlash = $_SESSION['_barama_portable_update_flash_v102'] ?? null;
 if (isset($_SESSION['_barama_portable_update_flash_v102'])) unset($_SESSION['_barama_portable_update_flash_v102']);
@@ -83,7 +102,36 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
    <div class="bau-mini"><span>Staged release ZIP</span><strong><?= $uStagedVerified ? 'Verified' : ($uStaged ? 'Present · unverified' : 'Not staged') ?></strong></div>
    <div class="bau-mini"><span>Backup and rollback</span><strong>Not verified in this session</strong></div>
    <div class="bau-aside-actions">
-    <?php if ($uStaging): ?><div class="bau-safe-note">Staging installation is reserved for the protected staging worker. This dashboard only discovers updates.</div>
+    <?php if ($uStaging): ?>
+      <div class="bau-safe-note">Staging installations require a separate, protected, root-owned worker. Discovery alone never starts installation.</div>
+      <?php if ($uCanRequestStagingUpdate): ?>
+        <form method="post" action="<?= e(url('/dashboard/system/auto-updater/update-now')) ?>" data-bau-install-form>
+          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+          <button type="submit" class="bau-button bau-install">Update Now</button>
+        </form>
+        <small>Administrator request only. The independent trusted worker must reverify authorization, ZIP integrity, backup, and recovery before any update is installed.</small>
+      <?php else: ?>
+        <button type="button" class="bau-button bau-install" disabled>Update Now unavailable</button>
+        <small><?php if (!$uStagingQueueSupported): ?>The protected staging update queue is not installed in this application build.
+          <?php elseif (!$uStagingAdministrator): ?>Only an administrator can request an update.
+          <?php elseif (!empty($systemOneClickPending)): ?>A previous update request is pending; review its status before resubmitting.
+          <?php elseif (empty($systemOneClickWorkerReady)): ?>The trusted staging worker is offline; Update Now remains disabled.
+          <?php else: ?>Use Check for updates to verify a fresh, eligible, newer signed release.
+          <?php endif; ?></small>
+      <?php endif; ?>
+      <?php if ($uStagingQueueSupported): ?>
+      <?php if (!empty($systemOneClickFlash)): ?><p class="bau-flash" role="status"><?= e((string)$systemOneClickFlash) ?></p><?php endif; ?>
+      <div class="bau-safe-note" role="status" aria-live="polite"
+           data-oneclick-status
+           data-oneclick-endpoint="<?= e(url('/dashboard/system/auto-updater/status')) ?>"
+           data-oneclick-initial-worker-ready="<?= $systemOneClickWorkerReady ? '1' : '0' ?>"
+           data-oneclick-initial-pending="<?= $systemOneClickPending ? '1' : '0' ?>"
+           data-oneclick-initial-state="<?= e((string)($systemOneClickStatus['state'] ?? 'not_started')) ?>">
+        Update job: <strong data-oneclick-state><?= e(str_replace('_', ' ', (string)($systemOneClickStatus['state'] ?? 'not_started'))) ?></strong>
+        <span data-oneclick-worker><?= $systemOneClickWorkerReady ? ' · Trusted worker online' : ' · Trusted worker offline' ?></span>
+        <p data-oneclick-stage-message>Awaiting trusted job status.</p>
+      </div>
+      <?php endif; ?>
     <?php elseif ($uReadyInstall): ?>
       <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>" data-bau-install-form>
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
@@ -100,3 +148,4 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
   </tbody></table></div></section>
 </main>
 <script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=100') ?>"></script>
+<?php if ($uStagingQueueSupported): ?><script defer src="<?= e(asset('js/barama-oneclick-status-v100.js') . '?v=100') ?>"></script><?php endif; ?>
