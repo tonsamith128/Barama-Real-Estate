@@ -8,6 +8,19 @@
 
 > **North star:** A verified administrator can check entitlement and see a genuinely offered, correctly signed, installation-specific release, request **Update Now**, observe honest progress, and finish with the *actual* installed version updated and a verified recovery path. A CodeCanyon customer install must ultimately support this without root/server-owner privileges.
 
+## Accepted two-site Premium Auto Updater UI deployment — 2026-10-22 (operator verified)
+
+**Milestone: UI-only deployment PASS on Staging and Production. Auto Updater end-to-end installation remains OPEN.**
+
+- Exact root-private aaPanel package: `Barama-AutoUpdater-PremiumUX-BothSites-aaPanel-v1.0.1.zip`; SHA-256 `77bda7470e6afa7e0739c58961e488cce7a07b24faf16afe130244d6b0b67257`. Supersedes halted v1.0.0.
+- Owner verified outer ZIP hash, `unzip -tq`, every `SHA256SUMS.txt` entry, and `tests/fixture_smoke.py`. The fixture passed Staging install/rollback, Production install/rollback and changed-JS rejection, and explicitly reported `NO_LIVE_WEBSITE_FILES_WRITTEN` for fixture operations.
+- **Independent read-only live preflights:** both sites showed exact CSS and JS baseline matches, candidates `8912f550e37db4a704147cbffaaa83782d200a9d` and `c297cc4a9c8ee50a9a5456a451f00fabf02fe59e`, and `READY_FOR_UI_ONLY_DEPLOY=YES`.
+- **Actual Staging owner deployment:** `python3 -B deploy.py --site staging --deploy --confirm INSTALL_PREMIUM_UI_STAGING_ONLY` returned `PREMIUM_UI_DEPLOY=PASS`, private backup `/root/Barama-AutoUpdater-PremiumUX-Backups/staging/20261022T025843Z-7b090821`. Exact printed rollback: `python3 -B deploy.py --site staging --rollback 20261022T025843Z-7b090821 --confirm ROLLBACK_PREMIUM_UI_STAGING_ONLY`.
+- **Actual Production owner deployment:** `python3 -B deploy.py --site production --deploy --confirm INSTALL_PREMIUM_UI_PRODUCTION_ONLY` returned `PREMIUM_UI_DEPLOY=PASS`, private backup `/root/Barama-AutoUpdater-PremiumUX-Backups/production/20261022T025852Z-c7862e9b`. Exact printed rollback: `python3 -B deploy.py --site production --rollback 20261022T025852Z-c7862e9b --confirm ROLLBACK_PREMIUM_UI_PRODUCTION_ONLY`.
+- **Scope:** existing Auto Updater CSS and JS only; server receipts show `VERSION_CHANGED=NO; SQL_CHANGED=NO; WORKER_STARTED=NO; UPDATE_JOB_SUBMITTED=NO`. Earlier accepted view/controller, license category, entitlement, signing trust and worker execution contract were not modified by this package.
+- **Not yet evidenced:** user/browser visual validation of both themes and breakpoints after cache refresh; a new Staging `0.9.23 → 0.9.24` dashboard-origin update; real end-to-end recovery. Do not conflate successful premium UI deployment with completed Auto Updater execution or Production tester entitlement.
+- **Next core milestone:** inspect current Staging worker readiness with the available signed `0.9.24` release, confirm Staging-targeted audience and recovery, and run one explicitly approved protected dashboard job. No additional UI rewrites or generic server re-audits.
+
 ## Accepted Staging integration — 2026-10-22 (operator verified)
 
 **Status: Staging unified Auto Updater *view-only* integration INSTALLED / PASS; Auto Updater end-to-end completion remains OPEN.**
@@ -27,7 +40,7 @@
 - Owner verified **both** Staging and Production have identical CSS SHA-256 `466410814f40b7abd09e1a8349dfbbd53691113f37163f9965ea67caf7d03109` and JS 1398-byte Git blob `437665a2300b8c8c87eb77214d6c899bdcb27866` (SHA-256 `34f96cb9edb2742b3c15494aeaba4ee2aee8ab5a7631f47cce77a4e8b830abc3`). The **only** difference from GitHub's accepted 1397-byte JS baseline blob `c4e56754ad13cdfb9aa2d6c040f0d6a018176314` is an extra terminal newline; not a code change.
 - Corrected ZIP **`Barama-AutoUpdater-PremiumUX-BothSites-aaPanel-v1.0.1.zip`**, SHA-256 `77bda7470e6afa7e0739c58961e488cce7a07b24faf16afe130244d6b0b67257` supersedes v1.0.0. It requires the **exact** live JS blob above and confirms that removing exactly one trailing LF reconstructs the GitHub baseline before append. The resulting JS Git blob is **exactly** GitHub `main` `c297cc4a9c8ee50a9a5456a451f00fabf02fe59e`; CSS output matches `8912f550e37db4a704147cbffaaa83782d200a9d`.
 - Local offline fixture: exact source preflight, install and rollback **passed independently for Staging and Production**; a mutated JS file was denied. Source files are backed up byte-for-byte including the original newline in private root-only backup directories. No live server changes were made by this fixture.
-- **Live deployment still pending operator aaPanel action:** ZIP SHA-256, internal checksums, fixture smoke, each site's read-only preflight; then separate Staging install/visual review and Production install. No PHP/controller/license/signing/worker/real updater execution changes. **Do not mark installed until owner posts the live receipts.**
+- **Historical status at package preparation, superseded by the accepted two-site installation receipts above.** No PHP/controller/license/signing/worker/real updater execution changes.
 
 ## UI Experience v1.0.2 — Source prepared, live deployment pending (2026-10-22)
 
