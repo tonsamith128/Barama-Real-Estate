@@ -1,5 +1,7 @@
 # REPORT — Barama Real Estate Auto Updater
 
+> **UPDATE — 2026-10-23 ~00:08 ICT (supersedes the old current-blocker line below).** The v1.0.0 preflight mismatch was reproduced locally: under restricted PHP, original reports READY=NO / STATE=unavailable and corrected code reports READY=YES / STATE=not_started. Corrected test harness v1.0.1 passed 11/11 unit tests and a local restricted PHP 8.4 smoke test; SHA-256 of zip e0ed20f9bf446a21c306047d7a934c9022d5ecd3d69926d3dfec59bf93136811. The unchanged narrow source fix was committed to **PR #126 only**, commit 73bd7206002b4607809d3ac20f4242b3a497f291, preserving private vault and missing-vault guards. **NO QA WEBSITE PATCH DEPLOYED YET; real PHP-FPM, authenticated ZIP download, installation, rollback still UNVERIFIED.** Next immediate step: owner uploads v1.0.1 QA one-file patch, runs guarded deploy (fresh check inside deploy), verifies QA browser button, then runs single-stage download-only via authenticated browser; do not click JS-chained full install. Do not re-run v1.0.0. Current test manifest expiry remains 2026-10-23 10:07:17 ICT. This addendum takes precedence over any older 'immediate stop' text in this document.
+
 **Authoritative cross-chat handoff and acceptance report**  
 **Last updated:** 2026-10-22, approximately 23:23 Asia/Phnom_Penh (ICT)  
 **Project:** Barama Real Estate, Portable File-Only Auto Updater (PHP, aaPanel)  
