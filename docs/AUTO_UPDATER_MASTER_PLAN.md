@@ -8,14 +8,28 @@
 
 > **North star:** A verified administrator can check entitlement and see a genuinely offered, correctly signed, installation-specific release, request **Update Now**, observe honest progress, and finish with the *actual* installed version updated and a verified recovery path. A CodeCanyon customer install must ultimately support this without root/server-owner privileges.
 
-## Premium UI browser-visibility correction v1.0.2 — 2026-10-22 (source ready; live not yet deployed)
+## Accepted v1.0.2 server-side layout deployment — 2026-10-22 (operator verified)
+
+**Staging and Production deployment receipts: PASS. Browser rendering still awaiting screenshots. This is a UI-only milestone, NOT a completed Auto Updater installation.**
+
+- Exact aaPanel package: `Barama-AutoUpdater-Premium-Visible-Fix-aaPanel-v1.0.2.zip`, SHA-256 `e3afa2a8ffd0d690c4cff61f45ddb51eb65dd3aa67f261706dea3cdd40ab2bf1`.
+- Owner-reported package: outer ZIP checksum, `unzip -tq`, every internal `SHA256SUMS.txt` file and offline Staging/Production installation+rollback fixture **PASS**. Fixtures explicitly showed `NO_LIVE_WEBSITE_FILES_WRITTEN=YES`.
+- Read-only preflights for **both** sites: `LIFECYCLE_FIRST_SERVER_MARKUP=PASS`, `FLOATING_NOTIFICATION_SERVER_MARKUP=PASS`, `NEW_ASSET_FILENAMES_NO_OLD_CACHE=PASS`, `PHP_SYNTAX=PASS`, `UPDATE_AUTHORIZATION_CODE=UNCHANGED`, `READY_FOR_PRESENTATION_ONLY_DEPLOY=YES`.
+- **Actual Staging deployment:** `PREMIUM_VISIBLE_UI_INSTALL=PASS`, view SHA-256 `e0adbc9c05f8b3b535fced6564d0a09667a5c11ae50a3b4ac478b42f6cce864c` → `d1dc29f459c9631c9b8f9ec6747cda028ae195839f563aef37ab6efd02d861e4`. Root-private backup: `/root/Barama-AutoUpdater-VisibleUX-Backups/staging/20261022T031341Z-cf7d9fb6`. Owner-reported rollback command from package: `python3 -B deploy.py --site staging --rollback 20261022T031341Z-cf7d9fb6 --confirm ROLLBACK_VISIBLE_PREMIUM_UX_STAGING_ONLY`. Not executed.
+- **Actual Production deployment:** `PREMIUM_VISIBLE_UI_INSTALL=PASS`, view SHA-256 `224c140a3842e02f548d6afcd233a88729575a30300bbd19ea7202a509567e13` → `6d2e750bada4272af64fb6d3d75f3a490c808620c69525f7239dd224d0c8c343`. Root-private backup: `/root/Barama-AutoUpdater-VisibleUX-Backups/production/20261022T031442Z-f700509d`. Owner-reported rollback command: `python3 -B deploy.py --site production --rollback 20261022T031442Z-f700509d --confirm ROLLBACK_VISIBLE_PREMIUM_UX_PRODUCTION_ONLY`. Not executed.
+- New asset Git blobs on both sites: CSS `8bac3d28430e60d5e633d26382e06281445caf2d`, JS `f3e37d1d9846a3e7e6ca259aae1ecce9dee17399`; installed view links these cache-distinct filenames. GitHub [PR #120](https://github.com/tonsamith128/Barama-Real-Estate/pull/120) already merged the canonical source implementation.
+- A separate attempt from `/root` initially invoked the wrong `deploy.py` and failed with `unrecognized arguments: --site production`; this caused **no production view install**, and the corrected command from the extracted package subsequently succeeded.
+- Scope and safety: `VERSION_CHANGED=NO; DATABASE_CHANGED=NO; WORKER_STARTED=NO; UPDATE_JOB_SUBMITTED=NO`. No license-entitlement or signing-key change. Both application versions remain as previously recorded; no new release was installed by this UI package.
+- **Next acceptance:** visually confirm both pages show lifecycle above versions/readiness, premium Manage license action, and dismissible floating feedback after a genuine Check for updates. Then return to one genuine, independently authorized, recoverable Staging Update Now run. Do not repeat previous general baseline audits or revive old UI packages.
+
+## Premium UI browser-visibility correction v1.0.2 — 2026-10-22 (installed on both sites; visual confirmation pending)
 
 - Owner screenshots at 10:00 Cambodia time show **both** Staging and Production still displayed the old layout despite successful v1.0.1 CSS/JS disk installation receipts. **The UI visual outcome of v1.0.1 was not accepted.**
 - Root cause in verified GitHub and prior Staging view: server-rendered PHP still places versions/readiness **above** Update Lifecycle and keeps stale cache-identifiable v100/v101 stylesheet/script URLs. Dynamic JS-only DOM reordering is not a reliable primary layout contract.
 - [PR #120](https://github.com/tonsamith128/Barama-Real-Estate/pull/120) reorders the actual PHP view for GitHub `main`, creates fresh v103 CSS/JS asset filenames, and includes CI PHP syntax and section order checks; it **does not change installer authorization**.
 - Owner-operated **`Barama-AutoUpdater-Premium-Visible-Fix-aaPanel-v1.0.2.zip`**, SHA-256 `e3afa2a8ffd0d690c4cff61f45ddb51eb65dd3aa67f261706dea3cdd40ab2bf1`, patches each site's **current** PHP view only by exact source anchors. Staging also requires accepted current view SHA256 `e0adbc9c05f8b3b535fced6564d0a09667a5c11ae50a3b4ac478b42f6cce864c`; both sites require accepted previous CSS/JS Git blobs. New filenames ensure no prior asset URL is reused. The original Staging authenticated Update Now / status contract remains intact.
 - Local offline acceptance: PHP syntax and structural checks, simulated Staging-style and Production-style installation and private rollback **PASSED**, with no website files contacted. **Production's actual live PHP view has not been fetched; its source-guarded read-only preflight must pass before any deploy.**
-- **Current live state:** only prior v1.0.1 CSS/JS are on Staging and Production; v1.0.2 **is not yet deployed**. Wait for owner preflight and browser screenshots before marking visual UX accepted.
+- **Current live state:** v1.0.2 server-side layout correction is **installed on both Staging and Production**, confirmed by owner-run commands and exact payload receipts below. Browser visual acceptance remains pending; do not claim it is seen correctly until screenshots verify the result.
 - **Core completion remains OPEN:** the independently authorized, recoverable Staging v0.9.23→v0.9.24 Update Now workflow is not executed by this presentation-only patch.
 
 ## Accepted two-site Premium Auto Updater UI deployment — 2026-10-22 (operator verified)
