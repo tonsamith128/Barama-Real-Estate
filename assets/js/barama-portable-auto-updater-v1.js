@@ -21,6 +21,7 @@
   let active = false;
   form.addEventListener('submit', async (event) => {
     if (active) { event.preventDefault(); return; }
+    if (!window.confirm('Proceed with this authenticated file-only update step? Confirm the site has a verified recovery plan.')) { event.preventDefault(); return; }
     const api = ('fetch' in window) && ('FormData' in window);
     if (!api) return; // plain HTML POST remains usable
     event.preventDefault();
