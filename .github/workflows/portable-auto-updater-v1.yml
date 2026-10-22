@@ -17,6 +17,10 @@ on:
       - 'application/app/Services/Updates/PortableCustomerUpdateV1.php'
       - 'tests/portable_customer_flow_v1.php'
       - 'tests/portable_customer_e2e_v1.php'
+      - 'tests/portable_customer_package_v1.php'
+      - 'tools/build-package.php'
+      - 'application/config/update-feed-v2.json'
+      - 'application/config/update-publisher-v2-keys.json'
       - 'application/app/Http/Controllers/SystemCenterController.php'
       - 'application/routes/web.php'
       - 'application/resources/views/workspace/auto-updater-unified-v100.php'
@@ -53,6 +57,8 @@ jobs:
           php -l application/app/Services/Updates/PortableCustomerUpdateV1.php
           php -l tests/portable_customer_flow_v1.php
           php -l tests/portable_customer_e2e_v1.php
+          php -l tests/portable_customer_package_v1.php
+          php -l tools/build-package.php
           php -l application/app/Http/Controllers/SystemCenterController.php
           php -l application/routes/web.php
           php -l application/resources/views/workspace/auto-updater-unified-v100.php
@@ -81,3 +87,9 @@ jobs:
             rm -rf -- "$ROOT"
           done
           echo "PORTABLE_CUSTOMER_FILE_ONLY_GOLDEN_FIXTURES=PASS"
+      - name: Build and inspect exact customer ZIP (no license activation)
+        run: |
+          set -Eeuo pipefail
+          PACKAGE="${RUNNER_TEMP}/Barama-AutoUpdater-Customer-Smoke.zip"
+          php tools/build-package.php "$PACKAGE"
+          php tests/portable_customer_package_v1.php "$PACKAGE"
