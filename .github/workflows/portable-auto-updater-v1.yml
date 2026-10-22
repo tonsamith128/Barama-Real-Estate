@@ -16,6 +16,7 @@ on:
       - 'tests/portable_update_download_v1.php'
       - 'application/app/Services/Updates/PortableCustomerUpdateV1.php'
       - 'tests/portable_customer_flow_v1.php'
+      - 'tests/portable_customer_e2e_v1.php'
       - 'application/app/Http/Controllers/SystemCenterController.php'
       - 'application/routes/web.php'
       - 'application/resources/views/workspace/auto-updater-unified-v100.php'
@@ -47,6 +48,7 @@ jobs:
           php -l tests/portable_update_download_v1.php
           php -l application/app/Services/Updates/PortableCustomerUpdateV1.php
           php -l tests/portable_customer_flow_v1.php
+          php -l tests/portable_customer_e2e_v1.php
           php -l application/app/Http/Controllers/SystemCenterController.php
           php -l application/routes/web.php
           php -l application/resources/views/workspace/auto-updater-unified-v100.php
@@ -60,3 +62,14 @@ jobs:
         run: php tests/portable_update_download_v1.php
       - name: Portable administrator coordinator and recovery status
         run: php tests/portable_customer_flow_v1.php
+      - name: Customer one-click file-only golden fixture with fresh PHP boot and rollback
+        run: |
+          set -Eeuo pipefail
+          for scenario in complete rollback; do
+            ROOT="$(mktemp -d /tmp/barama-portable-e2e-XXXXXXXX)"
+            php tests/portable_customer_e2e_v1.php init "$ROOT"
+            php tests/portable_customer_e2e_v1.php "$scenario" "$ROOT"
+            test -d "$ROOT" && [[ "$ROOT" == /tmp/barama-portable-e2e-* ]]
+            rm -rf -- "$ROOT"
+          done
+          echo "PORTABLE_CUSTOMER_FILE_ONLY_GOLDEN_FIXTURES=PASS"
