@@ -1,0 +1,58 @@
+name: Auto Updater Unified Staging Integration
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/auto-updater-core-main-20261022]
+permissions:
+  contents: read
+jobs:
+  staging-ui-queue-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, sodium, zip, pdo_mysql
+          coverage: none
+      - name: PHP syntax and integration boundary
+        run: |
+          set -Eeuo pipefail
+          for p in \
+            application/app/Services/Updates/PublisherTrustPaths.php \
+            application/app/Services/Updates/OneClickUpdateQueueV1.php \
+            application/app/Services/Updates/TrustedReleaseFeed.php \
+            application/bin/oneclick-unprivileged-delivery.php \
+            application/app/Http/Controllers/SystemCenterController.php \
+            application/routes/web.php \
+            application/resources/views/workspace/auto-updater-unified-v100.php \
+            tests/security/AutoUpdaterUnifiedIntegrationContractTest.php
+          do php -l "$p"; done
+          php tests/security/AutoUpdaterUnifiedIntegrationContractTest.php
+      - name: Browser status behavior is display-only
+        run: |
+          set -Eeuo pipefail
+          node --check assets/js/barama-oneclick-status-v100.js
+          node --test tests/security/OneClickDashboardStatusTest.cjs
+      - name: No production worker, root-command or fake installation
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          q=Path('application/app/Services/Updates/OneClickUpdateQueueV1.php').read_text()
+          c=Path('application/app/Http/Controllers/SystemCenterController.php').read_text()
+          v=Path('application/resources/views/workspace/auto-updater-unified-v100.php').read_text()
+          assert 'PRODUCTION_ONLY' not in q
+          assert "return $site===self::SITE ? 'STAGING_ONLY' : null;" in q
+          assert 'authorized_to_install' in q
+          assert 'PublisherTrustPaths::isProtectedStaging()' in c
+          assert 'systemOneClickWorkerReady' in v
+          assert 'Install verified update' in v  # original production gate remains unchanged
+          for text in (q,c,v):
+              for forbidden in ('shell_exec(', 'passthru(', 'proc_open(', 'sudo ', 'systemctl '):
+                  assert forbidden not in text, forbidden
+          print('NO_PRODUCTION_WORKER_OR_ROOT_EXECUTION=PASS')
+          PY
+          echo 'LIVE_INSTALLATION=NOT_EXECUTED'
