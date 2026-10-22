@@ -1,0 +1,180 @@
+/* BARAMA_UNIFIED_AUTO_UPDATER_THEME_V101
+   Applies only inside the unified Auto Updater screen.
+   Barama's authoritative theme is html[data-bs-theme] (NOT OS preference).
+   No updater authorization, button state, or application behavior is changed.
+*/
+
+html:not([data-bs-theme="dark"]) #barama-unified-auto-updater {
+  color-scheme: light;
+  --bau-ink: var(--barama-text, #182943);
+  --bau-muted: var(--barama-muted, #66758e);
+  --bau-blue: var(--barama-primary, #2463f6);
+  --bau-border: var(--barama-border, #dbe4f0);
+  --card-bg: var(--barama-surface, #fff);
+  --bau-soft: var(--barama-surface-soft, #f0f4fa);
+  --bau-tint: color-mix(in srgb, var(--bau-blue) 7%, var(--card-bg));
+  --bau-surface-ring: color-mix(in srgb, var(--bau-blue) 7%, var(--card-bg));
+  --bau-good: var(--barama-success, #0c9b72);
+  --bau-pending: #687c9b;
+}
+
+html[data-bs-theme="dark"] #barama-unified-auto-updater {
+  color-scheme: dark;
+  --bau-ink: var(--barama-text, #edf4ff);
+  --bau-muted: var(--barama-muted, #9eacc0);
+  --bau-blue: var(--barama-primary, #6d98ff);
+  --bau-border: var(--barama-border, #26364b);
+  --card-bg: var(--barama-surface, #131d2b);
+  --bau-soft: var(--barama-surface-soft, #182537);
+  --bau-tint: color-mix(in srgb, var(--bau-blue) 12%, var(--card-bg));
+  --bau-surface-ring: color-mix(in srgb, var(--bau-blue) 11%, var(--card-bg));
+  --bau-good: var(--barama-success, #4ecba4);
+  --bau-pending: #a1b4d2;
+}
+
+/* Correct all shared surfaces and foregrounds, including the modal-free cards. */
+#barama-unified-auto-updater,
+#barama-unified-auto-updater h1,
+#barama-unified-auto-updater h2,
+#barama-unified-auto-updater .bau-versions strong,
+#barama-unified-auto-updater .bau-ring-inner strong,
+#barama-unified-auto-updater .bau-step strong,
+#barama-unified-auto-updater .bau-mini strong,
+#barama-unified-auto-updater .bau-table td:first-child {
+  color: var(--bau-ink);
+}
+
+#barama-unified-auto-updater .bau-versions,
+#barama-unified-auto-updater .bau-readiness,
+#barama-unified-auto-updater .bau-panel,
+#barama-unified-auto-updater .bau-ring-inner {
+  background: var(--card-bg);
+  border-color: var(--bau-border);
+  color: var(--bau-ink);
+}
+
+#barama-unified-auto-updater .bau-heading p,
+#barama-unified-auto-updater .bau-panel-heading p,
+#barama-unified-auto-updater .bau-breadcrumb,
+#barama-unified-auto-updater .bau-kicker,
+#barama-unified-auto-updater .bau-versions small,
+#barama-unified-auto-updater .bau-ring-inner small,
+#barama-unified-auto-updater .bau-ring-note,
+#barama-unified-auto-updater .bau-step small,
+#barama-unified-auto-updater .bau-mini span,
+#barama-unified-auto-updater .bau-aside-actions small,
+#barama-unified-auto-updater .bau-separate,
+#barama-unified-auto-updater .bau-table th,
+#barama-unified-auto-updater .bau-table td:last-child {
+  color: var(--bau-muted);
+}
+
+/* The existing v1.0.0 sheet hardcodes bright pills, headings, buttons and notes. */
+#barama-unified-auto-updater .bau-button:not(.bau-primary) {
+  background: var(--bau-soft);
+  border-color: var(--bau-border);
+  color: var(--bau-ink);
+}
+#barama-unified-auto-updater .bau-button:hover:not(:disabled) {
+  border-color: var(--bau-blue);
+  background: var(--bau-tint);
+}
+#barama-unified-auto-updater .bau-button.bau-primary {
+  background: #2463f6;
+  color: #fff;
+  border-color: #2463f6;
+}
+#barama-unified-auto-updater .bau-button.bau-primary:hover:not(:disabled) {
+  background: #1851d8;
+  border-color: #1851d8;
+}
+#barama-unified-auto-updater .bau-install {
+  background: var(--bau-tint);
+  border-color: var(--bau-border);
+  color: var(--bau-blue);
+}
+#barama-unified-auto-updater .bau-button:focus-visible,
+#barama-unified-auto-updater a:focus-visible {
+  outline: 3px solid var(--bau-blue);
+  outline-offset: 2px;
+}
+
+#barama-unified-auto-updater .bau-pill {
+  background: var(--bau-soft);
+  border-color: var(--bau-border);
+  color: var(--bau-muted);
+}
+#barama-unified-auto-updater .bau-pill--good {
+  background: color-mix(in srgb, var(--bau-good) 13%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--bau-good) 43%, var(--bau-border));
+  color: var(--bau-good);
+}
+#barama-unified-auto-updater .bau-pill--warn {
+  background: color-mix(in srgb, #e2a344 13%, var(--card-bg));
+  border-color: color-mix(in srgb, #e2a344 44%, var(--bau-border));
+  color: light-dark(#935a13, #f4bf70);
+}
+#barama-unified-auto-updater .bau-readiness b {
+  background: var(--bau-soft);
+  color: var(--bau-pending);
+}
+#barama-unified-auto-updater .bau-readiness .bau-icon-good {
+  background: color-mix(in srgb, var(--bau-good) 14%, var(--card-bg));
+  color: var(--bau-good);
+}
+#barama-unified-auto-updater .bau-step-num {
+  background: var(--card-bg);
+  border-color: var(--bau-border);
+  color: var(--bau-pending);
+}
+#barama-unified-auto-updater .bau-step--done .bau-step-num {
+  background: #0eaa79;
+  border-color: #0eaa79;
+  color: #fff;
+}
+#barama-unified-auto-updater .bau-step--warn .bau-step-num {
+  border-color: #c99349;
+  color: light-dark(#935a13, #f4bf70);
+}
+#barama-unified-auto-updater .bau-step--pending:first-of-type {
+  background: var(--bau-tint);
+}
+#barama-unified-auto-updater .bau-table th {
+  background: var(--bau-soft);
+}
+#barama-unified-auto-updater .bau-table td,
+#barama-unified-auto-updater .bau-mini {
+  border-color: var(--bau-border);
+}
+#barama-unified-auto-updater .bau-safe-note,
+#barama-unified-auto-updater .bau-flash {
+  background: var(--bau-tint);
+  color: var(--bau-ink);
+  border-color: var(--bau-border);
+}
+#barama-unified-auto-updater .bau-safe-note {
+  border: 1px solid var(--bau-border);
+}
+#barama-unified-auto-updater .bau-ring {
+  box-shadow: 0 0 0 9px var(--bau-surface-ring),
+              0 17px 35px color-mix(in srgb, var(--bau-blue) 10%, transparent);
+}
+#barama-unified-auto-updater .bau-ring:before {
+  border-color: var(--bau-blue);
+}
+#barama-unified-auto-updater .bau-ring-symbol {
+  background: var(--bau-tint);
+  color: var(--bau-blue);
+}
+#barama-unified-auto-updater .bau-versus {
+  color: var(--bau-muted);
+}
+
+/* Dark-mode ring track: eliminate the pale blue-white outer fill. */
+html[data-bs-theme="dark"] #barama-unified-auto-updater .bau-ring {
+  background: conic-gradient(from -90deg,
+      #477eff 0deg, #6a9dff 80deg,
+      #375889 140deg, #20334c 141deg,
+      #20334c 290deg, #477eff 360deg);
+}
+/* BARAMA_UNIFIED_AUTO_UPDATER_THEME_V101_END */
