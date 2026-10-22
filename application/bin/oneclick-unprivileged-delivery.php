@@ -150,7 +150,7 @@ try {
                 throw new RuntimeException('AUTHENTICATED_ARTIFACT_HTTP_REJECTED');
             }
         } finally {
-            unset($curl); // PHP 8.5-compatible cleanup
+            curl_close($curl);
         }
         if (!fflush($stream) || (function_exists('fsync') && !fsync($stream))) {
             throw new RuntimeException('DOWNLOAD_FLUSH_FAILED');
