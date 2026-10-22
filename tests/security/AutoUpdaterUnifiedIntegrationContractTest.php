@@ -59,7 +59,7 @@ try {
     $must(str_contains($controller, "TrustedReleaseFeed::check("), 'FRESH_PUBLISHER_RECHECK');
     $must(str_contains($controller, "'Cache-Control' => 'no-store, no-cache, must-revalidate'"), 'NO_CACHED_STATUS');
     $must(str_contains($controller, 'is_string($sessionJob) ? $sessionJob : null'), 'SESSION_EXACT_JOB');
-    $must(str_contains($queue, "if($site!==self::SITE||is_link($site)"), 'STAGING_ONLY_QUEUE_GUARD');
+    $must(str_contains($queue, 'if($site!==self::SITE||is_link($site)'), 'STAGING_ONLY_QUEUE_GUARD');
     $must(!str_contains($queue, "PRODUCTION_ONLY"), 'NO_PRODUCTION_SCOPE');
     $must(str_contains($queue, "'authorized_to_install'=>false"), 'WEB_INTENT_NEVER_AUTHORIZES');
     $must(str_contains($queue, "ONECLICK_PENDING_JOB_REQUIRES_REVIEW"), 'DUPLICATE_JOB_REFUSED');
