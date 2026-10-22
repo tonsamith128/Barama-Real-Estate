@@ -132,10 +132,11 @@ final class PortableUpdateBackupV1
         foreach ($plan['files'] as $index=>$item) {
             $entry=$r['files'][$index]??null;
             if (!is_array($entry) || ($entry['path']??null)!==$item['path']
-                || ($entry['baseline']??false)!==$item['baseline'])
+                || !array_key_exists('baseline', $entry)
+                || $entry['baseline']!==$item['baseline'])
                 throw new RuntimeException('PORTABLE_BACKUP_RECEIPT_MISMATCH');
             if ($item['baseline']===null) {
-                if (($entry['backup']??'UNDEFINED')!==null)
+                if (!array_key_exists('backup',$entry) || $entry['backup']!==null)
                     throw new RuntimeException('PORTABLE_BACKUP_NEW_FILE_INVALID');
                 continue;
             }
