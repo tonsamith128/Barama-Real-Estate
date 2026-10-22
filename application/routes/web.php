@@ -1118,6 +1118,12 @@ $router->post('/dashboard/system/auto-updater/inspect-staged-release', [SystemCe
 $router->post('/dashboard/system/auto-updater/check-updates', [SystemCenterController::class, 'checkUpdateEntitlement'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 $router->post('/dashboard/system/auto-updater/update-now', [SystemCenterController::class, 'requestOneClickUpdate'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
 $router->get('/dashboard/system/auto-updater/status', [SystemCenterController::class, 'oneClickStatus'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
+/* Portable customer file-only flow: no root worker, authenticated administrator actions. */
+$router->post('/dashboard/system/auto-updater/portable-update-now', [SystemCenterController::class, 'portableBegin'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->post('/dashboard/system/auto-updater/portable-install', [SystemCenterController::class, 'portableInstall'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->post('/dashboard/system/auto-updater/portable-finish', [SystemCenterController::class, 'portableFinish'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->post('/dashboard/system/auto-updater/portable-recover', [SystemCenterController::class, 'portableRecover'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]);
+$router->get('/dashboard/system/auto-updater/portable-status', [SystemCenterController::class, 'portableStatus'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
 
 /* BARAMA_PUBLIC_SYSTEM_STATUS_V1126 */
 $router->get('/health', [SystemHealthController::class, 'index']);
