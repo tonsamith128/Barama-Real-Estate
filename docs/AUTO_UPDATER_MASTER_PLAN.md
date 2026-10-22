@@ -28,7 +28,7 @@ No green CI fixture, source merge, dashboard design, signed manifest, key additi
 | Area | Verified state | Evidence/next implication |
 | --- | --- | --- |
 | GitHub `main` | `6a180598c9a9b8b25c07cccab713a10eb9fb6619`; `VERSION=0.9.22-dev` | Keep app version independent from UI/tool package versions. |
-| Live staging | `0.9.23`; light/dark verified; root staging worker **stopped/disabled**, no submitted job confirmed | **v0.9.24 not installed.** Need one real signed staging transaction later. |
+| Live staging | `0.9.23`; light/dark verified; **v0.9.23 successfully installed by an independent root worker on Oct 21**; worker then stopped/disabled | Prior verified `0.9.22-dev → 0.9.23` job `job-bbd7f9c92166cf5cbca9c6e9fe1fbeb3`, signed release, private file/SQL backup, rollback rehearsals ([owner evidence](security/one-click-updater-acceptance-2026-10-21.md)). **The current unified web dashboard did not initiate that prior job.** v0.9.24 not installed. |
 | Live production | `0.9.22-dev`; light/dark verified | Do not change application version until authorized release install succeeds. |
 | Theme | PR [#111](https://github.com/tonsamith128/Barama-Real-Estate/pull/111) merged; deployed/visually accepted on both sites | **DONE for theme**, not updater execution. |
 | PHP 8.5 `curl_close()` cleanup | PR [#112](https://github.com/tonsamith128/Barama-Real-Estate/pull/112) merged; all three GitHub QA jobs passed | **GitHub source done**; do not claim live deployment of this separate source patch. |
@@ -37,7 +37,7 @@ No green CI fixture, source merge, dashboard design, signed manifest, key additi
 | Publisher entitlement, staging | activation #19: tester, `allow` stable grant, current validity, license #7, domain binding matched at observed check | Supports staging discovery only; still needs release audience, worker and recovery checks. |
 | Publisher entitlement, production | activation #8: tester, exact activation/license/domain/product matched; **NO row** in `commercial_update_entitlements_v2` | Publisher `entitlement_not_configured` is **consistent with enforced tester policy**. Do not classify as a code regression or silently grant updates. Determine owner-authorized production tester terms, then create **one narrowly bound, time-limited, audited** grant only if intended. |
 | Current GitHub UI | `auto-updater-unified-v100.php` is active. Its staging branch says discovery only; current `main` has no `/update-now` route | Missing functional staging Update Now is a **real integration gap**, not a CSS bug. |
-| Tested components | Signature/ZIP preflights, private delivery, backup/recovery *fixtures*, and CI exist across main and draft branches | Pieces present != a demonstrated real installer. Avoid repeating passing audits without changed code or a failing gate. |
+| Tested components | Signature/ZIP preflights, private delivery, recovery fixtures and CI exist; **v0.9.23 external-worker live install was operator-confirmed with combined file+SQL restore rehearsal** | Proven for **that scoped worker session**, not complete browser-to-worker integration or general customer portability. Avoid repeating passing audits without a changed contract. |
 
 ### Accepted live receipts: do not silently overwrite
 
@@ -56,6 +56,10 @@ These are **operator-reported 2026-10-22 hashes**, not substitutes for checking 
 Do not promote an older GitHub file over these accepted deployed changes or equate the Git blob hash with a disk SHA-256. Every deployment must compare actual current local hashes, review the intended delta and stop on drift. Never write production from a staging-specific artifact.
 
 **Important boundaries:** The Production tester grant is a product/licensing decision, **not a reason to modify signing keys**. A tester grant, if approved, must have independently verified installation/license binding, expiry and the applicable audience; it must not confer staging-only release access. The already working staging entitlement must not be copied to production.
+
+### Accepted live worker receipt — correction to earlier summaries
+
+The [2026-10-21 staging acceptance record](security/one-click-updater-acceptance-2026-10-21.md) reports a **real** external-worker installation of `0.9.23`, exact job `job-bbd7f9c92166cf5cbca9c6e9fe1fbeb3`, with backup receipts, independent disposable MySQL restore (61 tables, 2 triggers), combined file+SQL reconstruction, and worker shutoff. **This is positive installation evidence.** The missing portion is an end-to-end **current unified browser Update Now → queue → worker → completion** run; a recovered clone HTTP boot was not shown. New chats must not overwrite the historical acceptance with “no staging update ever ran.”
 
 ## 3. GitHub branch/PR reconciliation — no blind merges
 
@@ -92,10 +96,11 @@ Do not promote an older GitHub file over these accepted deployed changes or equa
 - Connect the worker to a real, scoped file+DB transaction and job-state journal. Make "Update Now" enabled **only after all gates**; disabled UI explains exact failed gate.
 - Do not treat a draft route, idle worker or successful mock run as "done."
 
-### Gate D — Prove one complete staging update (NOT done)
+### Gate D — Prove the **unified dashboard-initiated** staging update (NOT done; prior external-worker v0.9.23 install is proven)
 
 - One approved audience-bound signing release (currently the v0.9.24 staging pilot is the proposed candidate, **not installed**); verify exact package and separate Publisher authorization.
-- Confirm real staging DB backup + file snapshot, restore trial and failed-install/crash rehearsal. Run a **single explicitly approved** real staging job. Capture only sanitized receipts, before/after app hashes/version, migration results, health, completion and rollback.
+- Reuse the already evidenced v0.9.23 independent-worker backup, 61-table/2-trigger isolated restore, and combined file/SQL recovery as the baseline. Confirm what changed since that acceptance, especially the missing full recovered-clone HTTP boot.
+- Validate signed v0.9.24 audience and entitlement for **the staging installation**, prove rollback for its actual diff, then run one **explicitly approved dashboard-submitted staging job** via the new integrated UI/queue/worker. Capture job-bound sanitized receipts, hashes, migrations, health and VERSION before/after.
 - Any failure stops progression; fix only the failed contract. No repeated full audits when nothing changed.
 
 ### Gate E — Validate real customer portability (NOT done)
@@ -116,8 +121,8 @@ Do not promote an older GitHub file over these accepted deployed changes or equa
 | Unauthorized, mismatched domain/installation, expired, missing tester grant | Denied; no download/install; stable error | **Partially evidenced**; Production missing-grant denial verified |
 | Old/replayed job and two simultaneous Update Now clicks | Cannot install twice; pending/recovery state explicit | **OPEN** |
 | Corrupt/unsigned/revoked key/changed digest/expired ZIP | Hard stop before applying source or migrations | **Fixture coverage exists; real path OPEN** |
-| Real file and complete MySQL backup followed by successful update | Independently verified recovery evidence | **OPEN** |
-| Failure between files and migrations, SIGKILL and restart | Restore or fail-closed manual recovery with correct status | **Fixtures exist; end-to-end OPEN** |
+| Real file and complete MySQL backup followed by successful update | Independently verified recovery evidence | **PASS for prior v0.9.23 external worker**; browser-initiated new release OPEN |
+| Failure between files and migrations, SIGKILL and restart | Restore or fail-closed manual recovery with correct status | **Isolated file+SQL recovery rehearsed for v0.9.23; full recovered-clone HTTP boot and current browser job OPEN** |
 | Exact CodeCanyon customer package on supported hosting without root | Install or safe unsupported-state handling as documented | **OPEN** |
 | Distinct Production approval and target | No staging artifact or grant crosses the boundary | **OPEN** |
 
@@ -141,4 +146,4 @@ Do not promote an older GitHub file over these accepted deployed changes or equa
 
 **Continue**, but with this bounded plan. The immediate success checkpoint is **one real authorized staging installation and recovery demonstration**, not another themed UI or signing audit. If the team cannot integrate a safe executor or cannot prove recovery under supported hosting, explicitly mark the project **PAUSED** and ship it only as "signed release discovery"—never pretend it is a completed Auto Updater.
 
-**Current next engineering action:** reconcile the functional core in #110 with the active unified UI in #113 into a **new single branch based on current main**, while independently deciding whether Production's missing *tester* entitlement is intended policy or requires an owner-approved exact grant. Do not deploy either until the contract tests and acceptance gates pass.
+**Current engineering execution (2026-10-22):** Branch `feature/auto-updater-core-main-20261022` combines the **staging-only** admin/CSRF POST + exact-job status, guarded queue, signed-release downloader and the **active unified** dashboard from #110/#113. Its CI/security integration and real staging source-diff/deployment acceptance remain required. No root service is enabled and Production's tester entitlement is unchanged. After this integration passes tests and source reconciliation, execute a controlled **dashboard-initiated** staging job and recovery proof. Do not deploy or merge unsafe WIP shortcuts.
