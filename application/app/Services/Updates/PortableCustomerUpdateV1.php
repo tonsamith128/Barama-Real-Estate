@@ -170,7 +170,7 @@ final class PortableCustomerUpdateV1
                 throw new RuntimeException('PORTABLE_ACTIVE_JOB_MISMATCH');
             }
             $journal=self::json($vault.'/'.$current['install_job_id'].'/journal.json',65536);
-            if (($journal['state']??null)!=='files_applied_health_pending'
+            if (!in_array($journal['state']??null,['files_applied_health_pending','completed_file_only'],true)
                 || ($journal['schema']??null)!=='barama-portable-file-transaction-v1'
                 || ($journal['job_id']??null)!==$current['install_job_id']
                 || ($journal['archive_sha256']??null)!==$current['archive_sha256']
@@ -254,15 +254,20 @@ final class PortableCustomerUpdateV1
         try {
             $vault=self::vault(false);
             if (!is_dir($vault)) return ['state'=>'not_started','pending'=>false];
-            if (is_link($vault.'/active.json') || is_file($vault.'/active.json')) {
-                if (!is_file($vault.'/current.json')) {
-                    return ['state'=>'recovery_review_required','pending'=>true];
-                }
+            $active=is_link($vault.'/active.json') || is_file($vault.'/active.json');
+            $hasCurrent=!is_link($vault.'/current.json') && is_file($vault.'/current.json');
+            if ($active && !$hasCurrent) {
+                return ['state'=>'recovery_review_required','pending'=>true];
             }
-            $path=is_file($vault.'/current.json') ? $vault.'/current.json' : $vault.'/last.json';
+            $path=$hasCurrent ? $vault.'/current.json' : $vault.'/last.json';
+            if (is_link($path)) return ['state'=>'recovery_review_required','pending'=>true];
             if (!is_file($path)) return ['state'=>'not_started','pending'=>false];
             $rec=self::json($path,8192);
             $state=$rec['state']??'unavailable';
+            if (($active && $state!=='health_pending')
+                || (!$active && $state==='health_pending')) {
+                return ['state'=>'recovery_review_required','pending'=>true];
+            }
             $allowed=['downloaded','health_pending','completed_file_only','rolled_back'];
             if (!is_string($state) || !in_array($state,$allowed,true)) {
                 return ['state'=>'recovery_review_required','pending'=>true];
