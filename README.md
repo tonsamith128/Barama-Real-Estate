@@ -2,6 +2,10 @@
 
 Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace and property-management platform by Ton Samith.
 
+## Auto Updater — current delivery plan
+
+**Authoritative status and implementation gates:** [Barama Auto Updater Master Plan](docs/AUTO_UPDATER_MASTER_PLAN.md). Read this document before editing updater source or using older updater branches/phase notes. Signed discovery, a passing preflight or a new version label are **not** proof of an installed release. Do not merge stacked draft one-click PRs as a batch.
+
 ## Release target
 
 - Current development line: `0.9.22-dev`
