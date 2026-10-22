@@ -57,6 +57,23 @@ Do not promote an older GitHub file over these accepted deployed changes or equa
 
 **Important boundaries:** The Production tester grant is a product/licensing decision, **not a reason to modify signing keys**. A tester grant, if approved, must have independently verified installation/license binding, expiry and the applicable audience; it must not confer staging-only release access. The already working staging entitlement must not be copied to production.
 
+### Source reconciliation — operator-reported live Staging, October 22, 2026
+
+The following are **Git blob IDs**, not SHA-256 file hashes. The accepted live versions must not be silently replaced by a different Git branch. The only unknown full-content changes are in the controller and unified view.
+
+| Component | Live Staging Git blob | Deployment consequence |
+| --- | --- | --- |
+| `application/app/Http/Controllers/SystemCenterController.php` | `689affba5da2797050a5be8d10c6e21efb385358` | UNKNOWN DIFF: exact live source needed before modifying |
+| `application/app/Services/Updates/TrustedReleaseFeed.php` | `8e29bfd90c0f4eeefeb86ad6a9d6345256d3634c` | Preserved accepted trust contract; PHP 8.5 cleanup in proposal |
+| `application/app/Services/Updates/OneClickUpdateQueueV1.php` | `eb9af59200eeeacb2ee1ad4907f3a371c0bfdf72` | Byte-for-byte preserved on PR |
+| `application/app/Services/Updates/PublisherTrustPaths.php` | `e772b19f7ac0c7578b889474a0b861e33f8797bd` | Byte-for-byte preserved on PR |
+| `application/bin/oneclick-unprivileged-delivery.php` | `ab2c471ba73412c197e9d6f5221caf69a99e3342` | Byte-for-byte preserved; worker source digest pin |
+| `application/resources/views/workspace/auto-updater-unified-v100.php` | `e207a54418b4c924d639c8f594b7da1a5123fb4c` | UNKNOWN DIFF: preserve verified theme before modifying |
+| `application/routes/web.php` | `d1cc1b4b13a441dd458f18a2a93b14d224047d03` | Already matches PR115 routes |
+| `assets/js/barama-oneclick-status-v100.js` | `2fddd727ee1d8c1ef1591060b2ff5aeff6049261` | Already matches PR115 status script |
+
+**Next engineering deliverable:** reconcile only the current Staging controller and unified view against PR #115 source and accepted light/dark theme. Then prepare a rollback-capable, exact-source-pinned *Staging-only* overlay; do not run Update Now, move Production files, or enable a worker without its independent trust and recovery acceptance.
+
 ### Accepted live worker receipt — correction to earlier summaries
 
 The [2026-10-21 staging acceptance record](security/one-click-updater-acceptance-2026-10-21.md) reports a **real** external-worker installation of `0.9.23`, exact job `job-bbd7f9c92166cf5cbca9c6e9fe1fbeb3`, with backup receipts, independent disposable MySQL restore (61 tables, 2 triggers), combined file+SQL reconstruction, and worker shutoff. **This is positive installation evidence.** The missing portion is an end-to-end **current unified browser Update Now → queue → worker → completion** run; a recovered clone HTTP boot was not shown. New chats must not overwrite the historical acceptance with “no staging update ever ran.”
