@@ -1,0 +1,31 @@
+name: Portable Auto Updater V1
+
+on:
+  push:
+    branches:
+      - feat/auto-updater-portable-file-only-v1-20261022
+  pull_request:
+    paths:
+      - 'application/app/Services/Updates/PortableUpdateArchiveV1.php'
+      - 'tests/portable_update_archive_v1.php'
+      - '.github/workflows/portable-auto-updater-v1.yml'
+
+jobs:
+  signed-file-only-verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete repository
+        uses: actions/checkout@v4
+      - name: PHP 8.2 with required extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip, sodium, curl, openssl
+          tools: none
+          coverage: none
+      - name: Syntax checks
+        run: |
+          php -l application/app/Services/Updates/PortableUpdateArchiveV1.php
+          php -l tests/portable_update_archive_v1.php
+      - name: Signed portable ZIP fixtures
+        run: php tests/portable_update_archive_v1.php
