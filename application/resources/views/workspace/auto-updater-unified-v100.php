@@ -14,7 +14,7 @@ $uEligible = $uEligible && ($uFeed['entitlement'] ?? '') === 'Eligible';
 $uSigned = $uFeedStatus === 'available' && $uEligible && ($uFeed['feed'] ?? '') === 'Signed release verified';
 $uFresh = isset($uFeed['at']) && is_int($uFeed['at']) && $uFeed['at'] <= time()+30 && $uFeed['at'] > time()-600;
 $uSigned = $uSigned && $uFresh;
-$uVersionAvailable = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', (string)($uFeed['version'] ?? '')) === 1;
+$uVersionAvailable = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', (string)($uFeed['version'] ?? '')) === 1 && version_compare((string)($uFeed['version'] ?? ''),$uVersion,'>');
 $uCanCheck = !empty($uReady['can_check']);
 $uLicenseActive = in_array((string)($uLicense['state'] ?? ''), ['Active license verified', 'Installed license recognized'], true);
 $uDomain = (string)($uBinding['recorded_domain'] ?? '');
@@ -29,7 +29,9 @@ $uStorage = !empty($uSystem['storage_writable']);
 $uStaging = class_exists(\Barama\Services\Updates\PublisherTrustPaths::class) && \Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging();
 $uPortable = false;
 try { $uPortable = class_exists(\Barama\Services\Updates\PortableCustomerUpdateV1::class) && \Barama\Services\Updates\PortableCustomerUpdateV1::ready(); } catch (\Throwable) { /* Unknown => disabled */ }
-$uReadyInstall = !$uStaging && $uPortable && $uVersionAvailable;
+$uPortableState = is_array($systemPortableStatus ?? null) ? (string)($systemPortableStatus['state'] ?? 'not_started') : 'unavailable';
+$uPortablePending = is_array($systemPortableStatus ?? null) && !empty($systemPortableStatus['pending']);
+$uReadyInstall = !$uStaging && $uPortable && $uVersionAvailable && !$uPortablePending;
 // A staging action is visible only when the separately reviewed one-click
 // controller, queue, and root-worker status contract have all been supplied.
 // This view never grants update authorization or creates update jobs.
@@ -126,12 +128,26 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
         <p data-oneclick-stage-message>Awaiting trusted job status.</p>
       </div>
       <?php endif; ?>
-    <?php elseif ($uReadyInstall): ?>
-      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>" data-bau-install-form>
+    <?php elseif (in_array($uPortableState,['downloaded','health_pending'],true) && $uPortable): ?>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/' . ($uPortableState === 'downloaded' ? 'portable-install' : 'portable-finish'))) ?>"
+            data-bau-install-form data-bau-portable-flow data-portable-start="<?= e($uPortableState) ?>">
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-       <button type="submit" class="bau-button bau-install">Install verified update</button>
-      </form><small>Installation requires administrator confirmation, fresh signed authorization, and the updater's independent verification.</small>
-    <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button><small><?= !$uCanCheck ? 'Publisher trust must be available to the website runtime.' : 'A fresh, eligible, newer signed release is required.' ?></small><?php endif; ?>
+       <button type="submit" class="bau-button bau-install"><?= $uPortableState === 'downloaded' ? 'Continue verified installation' : 'Verify installed update' ?></button>
+      </form><small>Existing verified job: <?= e(str_replace('_',' ',$uPortableState)) ?>.</small>
+    <?php elseif ($uPortableState === 'recovery_review_required'): ?>
+      <button type="button" class="bau-button bau-install" disabled>Recovery review required</button>
+      <small>Preserve the private backup. Do not submit a new update.</small>
+    <?php elseif ($uPortableState === 'completed_file_only'): ?>
+      <div class="bau-safe-note" role="status">Previous file-only update completed and installed files were verified.</div>
+    <?php elseif ($uReadyInstall): ?>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>"
+            data-bau-install-form data-bau-portable-flow data-portable-start="not_started">
+       <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+       <button type="submit" class="bau-button bau-install">Update Now</button>
+      </form><small>Administrator-only: signed download, private backup, file-only installation and independent verification. No DB migrations.</small>
+    <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button>
+      <small><?= !$uPortable ? 'Private vault, writable code and PHP extensions are required.' : (!$uCanCheck ? 'Publisher trust must be available.' : 'A fresh newer eligible signed release is required.') ?></small>
+    <?php endif; ?>
     <p class="bau-separate">License activation and verification are managed separately in <a href="<?= e(url('/dashboard/license')) ?>">License &amp; Activation</a>.</p>
    </div>
   </aside>
@@ -157,3 +173,4 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
 <script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=103') ?>"></script>
 <script defer src="<?= e(asset('js/barama-auto-updater-experience-v103.js') . '?v=103') ?>"></script>
 <?php if ($uStagingQueueSupported): ?><script defer src="<?= e(asset('js/barama-oneclick-status-v100.js') . '?v=104') ?>"></script><?php endif; ?>
+<?php if (!$uStaging): ?><script defer src="<?= e(asset('js/barama-portable-auto-updater-v1.js') . '?v=100') ?>"></script><?php endif; ?>
