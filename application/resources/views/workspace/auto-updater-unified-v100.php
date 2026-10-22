@@ -134,6 +134,12 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <button type="submit" class="bau-button bau-install"><?= $uPortableState === 'downloaded' ? 'Continue verified installation' : 'Verify installed update' ?></button>
       </form><small>Existing verified job: <?= e(str_replace('_',' ',$uPortableState)) ?>.</small>
+      <?php if ($uPortableState === 'health_pending'): ?>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-recover')) ?>" data-bau-portable-recovery>
+       <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+       <button type="submit" class="bau-button bau-refresh">Restore previous files</button>
+      </form><small>Manual rollback of this bound file-only job only. No database data will be restored.</small>
+      <?php endif; ?>
     <?php elseif ($uPortableState === 'recovery_review_required'): ?>
       <button type="button" class="bau-button bau-install" disabled>Recovery review required</button>
       <small>Preserve the private backup. Do not submit a new update.</small>
