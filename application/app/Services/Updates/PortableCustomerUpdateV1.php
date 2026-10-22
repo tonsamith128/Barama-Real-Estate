@@ -46,11 +46,19 @@ final class PortableCustomerUpdateV1
             throw new RuntimeException('PORTABLE_VAULT_SITE_UNSAFE');
         }
         $parent=dirname($root);
-        if ($parent==='/' || is_link($parent) || !is_dir($parent)
-            || realpath($parent)!==$parent) {
+        // The sibling vault is pre-provisioned and independently canonical.
+        // With open_basedir confined to site + vault, the parent itself may
+        // be unavailable to PHP-FPM. Never broaden the directory allowance.
+        if ($parent==='/' || $parent===$root) {
             throw new RuntimeException('PORTABLE_VAULT_PARENT_UNSAFE');
         }
         $path=$parent.'/.barama-private-updates-'.substr(hash('sha256',$root),0,18);
+        // For a MISSING vault, retain strict canonical-parent checks and
+        // refuse creation when its parent is outside open_basedir.
+        if (!is_dir($path) && (is_link($parent) || !is_dir($parent)
+            || realpath($parent)!==$parent)) {
+            throw new RuntimeException('PORTABLE_VAULT_PARENT_UNSAFE');
+        }
         // The configured web DOCUMENT_ROOT can differ from BASE_PATH in some
         // customer setups; do not rely on an .htaccess deny on Nginx.
         $document=isset($_SERVER['DOCUMENT_ROOT'])
