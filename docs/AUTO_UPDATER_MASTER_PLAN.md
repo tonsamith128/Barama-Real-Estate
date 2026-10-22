@@ -57,6 +57,16 @@ Do not promote an older GitHub file over these accepted deployed changes or equa
 
 **Important boundaries:** The Production tester grant is a product/licensing decision, **not a reason to modify signing keys**. A tester grant, if approved, must have independently verified installation/license binding, expiry and the applicable audience; it must not confer staging-only release access. The already working staging entitlement must not be copied to production.
 
+### Audited one-file Staging integration candidate (2026-10-22)
+
+- User-provided exact two-source ZIP independently verified: SHA256 `ec186f02ec4a84eb4edbd971f3a6ea9de05f58adc67b4577045f3ae2bb138f83`; both Git blob hashes and manifest checks passed.
+- **Existing live Staging controller already provides** `requestOneClickUpdate`, `oneClickStatus`, and server-rendered queue/worker/job state. Exact routes and the job-status JS match. **Do not replace the live controller, worker queue, trust class, or source-pinned downloader.**
+- Local audited Staging-only overlay changes **only** `application/resources/views/workspace/auto-updater-unified-v100.php`, adding a guarded POST, exact job-status display and existing status JS, while preserving the original view's CSS and all non-Staging behavior.
+- Accepted live view SHA256 `224c140a3842e02f548d6afcd233a88729575a30300bbd19ea7202a509567e13` → candidate `e0adbc9c05f8b3b535fced6564d0a09667a5c11ae50a3b4ac478b42f6cce864c`.
+- Prepared package `Barama-AutoUpdater-Staging-UnifiedView-Integration-v1.0.0.zip` with SHA256 `c83e5b5afee063992c3f6dfb605232dda35e14440f2a995bb87848257bc7fd7c`. Contains exact-hash eight-file Staging preflight, private backup/rollback, and the PHP view payload. Source-only package; **it does not perform an update installation**.
+- Local verification: PHP 8.4 syntax checks passed, PHP mocked view rendering passed 10 assertions, simulated private backup/install/rollback on disposable fixture passed; no live server contacted. This is **not** live update/recovery acceptance.
+- **Remaining release gate:** operator must transfer, checksum, run read-only `--check`, then explicitly approve view-only install and review Staging UI; an authorized worker and fresh audience-bound signed release are separately necessary for a new end-to-end installation. Do not enable Production or merge a PR wholesale based on this package.
+
 ### Source reconciliation — operator-reported live Staging, October 22, 2026
 
 The following are **Git blob IDs**, not SHA-256 file hashes. The accepted live versions must not be silently replaced by a different Git branch. The only unknown full-content changes are in the controller and unified view.
