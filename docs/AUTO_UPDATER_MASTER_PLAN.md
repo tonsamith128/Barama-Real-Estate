@@ -8,6 +8,16 @@
 
 > **North star:** A verified administrator can check entitlement and see a genuinely offered, correctly signed, installation-specific release, request **Update Now**, observe honest progress, and finish with the *actual* installed version updated and a verified recovery path. A CodeCanyon customer install must ultimately support this without root/server-owner privileges.
 
+## Protected Staging Auto Updater core — GitHub parity work (2026-10-22)
+
+- **UI accepted on both Staging and Production**. Do not change the accepted v1.0.2 layout further unless a specific regression is reproduced.
+- [PR #122](https://github.com/tonsamith128/Barama-Real-Estate/pull/122) is the **current consolidated Staging code-parity effort**, branching from latest `main` after #120 and #121. Historical stacked updater PRs #109/#110/#115 remain review evidence, **not instructions to deploy them**.
+- The new branch preserves the exact previously accepted Staging queue `eb9af59200eeeacb2ee1ad4907f3a371c0bfdf72`, root-owned trust-path class `e772b19f7ac0c7578b889474a0b861e33f8797bd`, and source-pinned unprivileged downloader `ab2c471ba73412c197e9d6f5221caf69a99e3342`. It adds the administrator+CSRF intent route, binding to a **fresh** signed Publisher discovery result, session-bound no-cache job status and worker progress display on the accepted v103 view.
+- No web page can authorize installation: the queued job contains `authorized_to_install=false`, a short-lived nonce, a durable admin audit, lock and release digest. A separately approved root worker must reverify entitlement, audience, signed ZIP and recovery. **PRODUCTION_ONLY queue and root worker remain disabled**, preserving distinct Production licensing policy.
+- **This source integration is NOT the remaining live blocker.** Staging's previously accepted controller/queue already exists on the owner-run server; its independent root worker reports OFFLINE. Do **not** overwrite live Staging full files with the GitHub branch. The remaining executable gate is worker service readiness, current authorized v0.9.24 audience, backup and actual job processing under the existing source-digest pin.
+- Next evidence must be restricted to *root worker service name/state*, two allowlisted root-owned readiness/result signals, pending queue count, and installed v0.9.23. No broad theme/SQL/signing re-audits, credential output or automatic job submission. After verified recovery and explicit owner authorization, execute one Staging dashboard Update Now job and validate installed version/recovery.
+- This code work alone does not implement the portable shared-hosting customer executor. It remains a separate definition-of-done gate before CodeCanyon feature acceptance.
+
 ## Accepted v1.0.2 server-side layout deployment — 2026-10-22 (operator verified)
 
 **Staging and Production deployment receipts: PASS; user screenshots confirm premium server-rendered layout visually WORKING on both sites (2026-10-22). This UI milestone is complete, but the Auto Updater installation workflow remains OPEN.**
