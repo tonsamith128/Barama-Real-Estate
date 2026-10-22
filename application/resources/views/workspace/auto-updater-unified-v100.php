@@ -143,14 +143,14 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
     <?php elseif ($uPortableState === 'recovery_review_required'): ?>
       <button type="button" class="bau-button bau-install" disabled>Recovery review required</button>
       <small>Preserve the private backup. Do not submit a new update.</small>
-    <?php elseif ($uPortableState === 'completed_file_only'): ?>
-      <div class="bau-safe-note" role="status">Previous file-only update completed and installed files were verified.</div>
     <?php elseif ($uReadyInstall): ?>
       <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>"
             data-bau-install-form data-bau-portable-flow data-portable-start="not_started">
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <button type="submit" class="bau-button bau-install">Install verified update</button>
       </form><small>Administrator-only: signed download, private backup, file-only installation and independent verification. No DB migrations.</small>
+    <?php elseif ($uPortableState === 'completed_file_only'): ?>
+      <div class="bau-safe-note" role="status">Previous file-only update completed and installed files were verified.</div>
     <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button>
       <small><?= !$uPortable ? 'Private vault, writable code and PHP extensions are required.' : (!$uCanCheck ? 'Publisher trust must be available.' : 'A fresh newer eligible signed release is required.') ?></small>
     <?php endif; ?>
