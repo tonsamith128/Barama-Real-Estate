@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Barama\Services\Updates;
 
+// Also supports isolated CLI/CI smoke tests that load this service directly.
+require_once __DIR__ . '/PublisherTrustPaths.php';
+
 use Barama\Core\Installation;
 use Barama\Services\LicenseManagerClient;
 use Closure;
@@ -130,7 +133,7 @@ final class TrustedReleaseFeed
         // Publisher-signed digest is safe metadata, not an activation token.
         // Bind the exact private staged ZIP to the authenticated discovery result.
         $result['archive_sha256'] = $response['envelope']['manifest']['package_sha256'];
-        // Private non-root CLI downloader only; ordinary dashboard requests never retain the envelope.
+        // Internal CLI downloader only. Existing callers receive no extra fields.
         if ($includeSignedEnvelope) $result['signed_envelope'] = $response['envelope'];
         $result['status'] = 'available';
         $result['feed'] = 'Signed release verified';
@@ -243,7 +246,7 @@ final class TrustedReleaseFeed
             if ($ok === false || strlen($body) > self::MAX_RESPONSE || !in_array($status, [200, 403], true)) {
                 throw new RuntimeException('UPDATE_PUBLISHER_UNAVAILABLE');
             }
-        } finally { unset($handle); } // PHP 8+ releases CurlHandle automatically; curl_close() is deprecated in 8.5.
+        } finally { unset($handle); // PHP 8.5-compatible handle cleanup }
         try { $data = json_decode($body, true, 24, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { throw new RuntimeException('UPDATE_PUBLISHER_RESPONSE_INVALID'); }
         return ['http_status' => $status, 'body' => $data];
@@ -255,28 +258,9 @@ final class TrustedReleaseFeed
         catch (RuntimeException) { return false; }
     }
 
-    /**
-     * Preserve the original release-feed contract for ordinary installations
-     * and standalone CI tests that load this class without an autoloader.
-     * The exact protected staging deployment always requires its root-pinned
-     * trust class. Do not fall back to a web-writable catalog on that site.
-     */
-    private static function protectedStaging(): bool
-    {
-        if (!defined('BASE_PATH')
-            || BASE_PATH !== '/www/wwwroot/baramastaging.tonsamith.com') {
-            return false;
-        }
-        if (!class_exists(PublisherTrustPaths::class)) {
-            throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED');
-        }
-        return PublisherTrustPaths::isProtectedStaging();
-    }
-
     private static function settings(): array
     {
-        $path = self::protectedStaging()
-            ? PublisherTrustPaths::feed() : APP_PATH . self::CONFIG_FILE;
+        $path = PublisherTrustPaths::feed();
         if (!self::safeFile($path, 4096)) throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED');
         try { $value = json_decode((string)file_get_contents($path), true, 8, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { throw new RuntimeException('UPDATE_PUBLISHER_NOT_CONFIGURED'); }
@@ -292,8 +276,7 @@ final class TrustedReleaseFeed
     /** Publisher-format key catalog, independently pinned by the author; never fetched at runtime. */
     private static function trustedKeys(): array
     {
-        $path = self::protectedStaging()
-            ? PublisherTrustPaths::keys() : APP_PATH . self::KEYS_FILE;
+        $path = PublisherTrustPaths::keys();
         if (!self::safeFile($path, 65536) || !extension_loaded('sodium')) return [];
         try { $value = json_decode((string)file_get_contents($path), true, 16, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { return []; }
@@ -316,11 +299,6 @@ final class TrustedReleaseFeed
 
     private static function safeFile(string $path, int $max): bool
     {
-        if (self::protectedStaging()) {
-            return PublisherTrustPaths::safeTrustFile($path, $max);
-        }
-        if (is_link($path) || !is_file($path) || !is_readable($path)) return false;
-        $st = @stat($path);
-        return is_array($st) && $st['size'] > 0 && $st['size'] <= $max && (($st['mode'] & 0022) === 0);
+        return PublisherTrustPaths::safeTrustFile($path, $max);
     }
 }
