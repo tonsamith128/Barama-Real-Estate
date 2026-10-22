@@ -241,7 +241,7 @@ final class TrustedReleaseFeed
             if ($ok === false || strlen($body) > self::MAX_RESPONSE || !in_array($status, [200, 403], true)) {
                 throw new RuntimeException('UPDATE_PUBLISHER_UNAVAILABLE');
             }
-        } finally { curl_close($handle); }
+        } finally { unset($handle); } // PHP 8+ releases CurlHandle automatically; curl_close() is deprecated in 8.5.
         try { $data = json_decode($body, true, 24, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { throw new RuntimeException('UPDATE_PUBLISHER_RESPONSE_INVALID'); }
         return ['http_status' => $status, 'body' => $data];
