@@ -28,7 +28,7 @@ $bauVerifiedHistory = (static function () use ($uStaging, $uVersion, $uVersionAv
         if (!is_file($path) || is_link($path)
             || filesize($path) < 1 || filesize($path) > 8192) return null;
         $receipt = json_decode((string) file_get_contents($path), true, 16, JSON_THROW_ON_ERROR);
-        if (!is_array($receipt) || array_is_list($receipt)) return null;
+        if (!is_array($receipt)) return null;
 
         $from = (string) ($receipt['installed_version'] ?? '');
         $to = (string) ($receipt['target_version'] ?? '');
