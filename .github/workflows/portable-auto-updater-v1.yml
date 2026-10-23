@@ -1,0 +1,110 @@
+name: Portable Auto Updater V1
+
+on:
+  push:
+    branches:
+      - feat/auto-updater-portable-file-only-v1-20261022
+  pull_request:
+    paths:
+      - 'application/app/Services/Updates/PortableUpdateArchiveV1.php'
+      - 'tests/portable_update_archive_v1.php'
+      - 'application/app/Services/Updates/PortableUpdateBackupV1.php'
+      - 'tests/portable_update_snapshot_v1.php'
+      - 'application/app/Services/Updates/PortableUpdateFileTransactionV1.php'
+      - 'tests/portable_update_transaction_v1.php'
+      - 'application/app/Services/Updates/PortableUpdateDownloadV1.php'
+      - 'tests/portable_update_download_v1.php'
+      - 'application/app/Services/Updates/PortableCustomerUpdateV1.php'
+      - 'tests/portable_customer_flow_v1.php'
+      - 'tests/portable_customer_e2e_v1.php'
+      - 'tests/portable_customer_package_v1.php'
+      - 'tools/build-package.php'
+      - 'application/config/update-feed-v2.json'
+      - 'application/config/update-publisher-v2-keys.json'
+      - 'application/app/Http/Controllers/SystemCenterController.php'
+      - 'application/routes/web.php'
+      - 'application/resources/views/workspace/auto-updater-unified-v100.php'
+      - 'assets/css/barama-qa-busy-arrow-v105.css'
+      - 'tests/portable_lifecycle_presentation_v1.php'
+      - 'assets/js/barama-portable-auto-updater-v1.js'
+      - '.github/workflows/portable-auto-updater-v1.yml'
+
+jobs:
+  signed-file-only-verifier:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4', '8.5']
+    steps:
+      - name: Checkout complete repository
+        uses: actions/checkout@v4
+      - name: PHP 8.2 with required extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: zip, sodium, curl, openssl
+          tools: none
+          coverage: none
+      - name: Syntax checks
+        run: |
+          php -l application/app/Services/Updates/PortableUpdateArchiveV1.php
+          php -l tests/portable_update_archive_v1.php
+          php -l application/app/Services/Updates/PortableUpdateBackupV1.php
+          php -l tests/portable_update_snapshot_v1.php
+          php -l application/app/Services/Updates/PortableUpdateFileTransactionV1.php
+          php -l tests/portable_update_transaction_v1.php
+          php -l application/app/Services/Updates/PortableUpdateDownloadV1.php
+          php -l tests/portable_update_download_v1.php
+          php -l application/app/Services/Updates/PortableCustomerUpdateV1.php
+          php -l tests/portable_customer_flow_v1.php
+          php -l tests/portable_customer_e2e_v1.php
+          php -l tests/portable_customer_package_v1.php
+          php -l tools/build-package.php
+          php -l application/app/Http/Controllers/SystemCenterController.php
+          php -l application/routes/web.php
+          php -l application/resources/views/workspace/auto-updater-unified-v100.php
+          php -l tests/portable_lifecycle_presentation_v1.php
+      - name: Portable browser flow syntax
+        run: |
+          node --check assets/js/barama-portable-auto-updater-v1.js
+          node --check assets/js/barama-auto-updater-unified-v100.js
+      - name: Portable lifecycle target-version binding and busy-state presentation
+        run: php tests/portable_lifecycle_presentation_v1.php
+      - name: Signed portable ZIP fixtures
+        run: php tests/portable_update_archive_v1.php
+      - name: Portable private backup and integrity fixtures
+        run: php tests/portable_update_snapshot_v1.php
+      - name: Private file apply and interrupted-recovery fixtures
+        run: php tests/portable_update_transaction_v1.php
+      - name: Authenticated private ZIP download fixtures
+        run: php tests/portable_update_download_v1.php
+      - name: Portable administrator coordinator and recovery status
+        run: php tests/portable_customer_flow_v1.php
+      - name: Customer one-click file-only golden fixture with fresh PHP boot and rollback
+        run: |
+          set -Eeuo pipefail
+          for scenario in complete rollback; do
+            ROOT="$(mktemp -d /tmp/barama-portable-e2e-XXXXXXXX)"
+            php tests/portable_customer_e2e_v1.php init "$ROOT"
+            php tests/portable_customer_e2e_v1.php "$scenario" "$ROOT"
+            test -d "$ROOT" && [[ "$ROOT" == /tmp/barama-portable-e2e-* ]]
+            rm -rf -- "$ROOT"
+          done
+          echo "PORTABLE_CUSTOMER_FILE_ONLY_GOLDEN_FIXTURES=PASS"
+      - name: Build and inspect exact customer ZIP (no license activation)
+        run: |
+          set -Eeuo pipefail
+          PACKAGE="${RUNNER_TEMP}/Barama-AutoUpdater-Customer-Smoke.zip"
+          php tools/build-package.php "$PACKAGE"
+          php tests/portable_customer_package_v1.php "$PACKAGE"
+      - name: Publish private QA customer ZIP and checksum
+        if: matrix.php == '8.3'
+        uses: actions/upload-artifact@v4
+        with:
+          name: barama-auto-updater-qa-customer-zip-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/Barama-AutoUpdater-Customer-Smoke.zip
+            ${{ runner.temp }}/Barama-AutoUpdater-Customer-Smoke.zip.sha256

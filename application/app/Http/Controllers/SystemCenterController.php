@@ -225,6 +225,71 @@ final class SystemCenterController
         ]);
     }
 
+
+    /* Portable file-only customer flow; route middleware enforces auth+CSRF. */
+    public function portableBegin(Request $r): Response { return $this->portableAction('begin'); }
+    public function portableInstall(Request $r): Response { return $this->portableAction('install'); }
+    public function portableFinish(Request $r): Response { return $this->portableAction('finish'); }
+    public function portableRecover(Request $r): Response { return $this->portableAction('recover'); }
+
+    public function portableStatus(Request $r): Response
+    {
+        if (\Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) return Response::html('Not Found',404);
+        $auth=new \Barama\Services\AuthService();
+        if (!$auth->hasRole('administrator')&&!$auth->hasRole('super-administrator')) return Response::html('Forbidden',403);
+        $state=\Barama\Services\Updates\PortableCustomerUpdateV1::status();
+        return new Response(json_encode([
+            'schema'=>'barama-portable-customer-status-v1',
+            'state'=>$state['state'],'pending'=>$state['pending'],'version'=>$state['version']??'',
+        ],JSON_THROW_ON_ERROR),200,[
+            'Content-Type'=>'application/json; charset=UTF-8',
+            'Cache-Control'=>'no-store, no-cache, must-revalidate',
+            'X-Content-Type-Options'=>'nosniff',
+        ]);
+    }
+
+    private function portableAction(string $action): Response
+    {
+        if (\Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) return Response::html('Not Found',404);
+        $auth=new \Barama\Services\AuthService();
+        if (!$auth->hasRole('administrator')&&!$auth->hasRole('super-administrator')) return Response::html('Forbidden',403);
+        $ajax=(string)($_SERVER['HTTP_X_REQUESTED_WITH']??'')==='XMLHttpRequest'
+            && str_contains((string)($_SERVER['HTTP_ACCEPT']??''),'application/json');
+        try {
+            $result=match ($action) {
+                'begin'=>\Barama\Services\Updates\PortableCustomerUpdateV1::begin(),
+                'install'=>\Barama\Services\Updates\PortableCustomerUpdateV1::install(),
+                'finish'=>\Barama\Services\Updates\PortableCustomerUpdateV1::finish(),
+                'recover'=>\Barama\Services\Updates\PortableCustomerUpdateV1::recover(),
+                default=>throw new \RuntimeException('PORTABLE_UNKNOWN_ACTION'),
+            };
+            $message=match ($result['state']??'') {
+                'downloaded'=>'Signed ZIP downloaded to private storage; nothing installed yet.',
+                'health_pending'=>'Files installed; application verification is pending.',
+                'completed_file_only'=>'File-only update complete; installed version verified.',
+                'rolled_back'=>'Update files restored from verified backup.',
+                default=>'Updater step recorded.',
+            };
+            $_SESSION['_barama_portable_update_flash_v102']=$message;
+            if ($ajax) return new Response(json_encode([
+                'schema'=>'barama-portable-customer-action-v1','ok'=>true,
+                'state'=>$result['state'],'message'=>$message,
+            ],JSON_THROW_ON_ERROR),200,[
+                'Content-Type'=>'application/json; charset=UTF-8','Cache-Control'=>'no-store'
+            ]);
+        } catch (\Throwable) {
+            $message='Updater step blocked. Review job status and recovery before retrying; installation success is not claimed.';
+            $_SESSION['_barama_portable_update_flash_v102']=$message;
+            if ($ajax) return new Response(json_encode([
+                'schema'=>'barama-portable-customer-action-v1','ok'=>false,
+                'state'=>'blocked','message'=>$message
+            ],JSON_THROW_ON_ERROR),409,[
+                'Content-Type'=>'application/json; charset=UTF-8','Cache-Control'=>'no-store'
+            ]);
+        }
+        return Response::redirect(url('/dashboard/system/auto-updater'),303);
+    }
+
     /** Server-session fingerprint: never store or render an activation token. */
     private static function feedBindingFingerprint(array $license, array $runtime): string
     {
@@ -532,6 +597,17 @@ final class SystemCenterController
             return $domain;
         };
         // Status signals are root-owned and only used on the fixed staging site.
+        $portableReady=false;
+        $portableStatus=['state'=>'unsupported_staging','pending'=>false];
+        if ($section==='auto-updater'
+            && !\Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging()) {
+            try {
+                $portableReady=\Barama\Services\Updates\PortableCustomerUpdateV1::ready();
+                $portableStatus=\Barama\Services\Updates\PortableCustomerUpdateV1::status();
+            } catch (\Throwable) {
+                $portableStatus=['state'=>'unavailable','pending'=>true];
+            }
+        }
         $oneClickFlash = '';
         $oneClickWorkerReady = false;
         $oneClickPending = false;
@@ -595,6 +671,8 @@ final class SystemCenterController
             'systemOneClickWorkerReady' => $oneClickWorkerReady,
             'systemOneClickPending' => $oneClickPending,
             'systemOneClickStatus' => $oneClickStatus,
+            'systemPortableReady' => $portableReady,
+            'systemPortableStatus' => $portableStatus,
             'systemLicenseBinding' => [
                 'current_domain' => $domainDisplay(Installation::runtimeConfig()['APP_URL'] ?? null),
                 'recorded_domain' => $domainDisplay($license['domain'] ?? null),

@@ -14,7 +14,7 @@ $uEligible = $uEligible && ($uFeed['entitlement'] ?? '') === 'Eligible';
 $uSigned = $uFeedStatus === 'available' && $uEligible && ($uFeed['feed'] ?? '') === 'Signed release verified';
 $uFresh = isset($uFeed['at']) && is_int($uFeed['at']) && $uFeed['at'] <= time()+30 && $uFeed['at'] > time()-600;
 $uSigned = $uSigned && $uFresh;
-$uVersionAvailable = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', (string)($uFeed['version'] ?? '')) === 1;
+$uVersionAvailable = $uSigned && preg_match('/^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', (string)($uFeed['version'] ?? '')) === 1 && version_compare((string)($uFeed['version'] ?? ''),$uVersion,'>');
 $uCanCheck = !empty($uReady['can_check']);
 $uLicenseActive = in_array((string)($uLicense['state'] ?? ''), ['Active license verified', 'Installed license recognized'], true);
 $uDomain = (string)($uBinding['recorded_domain'] ?? '');
@@ -29,7 +29,9 @@ $uStorage = !empty($uSystem['storage_writable']);
 $uStaging = class_exists(\Barama\Services\Updates\PublisherTrustPaths::class) && \Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging();
 $uPortable = false;
 try { $uPortable = class_exists(\Barama\Services\Updates\PortableCustomerUpdateV1::class) && \Barama\Services\Updates\PortableCustomerUpdateV1::ready(); } catch (\Throwable) { /* Unknown => disabled */ }
-$uReadyInstall = !$uStaging && $uPortable && $uVersionAvailable;
+$uPortableState = is_array($systemPortableStatus ?? null) ? (string)($systemPortableStatus['state'] ?? 'not_started') : 'unavailable';
+$uPortablePending = is_array($systemPortableStatus ?? null) && !empty($systemPortableStatus['pending']);
+$uReadyInstall = !$uStaging && $uPortable && $uVersionAvailable && !$uPortablePending;
 // A staging action is visible only when the separately reviewed one-click
 // controller, queue, and root-worker status contract have all been supplied.
 // This view never grants update authorization or creates update jobs.
@@ -65,11 +67,65 @@ $uSteps = [
 ];
 $uCompleted = ($uEligible && $uFresh ? 1 : 0) + ($uCanCheck ? 1 : 0) + ($uVersionAvailable ? 1 : 0) + ($uStaged ? 1 : 0) + ($uStagedVerified ? 1 : 0);
 $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligible' ? 'No newer release' : ($uFeedStatus === 'ineligible' ? 'Update not authorized' : ($uCanCheck ? 'Ready to check' : 'Setup required')));
+
+/* BARAMA_PORTABLE_VERIFIED_LIFECYCLE_V105: QA presentation with preserved PR job binding.
+ * UI state is server-supplied and cannot authorize downloads/installs.
+ * A completed job must refer to the currently installed version, never
+ * just any stale completed receipt; no recoverability claims are inferred.
+ */
+$uPortableTarget = is_array($systemPortableStatus ?? null)
+    ? (string)($systemPortableStatus['version'] ?? '') : '';
+$uPortableTargetWellFormed = preg_match('/^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', $uPortableTarget) === 1;
+$uPortableLifecycle = !$uStaging && $uPortable && $uPortableTargetWellFormed
+    && in_array($uPortableState, ['downloaded', 'health_pending', 'completed_file_only'], true)
+    && ($uPortableState === 'downloaded' || hash_equals($uVersion, $uPortableTarget))
+    && ($uPortableState !== 'completed_file_only' || (!$uVersionAvailable && !$uPortablePending));
+if ($uPortableLifecycle) {
+    // health_pending occurs after backup creation and verified file installation.
+    $uPortableCount = ['downloaded' => 1, 'health_pending' => 3, 'completed_file_only' => 4];
+    $uCompleted = $uPortableCount[$uPortableState];
+    $uSteps = [
+        ['Signed download', 'Signed package verified', 'done'],
+        ['Backup creation', $uCompleted >= 3 ? 'Installer checkpoint passed; backup not rechecked' : 'Not yet confirmed', $uCompleted >= 3 ? 'done' : 'pending'],
+        ['File installation', $uCompleted === 4 ? 'Installed version verified' : ($uCompleted >= 3 ? 'Installed; final verification pending' : 'Not yet confirmed'), $uCompleted >= 3 ? 'done' : 'pending'],
+        ['Final verification', $uCompleted === 4 ? 'Installed version verified' : 'Not yet confirmed', $uCompleted === 4 ? 'done' : 'pending'],
+    ];
+    $uPhase = match ($uPortableState) {
+        'downloaded' => 'Signed package downloaded',
+        'health_pending' => 'Final verification pending',
+        'completed_file_only' => 'Update completed',
+    };
+}
+$uPortableCompleted = $uPortableLifecycle && $uCompleted === 4;
+$uStepTotal = count($uSteps);
+$uProgressLabel = $uPortableCompleted
+    ? 'Completed · 4 of 4 confirmed'
+    : 'Step ' . $uCompleted . ' of ' . $uStepTotal . ' confirmed';
+$uPortableRingDescription = $uPortableLifecycle
+    ? ($uPortableCompleted ? 'Installed version v' . $uVersion . ' verified'
+        : ($uCompleted === 3 ? 'Files installed; final verification pending' : 'Signed package acquired; installation not yet confirmed'))
+    : ($uVersionAvailable ? 'Release metadata signed by the trusted publisher' : 'Awaiting verified update discovery');
+$uPortableRingNote = $uPortableLifecycle
+    ? ($uPortableCompleted ? 'File-only update completed and installed version verified. Rollback was not used.'
+        : ($uCompleted === 3 ? 'Backup checkpoint and installation completed; final verification pending.' : 'Signed download verified; installation not yet confirmed.'))
+    : 'No download, backup, or installation has been started on this page.';
+$uBackupSummary = $uPortableLifecycle
+    ? ($uCompleted >= 3 ? 'Checkpoint passed · artifact not rechecked' : 'Not yet confirmed')
+    : 'Not verified in this session';
+$uRecoverySummary = $uPortableLifecycle
+    ? match ($uPortableState) {
+        'downloaded' => 'Not yet applicable',
+        'health_pending' => 'Recovery action offered · backup not audited',
+        'completed_file_only' => 'Not used · availability not audited',
+    }
+    : 'Not verified in this session';
+
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-unified-v100.css') . '?v=100') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-theme-v101.css') . '?v=103') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-experience-v103.css') . '?v=103') ?>">
-<main class="bau" id="barama-unified-auto-updater" aria-labelledby="bau-title">
+<link rel="stylesheet" href="<?= e(asset('css/barama-qa-busy-arrow-v105.css') . '?v=105') ?>">
+<main class="bau<?= $uPortableCompleted ? ' bau-portable-complete' : '' ?>" id="barama-unified-auto-updater" aria-labelledby="bau-title">
  <nav class="bau-breadcrumb" aria-label="Breadcrumb">Administration / System / Auto Updater</nav>
  <header class="bau-heading"><div><h1 id="bau-title">Auto Updater</h1><p>Discover and verify publisher-signed Barama releases in one place.</p></div>
   <form method="post" action="<?= e(url('/dashboard/system/auto-updater/check-updates')) ?>" data-bau-check-form>
@@ -85,8 +141,8 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
  
  <div class="bau-columns">
   <section class="bau-panel bau-mainpanel" aria-labelledby="bau-workflow-title">
-   <div class="bau-panel-heading"><div><h2 id="bau-workflow-title">Update lifecycle</h2><p>Progress is based on confirmed server results. No installation starts during discovery.</p></div><span class="bau-pill">Step <?= (int)$uCompleted ?> of 7 confirmed</span></div>
-   <div class="bau-progress-layout"><div class="bau-ring-wrap"><div class="bau-ring" data-bau-ring role="status" aria-live="polite" aria-label="<?= e($uPhase) ?>"><div class="bau-ring-inner"><span class="bau-ring-symbol">↻</span><strong data-bau-ring-title><?= e($uPhase) ?></strong><small data-bau-ring-desc><?= $uVersionAvailable ? 'Release metadata signed by the trusted publisher' : 'Awaiting verified update discovery' ?></small></div></div><p class="bau-ring-note" data-bau-live-message>No download, backup, or installation has been started on this page.</p></div>
+   <div class="bau-panel-heading"><div><h2 id="bau-workflow-title">Update lifecycle</h2><p>Progress is based on confirmed server results. No installation starts during discovery.</p></div><span class="bau-pill<?= $uPortableCompleted ? ' bau-pill--good' : '' ?>"><?= e($uProgressLabel) ?></span></div>
+   <div class="bau-progress-layout"><div class="bau-ring-wrap"><div class="bau-ring" data-bau-ring role="status" aria-live="polite" aria-label="<?= e($uPhase) ?>"><div class="bau-ring-inner"><span class="bau-ring-symbol"><?= $uPortableCompleted ? '✓' : '↻' ?></span><strong data-bau-ring-title><?= e($uPhase) ?></strong><small data-bau-ring-desc><?= e($uPortableRingDescription) ?></small></div></div><p class="bau-ring-note" data-bau-live-message><?= e($uPortableRingNote) ?></p></div>
     <ol class="bau-steps"><?php foreach ($uSteps as $uIndex=>$uStep): ?><li class="bau-step bau-step--<?= e($uStep[2]) ?>"><span class="bau-step-num"><?= $uStep[2] === 'done' ? '✓' : (string)($uIndex+1) ?></span><div><strong><?= e($uStep[0]) ?></strong><small><?= e($uStep[1]) ?></small></div></li><?php endforeach; ?></ol>
    </div>
   </section>
@@ -95,7 +151,12 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
    <div class="bau-mini"><span>Signed candidate</span><strong><?= $uVersionAvailable ? 'v'.e((string)$uFeed['version']) : 'None verified' ?></strong></div>
    <div class="bau-mini"><span>Update entitlement</span><strong><?= $uEligible && $uFresh ? 'Eligible' : ($uFeedStatus === 'ineligible' ? (($uFeed['entitlement'] ?? '') === 'Not configured' ? 'Not configured' : 'Not entitled') : 'Not confirmed') ?></strong></div>
    <div class="bau-mini"><span>Staged release ZIP</span><strong><?= $uStagedVerified ? 'Verified' : ($uStaged ? 'Present · unverified' : 'Not staged') ?></strong></div>
+   <?php if ($uPortableLifecycle): ?>
+   <div class="bau-mini"><span>Backup creation</span><strong><?= e($uBackupSummary) ?></strong></div>
+   <div class="bau-mini"><span>Rollback &amp; recovery</span><strong><?= e($uRecoverySummary) ?></strong></div>
+   <?php else: ?>
    <div class="bau-mini"><span>Backup and rollback</span><strong>Not verified in this session</strong></div>
+   <?php endif; ?>
    <div class="bau-aside-actions">
     <?php if ($uStaging): ?>
       <div class="bau-safe-note">Staging installations require a separate, protected, root-owned worker. Discovery alone never starts installation.</div>
@@ -126,12 +187,37 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
         <p data-oneclick-stage-message>Awaiting trusted job status.</p>
       </div>
       <?php endif; ?>
+    <?php elseif (in_array($uPortableState,['downloaded','health_pending'],true) && $uPortable): ?>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/' . ($uPortableState === 'downloaded' ? 'portable-install' : 'portable-finish'))) ?>"
+            data-bau-install-form data-bau-portable-flow data-portable-start="<?= e($uPortableState) ?>">
+       <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+       <button type="submit" class="bau-button bau-install"><?= $uPortableState === 'downloaded' ? 'Continue verified installation' : 'Verify installed update' ?></button>
+      </form><small>Existing verified job: <?= e(str_replace('_',' ',$uPortableState)) ?>.</small>
+      <?php if ($uPortableState === 'health_pending'): ?>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-recover')) ?>" data-bau-portable-recovery>
+       <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+       <button type="submit" class="bau-button bau-refresh">Restore previous files</button>
+      </form><small>Manual rollback of this bound file-only job only. No database data will be restored.</small>
+      <?php endif; ?>
+    <?php elseif ($uPortableState === 'recovery_review_required'): ?>
+      <button type="button" class="bau-button bau-install" disabled>Recovery review required</button>
+      <small>Preserve the private backup. Do not submit a new update.</small>
     <?php elseif ($uReadyInstall): ?>
-      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>" data-bau-install-form>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>"
+            data-bau-install-form data-bau-portable-flow data-portable-start="not_started">
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <button type="submit" class="bau-button bau-install">Install verified update</button>
-      </form><small>Installation requires administrator confirmation, fresh signed authorization, and the updater's independent verification.</small>
-    <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button><small><?= !$uCanCheck ? 'Publisher trust must be available to the website runtime.' : 'A fresh, eligible, newer signed release is required.' ?></small><?php endif; ?>
+      </form><small>Administrator-only: signed download, private backup, file-only installation and independent verification. No DB migrations.</small>
+    <?php elseif ($uPortableState === 'completed_file_only'): ?>
+      <?php if ($uPortableCompleted): ?>
+      <div class="bau-safe-note" role="status">Previous file-only update completed and installed files were verified.</div>
+      <?php else: ?>
+      <button type="button" class="bau-button bau-install" disabled>Update status requires review</button>
+      <small>Completed receipt cannot be matched to the installed version; review the private job before updating.</small>
+      <?php endif; ?>
+    <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button>
+      <small><?= !$uPortable ? 'Private vault, writable code and PHP extensions are required.' : (!$uCanCheck ? 'Publisher trust must be available.' : 'A fresh newer eligible signed release is required.') ?></small>
+    <?php endif; ?>
     <p class="bau-separate">License activation and verification are managed separately in <a href="<?= e(url('/dashboard/license')) ?>">License &amp; Activation</a>.</p>
    </div>
   </aside>
@@ -157,3 +243,4 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
 <script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=103') ?>"></script>
 <script defer src="<?= e(asset('js/barama-auto-updater-experience-v103.js') . '?v=103') ?>"></script>
 <?php if ($uStagingQueueSupported): ?><script defer src="<?= e(asset('js/barama-oneclick-status-v100.js') . '?v=104') ?>"></script><?php endif; ?>
+<?php if (!$uStaging): ?><script defer src="<?= e(asset('js/barama-portable-auto-updater-v1.js') . '?v=100') ?>"></script><?php endif; ?>
