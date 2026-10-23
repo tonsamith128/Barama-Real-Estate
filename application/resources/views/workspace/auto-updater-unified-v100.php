@@ -209,7 +209,12 @@ $uRecoverySummary = $uPortableLifecycle
        <button type="submit" class="bau-button bau-install">Install verified update</button>
       </form><small>Administrator-only: signed download, private backup, file-only installation and independent verification. No DB migrations.</small>
     <?php elseif ($uPortableState === 'completed_file_only'): ?>
+      <?php if ($uPortableCompleted): ?>
       <div class="bau-safe-note" role="status">Previous file-only update completed and installed files were verified.</div>
+      <?php else: ?>
+      <button type="button" class="bau-button bau-install" disabled>Update status requires review</button>
+      <small>Completed receipt cannot be matched to the installed version; review the private job before updating.</small>
+      <?php endif; ?>
     <?php else: ?><button class="bau-button bau-install" disabled>Install update unavailable</button>
       <small><?= !$uPortable ? 'Private vault, writable code and PHP extensions are required.' : (!$uCanCheck ? 'Publisher trust must be available.' : 'A fresh newer eligible signed release is required.') ?></small>
     <?php endif; ?>
