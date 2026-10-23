@@ -170,6 +170,7 @@ $uRecoverySummary = $uPortableLifecycle
  </div>
  
  
+ <?php require __DIR__ . '/barama-updater-completed-receipt-v101.php'; ?>
  <div class="bau-columns">
   <section class="bau-panel bau-mainpanel" aria-labelledby="bau-workflow-title">
    <div class="bau-panel-heading"><div><h2 id="bau-workflow-title">Update lifecycle</h2><p>Progress is based on confirmed server results. No installation starts during discovery.</p></div><span class="bau-pill<?= $uPortableCompleted ? ' bau-pill--good' : '' ?>"><?= e($uProgressLabel) ?></span></div>
