@@ -24,6 +24,8 @@ on:
       - 'application/app/Http/Controllers/SystemCenterController.php'
       - 'application/routes/web.php'
       - 'application/resources/views/workspace/auto-updater-unified-v100.php'
+      - 'assets/css/barama-qa-busy-arrow-v105.css'
+      - 'tests/portable_lifecycle_presentation_v1.php'
       - 'assets/js/barama-portable-auto-updater-v1.js'
       - '.github/workflows/portable-auto-updater-v1.yml'
 
@@ -62,10 +64,13 @@ jobs:
           php -l application/app/Http/Controllers/SystemCenterController.php
           php -l application/routes/web.php
           php -l application/resources/views/workspace/auto-updater-unified-v100.php
+          php -l tests/portable_lifecycle_presentation_v1.php
       - name: Portable browser flow syntax
         run: |
           node --check assets/js/barama-portable-auto-updater-v1.js
           node --check assets/js/barama-auto-updater-unified-v100.js
+      - name: Portable lifecycle target-version binding and busy-state presentation
+        run: php tests/portable_lifecycle_presentation_v1.php
       - name: Signed portable ZIP fixtures
         run: php tests/portable_update_archive_v1.php
       - name: Portable private backup and integrity fixtures
