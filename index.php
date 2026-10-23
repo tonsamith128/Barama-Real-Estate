@@ -64,6 +64,56 @@ $installed = Barama\Core\Installation::metadata();
 $installedVersion = trim((string) ($installed['version'] ?? ''));
 
 if ($installedVersion !== APP_VERSION) {
+    // BARAMA_PORTABLE_PENDING_BOOTSTRAP_V1
+    // File-only installs update VERSION before their independent new-boot
+    // verification. Only the authenticated, CSRF-guarded recovery/finish
+    // workflow may bypass the legacy database-upgrade redirect.
+    $portablePath = parse_url(
+        (string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH
+    );
+    $portableMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    $portableScript = str_replace(
+        '\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php')
+    );
+    $portableBase = rtrim(dirname($portableScript), '/');
+    if ($portableBase === '/' || $portableBase === '.') {
+        $portableBase = '';
+    }
+    $portableAllowed = [
+        'GET' => [
+            '/login',
+            '/dashboard/system/auto-updater',
+            '/dashboard/system/auto-updater/portable-status',
+        ],
+        'POST' => [
+            '/login',
+            '/dashboard/system/auto-updater/portable-finish',
+            '/dashboard/system/auto-updater/portable-recover',
+        ],
+    ];
+    $portablePendingRoute = false;
+    if (is_string($portablePath)
+        && in_array(
+            $portablePath,
+            array_map(
+                static fn (string $path): string => $portableBase . $path,
+                $portableAllowed[$portableMethod] ?? []
+            ),
+            true
+        )
+    ) {
+        try {
+            $portableState =
+                \Barama\Services\Updates\PortableCustomerUpdateV1::status();
+            $portablePendingRoute =
+                ($portableState['state'] ?? '') === 'health_pending'
+                && ($portableState['version'] ?? '') === APP_VERSION;
+        } catch (\Throwable) {
+            $portablePendingRoute = false;
+        }
+    }
+    if (!$portablePendingRoute) {
+
     $script = str_replace(
         '\\',
         '/',
@@ -84,6 +134,7 @@ if ($installedVersion !== APP_VERSION) {
     }
 
     exit;
+    }
 }
 
 $app = require __DIR__ . '/application/bootstrap/app.php';
