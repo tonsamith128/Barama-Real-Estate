@@ -178,6 +178,11 @@ final class PortableUpdateFileTransactionV1
             !hash_equals($baseline,(string)hash_file('sha256',$dest))) {
             throw new RuntimeException('PORTABLE_INSTALL_CONCURRENT_MODIFICATION');
         }
+        // Retain an already installed, byte-identical source file. Its mode,
+        // owner and group must not change merely to advance a signed version.
+        // VERSION is always applied last through the atomic replacement below.
+        if ($name !== 'VERSION' && $baseline !== null
+            && hash_equals($baseline, $entry['sha256'])) return;
         $parent=dirname($dest);
         if (!is_dir($parent) || is_link($parent) || !is_writable($parent))
             throw new RuntimeException('PORTABLE_INSTALL_UNWRITABLE_PARENT');
@@ -265,6 +270,16 @@ final class PortableUpdateFileTransactionV1
             $tmp=dirname($dest).'/.barama-restore-'.bin2hex(random_bytes(12));
             if (!copy($source,$tmp)) throw new RuntimeException('PORTABLE_RECOVERY_COPY_FAILED');
             try {
+                // Recovery must not leave VERSION inaccessible to PHP-FPM.
+                // copy() into an umask-077 temporary file defaults to 0600;
+                // the existing installed file provides the prior safe mode.
+                $restoreMode = is_file($dest) ? (fileperms($dest) & 0777) : 0644;
+                if (($restoreMode & 0044) === 0 && $entry['path'] === 'VERSION') {
+                    throw new RuntimeException('PORTABLE_RECOVERY_VERSION_MODE_UNSAFE');
+                }
+                if (!chmod($tmp,$restoreMode)) {
+                    throw new RuntimeException('PORTABLE_RECOVERY_MODE_FAILED');
+                }
                 if (!hash_equals($baseline,(string)hash_file('sha256',$tmp))
                     || !rename($tmp,$dest))
                     throw new RuntimeException('PORTABLE_RECOVERY_RENAME_FAILED');

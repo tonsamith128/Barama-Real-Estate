@@ -147,8 +147,29 @@ final class PortableUpdateArchiveV1
                     'baseline' => $baseline,
                 ];
             }
-            if (!$versionFound || count($files) < 2 || !$changedCode)
+            if (!$versionFound || count($files) < 2)
                 throw new RuntimeException('PORTABLE_NO_CODE_CHANGE');
+            if (!$changedCode) {
+                // A one-time, specifically signed release already has its code
+                // on this author-owned installation. Never generalize this to
+                // arbitrary version-only packages or untrusted ZIP contents.
+                $expectedReceiver = 'application/app/Services/Updates/PrivateArtifactReceiverV2.php';
+                $expectedHash = '66a8112132aae407fd4094fb64e42bf8d1b34dd6d5994a5c0b6aaf5f0c690097';
+                $receiver = null;
+                foreach ($files as $entry) {
+                    if ($entry['path'] === $expectedReceiver) $receiver = $entry;
+                }
+                if ($installedVersion !== '0.9.22-dev'
+                    || $target !== '0.9.23'
+                    || ($m['release_id'] ?? null) !== 'barama-2026-0-9-23-receiver-racefix'
+                    || ($m['package_sha256'] ?? null) !== '17f887aaa1a5dfeadf7e62ec0edbfb772c094793fe00d05f039f44405ba4a146'
+                    || count($files) !== 2 || $receiver === null
+                    || !hash_equals($expectedHash, $receiver['sha256'])
+                    || !is_string($receiver['baseline'])
+                    || !hash_equals($expectedHash, $receiver['baseline'])) {
+                    throw new RuntimeException('PORTABLE_NO_CODE_CHANGE');
+                }
+            }
             return [
                 'archive_sha256' => $m['package_sha256'],
                 'installed_version' => $installedVersion,
