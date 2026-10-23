@@ -108,7 +108,7 @@ if (!$uStaging && $uPortableState === 'downloaded' && $uPortableTargetWellFormed
     $uPhase = $uStagedVerified ? 'Signed ZIP inspected' : 'Signed ZIP staged';
 }
 $uPortableLifecycle = !$uStaging && $uPortable && $uPortableTargetWellFormed
-    && in_array($uPortableState, ['health_pending', 'completed_file_only'], true)
+    && in_array($uPortableState, ['downloaded', 'health_pending', 'completed_file_only'], true)
     && ($uPortableState === 'downloaded' || hash_equals($uVersion, $uPortableTarget))
     && ($uPortableState !== 'completed_file_only' || (!$uVersionAvailable && !$uPortablePending));
 if ($uPortableLifecycle) {
