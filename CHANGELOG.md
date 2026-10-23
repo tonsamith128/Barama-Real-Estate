@@ -2,7 +2,15 @@
 
 All customer-facing changes to Barama Real Estate will be recorded in this file.
 
-Development-only 0.9.x milestones are intentionally not presented as separate customer releases. Git history remains the source of truth for pre-release engineering changes.
+Development-only 0.9.x milestones are intentionally not presented as separate CodeCanyon customer releases. Git history remains the source of truth for pre-release engineering changes.
+
+## 0.9.25 — 2026-10-23 (Live Demo source release)
+
+- Promote the GitHub Main Live Demo source to a consistent pre-1.0 release version.
+- Include the verified Auto Updater code merged via PR #126 and its PHP/browser QA acceptance.
+- Align deployed source `VERSION` and installed runtime metadata as one guarded deployment, without changing the database schema, runtime secrets, or uploaded media.
+- Portable signed update installation still requires host-appropriate private vault and controlled write permissions; this version promotion alone does not certify that `Update Now` can install a future release.
+
 
 ## Unreleased — v1.0.0
 
