@@ -31,6 +31,20 @@ final class PortableCustomerUpdateV1
         } catch (\Throwable) { return false; }
     }
 
+    /** Step 4 download-only capability; no permission to replace website files. */
+    public static function canStage(): bool
+    {
+        if (!defined('BASE_PATH') || PublisherTrustPaths::isProtectedStaging()
+            || !extension_loaded('sodium') || !extension_loaded('curl')
+            || !class_exists(\ZipArchive::class)) return false;
+        try {
+            $v = self::vault(false);
+            return is_dir($v) && !is_link($v) && is_writable($v)
+                && is_file(BASE_PATH . '/VERSION')
+                && !is_link(BASE_PATH . '/VERSION');
+        } catch (\Throwable) { return false; }
+    }
+
     /**
      * Paths are derived from the already-installed application root only.
      * Never from requests, publisher manifests, host headers or session.
@@ -90,8 +104,12 @@ final class PortableCustomerUpdateV1
     public static function begin(?Closure $fixtureFeed=null, ?Closure $fixtureTransfer=null): array
     {
         self::fixtureGate($fixtureFeed,$fixtureTransfer);
-        self::gate();
-        $vault=self::vault(true);
+        // Download-only: never depend on writable application code.
+        // Installation and recovery retain their independent, strict gate().
+        if (!self::canStage() || !defined('APP_VERSION')) {
+            throw new RuntimeException('PORTABLE_STAGE_VAULT_OR_PHP_UNAVAILABLE');
+        }
+        $vault=self::vault(false);
         $lock=self::lock($vault);
         try {
             self::assertNoCurrent($vault);

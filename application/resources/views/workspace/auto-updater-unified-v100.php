@@ -25,13 +25,31 @@ $uDomainTitle = $uDomainOk ? 'Installed website: ' . $uCurrentDomain
     : 'Configured website: ' . $uCurrentDomain . ' | Saved license domain: ' . $uDomain;
 $uStaged = !empty($uRelease['staged_release']);
 $uStagedVerified = ($uInspect['status'] ?? '') === 'Signed package verified (not installed)';
+// STEP5_READONLY_INSPECTION_V100: recompute the exact private ZIP, never trust
+// a stale session value or a mutable "verified" flag for lifecycle status.
+$uStep5 = ['verified'=>false,'reason'=>'STEP5_NOT_INSPECTED'];
+if (class_exists(\Barama\Services\Updates\PortableUpdateInspectionV1::class)) {
+    try { $uStep5 = \Barama\Services\Updates\PortableUpdateInspectionV1::status(); }
+    catch (\Throwable) { $uStep5 = ['verified'=>false,'reason'=>'STEP5_VERIFICATION_BLOCKED']; }
+}
+$uStagedVerified = !empty($uStep5['verified']);
 $uStorage = !empty($uSystem['storage_writable']);
 $uStaging = class_exists(\Barama\Services\Updates\PublisherTrustPaths::class) && \Barama\Services\Updates\PublisherTrustPaths::isProtectedStaging();
 $uPortable = false;
 try { $uPortable = class_exists(\Barama\Services\Updates\PortableCustomerUpdateV1::class) && \Barama\Services\Updates\PortableCustomerUpdateV1::ready(); } catch (\Throwable) { /* Unknown => disabled */ }
 $uPortableState = is_array($systemPortableStatus ?? null) ? (string)($systemPortableStatus['state'] ?? 'not_started') : 'unavailable';
 $uPortablePending = is_array($systemPortableStatus ?? null) && !empty($systemPortableStatus['pending']);
+// STEP4_PRIVATE_DOWNLOAD_ONLY: allows verified staging without granting
+// writable code; the install gate and JS-chained install action remain closed.
+$uCanStage = false;
+try { $uCanStage = !$uStaging && class_exists(\Barama\Services\Updates\PortableCustomerUpdateV1::class)
+    && \Barama\Services\Updates\PortableCustomerUpdateV1::canStage(); }
+catch (\Throwable) { /* fail closed */ }
+$uStageOnlyAvailable = $uCanStage && $uVersionAvailable
+    && $uPortableState === 'not_started' && !$uPortablePending;
 $uReadyInstall = !$uStaging && $uPortable && $uVersionAvailable && !$uPortablePending;
+// A verified download receipt is an installed-app state; it is not an
+// archive inspection or a claim that any website files have been installed.
 // A staging action is visible only when the separately reviewed one-click
 // controller, queue, and root-worker status contract have all been supplied.
 // This view never grants update authorization or creates update jobs.
@@ -76,8 +94,21 @@ $uPhase = $uVersionAvailable ? 'Signed release found' : ($uFeedStatus === 'eligi
 $uPortableTarget = is_array($systemPortableStatus ?? null)
     ? (string)($systemPortableStatus['version'] ?? '') : '';
 $uPortableTargetWellFormed = preg_match('/^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}(?:-[A-Za-z0-9.]{1,24})?$/D', $uPortableTarget) === 1;
+if (!$uStaging && $uPortableState === 'downloaded' && $uPortableTargetWellFormed) {
+    $uStaged = true;
+    $uSteps[3] = ['Package staging', 'Signed ZIP downloaded privately', 'done'];
+    if ($uStagedVerified) {
+        $uSteps[4] = ['Package inspection', 'Signature, ZIP CRC & paths verified', 'done'];
+    } elseif (($uStep5['reason'] ?? 'STEP5_NOT_INSPECTED') !== 'STEP5_STAGED_JOB_NOT_READY') {
+        $uSteps[4] = ['Package inspection', 'Inspection blocked · review package', 'warn'];
+    }
+    // No backup, file replacement, installation, or VERSION update was performed.
+    $uCompleted = ($uEligible && $uFresh ? 1 : 0) + ($uCanCheck ? 1 : 0)
+        + ($uVersionAvailable ? 1 : 0) + 1 + ($uStagedVerified ? 1 : 0);
+    $uPhase = $uStagedVerified ? 'Signed ZIP inspected' : 'Signed ZIP staged';
+}
 $uPortableLifecycle = !$uStaging && $uPortable && $uPortableTargetWellFormed
-    && in_array($uPortableState, ['downloaded', 'health_pending', 'completed_file_only'], true)
+    && in_array($uPortableState, ['health_pending', 'completed_file_only'], true)
     && ($uPortableState === 'downloaded' || hash_equals($uVersion, $uPortableTarget))
     && ($uPortableState !== 'completed_file_only' || (!$uVersionAvailable && !$uPortablePending));
 if ($uPortableLifecycle) {
@@ -108,7 +139,7 @@ $uPortableRingDescription = $uPortableLifecycle
 $uPortableRingNote = $uPortableLifecycle
     ? ($uPortableCompleted ? 'File-only update completed and installed version verified. Rollback was not used.'
         : ($uCompleted === 3 ? 'Backup checkpoint and installation completed; final verification pending.' : 'Signed download verified; installation not yet confirmed.'))
-    : 'No download, backup, or installation has been started on this page.';
+    : ($uPortableState === 'downloaded' ? 'Private signed ZIP downloaded and ' . ($uStagedVerified ? 'independently inspected.' : 'awaiting independent inspection.') . ' No backup or installation started.' : 'No download, backup, or installation has been started on this page.');
 $uBackupSummary = $uPortableLifecycle
     ? ($uCompleted >= 3 ? 'Checkpoint passed · artifact not rechecked' : 'Not yet confirmed')
     : 'Not verified in this session';
@@ -187,6 +218,26 @@ $uRecoverySummary = $uPortableLifecycle
         <p data-oneclick-stage-message>Awaiting trusted job status.</p>
       </div>
       <?php endif; ?>
+    <?php elseif (!$uStaging && $uPortableState === 'downloaded'): ?>
+      <div class="bau-safe-note" role="status">Signed ZIP staged in private storage. No website files installed. Installation remains locked until separate backup and code-write readiness is approved.</div>
+      <button type="button" class="bau-button bau-install" disabled>Installation locked — Step 6</button>
+      <?php if ($uStagedVerified): ?>
+        <div class="bau-safe-note" role="status">Step 5 complete: the signed ZIP, SHA-256, CRC, allowed paths, and current file baselines were verified independently. <?= e((string)($uStep5['file_count'] ?? '')) ?> file entries inspected; <?= e((string)($uStep5['overwrites'] ?? '')) ?> non-version file(s) differ. No installation performed.</div>
+        <?php if (!empty($uStep5['version_only'])): ?>
+        <small>Verified version-only package: the signed v0.9.23 ZIP changes VERSION, but its included PHP source already matches Live Demo. Step 6 remains locked; the normal installer still requires a separately reviewed install policy and backup.</small>
+        <?php endif; ?>
+        <?php if (!empty($uStep5['changed_paths'])): ?>
+        <small>Proposed changed files: <?= e(implode(', ', (array)$uStep5['changed_paths'])) ?>. Review these changes before separately approving Step 6.</small>
+        <?php endif; ?>
+      <?php else: ?>
+        <small>Step 5 inspection pending: <?= e((string)($uStep5['reason'] ?? 'STEP5_VERIFICATION_BLOCKED')) ?>. No installation permitted.</small>
+      <?php endif; ?>
+    <?php elseif ($uStageOnlyAvailable): ?>
+      <form method="post" action="<?= e(url('/dashboard/system/auto-updater/portable-update-now')) ?>">
+       <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
+       <button type="submit" class="bau-button bau-install">Download signed ZIP only</button>
+      </form>
+      <small>Step 4 only: authorized private download and SHA-256 verification. No files installed, no backup started, no automatic continuation.</small>
     <?php elseif (in_array($uPortableState,['downloaded','health_pending'],true) && $uPortable): ?>
       <form method="post" action="<?= e(url('/dashboard/system/auto-updater/' . ($uPortableState === 'downloaded' ? 'portable-install' : 'portable-finish'))) ?>"
             data-bau-install-form data-bau-portable-flow data-portable-start="<?= e($uPortableState) ?>">
