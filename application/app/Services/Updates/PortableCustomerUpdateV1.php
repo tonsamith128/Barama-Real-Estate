@@ -207,6 +207,28 @@ final class PortableCustomerUpdateV1
                     throw new RuntimeException('PORTABLE_POSTINSTALL_FILE_MISMATCH');
                 }
             }
+            // BARAMA_PORTABLE_INSTALLED_METADATA_V1
+            // A file-only release contains no DB migrations. The legacy
+            // bootstrap uses the installed.php version, not VERSION alone.
+            // Synchronize only that file's version after verifying every
+            // applied file. If PHP stops here, health_pending + active.json
+            // remain bound and the next request can finish or recover.
+            $installMeta=\Barama\Core\Installation::metadata();
+            $metaVersion=(string)($installMeta['version']??'');
+            if (!in_array($metaVersion,[
+                $current['installed_version'],$current['target_version']
+            ],true)) {
+                throw new RuntimeException('PORTABLE_INSTALLED_METADATA_UNEXPECTED');
+            }
+            if ($metaVersion!==$current['target_version']) {
+                \Barama\Core\Installation::updateInstalledMetadata([
+                    'version'=>$current['target_version']
+                ]);
+            }
+            if ((string)(\Barama\Core\Installation::metadata()['version']??'')
+                !==$current['target_version']) {
+                throw new RuntimeException('PORTABLE_INSTALLED_METADATA_NOT_SAVED');
+            }
             // Persist "completed" before releasing the active job marker.
             // The next request can recover a missing cleanup without
             // misreporting the file integrity evidence.
@@ -245,6 +267,25 @@ final class PortableCustomerUpdateV1
             }
             if (($current['state']??'')==='completed_file_only') {
                 throw new RuntimeException('PORTABLE_FINISHED_JOB_CANNOT_RECOVER');
+            }
+            // If finalization was interrupted after metadata synchronization,
+            // restore that metadata first so any interrupted file rollback
+            // still stays on the authenticated portable recovery path.
+            $installedMeta=\Barama\Core\Installation::metadata();
+            $metaVersion=(string)($installedMeta['version']??'');
+            if (!in_array($metaVersion,[
+                $current['installed_version'],$current['target_version']
+            ],true)) {
+                throw new RuntimeException('PORTABLE_RECOVERY_METADATA_UNEXPECTED');
+            }
+            if ($metaVersion!==$current['installed_version']) {
+                \Barama\Core\Installation::updateInstalledMetadata([
+                    'version'=>$current['installed_version']
+                ]);
+                if ((string)(\Barama\Core\Installation::metadata()['version']??'')
+                    !==$current['installed_version']) {
+                    throw new RuntimeException('PORTABLE_RECOVERY_METADATA_NOT_SAVED');
+                }
             }
             $result=PortableUpdateFileTransactionV1::recover((string)BASE_PATH,$vault,$install);
             $current['state']='rolled_back';
