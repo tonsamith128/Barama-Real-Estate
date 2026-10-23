@@ -108,7 +108,7 @@ if (!$uStaging && $uPortableState === 'downloaded' && $uPortableTargetWellFormed
     $uPhase = $uStagedVerified ? 'Signed ZIP inspected' : 'Signed ZIP staged';
 }
 $uPortableLifecycle = !$uStaging && $uPortable && $uPortableTargetWellFormed
-    && in_array($uPortableState, ['health_pending', 'completed_file_only'], true)
+    && in_array($uPortableState, ['downloaded', 'health_pending', 'completed_file_only'], true)
     && ($uPortableState === 'downloaded' || hash_equals($uVersion, $uPortableTarget))
     && ($uPortableState !== 'completed_file_only' || (!$uVersionAvailable && !$uPortablePending));
 if ($uPortableLifecycle) {
@@ -170,6 +170,7 @@ $uRecoverySummary = $uPortableLifecycle
  </div>
  
  
+ <?php require __DIR__ . '/barama-updater-completed-receipt-v101.php'; ?>
  <div class="bau-columns">
   <section class="bau-panel bau-mainpanel" aria-labelledby="bau-workflow-title">
    <div class="bau-panel-heading"><div><h2 id="bau-workflow-title">Update lifecycle</h2><p>Progress is based on confirmed server results. No installation starts during discovery.</p></div><span class="bau-pill<?= $uPortableCompleted ? ' bau-pill--good' : '' ?>"><?= e($uProgressLabel) ?></span></div>
