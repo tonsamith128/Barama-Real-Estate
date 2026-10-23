@@ -23,6 +23,7 @@ try {
         'application/routes/web.php',
         'application/resources/views/workspace/auto-updater-unified-v100.php',
         'assets/js/barama-portable-auto-updater-v1.js',
+        'assets/css/barama-qa-busy-arrow-v105.css',
         'application/config/update-feed-v2.json',
         'application/config/update-publisher-v2-keys.json',
     ];
@@ -31,6 +32,13 @@ try {
             throw new RuntimeException('CUSTOMER_ZIP_MISSING_PORTABLE_COMPONENT='.$entry);
         }
         echo 'PASS='.$entry."\n";
+    }
+    $view=(string)$zip->getFromName('application/resources/views/workspace/auto-updater-unified-v100.php');
+    $busyCss=(string)$zip->getFromName('assets/css/barama-qa-busy-arrow-v105.css');
+    if (!str_contains($view, 'barama-qa-busy-arrow-v105.css')
+        || !str_contains($view, 'hash_equals($uVersion, $uPortableTarget)')
+        || !str_contains($busyCss, 'bau-qa-amber-arrow-orbit-v105')) {
+        throw new RuntimeException('CUSTOMER_UI_OR_TARGET_VERSION_GUARD_MISSING');
     }
     $feed=$zip->getFromName('application/config/update-feed-v2.json');
     $keys=$zip->getFromName('application/config/update-publisher-v2-keys.json');
