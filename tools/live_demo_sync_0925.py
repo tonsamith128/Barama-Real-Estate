@@ -46,20 +46,18 @@ def target(rel, make=False):
         p=p/comp
         require(not p.is_symlink(),"SYMLINK_PARENT_"+rel)
         if not p.exists():
-            require(make,"MISSING_PARENT_"+rel)
-            p.mkdir(mode=0o755)
+            if make: p.mkdir(mode=0o755)
+            else: continue
         require(p.is_dir(),"NOT_A_DIRECTORY_"+rel)
     out=SITE/rel
     require(not out.is_symlink() and (not out.exists() or out.is_file()),"UNSAFE_DESTINATION_"+rel)
     return out
-def metadata(version):
-    code=r"""define("BARAMA_BOOTSTRAP",true);
-$d=require $argv[1];
-if(!is_array($d)||($d["version"]??null)!==$argv[2]) exit(6);
-if($argv[3]==="read"){echo $d["version"];exit;}
+def render_metadata(path):
+    code=r"""define("BARAMA_BOOTSTRAP",true);$d=require $argv[1];
+if(!is_array($d)||($d["version"]??null)!==$argv[2])exit(5);
 $d["version"]=$argv[3];
 echo "<?php\n\ndeclare(strict_types=1);\n\nif (!defined('BARAMA_BOOTSTRAP')) {\n http_response_code(404);\n exit;\n}\n\nreturn ".var_export($d,true).";\n";"""
-    return run([PHP,"-r",code,str(SITE/META),version,"read" if version=="" else NEW])
+    return run([PHP,"-r",code,str(path),OLD,NEW])
 def meta_version():
     code='define("BARAMA_BOOTSTRAP",true);$d=require $argv[1];if(!is_array($d)||!is_string($d["version"]??null))exit(6);echo $d["version"];'
     return run([PHP,"-r",code,str(SITE/META)]).decode().strip()
@@ -168,12 +166,8 @@ def deploy(contents):
     baseline();health()
     changes=[rel for rel,h in contents.items() if not (target(rel).is_file() and digest(target(rel))==h)]
     print("SOURCE_FILES="+str(len(contents))+" FILES_TO_SYNC="+str(len(changes)),flush=True)
-    # Generate installed metadata from PHP, preserving all existing fields.
-    code=r"""define("BARAMA_BOOTSTRAP",true);$d=require $argv[1];
-if(!is_array($d)||($d["version"]??null)!==$argv[2])exit(5);
-$d["version"]=$argv[3];
-echo "<?php\n\ndeclare(strict_types=1);\n\nif (!defined('BARAMA_BOOTSTRAP')) {\n http_response_code(404);\n exit;\n}\n\nreturn ".var_export($d,true).";\n";"""
-    new_meta=run([PHP,"-r",code,str(SITE/META),OLD,NEW])
+    # Generate metadata using the same canonical formatter as rollback.
+    new_meta=render_metadata(SITE/META)
     require(b"'version' => '0.9.25'" in new_meta,"NEW_METADATA_GENERATION_INVALID")
     if not changes: require(False,"VERSION_UNEXPECTEDLY_UNCHANGED")
     location,info=prepare(changes)
@@ -242,7 +236,9 @@ def main():
             info=json.loads((path/"journal.json").read_text())
             require(info.get("schema")=="barama-live-github0925-recovery-v1" and info.get("commit")==COMMIT and info.get("site")==str(SITE),"ROLLBACK_JOURNAL_INVALID")
             require(meta_version()==NEW,"ROLLBACK_INSTALLED_VERSION_CHANGED")
-            restore(path,info,{**contents,META:None})
+            old_meta=path/"original"/META
+            require(old_meta.is_file() and not old_meta.is_symlink(),"ROLLBACK_METADATA_BACKUP_MISSING")
+            restore(path,info,{**contents,META:sha(render_metadata(old_meta))})
             require(meta_version()==OLD and (SITE/"VERSION").read_text().strip()==OLD,"ROLLBACK_VERSION_MISMATCH")
             health()
     finally:
