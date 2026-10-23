@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__).'/application/app/Core/Installation.php';
 require_once dirname(__DIR__).'/application/app/Services/Updates/PublisherTrustPaths.php';
 require_once dirname(__DIR__).'/application/app/Services/Updates/TrustedReleaseFeed.php';
 require_once dirname(__DIR__).'/application/app/Services/Updates/PortableUpdateArchiveV1.php';
@@ -32,9 +33,15 @@ if ($mode==='init') {
 define('BASE_PATH',$site);
 define('APP_PATH',$site.'/application');
 define('APP_VERSION',trim((string)file_get_contents($site.'/VERSION')));
+define('BARAMA_BOOTSTRAP', true);
 $_SERVER['DOCUMENT_ROOT']=$site;
 if ($mode==='init') {
     define('BARAMA_PORTABLE_FIXTURE_ONLY',true);
+    // Match a normally installed customer: finish() synchronizes installed.php,
+    // and the independent rollback request must be able to read its version.
+    \Barama\Core\Installation::markInstalled(['version'=>APP_VERSION]);
+    affirm(\Barama\Core\Installation::metadata()['version']===APP_VERSION,
+        'installed_bootstrap_metadata_created');
     $kp=sodium_crypto_sign_keypair();
     file_put_contents(APP_PATH.'/config/update-publisher-v2-keys.json',
         json_encode([
