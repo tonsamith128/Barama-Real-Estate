@@ -315,6 +315,9 @@ $approvedSemanticNames = [
     'application/database/migrations/0030_update_homepage_hero_copy.php',
     // This is an intentional safety test, not a duplicate customer backup.
     'tools/private-database-backup-safety-smoke.php',
+    // The System Tool guide intentionally documents customer backup and restore.
+    // It is a single canonical documentation file, not a source-code copy.
+    'docs/system-tool-import-export-backup-restore.md',
 ];
 $forbidden = array_values(array_filter(
     $allFiles,

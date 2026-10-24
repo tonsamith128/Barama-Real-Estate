@@ -241,7 +241,9 @@ foreach ($entries as $entry) {
 
     if (
         preg_match(
-            '/(?:^|\/)(?:demo|sample|fixture|fixtures)(?:[\/._-]|$)/i',
+            // Reject fixture directories and recognizable sample seed files,
+            // not legitimate customer features such as demo-importer.php.
+            '#(?:^|/)(?:demo|sample|fixture|fixtures)(?:/|$)|(?:^|/)[^/]*[._-](?:fixture|fixtures|sample|seed-data)(?:[._-]|$)#i',
             $entry
         ) === 1
     ) {
