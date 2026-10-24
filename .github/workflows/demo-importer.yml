@@ -9,12 +9,27 @@ on:
       - 'application/routes/web.php'
       - 'application/resources/views/layouts/app.php'
       - 'tests/demo_import_package_v100.php'
+      - 'tests/demo_import_mysql_v100.php'
+      - 'application/app/Services/SystemToolService.php'
       - '.github/workflows/demo-importer.yml'
   push:
     branches: [main, 'feature/system-demo-importer-*']
 jobs:
   signed-demo-tests:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: demo_test_password
+          MYSQL_DATABASE: barama_demo_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     strategy:
       fail-fast: false
       matrix:
@@ -34,5 +49,11 @@ jobs:
           php -l application/routes/web.php
           php -l application/resources/views/layouts/app.php
           php -l tests/demo_import_package_v100.php
+          php -l tests/demo_import_mysql_v100.php
+          php -l application/app/Services/SystemToolService.php
       - name: Signed demo package contract
         run: php tests/demo_import_package_v100.php
+      - name: Isolated MySQL signed-demo installation and safety backup
+        env:
+          BARAMA_DEMO_IT: isolated-ci
+        run: php tests/demo_import_mysql_v100.php
