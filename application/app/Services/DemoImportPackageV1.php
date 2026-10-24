@@ -90,12 +90,16 @@ final class DemoImportPackageV1
                         JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
                     $public)) throw new RuntimeException('DEMO_SIGNATURE_NOT_TRUSTED');
             $digests = $manifest['files'] ?? null;
-            if (!is_array($digests) || array_keys($list) !== array_keys($digests) && count($list) !== count($digests) + 1) {
-                // Manifest excludes itself, includes every other asset and content.json.
-                // Compare exact sets after removing envelope.
-            }
             unset($list['envelope.json']);
-            if (!is_array($digests) || array_keys($list) !== array_keys($digests)) {
+            if (!is_array($digests) || !array_key_exists('content.json', $list)
+                || count($list) !== count($digests)) {
+                throw new RuntimeException('DEMO_FILE_LIST_INCOMPLETE');
+            }
+            $expectedNames = array_keys($list);
+            $signedNames = array_keys($digests);
+            sort($expectedNames, SORT_STRING);
+            sort($signedNames, SORT_STRING);
+            if ($expectedNames !== $signedNames) {
                 throw new RuntimeException('DEMO_FILE_LIST_INCOMPLETE');
             }
             foreach ($digests as $name => $hash) {
