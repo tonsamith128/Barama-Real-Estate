@@ -29,7 +29,7 @@ if ($zip->open($fixture, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) e
 $zip->addFromString('manifest.json', json_encode(['product'=>'barama-real-estate',
     'demo_slug'=>'live','version'=>'0.9.24','schema_version'=>1], JSON_THROW_ON_ERROR));
 $zip->addFromString('content.json', json_encode(['schema'=>'barama-demo-content-v1',
-    'description'=>str_repeat('Preview test content. ',90)], JSON_THROW_ON_ERROR));
+    'description'=>bin2hex(random_bytes(800))], JSON_THROW_ON_ERROR));
 $zip->close();
 $contents = file_get_contents($fixture);
 $sha = hash('sha256', $contents);
