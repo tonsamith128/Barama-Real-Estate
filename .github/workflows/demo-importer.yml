@@ -105,6 +105,10 @@ jobs:
           print('DEMO_PREVIEW_LIGHT_CONTRAST_V105_CONTRACT=PASS')
           print('MANUAL_UI_V104_CONTRACT=PASS')
           PY
+      - name: Demo Importer feedback toast contract
+        run: |
+          php -l tests/demo_import_toast_v106.php
+          php tests/demo_import_toast_v106.php
       - name: Signed demo package contract
         run: |
           php tests/demo_import_package_v100.php
