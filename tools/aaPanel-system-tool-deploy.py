@@ -83,7 +83,10 @@ def source_checks() -> dict[str, bytes]:
         p = ROOT / relative
         check_file(p)
         data = p.read_bytes()
-        if not data or b"BARAMA_SYSTEM_TOOL_V100" not in data:
+        marker = (b"BARAMA_SYSTEM_TOOL_CONTROLLER_V100"
+                  if relative.endswith("SystemToolController.php")
+                  else b"BARAMA_SYSTEM_TOOL_V100")
+        if not data or marker not in data:
             raise RuntimeError("SOURCE_MARKER_MISSING:" + relative)
         out[relative] = data
     return out
