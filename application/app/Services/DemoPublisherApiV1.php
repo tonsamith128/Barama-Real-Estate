@@ -21,6 +21,8 @@ final class DemoPublisherApiV1
     private const PREFIX = '/api/demo-import/v1';
     private const PRODUCT = 'barama-real-estate';
     private const MAX_JSON = 1048576;
+    // Independently verified against publisher-side keys/public.key, 2026-10-24.
+    public const PINNED_PUBLIC_KEY_SHA256 = 'be53fa7e3e531da5a7a21e9f12eaaf15dfcf8633af4fd65640d27bb21bb03287';
 
     /** @var callable|null Fixture-only transport; production uses strict cURL. */
     private $transport;
@@ -55,6 +57,40 @@ final class DemoPublisherApiV1
         return ['algorithm' => 'Ed25519', 'key_id' => $keyId,
             'public_key' => (string)$identity['public_key'],
             'fingerprint' => $fingerprint];
+    }
+
+    /**
+     * Accept the publisher's signing identity only if the full Ed25519
+     * fingerprint matches the independently approved publisher-side key.
+     * Key rotation is fail-closed until separately approved and deployed.
+     */
+    public function pinnedSigningIdentity(): array
+    {
+        $identity = $this->signingIdentity();
+        self::requirePinnedIdentity($identity, self::PINNED_PUBLIC_KEY_SHA256);
+        return $identity;
+    }
+
+    /**
+     * Factored for negative/fixture coverage. Caller must supply an
+     * independently verified fingerprint, NEVER one from the same API response.
+     */
+    public static function requirePinnedIdentity(array $identity, string $expectedFingerprint): void
+    {
+        if (preg_match('/^[a-f0-9]{64}$/D', $expectedFingerprint) !== 1 ||
+            !isset($identity['fingerprint'], $identity['public_key'], $identity['key_id']) ||
+            !is_string($identity['fingerprint']) ||
+            !hash_equals($expectedFingerprint, $identity['fingerprint']) ||
+            !is_string($identity['public_key']) ||
+            !is_string($identity['key_id'])) {
+            throw new RuntimeException('DEMO_PUBLISHER_PIN_MISMATCH');
+        }
+        $raw = base64_decode($identity['public_key'], true);
+        if (!is_string($raw) || strlen($raw) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ||
+            !hash_equals($expectedFingerprint, hash('sha256', $raw)) ||
+            !hash_equals(substr($expectedFingerprint, 0, 24), $identity['key_id'])) {
+            throw new RuntimeException('DEMO_PUBLISHER_PIN_MISMATCH');
+        }
     }
 
     /**
