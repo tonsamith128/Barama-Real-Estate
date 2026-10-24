@@ -12,6 +12,8 @@ on:
       - 'tests/system_tool_contract_v100.php'
       - 'tests/system_tool_mysql_integration_v100.php'
       - '.github/workflows/system-tool.yml'
+      - 'tools/aaPanel-system-tool-deploy.py'
+      - 'docs/system-tool-import-export-backup-restore.md'
   push:
     branches:
       - main
@@ -52,8 +54,10 @@ jobs:
           php -l application/resources/views/layouts/app.php
           php -l tests/system_tool_contract_v100.php
           php -l tests/system_tool_mysql_integration_v100.php
-      - name: JavaScript syntax
-        run: node --check assets/js/barama-system-tool-v100.js
+      - name: JavaScript and guarded deployment syntax
+        run: |
+          node --check assets/js/barama-system-tool-v100.js
+          python3 -m py_compile tools/aaPanel-system-tool-deploy.py
       - name: Security and routing contracts
         run: php tests/system_tool_contract_v100.php
       - name: Isolated MySQL backup and restore integration
