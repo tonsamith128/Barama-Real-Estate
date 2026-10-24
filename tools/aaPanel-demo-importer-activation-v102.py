@@ -96,8 +96,6 @@ def patch_view(body: str) -> str:
          "$demoRingMode === 'auto' && empty($demoDownloadEnabled) ? 'pending' : 'ready'"),
         ("'pending' => 'Automatic retrieval is unavailable until the Barama demo release is published.'",
          "'pending' => 'Publisher retrieval is temporarily unavailable.'"),
-        ("No published Barama package is available to this activation. Your package #2 is Draft and is intentionally excluded.",
-         "No published Barama package is available to this activated license."),
         ("<span>Package expires</span>", "<span>Signature status</span>"),
         ("Imported sections:", "Packaged sections:"),
     ]
