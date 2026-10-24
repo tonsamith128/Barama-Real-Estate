@@ -191,6 +191,17 @@ final class DemoImportPackageV1
                             !hash_equals((string)($row['checksum_sha256'] ?? ''), hash('sha256', $bytes))) {
                             throw new RuntimeException('DEMO_MEDIA_BYTES_INVALID');
                         }
+                        $extension = pathinfo($old, PATHINFO_EXTENSION);
+                        $expectedMime = match ($extension) {
+                            'jpg' => 'image/jpeg', 'png' => 'image/png',
+                            'webp' => 'image/webp', default => '',
+                        };
+                        if ($expectedMime === '' ||
+                            ($row['mime_type'] ?? null) !== $expectedMime ||
+                            (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes) !== $expectedMime ||
+                            @getimagesizefromstring($bytes) === false) {
+                            throw new RuntimeException('DEMO_IMAGE_CONTENT_REJECTED');
+                        }
                         $dir = APP_PATH . '/storage/uploads/private/demo';
                         if (!is_dir($dir) && !mkdir($dir, 0750, true) && !is_dir($dir)) {
                             throw new RuntimeException('DEMO_PRIVATE_MEDIA_STORAGE_MISSING');
