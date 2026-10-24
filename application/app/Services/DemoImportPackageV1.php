@@ -291,12 +291,49 @@ final class DemoImportPackageV1
                             throw new RuntimeException('DEMO_PRIVATE_MEDIA_STORAGE_MISSING');
                         }
                         $dest = APP_PATH . '/storage/uploads/private/' . $old;
-                        if (is_file($dest) || is_link($dest)) throw new RuntimeException('DEMO_MEDIA_ALREADY_EXISTS');
-                        if (file_put_contents($dest, $bytes, LOCK_EX) !== strlen($bytes)) {
-                            throw new RuntimeException('DEMO_MEDIA_WRITE_FAILED');
+                        // BARAMA_DEMO_SHARED_MEDIA_V110:
+                        // Multiple signed media rows may reference the same
+                        // content-addressed image (53 records / 52 files).
+                        // Reuse ONLY an image created by this import attempt.
+                        // Refuse every pre-existing path, including symlinks.
+                        if (isset($written[$dest])) {
+                            if (!is_file($dest) || is_link($dest) ||
+                                !hash_equals((string)$row['checksum_sha256'],
+                                    (string)hash_file('sha256', $dest))) {
+                                throw new RuntimeException('DEMO_MEDIA_SHARED_ASSET_CHANGED');
+                            }
+                        } else {
+                            if (file_exists($dest) || is_link($dest)) {
+                                throw new RuntimeException('DEMO_MEDIA_ALREADY_EXISTS');
+                            }
+                            // Exclusive creation avoids overwriting concurrent
+                            // or pre-existing files. Track ownership immediately
+                            // so partial writes are removed on transaction abort.
+                            $handle = @fopen($dest, 'xb');
+                            if ($handle === false) {
+                                throw new RuntimeException('DEMO_MEDIA_EXCLUSIVE_CREATE_FAILED');
+                            }
+                            $written[$dest] = true;
+                            try {
+                                $totalBytes = strlen($bytes);
+                                $offset = 0;
+                                while ($offset < $totalBytes) {
+                                    $size = fwrite($handle, substr($bytes, $offset, 65536));
+                                    if (!is_int($size) || $size < 1) {
+                                        throw new RuntimeException('DEMO_MEDIA_WRITE_FAILED');
+                                    }
+                                    $offset += $size;
+                                }
+                                if (!fflush($handle)) {
+                                    throw new RuntimeException('DEMO_MEDIA_WRITE_FAILED');
+                                }
+                            } finally {
+                                fclose($handle);
+                            }
+                            if (!chmod($dest, 0640)) {
+                                throw new RuntimeException('DEMO_MEDIA_PERMISSIONS_FAILED');
+                            }
                         }
-                        chmod($dest, 0640);
-                        $written[] = $dest;
                     }
                     $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
@@ -322,7 +359,7 @@ final class DemoImportPackageV1
                 'pre_import_backup' => $backup['id']];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            foreach ($written as $dest) @unlink($dest);
+            foreach (array_keys($written) as $dest) @unlink($dest);
             throw $e;
         } finally { $zip->close(); }
     }
