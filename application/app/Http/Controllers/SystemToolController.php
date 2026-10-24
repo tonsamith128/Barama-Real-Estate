@@ -34,6 +34,15 @@ final class SystemToolController
         } catch (Throwable) {
             $error = 'Database metadata is temporarily unavailable. No operations have been performed.';
         }
+        $passcodeEnabled = true;
+        try {
+            $user = auth_user();
+            if (is_array($user) && isset($user['id'])) {
+                $passcodeEnabled = (new \Barama\Services\SecurityFactorService())->passcodeEnabled((int) $user['id']);
+            }
+        } catch (Throwable) {
+            $passcodeEnabled = true; // Fail closed: never suppress a required confirmation.
+        }
         return Response::html(View::render('workspace/system-tool', [
             'pageTitle' => 'Tool · System · Admin Control Center',
             'metaRobots' => 'noindex,nofollow,noarchive',
@@ -47,6 +56,7 @@ final class SystemToolController
             'toolDatasets' => $datasets,
             'toolBackups' => $backups,
             'toolStorageReady' => $service->storageReady(),
+            'toolPasscodeEnabled' => $passcodeEnabled,
             'toolError' => $error,
         ]));
     }
