@@ -5,6 +5,8 @@ on:
       - 'application/app/Services/DemoImportPackageV1.php'
       - 'application/app/Http/Controllers/DemoImporterController.php'
       - 'application/resources/views/workspace/demo-importer.php'
+      - 'assets/js/barama-demo-manual-v104.js'
+      - 'assets/css/barama-demo-manual-v104.css'
       - 'assets/css/barama-demo-importer-v100.css'
       - 'application/routes/web.php'
       - 'application/resources/views/layouts/app.php'
@@ -72,6 +74,26 @@ jobs:
           php -l tests/demo_import_mysql_v100.php
           php -l application/app/Services/SystemToolService.php
           php -l tools/demo-export-source-v100.php
+      - name: Manual Import premium UI contract
+        run: |
+          node --check assets/js/barama-demo-manual-v104.js
+          node --check assets/js/barama-demo-premium-v103.js
+          python3 - <<'PY'
+          from pathlib import Path
+          view=Path('application/resources/views/workspace/demo-importer.php').read_text()
+          js=Path('assets/js/barama-demo-manual-v104.js').read_text()
+          css=Path('assets/css/barama-demo-manual-v104.css').read_text()
+          assert view.count("barama-demo-premium-v103.css")==1
+          assert view.count("barama-demo-premium-v103.js")==1
+          assert view.count("barama-demo-manual-v104.css")==1
+          assert view.count("barama-demo-manual-v104.js")==1
+          assert view.index("barama-demo-premium-v103.js") < view.index("barama-demo-manual-v104.js")
+          assert 'Drag & Drop' in js and 'bdemo-manual-v104-drop' in css
+          assert 'Review and import' in js and 'Download from publisher' in js
+          assert 'bdemo-v103-preview' in js and 'bdemo-v103-ring' in js
+          assert 'DemoImportPackageV1' not in js
+          print('MANUAL_UI_V104_CONTRACT=PASS')
+          PY
       - name: Signed demo package contract
         run: |
           php tests/demo_import_package_v100.php
