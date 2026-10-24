@@ -5,6 +5,7 @@ on:
       - 'application/app/Services/DemoImportPackageV1.php'
       - 'tests/demo_import_native_install_v107.php'
       - 'tests/demo_import_status_v108.php'
+      - 'tests/demo_import_native_limits_v109.php'
       - 'application/app/Http/Controllers/DemoImporterController.php'
       - 'application/resources/views/workspace/demo-importer.php'
       - 'assets/js/barama-demo-manual-v104.js'
@@ -78,6 +79,7 @@ jobs:
           php -l tests/demo_import_mysql_v100.php
           php -l tests/demo_import_native_install_v107.php
           php -l tests/demo_import_status_v108.php
+          php -l tests/demo_import_native_limits_v109.php
           php -l application/app/Services/SystemToolService.php
           php -l tools/demo-export-source-v100.php
       - name: Manual Import premium UI contract
@@ -129,6 +131,8 @@ jobs:
         run: |
           node --check assets/js/barama-demo-premium-v103.js
           php tests/demo_import_status_v108.php
+      - name: Publisher native and legacy import limits parity
+        run: php tests/demo_import_native_limits_v109.php
       - name: Native publisher ZIP isolated install, rollback and empty-site guard
         env:
           BARAMA_DEMO_IT: isolated-ci
