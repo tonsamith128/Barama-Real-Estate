@@ -1124,6 +1124,8 @@ $router->post('/dashboard/system/tool/restore', [SystemToolController::class, 'r
 $demoAuth = [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')];
 $demoPost = [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()];
 $router->get('/dashboard/system/demo-importer', [DemoImporterController::class, 'index'], $demoAuth);
+$router->get('/dashboard/system/demo-importer/connection', [DemoImporterController::class, 'connection'], $demoAuth);
+$router->get('/dashboard/system/demo-importer/catalog', [DemoImporterController::class, 'catalog'], $demoAuth);
 $router->post('/dashboard/system/demo-importer/manual', [DemoImporterController::class, 'manual'], $demoPost);
 $router->post('/dashboard/system/demo-importer/auto', [DemoImporterController::class, 'automatic'], $demoPost);
 $router->post('/dashboard/system/demo-importer/install', [DemoImporterController::class, 'install'], $demoPost);
