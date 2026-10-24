@@ -218,6 +218,12 @@ final class DemoImportPackageV1
                         }
                         chmod($dest, 0640);
                         $written[] = $dest;
+                        // BARAMA_DEMO_PRIVATE_MEDIA_PATH_V112: The public
+                        // UUID media controller resolves DB paths relative to
+                        // storage/uploads; the installed file lives under
+                        // storage/uploads/private/demo. Preserve the signed
+                        // asset lookup above and store its actual relative path.
+                        $row['path'] = 'private/' . $old;
                     }
                     $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
