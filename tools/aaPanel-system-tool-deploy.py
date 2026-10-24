@@ -139,13 +139,15 @@ def private_vault(site: Path, create: bool) -> Path:
     root = real.parent / (".barama-system-tools-" + sha(str(real).encode())[:18])
     if root.is_symlink():
         raise RuntimeError("VAULT_SYMLINK_DENIED")
+    acct = pwd.getpwnam("www")
     if root.exists():
         st = root.stat()
         if not stat.S_ISDIR(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o700:
             raise RuntimeError("VAULT_PERMISSIONS_UNSAFE")
+        if st.st_uid != acct.pw_uid or st.st_gid != acct.pw_gid:
+            raise RuntimeError("VAULT_OWNER_MISMATCH")
         return root
     if create:
-        acct = pwd.getpwnam("www")
         root.mkdir(mode=0o700)
         os.chown(root, acct.pw_uid, acct.pw_gid)
         os.chmod(root, 0o700)
