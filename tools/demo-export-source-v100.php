@@ -141,6 +141,7 @@ $export['tables']['media_assets'] = array_values(array_filter(
     static fn(array $row): bool => isset($mediaIds[(int)$row['id']])
 ));
 $total = 0;
+$mediaPaths = [];
 foreach ($export['tables']['media_assets'] as &$row) {
     $mime = strtolower((string)($row['mime_type'] ?? ''));
     $ext = match ($mime) {
@@ -187,11 +188,35 @@ foreach ($export['tables']['media_assets'] as &$row) {
     if ($total > 50331648) throw new RuntimeException('DEMO_IMAGES_48MB_LIMIT');
     $row['disk'] = 'private';
     $row['path'] = $new;
+    $mediaPaths[$original] = $new;
     $row['checksum_sha256'] = $sha;
     $row['size_bytes'] = strlen($bytes);
     $row['extension'] = $ext;
 }
 unset($row);
+
+// Replace known demo-host absolute URLs with an installation-local placeholder.
+// Do not encode publisher/proprietor domains into commercial customer websites.
+$replace = static function(mixed $input) use (&$replace, $mediaPaths): mixed {
+    if (is_array($input)) {
+        foreach ($input as $key => $value) $input[$key] = $replace($value);
+        return $input;
+    }
+    if (!is_string($input)) return $input;
+    foreach ($mediaPaths as $oldPath => $newPath) {
+        $input = str_replace($oldPath, $newPath, $input);
+    }
+    return str_replace('https://baramarealestate.tonsamith.com', '{{APP_URL}}', $input);
+};
+$export['settings'] = $replace($export['settings']);
+foreach ($export['tables'] as $table => &$rows) {
+    foreach ($rows as &$row) {
+        if ($table === 'media_assets') continue;
+        $row = $replace($row);
+    }
+    unset($row);
+}
+unset($rows);
 
 $body = json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE |
     JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
