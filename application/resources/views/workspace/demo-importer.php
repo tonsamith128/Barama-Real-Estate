@@ -6,7 +6,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/barama-system-tool-v100.css') . '?v=100') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-importer-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-demo-premium-v103.css') . '?v=103') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/barama-demo-premium-v103.css') . '?v=105') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-manual-v104.css') . '?v=104') ?>">
 <section id="barama-system-tool" class="btool bdemo" data-passcode-enabled="<?= !empty($demoPasscodeEnabled) ? '1' : '0' ?>" aria-labelledby="bdemo-title">
  <div class="btool-breadcrumb">Administration <span>/</span> System <span>/</span> Demo Importer</div>
@@ -175,5 +175,5 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  </div>
 </dialog>
 <script defer src="<?= e(asset('js/barama-system-tool-v100.js') . '?v=100') ?>"></script>
-<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=103') ?>"></script>
+<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=105') ?>"></script>
 <script defer src="<?= e(asset('js/barama-demo-manual-v104.js') . '?v=104') ?>"></script>

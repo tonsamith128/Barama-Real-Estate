@@ -11,7 +11,7 @@
   const link=root.querySelector('.bdemo-source a'),url=link?.href&&new URL(link.href).hostname==='baramarealestate.tonsamith.com'?link.href:'https://baramarealestate.tonsamith.com/';
   const grid=document.createElement('div');grid.className='bdemo-v103-grid';
   const preview=document.createElement('section');preview.className='bdemo-v103-card bdemo-v103-preview';
-  preview.innerHTML='<div class="bdemo-v103-card-head"><span class="bdemo-v103-icon">▣</span><div><h2>Live Demo Preview</h2><p>See the official Barama homepage before importing.</p></div></div><a class="bdemo-v103-shot" target="_blank" rel="noopener noreferrer" aria-label="Open official homepage; hover to scroll the screenshot"><img src="/assets/images/barama-demo-preview-v103.webp?v=103" loading="eager" decoding="async" alt="Barama Real Estate homepage, listings, projects, companies and footer"><span class="bdemo-v103-preview-label">◉ Preview ↗</span></a><div class="bdemo-v103-action-slot"></div><p class="bdemo-v103-helper">Official signed ZIP verification and private staging only. Database/media installation is disabled until staging acceptance.</p>';
+  preview.innerHTML='<div class="bdemo-v103-card-head"><span class="bdemo-v103-icon">▣</span><div><h2>Live Demo Preview</h2><p>See the official Barama homepage before importing.</p></div></div><a class="bdemo-v103-shot" target="_blank" rel="noopener noreferrer" aria-label="Open official homepage; hover to scroll the screenshot"><img src="https://baramarealestate.tonsamith.com/assets/images/barama-demo-preview-v103.webp?v=103" loading="eager" decoding="async" alt="Barama Real Estate homepage, listings, projects, companies and footer"><span class="bdemo-v103-preview-label">◉ Preview ↗</span></a><div class="bdemo-v103-action-slot"></div><p class="bdemo-v103-helper">Official signed ZIP verification and private staging only. Database/media installation is disabled until staging acceptance.</p>';
   preview.querySelector('.bdemo-v103-shot').href=url;
   const form=Array.from(body.querySelectorAll('form')).find(f=>f.action.endsWith('/dashboard/system/demo-importer/'+mode));
   if(form){preview.querySelector('.bdemo-v103-action-slot').append(form);form.querySelector('.btool-actions')?.classList.add('bdemo-v103-actions');if(mode==='auto')form.querySelector('[type=submit]').textContent='⇩  Download & Verify official ZIP';}
@@ -40,6 +40,23 @@
   const shot=preview.querySelector('.bdemo-v103-shot'),image=shot.querySelector('img');
   const calibrate=()=>{if(!image.naturalWidth)return;const height=image.naturalHeight*shot.clientWidth/image.naturalWidth;shot.style.setProperty('--dp-preview-scroll',Math.max(0,Math.round(height-shot.clientHeight))+'px');};
   image.addEventListener('load',calibrate);if(image.complete)calibrate();window.addEventListener('resize',calibrate,{passive:true});
+
+  /* BARAMA_DEMO_PREVIEW_RECOVERY_V105
+   * The 0.9.25 customer ZIP intentionally does not embed the publisher's
+   * full-page screenshot. Display its public HTTPS asset from the official
+   * demo. If unavailable, show the packaged homepage hero, never a blank box.
+   */
+  let previewFallback=false;
+  image.addEventListener('error',()=>{
+    if(previewFallback)return;
+    previewFallback=true;
+    shot.classList.add('bdemo-preview-fallback-v105');
+    image.src='/assets/images/barama-homepage-hero-v1.webp?v=1';
+    const notice=document.createElement('span');
+    notice.className='bdemo-preview-notice-v105';
+    notice.textContent='Full-page preview unavailable. Open the official demo for the live experience.';
+    shot.append(notice);
+  });
   const steps=Array.from(ring.querySelectorAll('.bdemo-v103-step'));let ticker;
   const reset=()=>{if(ticker)clearInterval(ticker);steps.forEach(x=>x.classList.remove('is-current'));};
   if(form)form.addEventListener('submit',event=>{if(!form.checkValidity())return;window.setTimeout(()=>{
