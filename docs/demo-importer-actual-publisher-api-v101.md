@@ -18,6 +18,18 @@ The real TonSamith.com Demo Content implementation (source `tonsamith168-png/ton
 
 **Catalog:** Draft, revoked, disabled or unpublished ZIPs are absent. Package #2 (`DCP-20261024-03A1BCBA`, Barama Live Demo v0.9.24) was uploaded and signed as Draft on October 24, 2026, and MUST remain absent from customer catalog until explicitly published. The new read-only UI tools can test public HTTPS/signing identity and then query the licensed published catalog.
 
+## Independent publisher signing identity receipt — 2026-10-24
+
+aaPanel checked the publisher-side `/www/wwwroot/tonsamith.com/storage/private/demo-content/keys/public.key` (public key ONLY), decoded its Ed25519 bytes and compared the full SHA-256 digest with the live `GET /api/demo-import/v1/public-key` response:
+
+- Publisher API: HTTP 200, algorithm `Ed25519`
+- Key ID: `be53fa7e3e531da5a7a21e9f`
+- Independently matched full fingerprint:
+  `be53fa7e3e531da5a7a21e9f12eaaf15dfcf8633af4fd65640d27bb21bb03287`
+- Result: `INDEPENDENT_KEY_MATCH=PASS`, publisher Draft unchanged, private signing key not accessed, database writes NO.
+
+`DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256` is now the approved exact fingerprint. The controller uses `pinnedSigningIdentity()` for both connection and licensed catalog, rejecting any unexpected key substitution/rotation. No dynamic trust-on-first-use is permitted. Commercial customer download/import remains blocked until separate acceptance.
+
 ## Client components (draft PR #130)
 
 `DemoPublisherApiV1.php`
