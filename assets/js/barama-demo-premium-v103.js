@@ -49,5 +49,30 @@
     let index=0;const tick=()=>{steps.forEach((x,i)=>x.classList.toggle('is-current',i===index));index=(index+1)%steps.length;};
     tick();ticker=window.setInterval(tick,1200);
   },0);});
+  // Protected forms use native form.submit() after receiving the grant, so
+  // no second submit event fires. Animate *authorization*, never fake imports.
+  const dialog=document.getElementById('btool-passcode-dialog');
+  const input=document.getElementById('btool-passcode');
+  const button=document.getElementById('btool-passcode-submit');
+  const feedback=document.getElementById('btool-passcode-feedback');
+  const beginAuthorization=()=>{
+    if(!form||!dialog?.open||!/^[0-9]{6}$/.test(input?.value.trim()||''))return;
+    reset();ring.dataset.state='working';
+    readout.querySelector('[data-progress-label]').textContent='Requesting protected authorization';
+    readout.querySelector('[data-progress-detail]').textContent='Change Confirmation is being checked. No signed package verification or installation is claimed yet.';
+    let index=0;const tick=()=>{steps.forEach((el,i)=>el.classList.toggle('is-current',i===index));index=(index+1)%steps.length;};
+    tick();ticker=window.setInterval(tick,1200);
+  };
+  if(root.dataset.passcodeEnabled==='1'){
+    button?.addEventListener('click',beginAuthorization);
+    input?.addEventListener('keydown',event=>{if(event.key==='Enter')beginAuthorization();});
+    if(feedback)new MutationObserver(()=>{
+      if(feedback.textContent.trim()&&ring.dataset.state==='working'){
+        reset();ring.dataset.state='rejected';
+        readout.querySelector('[data-progress-label]').textContent='Authorization not confirmed';
+        readout.querySelector('[data-progress-detail]').textContent='Security check rejected or stopped the request. No content import is claimed.';
+      }
+    }).observe(feedback,{childList:true,subtree:true,characterData:true});
+  }
   window.addEventListener('pageshow',event=>{if(event.persisted){reset();window.location.reload();}});
 })();
