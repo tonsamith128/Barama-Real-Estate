@@ -204,7 +204,9 @@ final class DemoImportPackageV1
                 throw new RuntimeException('DEMO_NATIVE_CONTENT_LIMIT');
             }
             $data = json_decode($contents, true, 32, JSON_THROW_ON_ERROR);
-            $this->validateContent($data, []);
+            // Match the already authenticated native archive's bounded contract.
+            // Legacy envelope packages retain their original stricter limits.
+            $this->validateContent($data, [], 10000, 24000, 100);
             $counts = array_map('count', $data['tables']);
             if (array_sum($counts) !== (int)$native['record_count'] ||
                 count($data['settings']) !== (int)$native['settings_count']) {
@@ -336,8 +338,17 @@ final class DemoImportPackageV1
         return $value;
     }
 
-    private function validateContent(mixed $data, array $entries): void
-    {
+    private function validateContent(
+        mixed $data, array $entries, int $maxTableRows = 5000,
+        int $maxTotalRows = 12000, int $maxRowFields = 80
+    ): void {
+        // Native ZIP bounds are validated first by DemoPublisherNativeArchiveV1.
+        // These caller-selected limits preserve legacy compatibility and prevent
+        // the importer from rejecting a legitimate publisher-signed native ZIP.
+        if ($maxTableRows > 10000 || $maxTotalRows > 24000 || $maxRowFields > 100 ||
+            $maxTableRows < 1 || $maxTotalRows < 1 || $maxRowFields < 1) {
+            throw new RuntimeException('DEMO_CONTENT_LIMIT_INVALID');
+        }
         if (!is_array($data) || ($data['schema'] ?? '') !== 'barama-demo-content-v1'
             || !is_array($data['settings'] ?? null)
             || !is_array($data['tables'] ?? null)
@@ -351,13 +362,13 @@ final class DemoImportPackageV1
         }
         $count = 0;
         foreach ($data['tables'] as $table => $rows) {
-            if (!in_array($table, self::ORDER, true) || !is_array($rows) || count($rows) > 5000) {
+            if (!in_array($table, self::ORDER, true) || !is_array($rows) || count($rows) > $maxTableRows) {
                 throw new RuntimeException('DEMO_TABLE_INVALID');
             }
             foreach ($rows as $row) {
                 $pivot = in_array($table, ['project_amenities','property_amenities'], true);
                 $parent = $table === 'project_amenities' ? 'project_id' : 'property_id';
-                if (!is_array($row) || count($row) > 80 ||
+                if (!is_array($row) || count($row) > $maxRowFields ||
                     ($pivot
                       ? (!isset($row[$parent], $row['amenity_id']) ||
                          (int)$row[$parent] <= 0 || (int)$row['amenity_id'] <= 0)
@@ -368,7 +379,7 @@ final class DemoImportPackageV1
                     self::ident((string)$field);
                     if ($value !== null && !is_scalar($value)) throw new RuntimeException('DEMO_ROW_CELL_INVALID');
                 }
-                if (++$count > 12000) throw new RuntimeException('DEMO_ROW_LIMIT');
+                if (++$count > $maxTotalRows) throw new RuntimeException('DEMO_ROW_LIMIT');
             }
         }
         if (count($data['components']) > 30) throw new RuntimeException('DEMO_COMPONENT_LIMIT');
