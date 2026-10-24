@@ -10,6 +10,7 @@ use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Services\AuthService;
 use Barama\Services\DemoImportPackageV1;
+use Barama\Services\DemoPublisherApiV1;
 use Barama\Services\LicenseManagerClient;
 use Barama\Services\Updates\PublisherTrustPaths;
 use RuntimeException;
@@ -74,7 +75,76 @@ final class DemoImporterController
             'demoSource' => 'https://baramarealestate.tonsamith.com',
             'demoPublisher' => 'https://tonsamith.com/dashboard/demo-content',
             'demoCommercialConfigured' => $this->commercialEntitlementReady(),
+            'demoApiIdentity' => is_array($_SESSION['_barama_demo_api_identity'] ?? null)
+                ? $_SESSION['_barama_demo_api_identity'] : null,
+            'demoApiCatalog' => is_array($_SESSION['_barama_demo_api_catalog'] ?? null)
+                ? $_SESSION['_barama_demo_api_catalog'] : null,
         ]));
+    }
+
+    /**
+     * Read-only TLS + public signing identity probe.
+     * The observed key is NOT automatically pinned for ZIP installation.
+     */
+    public function connection(Request $request): Response
+    {
+        if (!$this->admin()) return Response::html('Forbidden', 403);
+        try {
+            $identity = (new DemoPublisherApiV1())->signingIdentity();
+            $_SESSION['_barama_demo_api_identity'] = [
+                'key_id' => $identity['key_id'],
+                'fingerprint' => $identity['fingerprint'],
+                'checked_at' => time(),
+            ];
+            return $this->flash('auto', 'success',
+                'Publisher API reachable over HTTPS. Signing key ID: '
+                . $identity['key_id'] . '. Identity observed; not yet pinned for installation.');
+        } catch (Throwable $error) {
+            return $this->failure('auto', $error);
+        }
+    }
+
+    /**
+     * Real publisher discovery lists only published demos.
+     * Draft package #2 is intentionally not exposed.
+     */
+    public function catalog(Request $request): Response
+    {
+        if (!$this->admin()) return Response::html('Forbidden', 403);
+        try {
+            $license = $this->licenseBindingForPublisher();
+            $result = (new DemoPublisherApiV1())->discover(
+                $license['token'], $license['domain'], $license['installation_id']
+            );
+            $_SESSION['_barama_demo_api_catalog'] = [
+                'packages' => array_slice($result['packages'], 0, 20),
+                'checked_at' => time(),
+            ];
+            return $this->flash('auto', 'success',
+                count($result['packages']) . ' published demo package(s) found for the licensed installation. '
+                . 'Draft packages are intentionally hidden.');
+        } catch (Throwable $error) {
+            unset($_SESSION['_barama_demo_api_catalog']);
+            return $this->failure('auto', $error);
+        }
+    }
+
+    /** @return array{token:string,domain:string,installation_id:string} */
+    private function licenseBindingForPublisher(): array
+    {
+        $state = Installation::licenseState();
+        $token = trim((string)($state['activation_token'] ?? ''));
+        $domain = LicenseManagerClient::canonicalDomain(
+            (string)(Installation::runtimeConfig()['APP_URL'] ?? '')
+        );
+        $registered = LicenseManagerClient::canonicalDomain((string)($state['domain'] ?? ''));
+        $id = Installation::installationId();
+        if ($token === '' || $domain === '' || $domain !== $registered ||
+            ($state['installation_id'] ?? null) !== $id ||
+            strtolower((string)($state['status'] ?? '')) !== 'active') {
+            throw new RuntimeException('DEMO_ACTIVE_BOUND_LICENSE_REQUIRED');
+        }
+        return ['token' => $token, 'domain' => $domain, 'installation_id' => $id];
     }
 
     /** Read-only preview; no commercial entitlement or DB modification required. */
