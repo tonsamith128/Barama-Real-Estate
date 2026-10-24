@@ -82,6 +82,40 @@ $changed = new DemoPublisherDownloadV1(static function ($url,$out,$cloud) use ($
 });
 denyTicket(fn() => $changed->receive($claim,$key,$fp,$dir),
     'changed_signed_zip_rejected');
+// Safe status diagnostics must classify publisher versus private R2
+// without exposing the short-lived ticket or signed redirect URL.
+$statusPublisher = new DemoPublisherDownloadV1(
+    static fn(): array => ['status' => 503]
+);
+try {
+    $statusPublisher->receive($claim, $key, $fp, $dir);
+    checkTicket(false, 'publisher_non200_status_safely_classified');
+} catch (RuntimeException $e) {
+    checkTicket($e->getMessage() === 'DEMO_DOWNLOAD_PUBLISHER_HTTP_503',
+        'publisher_non200_status_safely_classified');
+}
+$statusR2 = new DemoPublisherDownloadV1(static function ($url, $out, $cloud): array {
+    if (!$cloud) return ['status'=>303,
+        'location'=>'https://'.str_repeat('a', 32).'.r2.cloudflarestorage.com/demo.zip?X-Amz-Signature=sensitive'];
+    return ['status'=>403];
+});
+try {
+    $statusR2->receive($claim, $key, $fp, $dir);
+    checkTicket(false, 'r2_non200_status_safely_classified');
+} catch (RuntimeException $e) {
+    checkTicket($e->getMessage() === 'DEMO_DOWNLOAD_R2_HTTP_403',
+        'r2_non200_status_safely_classified');
+}
+$statusRedirect = new DemoPublisherDownloadV1(
+    static fn(): array => ['status' => 302]
+);
+try {
+    $statusRedirect->receive($claim, $key, $fp, $dir);
+    checkTicket(false, 'unexpected_redirect_denied_and_classified');
+} catch (RuntimeException $e) {
+    checkTicket($e->getMessage() === 'DEMO_DOWNLOAD_PUBLISHER_HTTP_302',
+        'unexpected_redirect_denied_and_classified');
+}
 $files = glob($dir . '/demo-receive-*') ?: [];
 checkTicket(count($files) === 0, 'failed_downloads_clean_private_temps');
 foreach (glob($dir . '/*') ?: [] as $file) unlink($file);
