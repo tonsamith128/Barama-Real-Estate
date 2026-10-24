@@ -144,25 +144,11 @@ final class DemoImportPackageV1
      */
     public function install(string $archive, int $adminUserId): array
     {
-        if (!defined('BASE_PATH')) throw new RuntimeException('DEMO_SITE_ROOT_MISSING');
-        $site = realpath((string) BASE_PATH);
-        if ($site === false || !is_dir($site)) throw new RuntimeException('DEMO_SITE_ROOT_UNSAFE');
-        $vault = dirname($site) . '/.barama-system-tools-' . substr(hash('sha256', $site), 0, 18);
-        if (!is_dir($vault) || is_link($vault) || (fileperms($vault) & 0077) !== 0) {
-            throw new RuntimeException('DEMO_BACKUP_VAULT_NOT_READY');
-        }
-        $lockFile = $vault . '/operation.lock';
-        if (is_link($lockFile)) throw new RuntimeException('DEMO_LOCK_UNSAFE');
-        $lock = fopen($lockFile, 'c+');
-        if ($lock === false) throw new RuntimeException('DEMO_LOCK_UNAVAILABLE');
-        try {
-            chmod($lockFile, 0600);
-            if (!flock($lock, LOCK_EX | LOCK_NB)) {
-                throw new RuntimeException('DEMO_ANOTHER_DATABASE_OPERATION_ACTIVE');
-            }
-            try { return $this->installLocked($archive, $adminUserId); }
-            finally { flock($lock, LOCK_UN); }
-        } finally { fclose($lock); }
+        // Share the System Tool lock across backup and installation; do not
+        // reacquire it while creating the mandatory pre-import snapshot.
+        return (new SystemToolService())->exclusiveWork(
+            fn (): array => $this->installLocked($archive, $adminUserId)
+        );
     }
 
     private function installLocked(string $archive, int $adminUserId): array
