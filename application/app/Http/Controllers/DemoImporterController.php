@@ -47,6 +47,15 @@ final class DemoImporterController
                 $review = null;
             }
         }
+        $passcodeEnabled = true;
+        try {
+            $user = (new AuthService())->user();
+            if (is_array($user) && isset($user['id'])) {
+                $passcodeEnabled = (new \Barama\Services\SecurityFactorService())->passcodeEnabled((int)$user['id']);
+            }
+        } catch (Throwable) {
+            $passcodeEnabled = true;
+        }
         return Response::html(View::render('workspace/demo-importer', [
             'pageTitle' => 'Live Demo Importer · Admin Control Center',
             'metaRobots' => 'noindex,nofollow,noarchive',
@@ -56,6 +65,7 @@ final class DemoImporterController
             'workspaceNavigation' => (new WorkspaceSettingsController())->systemAdminNavigation(),
             'activeSection' => 'system-demo-importer',
             'demoMode' => $mode,
+            'demoPasscodeEnabled' => $passcodeEnabled,
             'demoReview' => $review,
             'demoFlash' => is_array($flash) ? $flash : null,
             'demoSource' => 'https://baramarealestate.tonsamith.com',
