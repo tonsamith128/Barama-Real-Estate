@@ -8,7 +8,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-importer-v100.css') . '?v=100') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-premium-v103.css') . '?v=106') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-manual-v104.css') . '?v=104') ?>">
-<section id="barama-system-tool" class="btool bdemo" data-passcode-enabled="<?= !empty($demoPasscodeEnabled) ? '1' : '0' ?>" aria-labelledby="bdemo-title">
+<section id="barama-system-tool" class="btool bdemo" data-demo-install-ready="<?= !empty($demoReleaseAccepted) ? '1' : '0' ?>" data-passcode-enabled="<?= !empty($demoPasscodeEnabled) ? '1' : '0' ?>" aria-labelledby="bdemo-title">
  <div class="btool-breadcrumb">Administration <span>/</span> System <span>/</span> Demo Importer</div>
  <header class="btool-header">
    <div><span class="btool-eyebrow">Live demo delivery</span><h1 id="bdemo-title">Demo Importer</h1>
@@ -130,18 +130,18 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
          <span><b>01</b> Active bound license</span>
          <span><b>02</b> Official published demo</span>
          <span><b>03</b> Signed content ZIP</span>
-         <span><b>04</b> Private staging; no installation</span>
+         <span><b>04</b> <?= !empty($demoReleaseAccepted) ? 'Review before installing' : 'Private staging; no installation' ?></span>
        </div>
        <form method="post" action="<?= e(url('/dashboard/system/demo-importer/auto')) ?>" data-btool-protected>
          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
          <div class="btool-actions"><button type="submit" class="btool-btn btool-btn-primary" <?= empty($demoDownloadEnabled) ? 'disabled' : '' ?>>Download &amp; verify official ZIP</button></div>
        </form>
-       <p class="btool-help">The publisher issues a short-lived download ticket. The ZIP is verified and privately staged; it cannot modify this live website.</p>
+       <p class="btool-help">The publisher issues a short-lived download ticket. This action only verifies and privately stages the signed ZIP; it never imports records.</p>
       </section>
     <?php endif; ?>
 
     <?php if ($demoReview !== null): ?>
-     <section class="btool-card bdemo-review" aria-label="Verified package details">
+     <section id="bdemo-verified-package" class="btool-card bdemo-review" aria-label="Verified package details">
       <div class="bdemo-review-title">
        <div><span class="btool-eyebrow">Verified package</span><h3><?= e((string)$demoReview['package_id']) ?></h3></div>
        <span class="btool-chip">Ed25519 signature verified</span>
@@ -153,14 +153,18 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <div><strong><?= e((string)$demoReview['expires_at']) ?></strong><span>Signature status</span></div>
       </div>
       <p class="btool-help">Packaged sections: <?= e(implode(' · ', array_slice(array_map('strval',(array)$demoReview['components']),0,15))) ?>.</p>
-      <div class="btool-warning">
-       Demo import is for a fresh content installation. Existing marketplace records are never deleted or silently replaced. Installation remains disabled until staging acceptance. Your live website is not changed by package staging.
+      <div class="btool-warning" role="status">
+       <?php if (!empty($demoReleaseAccepted)): ?>
+       Staging pilot accepted. Importing requires an explicit confirmation and will write marketplace records, images and site design settings. A pre-import database backup is mandatory. Existing marketplace content is never deleted or overwritten. Nothing has been installed yet.
+       <?php else: ?>
+       Demo import is for a fresh content installation. Existing marketplace records are never deleted or silently replaced. Installation remains disabled until staging acceptance. Your website is not changed by package staging.
+       <?php endif; ?>
       </div>
       <form method="post" action="<?= e(url('/dashboard/system/demo-importer/install')) ?>" data-btool-protected>
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <label for="bdemo-confirmation">Type <strong>IMPORT LIVE DEMO</strong> to confirm</label>
        <input id="bdemo-confirmation" type="text" name="confirmation" autocomplete="off" placeholder="IMPORT LIVE DEMO" required>
-       <p class="btool-help">Installation will become available only after the native importer passes an isolated staging backup and rollback test.</p>
+       <p class="btool-help"><?= !empty($demoReleaseAccepted) ? 'Staging pilot: review the signed package, confirm you have a recovery plan, and type the exact confirmation above. Importing changes staging content only.' : 'Installation will become available only after the native importer passes an isolated staging backup and rollback test.' ?></p>
        <div class="btool-actions"><button class="btool-btn btool-btn-primary" type="submit" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Install verified Live Demo</button></div>
       </form>
      </section>
@@ -187,5 +191,5 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  </div>
 </dialog>
 <script defer src="<?= e(asset('js/barama-system-tool-v100.js') . '?v=100') ?>"></script>
-<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=106') ?>"></script>
+<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=108') ?>"></script>
 <script defer src="<?= e(asset('js/barama-demo-manual-v104.js') . '?v=104') ?>"></script>
