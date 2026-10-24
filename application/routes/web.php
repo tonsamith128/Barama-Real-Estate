@@ -35,6 +35,7 @@ use Barama\Http\Controllers\SeoController;
 use Barama\Http\Controllers\SystemHealthController;
 use Barama\Http\Controllers\SystemCenterController;
 use Barama\Http\Controllers\SystemToolController;
+use Barama\Http\Controllers\DemoImporterController;
 use Barama\Http\Controllers\PlanPurchaseController;
 use Barama\Http\Controllers\InvoiceTemplateController;
 use Barama\Http\Middleware\AuthMiddleware;
@@ -1118,6 +1119,16 @@ $router->get('/dashboard/system/tool/download', [SystemToolController::class, 'd
 $router->post('/dashboard/system/tool/import', [SystemToolController::class, 'import'], $toolWrite);
 $router->post('/dashboard/system/tool/backup', [SystemToolController::class, 'backup'], $toolWrite);
 $router->post('/dashboard/system/tool/restore', [SystemToolController::class, 'restore'], $toolWrite);
+
+/* BARAMA_DEMO_IMPORT_V100: the existing router also requires Change Confirmation on protected POSTs. */
+$demoAuth = [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')];
+$demoPost = [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()];
+$router->get('/dashboard/system/demo-importer', [DemoImporterController::class, 'index'], $demoAuth);
+$router->get('/dashboard/system/demo-importer/connection', [DemoImporterController::class, 'connection'], $demoAuth);
+$router->get('/dashboard/system/demo-importer/catalog', [DemoImporterController::class, 'catalog'], $demoAuth);
+$router->post('/dashboard/system/demo-importer/manual', [DemoImporterController::class, 'manual'], $demoPost);
+$router->post('/dashboard/system/demo-importer/auto', [DemoImporterController::class, 'automatic'], $demoPost);
+$router->post('/dashboard/system/demo-importer/install', [DemoImporterController::class, 'install'], $demoPost);
 
 /* BARAMA_SYSTEM_CENTER_V100_ADMIN_ROUTES */
 $router->get('/dashboard/system/about', [SystemCenterController::class, 'about'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);

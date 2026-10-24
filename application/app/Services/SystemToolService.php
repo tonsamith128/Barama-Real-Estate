@@ -334,6 +334,12 @@ final class SystemToolService
         return $count;
     }
 
+    /** Allow a verified demo transaction to share this service's database lock. */
+    public function exclusiveWork(callable $action): mixed
+    {
+        return $this->exclusive($action);
+    }
+
     private static int $lockDepth = 0;
 
     /** Prevent overlapping backups/imports/restores and fail closed on busy. */

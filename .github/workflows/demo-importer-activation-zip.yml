@@ -1,0 +1,53 @@
+name: Barama Demo Importer Download Activation ZIP
+on:
+  pull_request:
+    paths:
+      - 'tools/aaPanel-demo-importer-activation-v102.py'
+      - 'application/app/Http/Controllers/DemoImporterController.php'
+      - 'application/app/Services/DemoPublisherApiV1.php'
+      - 'application/app/Services/DemoPublisherDownloadV1.php'
+      - 'application/app/Services/DemoPublisherNativeArchiveV1.php'
+      - 'docs/demo-importer-live-download-activation-v102.md'
+      - '.github/workflows/demo-importer-activation-zip.yml'
+  push:
+    branches: [main, 'feature/system-demo-importer-*']
+jobs:
+  signed-download-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: zip, sodium, curl
+      - name: Check PHP source and Python installer syntax
+        run: |
+          python3 -m py_compile tools/aaPanel-demo-importer-activation-v102.py
+          php -l application/app/Http/Controllers/DemoImporterController.php
+          php -l application/app/Services/DemoPublisherApiV1.php
+          php -l application/app/Services/DemoPublisherDownloadV1.php
+          php -l application/app/Services/DemoPublisherNativeArchiveV1.php
+          php tests/demo_publisher_api_v101.php
+          php tests/demo_publisher_pin_v102.php
+          php tests/demo_publisher_native_archive_v102.php
+          php tests/demo_publisher_download_v101.php
+          php tests/demo_publisher_integration_v101.php
+      - name: Build scoped aaPanel archive
+        run: |
+          mkdir -p build/demo-api
+          zip -q -X -9 build/demo-api/Barama-Demo-Importer-Live-API-aaPanel-v1.0.2.zip \
+            tools/aaPanel-demo-importer-activation-v102.py \
+            application/app/Http/Controllers/DemoImporterController.php \
+            application/app/Services/DemoPublisherApiV1.php \
+            application/app/Services/DemoPublisherDownloadV1.php \
+            application/app/Services/DemoPublisherNativeArchiveV1.php \
+            docs/demo-importer-live-download-activation-v102.md
+          cd build/demo-api
+          unzip -tq Barama-Demo-Importer-Live-API-aaPanel-v1.0.2.zip
+          sha256sum Barama-Demo-Importer-Live-API-aaPanel-v1.0.2.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Barama-Demo-Importer-Live-API-aaPanel-v1.0.2
+          path: build/demo-api/Barama-Demo-Importer-Live-API-aaPanel-v1.0.2.zip
+          retention-days: 30
+          if-no-files-found: error
