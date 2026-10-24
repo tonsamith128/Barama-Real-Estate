@@ -64,3 +64,26 @@ jobs:
         env:
           SYSTEM_TOOL_INTEGRATION: isolated-ci
         run: php tests/system_tool_mysql_integration_v100.php
+  deployment-bundle:
+    needs: [contracts]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build scoped aaPanel deployment ZIP
+        run: |
+          mkdir -p build/system-tool
+          zip -q -X -9 build/system-tool/Barama-System-Tool-aaPanel-v1.0.0.zip \
+            tools/aaPanel-system-tool-deploy.py \
+            application/app/Services/SystemToolService.php \
+            application/app/Http/Controllers/SystemToolController.php \
+            application/resources/views/workspace/system-tool.php \
+            assets/css/barama-system-tool-v100.css \
+            assets/js/barama-system-tool-v100.js \
+            docs/system-tool-import-export-backup-restore.md
+          sha256sum build/system-tool/Barama-System-Tool-aaPanel-v1.0.0.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Barama-System-Tool-aaPanel-v1.0.0
+          path: build/system-tool/Barama-System-Tool-aaPanel-v1.0.0.zip
+          if-no-files-found: error
+          retention-days: 30
