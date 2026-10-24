@@ -9,6 +9,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 ## Release target
 
 - Live Demo application release: `0.9.25` (pre-1.0; GitHub Main is the source of truth)
+- Current development line: `0.9.25`
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
