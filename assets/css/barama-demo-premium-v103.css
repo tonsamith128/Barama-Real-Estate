@@ -54,3 +54,51 @@
 [data-bs-theme=light] .bdemo-v103 .bdemo-v103-shell,[data-bs-theme=light] .bdemo-v103 .bdemo-v103-card{background:#fff}
 [data-bs-theme=light] .bdemo-v103 .bdemo-v103-step{background:#f9fbff;color:#27405d}
 @media(prefers-reduced-motion:reduce){.bdemo-v103 .bdemo-v103-ring[data-state=working] .bdemo-v103-orbit::before{animation:none}.bdemo-v103 .bdemo-v103-shot img{transition:none}}
+
+/* BARAMA_DEMO_LIGHT_CONTRAST_V105: only Demo Importer in explicit light mode. */
+.bdemo-v103 .bdemo-preview-notice-v105{position:absolute;z-index:1;top:12px;left:12px;right:12px;padding:10px 12px;border-radius:9px;border:1px solid #b1c4db;color:#19344f;background:#f2f7ffed;font-size:12px;line-height:1.5;pointer-events:none}
+.bdemo-v103 .bdemo-preview-fallback-v105 img{height:100%;object-fit:cover;object-position:center;transform:none!important;transition:none!important}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103{
+  --dp-border:#cbd9eb;--dp-muted:#435970;--dp-bright:#152d49;--dp-panel:#fff;
+  --bt-ink:#192d46;--bt-muted:#4d6178;--bt-border:#cedbea;color:#192d46;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-shell,
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-card,
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-bottom{
+  background:#fff;border-color:#cedced;color:#192d46;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 :is(.bdemo-v103-card-head h2,.bdemo-v103-bottom h2,.bdemo-manual-v104-flowitem h3,.bdemo-pending strong){color:#142b45}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-step{
+  color:#26425f;background:#f2f7ff;border-color:#b7ccea;box-shadow:0 2px 5px #142e4911;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-step strong{color:#19549f}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-orbit{background:radial-gradient(circle,#e8f1ff 0%,#fff 76%);border-color:#b4cbed}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-orbit-mark{color:#2769d5;text-shadow:none}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-readout{
+  background:#eff6ff;color:#17314e;border-color:#bed4ef;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 :is(.bdemo-v103-readout p,.bdemo-v103-card-head p,.bdemo-v103-helper){color:#485d76}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-manual-v104-flow{
+  background:#fff;border-color:#ccd9ea;color:#172d47;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-manual-v104-flowitem{
+  background:#f5f8fe;color:#192d46;border-color:#ceddec;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 :is(.bdemo-manual-v104-flowhead p,.bdemo-manual-v104-flowitem p,.bdemo-manual-v104-points li){color:#485f78}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-manual-v104-drop{
+  background:#f3f8ff;border-color:#9cbbe5;color:#162d47;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 :is(.bdemo-manual-v104-copy strong,.bdemo-manual-v104-fileline strong){color:#192f4a}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 :is(.bdemo-manual-v104-copy span,.bdemo-manual-v104-meta,.bdemo-manual-v104-filename,.bdemo-manual-v104-smallnote){color:#455b74}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 :is(.bdemo-manual-v104-copy b,.bdemo-source a){color:#165ab4}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .btool-warning{
+  color:#8d411d;background:#fff5eb;border-color:#ecbc97;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-summary{
+  background:linear-gradient(115deg,#f5f9ff,#eefaf5);border-color:#cbdceb;color:#172d47;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-manual-v104-chip{
+  color:#18519b;background:#edf4ff;border-color:#aac5e9;
+}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-pending{background:#fbfdff;border-color:#cadaed}
+:is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-ring[data-state="working"] .bdemo-v103-step.is-current{color:#163d79;background:#deecff;border-color:#3173df}
