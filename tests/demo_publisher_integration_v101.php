@@ -14,9 +14,10 @@ foreach (['/dashboard/system/demo-importer/connection',
           '/dashboard/system/demo-importer/catalog'] as $uri) {
     needed(str_contains($routes,"'".$uri."'"),'admin_readonly_route_'.basename($uri));
 }
-needed(str_contains($controller,"public const RELEASE_GATE = 'publisher_pending';"),
-    'production_importer_release_stays_pending');
-needed(str_contains($controller,"self::RELEASE_GATE !== 'accepted'"),
+needed(str_contains($controller,"public const RELEASE_GATE = 'download_only_staging_pending';"),
+    'download_enabled_but_install_staging_gate_closed');
+needed(str_contains($controller,"Database and media installation is disabled until fresh staging") &&
+    !str_contains($controller,'(new DemoImportPackageV1())->install('),
     'database_install_kept_disabled');
 needed(!str_contains($controller,'/license/v2/demo/package') &&
        !str_contains($client,'/license/v2/demo/package'),
