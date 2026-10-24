@@ -1,0 +1,38 @@
+name: Demo Importer
+on:
+  pull_request:
+    paths:
+      - 'application/app/Services/DemoImportPackageV1.php'
+      - 'application/app/Http/Controllers/DemoImporterController.php'
+      - 'application/resources/views/workspace/demo-importer.php'
+      - 'assets/css/barama-demo-importer-v100.css'
+      - 'application/routes/web.php'
+      - 'application/resources/views/layouts/app.php'
+      - 'tests/demo_import_package_v100.php'
+      - '.github/workflows/demo-importer.yml'
+  push:
+    branches: [main, 'feature/system-demo-importer-*']
+jobs:
+  signed-demo-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: sodium, zip, pdo_mysql
+          coverage: none
+      - name: PHP source syntax
+        run: |
+          php -l application/app/Services/DemoImportPackageV1.php
+          php -l application/app/Http/Controllers/DemoImporterController.php
+          php -l application/resources/views/workspace/demo-importer.php
+          php -l application/routes/web.php
+          php -l application/resources/views/layouts/app.php
+          php -l tests/demo_import_package_v100.php
+      - name: Signed demo package contract
+        run: php tests/demo_import_package_v100.php
