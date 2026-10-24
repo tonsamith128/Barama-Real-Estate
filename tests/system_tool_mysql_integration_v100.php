@@ -34,8 +34,11 @@ function pass(bool $ok, string $label): void {
 }
 $db = Database::connection();
 foreach (['locations', 'amenities', 'companies', 'projects', 'properties'] as $name) {
+    $computed = $name === 'locations'
+        ? ', name_length INT GENERATED ALWAYS AS (CHAR_LENGTH(name)) STORED' : '';
     $db->exec('CREATE TABLE ' . $name .
-        ' (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL UNIQUE, note TEXT NULL) ENGINE=InnoDB');
+        ' (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL UNIQUE, note TEXT NULL' .
+        $computed . ') ENGINE=InnoDB');
 }
 $names = ['locations'=>'Battambang', 'amenities'=>'Wi-Fi', 'companies'=>'Demo Company',
     'projects'=>'Demo Project', 'properties'=>'Demo Property'];
@@ -46,6 +49,7 @@ foreach ($names as $table => $name) {
 $svc = new SystemToolService();
 $csv = $svc->exportCsv('locations');
 pass(str_contains($csv, 'Battambang') && str_contains($csv, 'id,name,note'), 'csv_export_real_mysql_data');
+pass(!str_contains($csv, 'name_length'), 'generated_field_excluded_from_portable_csv');
 pass(count($svc->datasets()) === 5, 'allowed_catalog_datasets');
 $bk = $svc->backup();
 pass($bk['tables'] === 5 && $bk['rows'] === 5, 'consistent_full_db_snapshot');
@@ -58,6 +62,7 @@ $result = $svc->restore($bk['id']);
 pass($result['tables'] === 5 && $result['rows'] === 5, 'restore_completed_without_schema_changes');
 pass((int)$db->query('SELECT COUNT(*) FROM locations')->fetchColumn() === 1, 'restore_removed_post_snapshot_rows');
 pass(str_contains((string)$db->query('SELECT note FROM locations LIMIT 1')->fetchColumn(), 'Original note'), 'restore_original_row_contents');
+pass((int)$db->query('SELECT name_length FROM locations LIMIT 1')->fetchColumn() === 10, 'generated_field_recomputed_after_restore');
 pass(count($svc->backups()) === 2 && $result['safety_backup'] !== $bk['id'], 'pre_restore_safety_snapshot');
 $blocked = false;
 try { $svc->verifiedBackup('../../etc/passwd'); }
