@@ -153,7 +153,81 @@ final class DemoImportPackageV1
 
     private function installLocked(string $archive, int $adminUserId): array
     {
-        $review = $this->inspect($archive);
+        return $this->applyVerifiedContent($archive, $this->inspect($archive), $adminUserId);
+    }
+
+    /**
+     * BARAMA_NATIVE_PUBLISHER_INSTALL_V107
+     * The native publisher format is signed OUTSIDE the ZIP over its exact
+     * SHA-256. Never treat structural inspection alone as an install grant.
+     *
+     * @param array<string,mixed> $metadata Published licensed catalog metadata
+     * @param array<string,string> $identity Independently pinned signing identity
+     */
+    public function installNative(
+        string $archive, array $metadata, array $identity,
+        string $pinnedFingerprint, int $adminUserId
+    ): array {
+        return (new SystemToolService())->exclusiveWork(
+            fn (): array => $this->installNativeLocked(
+                $archive, $metadata, $identity, $pinnedFingerprint, $adminUserId
+            )
+        );
+    }
+
+    private function installNativeLocked(
+        string $archive, array $metadata, array $identity,
+        string $pinnedFingerprint, int $adminUserId
+    ): array {
+        if ($adminUserId < 1 || !preg_match(
+            '/^DCP-[A-Za-z0-9-]{8,80}$/D', (string)($metadata['id'] ?? '')
+        )) {
+            throw new RuntimeException('DEMO_INSTALL_AUTHORIZATION_INVALID');
+        }
+        $native = (new DemoPublisherNativeArchiveV1())->inspectSigned(
+            $archive, $metadata, $identity, $pinnedFingerprint
+        );
+        if (($native['signature_verified'] ?? false) !== true ||
+            !hash_equals((string)$native['zip_sha256'], (string)($metadata['sha256'] ?? ''))) {
+            throw new RuntimeException('DEMO_NATIVE_SIGNATURE_REQUIRED');
+        }
+        if (($native['package_version'] ?? '') !== ($metadata['version'] ?? null)) {
+            throw new RuntimeException('DEMO_NATIVE_PUBLISHER_VERSION_MISMATCH');
+        }
+        $zip = new ZipArchive();
+        if ($zip->open($archive, ZipArchive::RDONLY) !== true) {
+            throw new RuntimeException('DEMO_NATIVE_ZIP_INVALID');
+        }
+        try {
+            $contents = $zip->getFromName('content.json');
+            if (!is_string($contents) || strlen($contents) > 8388608) {
+                throw new RuntimeException('DEMO_NATIVE_CONTENT_LIMIT');
+            }
+            $data = json_decode($contents, true, 32, JSON_THROW_ON_ERROR);
+            $this->validateContent($data, []);
+            $counts = array_map('count', $data['tables']);
+            if (array_sum($counts) !== (int)$native['record_count'] ||
+                count($data['settings']) !== (int)$native['settings_count']) {
+                throw new RuntimeException('DEMO_NATIVE_REVIEW_MISMATCH');
+            }
+        } finally {
+            $zip->close();
+        }
+        // Identical bounded transaction, backup, fresh-site guard and media
+        // cleanup used by the legacy signed format. Nothing is installed merely
+        // by calling inspectSigned() or downloading the archive.
+        return $this->applyVerifiedContent($archive, [
+            'content' => $data,
+            'package_id' => (string)$metadata['id'],
+            'records' => $native['record_count'],
+            'assets' => $native['media_images'],
+            'settings' => $native['settings_count'],
+        ], $adminUserId);
+    }
+
+    /** Shared installation path; caller must independently verify its format. */
+    private function applyVerifiedContent(string $archive, array $review, int $adminUserId): array
+    {
         $data = $review['content'];
         $db = Database::connection();
         // Convert author-side placeholders to the current customer domain only.
