@@ -110,4 +110,14 @@ $badKeyClient = new DemoPublisherApiV1(static function (...$args): array {
     ], JSON_THROW_ON_ERROR)];
 });
 rejectedDemo(fn() => $badKeyClient->signingIdentity(), 'publisher_key_fingerprint_mismatch_denied');
+// Regression: GET requests must not inherit a POST body from null CURLOPT_POSTFIELDS.
+$apiSource = file_get_contents(dirname(__DIR__) . '/application/app/Services/DemoPublisherApiV1.php');
+$httpsSource = is_string($apiSource) ? (explode('private function https(', $apiSource, 2)[1] ?? '') : '';
+$postBranch = strpos($httpsSource, "if (\$method === 'POST') {");
+$postField = strpos($httpsSource, '$options[CURLOPT_POSTFIELDS] =');
+$getBranch = strpos($httpsSource, '$options[CURLOPT_HTTPGET] = true;');
+expectDemo($postBranch !== false && $postField !== false && $getBranch !== false &&
+    $postBranch < $postField && $postField < $getBranch &&
+    !str_contains($httpsSource, 'CURLOPT_POSTFIELDS => $payload === null'),
+    'http_get_never_adds_postfields');
 echo "DEMO_PUBLISHER_API_CONTRACTS=PASS\n";
