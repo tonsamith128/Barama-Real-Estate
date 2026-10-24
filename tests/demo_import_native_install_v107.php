@@ -55,11 +55,16 @@ namespace {
   $contentTables=array_fill_keys($tables,[]);
   $contentTables['locations']=[['id'=>12,'name'=>'Demo City']];
   $contentTables['companies']=[['id'=>14,'name'=>'Demo Co','location_id'=>12]];
-  $contentTables['media_assets']=[['id'=>20,'disk'=>'private','path'=>$asset,
-    'checksum_sha256'=>$hash,'mime_type'=>'image/png']];
+  // Two distinct records deliberately reference the same verified image.
+  // This mirrors the real publisher ZIP (53 records, 52 unique files).
+  $contentTables['media_assets']=[
+    ['id'=>20,'disk'=>'private','path'=>$asset,'checksum_sha256'=>$hash,'mime_type'=>'image/png'],
+    ['id'=>21,'disk'=>'private','path'=>$asset,'checksum_sha256'=>$hash,'mime_type'=>'image/png']
+  ];
   $attachment=['id'=>22,'media_asset_id'=>20,'entity_type'=>'company','entity_id'=>14];
   if($fail)$attachment['unknown_database_column']='invalid';
-  $contentTables['media_attachments']=[$attachment];
+  $contentTables['media_attachments']=[$attachment,
+   ['id'=>23,'media_asset_id'=>21,'entity_type'=>'company','entity_id'=>14]];
   $payload=['schema'=>'barama-demo-content-v1',
    'components'=>['Homepage','Companies','Images'],
    'settings'=>['cms.site_content'=>['home'=>'{{APP_URL}}/hello'],
@@ -91,13 +96,27 @@ namespace {
  [$good,$meta]=$make(false);
  try {$engine->installNative($good,$meta,$identity,str_repeat('0',64),42);passNative(false,'pin_denied');}
  catch(\RuntimeException $e) {passNative(true,'pin_denied');}
+ // Existing data must never be silently reused or overwritten.
+ $original='NOT_A_DEMO_ASSET_KEEP_THIS_CUSTOMER_FILE';
+ file_put_contents($assetDest,$original);
+ try {$engine->installNative($good,$meta,$identity,$fp,42);passNative(false,'preexisting_media_denied');}
+ catch(\RuntimeException $e) {
+   passNative($e->getMessage()==='DEMO_MEDIA_ALREADY_EXISTS','preexisting_media_denied');
+ }
+ passNative(file_get_contents($assetDest)===$original,'preexisting_media_unchanged');
+ passNative((int)$db->query('SELECT COUNT(*) FROM locations')->fetchColumn()===0,
+   'preexisting_media_rollback_database');
+ unlink($assetDest);
  $result=$engine->installNative($good,$meta,$identity,$fp,42);
- passNative($result['records']===4&&$result['assets']===1,'signed_native_zip_installed');
+ passNative($result['records']===6&&$result['assets']===1,'signed_native_zip_installed');
  passNative(is_file($assetDest),'media_installed');
- passNative((int)$db->query('SELECT COUNT(*) FROM media_attachments')->fetchColumn()===1,'relationships_installed');
+ passNative((int)$db->query('SELECT COUNT(*) FROM media_attachments')->fetchColumn()===2,'relationships_installed');
+ passNative((int)$db->query('SELECT COUNT(*) FROM media_assets')->fetchColumn()===2,
+   'two_media_rows_reuse_one_signed_file');
+ passNative(hash_file('sha256',$assetDest)===$hash,'shared_image_sha256_verified');
  $setting=$db->query("SELECT setting_value FROM application_settings WHERE setting_key='cms.site_content'")->fetchColumn();
  passNative(str_contains((string)$setting,'https://customer.example.test/hello'),'recipient_url_rewritten');
- passNative(count((new \Barama\Services\SystemToolService())->backups())===2,'backup_before_success');
+ passNative(count((new \Barama\Services\SystemToolService())->backups())===3,'backup_before_success');
  try {$engine->installNative($good,$meta,$identity,$fp,42);passNative(false,'existing_content_guard');}
  catch(\RuntimeException $e) {
    passNative($e->getMessage()==='DEMO_REQUIRES_EMPTY_CONTENT_TABLES','existing_content_guard');
