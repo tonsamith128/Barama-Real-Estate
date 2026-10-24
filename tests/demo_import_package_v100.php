@@ -64,7 +64,7 @@ namespace {
         'manifest' => $manifest,
         'signature' => ['algorithm' => 'Ed25519', 'key_id' => $id, 'value' => base64_encode($sig)]
     ], JSON_THROW_ON_ERROR);
-    function pack(string $path, string $env, string $body): void {
+    function packDemoFixture(string $path, string $env, string $body): void {
         $z = new \ZipArchive();
         if ($z->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) exit(1);
         $z->addFromString('envelope.json', $env);
@@ -72,24 +72,24 @@ namespace {
         $z->close();
     }
     $good = $base . '/good.zip';
-    pack($good, $envelope, $contentJson);
+    packDemoFixture($good, $envelope, $contentJson);
     $engine = new DemoImportPackageV1();
     $review = $engine->inspect($good);
     pass($review['package_id'] === 'barama-live-demo-test', 'correct_publisher_signed_package');
     pass($review['records'] === 1 && $review['settings'] === 3, 'signed_content_parsed');
     $tampered = $base . '/changed.zip';
-    pack($tampered, $envelope, str_replace('Demo City', 'Evil City', $contentJson));
+    packDemoFixture($tampered, $envelope, str_replace('Demo City', 'Evil City', $contentJson));
     $blocked = false;
     try { $engine->inspect($tampered); } catch (\Throwable) { $blocked = true; }
     pass($blocked, 'tampered_body_denied');
     $badEnvelope = str_replace('barama-real-estate','different-product', $envelope);
     $wrongProduct = $base . '/different-product.zip';
-    pack($wrongProduct, $badEnvelope, $contentJson);
+    packDemoFixture($wrongProduct, $badEnvelope, $contentJson);
     $blocked = false;
     try { $engine->inspect($wrongProduct); } catch (\Throwable) { $blocked = true; }
     pass($blocked, 'wrong_product_denied');
     $extra = $base . '/extra.zip';
-    pack($extra, $envelope, $contentJson);
+    packDemoFixture($extra, $envelope, $contentJson);
     $z = new \ZipArchive();
     $z->open($extra);
     $z->addFromString('config.php', '<?php exit;');
@@ -103,7 +103,7 @@ namespace {
     $expiredSignature = sodium_crypto_sign_detached("TONSAMITH-BARAMA-DEMO-V1\n" .
         json_encode($expiredManifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
         sodium_crypto_sign_secretkey($keys));
-    pack($expired, json_encode(['manifest'=>$expiredManifest, 'signature'=>[
+    packDemoFixture($expired, json_encode(['manifest'=>$expiredManifest, 'signature'=>[
         'algorithm'=>'Ed25519','key_id'=>$id,'value'=>base64_encode($expiredSignature)]], JSON_THROW_ON_ERROR),
         $contentJson);
     $blocked = false;
