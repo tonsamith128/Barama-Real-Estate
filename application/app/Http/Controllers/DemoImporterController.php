@@ -114,7 +114,10 @@ final class DemoImporterController
             ];
             return $this->flash('auto', 'success',
                 'Publisher API reachable over HTTPS. Signing key ID: '
-                . $identity['key_id'] . '. Independently pinned signing fingerprint matches. Installation remains disabled.');
+                . $identity['key_id'] . '. Independently pinned signing fingerprint matches. '
+                . ($this->stagingInstallAccepted()
+                    ? 'Staging installation gate accepted; no content has been installed.'
+                    : 'Installation remains disabled until staging acceptance.'));
         } catch (Throwable $error) {
             return $this->failure('auto', $error);
         }
@@ -234,8 +237,11 @@ final class DemoImporterController
             } finally {
                 if (is_file($path) && !is_link($path)) @unlink($path);
             }
+            // BARAMA_DEMO_IMPORT_READY_COPY_V108: describe the server gate truthfully.
             return $this->flash('auto', 'success',
-                'Official signed demo downloaded and staged. Installation remains disabled pending staging.');
+                $this->stagingInstallAccepted()
+                    ? 'Official signed demo downloaded and privately staged. Staging installation is available below after package review and explicit confirmation. Nothing has been installed yet.'
+                    : 'Official signed demo downloaded and privately staged. Installation remains disabled until staging acceptance. Nothing has been installed.');
         } catch (Throwable $e) { return $this->failure('auto', $e); }
     }
 
