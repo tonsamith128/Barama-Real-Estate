@@ -9,10 +9,10 @@ use Barama\Core\Request;
 use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Services\AuthService;
-use Barama\Services\DemoImportPackageV1;
+use Barama\Services\DemoPublisherNativeArchiveV1;
+use Barama\Services\DemoPublisherDownloadV1;
 use Barama\Services\DemoPublisherApiV1;
 use Barama\Services\LicenseManagerClient;
-use Barama\Services\Updates\PublisherTrustPaths;
 use RuntimeException;
 use Throwable;
 
@@ -25,7 +25,7 @@ final class DemoImporterController
 {
     private const URL = '/dashboard/system/demo-importer';
     // Production remains preview-only until actual publisher and staging acceptance.
-    public const RELEASE_GATE = 'publisher_pending';
+    public const RELEASE_GATE = 'download_only_staging_pending';
     private const SESSION = '_barama_demo_import_v100';
 
     public function index(Request $request): Response
@@ -43,8 +43,23 @@ final class DemoImporterController
                 if (!hash_equals($stage['sha256'], hash_file('sha256', $file))) {
                     throw new RuntimeException('DEMO_STAGED_SHA_MISMATCH');
                 }
-                $review = (new DemoImportPackageV1())->inspect($file);
-                unset($review['content']);
+                if (($stage['source'] ?? '') !== 'publisher_signed_v1') {
+                    throw new RuntimeException('DEMO_OLD_UNTRUSTED_STAGE_REJECTED');
+                }
+                $proof = (new DemoPublisherNativeArchiveV1())->inspectSigned(
+                    $file, (array)($stage['publisher_metadata'] ?? []),
+                    (array)($stage['publisher_identity'] ?? []),
+                    DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256
+                );
+                $review = [
+                    'package_id' => (string)($stage['publisher_metadata']['id'] ?? ''),
+                    'version' => (string)$proof['package_version'],
+                    'records' => (int)$proof['record_count'],
+                    'assets' => (int)$proof['media_images'],
+                    'settings' => (int)$proof['settings_count'],
+                    'expires_at' => 'Publisher signed',
+                    'components' => array_keys(array_filter($proof['table_counts'])),
+                ];
             } catch (Throwable) {
                 $review = null;
             }
@@ -68,6 +83,7 @@ final class DemoImporterController
             'activeSection' => 'system-demo-importer',
             'demoMode' => $mode,
             'demoReleaseAccepted' => self::RELEASE_GATE === 'accepted',
+            'demoDownloadEnabled' => self::RELEASE_GATE === 'download_only_staging_pending',
             'demoPasscodeEnabled' => $passcodeEnabled,
             'demoReview' => $review,
             'demoFlash' => is_array($flash) ? $flash : null,
@@ -152,7 +168,7 @@ final class DemoImporterController
         return ['token' => $token, 'domain' => $domain, 'installation_id' => $id];
     }
 
-    /** Read-only preview; no commercial entitlement or DB modification required. */
+    /** Manual upload requires exact membership in licensed published catalog. */
     public function manual(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
@@ -165,70 +181,122 @@ final class DemoImporterController
                 (int)($file['size'] ?? 0) > 67108864) {
                 throw new RuntimeException('DEMO_UPLOAD_INVALID_MAX_64MB');
             }
-            $this->storeVerified((string)$file['tmp_name'], 'manual');
-            return $this->flash('manual', 'success', 'Publisher-signed demo package verified and staged. Nothing imported yet.');
+            $candidate = (string)$file['tmp_name'];
+            $source = $this->publishedPackageForHash(hash_file('sha256', $candidate));
+            $this->stageSigned($candidate, $source['metadata'], $source['identity'], 'manual');
+            return $this->flash('manual', 'success',
+                'Publisher-signed ZIP verified and privately staged. Nothing imported.');
         } catch (Throwable $e) { return $this->failure('manual', $e); }
     }
 
-    /**
-     * Auto ZIP acquisition remains disabled until the real publisher download
-     * ticket + digest + pinned-signature + staging importer gates pass.
-     * This removes the obsolete, unsupported download endpoint.
-     */
+    /** Authorized publisher download -> signature -> native ZIP -> private stage. */
     public function automatic(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
-        return $this->flash('auto', 'error',
-            'Automatic download is still disabled. Use the read-only catalog check '
-            . 'until the real publisher package is published and staging acceptance passes.');
+        if (self::RELEASE_GATE !== 'download_only_staging_pending') {
+            return $this->flash('auto', 'error', 'Publisher download is not enabled.');
+        }
+        try {
+            $binding = $this->licenseBindingForPublisher();
+            $api = new DemoPublisherApiV1();
+            $identity = $api->pinnedSigningIdentity();
+            $catalog = $api->discover(
+                $binding['token'], $binding['domain'], $binding['installation_id']
+            );
+            $selected = (string)$request->input('package_id', '');
+            $available = [];
+            foreach ($catalog['packages'] as $package) {
+                if (($package['demo_slug'] ?? '') === 'live') {
+                    $available[(string)$package['id']] = $package;
+                }
+            }
+            if (!$available) throw new RuntimeException('DEMO_NO_PUBLISHED_LIVE_PACKAGE');
+            if ($selected === '') $selected = (string)array_key_first($available);
+            if (!isset($available[$selected])) {
+                throw new RuntimeException('DEMO_SELECTED_PACKAGE_NOT_PUBLISHED');
+            }
+            $ticket = $api->authorize(
+                $selected, $binding['token'], $binding['domain'], $binding['installation_id']
+            );
+            $metadata = $ticket['metadata'];
+            if (!hash_equals((string)$available[$selected]['sha256'], (string)$metadata['sha256']) ||
+                !hash_equals((string)$available[$selected]['key_id'], (string)$metadata['key_id'])) {
+                throw new RuntimeException('DEMO_CATALOG_AUTH_MISMATCH');
+            }
+            $download = (new DemoPublisherDownloadV1())->receive(
+                $ticket, $identity, DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256,
+                $this->vault()
+            );
+            $path = $download['path'];
+            try {
+                $this->stageSigned($path, $metadata, $identity, 'auto');
+            } finally {
+                if (is_file($path) && !is_link($path)) @unlink($path);
+            }
+            return $this->flash('auto', 'success',
+                'Official signed demo downloaded and staged. Installation remains disabled pending staging.');
+        } catch (Throwable $e) { return $this->failure('auto', $e); }
     }
 
-    /** Database mutation: fresh install only, backup and explicit owner approval. */
+    /** @return array{metadata:array,identity:array} */
+    private function publishedPackageForHash(string $hash): array
+    {
+        $binding = $this->licenseBindingForPublisher();
+        $api = new DemoPublisherApiV1();
+        $identity = $api->pinnedSigningIdentity();
+        $catalog = $api->discover(
+            $binding['token'], $binding['domain'], $binding['installation_id']
+        );
+        foreach ($catalog['packages'] as $metadata) {
+            if (($metadata['demo_slug'] ?? '') === 'live' &&
+                is_string($metadata['sha256'] ?? null) &&
+                hash_equals($metadata['sha256'], $hash)) {
+                return ['metadata' => $metadata, 'identity' => $identity];
+            }
+        }
+        throw new RuntimeException('DEMO_ZIP_NOT_IN_LICENSED_PUBLISHED_CATALOG');
+    }
+
+    /** This handler can never modify production content until staging acceptance. */
     public function install(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
-        if (self::RELEASE_GATE !== 'accepted') {
-            return $this->flash('manual', 'error', 'Import is disabled until publisher package and staging restore acceptance pass.');
-        }
-        try {
-            if ((string)$request->input('confirmation', '') !== 'IMPORT LIVE DEMO') {
-                throw new RuntimeException('DEMO_TYPED_CONFIRMATION_REQUIRED');
-            }
-            $this->commercialLicense();
-            $file = $this->stagedFile();
-            $stage = $_SESSION[self::SESSION] ?? [];
-            if (!is_array($stage) || !hash_equals((string)($stage['sha256'] ?? ''), hash_file('sha256', $file))) {
-                throw new RuntimeException('DEMO_STAGED_PACKAGE_CHANGED');
-            }
-            $user = (new AuthService())->user();
-            $result = (new DemoImportPackageV1())->install($file, (int)($user['id'] ?? 0));
-            unset($_SESSION[self::SESSION]);
-            return $this->flash('manual', 'success',
-                'Live Demo import completed: ' . $result['records'] . ' records, ' .
-                $result['assets'] . ' images, ' . $result['settings'] .
-                ' configuration groups. Pre-import database backup: ' .
-                $result['pre_import_backup'] . '.');
-        } catch (Throwable $e) { return $this->failure('manual', $e); }
+        return $this->flash('manual', 'error',
+            'Database and media installation is disabled until fresh staging and rollback acceptance pass.');
     }
 
-    private function storeVerified(string $candidate, string $mode): void
+    private function stageSigned(string $candidate, array $metadata, array $identity, string $mode): void
     {
-        $proof = (new DemoImportPackageV1())->inspect($candidate);
+        $proof = (new DemoPublisherNativeArchiveV1())->inspectSigned(
+            $candidate, $metadata, $identity,
+            DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256
+        );
+        if ($proof['package_version'] !== ($metadata['version'] ?? null)) {
+            throw new RuntimeException('DEMO_PUBLISHER_VERSION_MISMATCH');
+        }
         $dir = $this->vault();
         $name = 'staged-' . bin2hex(random_bytes(16)) . '.zip';
         $destination = $dir . '/' . $name;
-        if (!copy($candidate, $destination)) throw new RuntimeException('DEMO_PRIVATE_STAGE_FAILED');
+        if (!copy($candidate, $destination)) throw new RuntimeException('DEMO_STAGE_COPY_FAILED');
         chmod($destination, 0600);
-        if (!hash_equals($proof['digest'], hash_file('sha256', $destination))) {
+        if (!hash_equals((string)$proof['zip_sha256'], hash_file('sha256', $destination))) {
             @unlink($destination);
-            throw new RuntimeException('DEMO_STAGE_DIGEST_MISMATCH');
+            throw new RuntimeException('DEMO_STAGE_DIGEST_FAILED');
         }
-        $previous = $_SESSION[self::SESSION]['file'] ?? null;
-        if (is_string($previous) && preg_match('/^staged-[a-f0-9]{32}\.zip$/D', $previous)) {
-            @unlink($dir . '/' . $previous);
+        $old = $_SESSION[self::SESSION]['file'] ?? null;
+        if (is_string($old) && preg_match('/^staged-[a-f0-9]{32}\.zip$/D', $old)) {
+            $prior = $dir . '/' . $old;
+            if (is_file($prior) && !is_link($prior)) @unlink($prior);
         }
-        $_SESSION[self::SESSION] = ['file' => $name,
-            'sha256' => $proof['digest'], 'mode' => $mode, 'created_at' => time()];
+        $_SESSION[self::SESSION] = [
+            'file' => $name,
+            'sha256' => $proof['zip_sha256'],
+            'source' => 'publisher_signed_v1',
+            'publisher_metadata' => $metadata,
+            'publisher_identity' => $identity,
+            'mode' => $mode,
+            'created_at' => time(),
+        ];
     }
 
     private function stagedFile(): string
@@ -246,7 +314,10 @@ final class DemoImporterController
 
     private function vault(): string
     {
-        $dir = APP_PATH . '/storage/app/demo-imports';
+        // Private sibling of website root; no ZIP within served application.
+        $site = dirname(APP_PATH);
+        $dir = dirname($site) . '/.barama-private-demo-' .
+            substr(hash('sha256', $site), 0, 18);
         if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
             throw new RuntimeException('DEMO_STORAGE_UNAVAILABLE');
         }
