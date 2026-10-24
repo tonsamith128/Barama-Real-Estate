@@ -121,7 +121,12 @@ final class DemoPublisherDownloadV1
             $this->stream($target, $output, true);
             return;
         }
-        throw new RuntimeException('DEMO_DOWNLOAD_HTTP_UNAVAILABLE');
+        // Report only bounded status and origin, never the bearer ticket,
+        // signed URL, response body, or private storage identifier.
+        $origin = $cloud ? 'R2' : 'PUBLISHER';
+        $safeStatus = $status >= 100 && $status <= 599
+            ? (string)$status : 'INVALID';
+        throw new RuntimeException('DEMO_DOWNLOAD_' . $origin . '_HTTP_' . $safeStatus);
     }
 
     private function allowedCloud(string $url): bool
