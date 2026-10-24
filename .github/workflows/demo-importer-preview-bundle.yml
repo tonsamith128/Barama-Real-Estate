@@ -1,0 +1,53 @@
+name: Demo Importer aaPanel Preview Bundle
+on:
+  pull_request:
+    paths:
+      - 'tools/aaPanel-demo-importer-preview-v100.py'
+      - 'tests/demo_import_deploy_test_v100.py'
+      - 'application/app/Services/DemoImportPackageV1.php'
+      - 'application/app/Http/Controllers/DemoImporterController.php'
+      - 'application/resources/views/workspace/demo-importer.php'
+      - 'assets/css/barama-demo-importer-v100.css'
+      - 'docs/demo-importer-aapanel-preview-v100.md'
+      - '.github/workflows/demo-importer-preview-bundle.yml'
+  push:
+    branches: ['feature/system-demo-importer-*']
+jobs:
+  verify-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sodium, zip, pdo_mysql
+          coverage: none
+      - name: PHP and Python syntax
+        run: |
+          php -l application/app/Services/DemoImportPackageV1.php
+          php -l application/app/Http/Controllers/DemoImporterController.php
+          php -l application/resources/views/workspace/demo-importer.php
+          python3 -m py_compile tools/aaPanel-demo-importer-preview-v100.py
+          python3 -m py_compile tests/demo_import_deploy_test_v100.py
+      - name: Signed package verification and preview deployment contracts
+        run: |
+          php tests/demo_import_package_v100.php
+          python3 tests/demo_import_deploy_test_v100.py
+      - name: Build deterministic scoped aaPanel ZIP
+        run: |
+          mkdir -p build/demo-importer
+          zip -q -X -9 build/demo-importer/Barama-Demo-Importer-Preview-aaPanel-v1.0.0.zip \
+            tools/aaPanel-demo-importer-preview-v100.py \
+            application/app/Services/DemoImportPackageV1.php \
+            application/app/Http/Controllers/DemoImporterController.php \
+            application/resources/views/workspace/demo-importer.php \
+            assets/css/barama-demo-importer-v100.css \
+            docs/demo-importer-aapanel-preview-v100.md
+          cd build/demo-importer
+          sha256sum Barama-Demo-Importer-Preview-aaPanel-v1.0.0.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Barama-Demo-Importer-Preview-aaPanel-v1.0.0
+          path: build/demo-importer/Barama-Demo-Importer-Preview-aaPanel-v1.0.0.zip
+          retention-days: 30
+          if-no-files-found: error
