@@ -36,7 +36,7 @@ namespace {
   $columns=match($table) {
    'locations'=>'id BIGINT PRIMARY KEY,name VARCHAR(120)',
    'companies'=>'id BIGINT PRIMARY KEY,name VARCHAR(120),location_id BIGINT',
-   'media_assets'=>'id BIGINT PRIMARY KEY,disk VARCHAR(20),path VARCHAR(255),checksum_sha256 CHAR(64),mime_type VARCHAR(60)',
+   'media_assets'=>'id BIGINT PRIMARY KEY,disk VARCHAR(20),path VARCHAR(255) UNIQUE,checksum_sha256 CHAR(64),mime_type VARCHAR(60)',
    'media_attachments'=>'id BIGINT PRIMARY KEY,entity_type VARCHAR(40),entity_id BIGINT,media_asset_id BIGINT',
    default=>'id BIGINT PRIMARY KEY'
   };
@@ -108,11 +108,14 @@ namespace {
    'preexisting_media_rollback_database');
  unlink($assetDest);
  $result=$engine->installNative($good,$meta,$identity,$fp,42);
- passNative($result['records']===6&&$result['assets']===1,'signed_native_zip_installed');
+ passNative($result['records']===5&&$result['assets']===1&&
+   $result['media_deduplicated']===1,'signed_native_zip_installed');
  passNative(is_file($assetDest),'media_installed');
  passNative((int)$db->query('SELECT COUNT(*) FROM media_attachments')->fetchColumn()===2,'relationships_installed');
- passNative((int)$db->query('SELECT COUNT(*) FROM media_assets')->fetchColumn()===2,
-   'two_media_rows_reuse_one_signed_file');
+ passNative((int)$db->query('SELECT COUNT(*) FROM media_attachments WHERE media_asset_id=20')->fetchColumn()===2,
+   'both_relationships_point_to_canonical_asset');
+ passNative((int)$db->query('SELECT COUNT(*) FROM media_assets')->fetchColumn()===1,
+   'database_unique_media_path_respected');
  passNative(hash_file('sha256',$assetDest)===$hash,'shared_image_sha256_verified');
  $setting=$db->query("SELECT setting_value FROM application_settings WHERE setting_key='cms.site_content'")->fetchColumn();
  passNative(str_contains((string)$setting,'https://customer.example.test/hello'),'recipient_url_rewritten');
