@@ -10,6 +10,7 @@ use Barama\Core\Response;
 use Barama\Core\View;
 use Barama\Services\AuthService;
 use Barama\Services\DemoPublisherNativeArchiveV1;
+use Barama\Services\DemoImportPackageV1;
 use Barama\Services\DemoPublisherDownloadV1;
 use Barama\Services\DemoPublisherApiV1;
 use Barama\Services\LicenseManagerClient;
@@ -82,7 +83,7 @@ final class DemoImporterController
             'workspaceNavigation' => (new WorkspaceSettingsController())->systemAdminNavigation(),
             'activeSection' => 'system-demo-importer',
             'demoMode' => $mode,
-            'demoReleaseAccepted' => self::RELEASE_GATE === 'accepted',
+            'demoReleaseAccepted' => $this->stagingInstallAccepted(),
             'demoDownloadEnabled' => self::RELEASE_GATE === 'download_only_staging_pending',
             'demoPasscodeEnabled' => $passcodeEnabled,
             'demoReview' => $review,
@@ -257,12 +258,64 @@ final class DemoImporterController
         throw new RuntimeException('DEMO_ZIP_NOT_IN_LICENSED_PUBLISHED_CATALOG');
     }
 
-    /** This handler can never modify production content until staging acceptance. */
+    /**
+     * Customer production stays closed. Stage-only acceptance must be explicitly
+     * provided by the root operator AFTER isolated signed-import/rollback tests.
+     */
+    private function stagingInstallAccepted(): bool
+    {
+        if (self::RELEASE_GATE !== 'download_only_staging_pending') return false;
+        $host = strtolower((string)parse_url(
+            (string)(Installation::runtimeConfig()['APP_URL'] ?? ''), PHP_URL_HOST
+        ));
+        if ($host !== 'baramastaging.tonsamith.com') return false;
+        $flag = APP_PATH . '/storage/private/demo-import-native-v107.acceptance';
+        if (!is_file($flag) || is_link($flag) || filesize($flag) > 128 ||
+            fileowner($flag) !== 0 || (fileperms($flag) & 0077) !== 0) return false;
+        return hash_equals(
+            'BARAMA_NATIVE_DEMO_INSTALL_STAGE_ACCEPTED_V107',
+            trim((string)file_get_contents($flag))
+        );
+    }
+
+    /** No content changes except on explicitly accepted staging. */
     public function install(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
-        return $this->flash('manual', 'error',
-            'Database and media installation is disabled until fresh staging and rollback acceptance pass.');
+        if (!$this->stagingInstallAccepted()) {
+            return $this->flash('auto', 'error',
+                'Database and media installation is disabled until fresh staging and rollback acceptance pass.');
+        }
+        try {
+            if (!hash_equals('IMPORT LIVE DEMO', trim((string)$request->input('confirmation', '')))) {
+                throw new RuntimeException('DEMO_INSTALL_CONFIRMATION_REQUIRED');
+            }
+            $this->licenseBindingForPublisher();
+            $user = (new AuthService())->user();
+            $adminId = is_array($user) ? (int)($user['id'] ?? 0) : 0;
+            if ($adminId < 1) throw new RuntimeException('DEMO_INSTALL_ADMIN_REQUIRED');
+            $stage = $_SESSION[self::SESSION] ?? null;
+            if (!is_array($stage) || ($stage['source'] ?? null) !== 'publisher_signed_v1') {
+                throw new RuntimeException('DEMO_SIGNED_STAGE_REQUIRED');
+            }
+            $archive = $this->stagedFile();
+            if (!hash_equals((string)($stage['sha256'] ?? ''), hash_file('sha256', $archive))) {
+                throw new RuntimeException('DEMO_STAGE_DIGEST_FAILED');
+            }
+            $result = (new DemoImportPackageV1())->installNative(
+                $archive, (array)($stage['publisher_metadata'] ?? []),
+                (array)($stage['publisher_identity'] ?? []),
+                DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256, $adminId
+            );
+            unset($_SESSION[self::SESSION]);
+            if (is_file($archive) && !is_link($archive)) @unlink($archive);
+            return $this->flash('auto', 'success',
+                'Official demo installed: ' . (int)$result['records']
+                . ' content records and ' . (int)$result['assets']
+                . ' signed images. A database backup was created before installation.');
+        } catch (Throwable $error) {
+            return $this->failure('auto', $error);
+        }
     }
 
     private function stageSigned(string $candidate, array $metadata, array $identity, string $mode): void
