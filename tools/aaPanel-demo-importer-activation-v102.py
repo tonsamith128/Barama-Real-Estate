@@ -112,6 +112,10 @@ def check_site(src: dict[str,bytes]):
         raise RuntimeError("INSTALLED_VERSION_MISMATCH")
     if sha(require_file(SITE / JS)) != EXPECTED_SIGNED_JS:
         raise RuntimeError("SIGNED_UPDATER_DRIFT_STOP")
+    for rel in SOURCE:
+        parent = (SITE / rel).parent
+        if parent.is_symlink() or not parent.is_dir():
+            raise RuntimeError("DEPLOY_TARGET_PARENT_UNAVAILABLE:" + rel)
     before_controller = require_file(SITE / CONTROLLER)
     before_view = require_file(SITE / VIEW)
     before_routes = require_file(SITE / ROUTES)
