@@ -265,11 +265,10 @@ final class DemoPublisherApiV1
             $headers = ['Accept: application/json', 'Cache-Control: no-store'];
             if ($bearer !== '') $headers[] = 'Authorization: Bearer ' . $bearer;
             if ($payload !== null) $headers[] = 'Content-Type: application/json';
-            curl_setopt_array($ch, [
+            // GET requests must never set CURLOPT_POSTFIELDS, even to null:
+            // libcurl implicitly selects POST when that option is configured.
+            $options = [
                 CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_POST => $method === 'POST',
-                CURLOPT_POSTFIELDS => $payload === null ? null :
-                    json_encode($payload, JSON_THROW_ON_ERROR),
                 CURLOPT_RETURNTRANSFER => false,
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
@@ -282,7 +281,16 @@ final class DemoPublisherApiV1
                     $body .= $piece;
                     return strlen($piece);
                 },
-            ]);
+            ];
+            if ($method === 'POST') {
+                $options[CURLOPT_POST] = true;
+                $options[CURLOPT_POSTFIELDS] = json_encode($payload ?? [], JSON_THROW_ON_ERROR);
+            } else {
+                $options[CURLOPT_HTTPGET] = true;
+            }
+            if (!curl_setopt_array($ch, $options)) {
+                throw new RuntimeException('DEMO_PUBLISHER_CURL_OPTIONS_REJECTED');
+            }
             $worked = curl_exec($ch);
             $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
             if ($worked !== true) throw new RuntimeException('DEMO_PUBLISHER_CONNECT_FAILED');
