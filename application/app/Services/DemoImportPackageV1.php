@@ -215,16 +215,92 @@ final class DemoImportPackageV1
         } finally {
             $zip->close();
         }
-        // Identical bounded transaction, backup, fresh-site guard and media
-        // cleanup used by the legacy signed format. Nothing is installed merely
-        // by calling inspectSigned() or downloading the archive.
+        // Publisher signatures always cover the original unchanged ZIP.
+        // The database enforces media_assets.path UNIQUE: normalize strictly
+        // redundant signed rows only AFTER the signature and count checks.
+        $normalized = $this->normalizeSignedNativeMedia($data);
+        // Reuse the existing guarded backup, fresh-site check and transaction.
         return $this->applyVerifiedContent($archive, [
-            'content' => $data,
+            'content' => $normalized['content'],
             'package_id' => (string)$metadata['id'],
-            'records' => $native['record_count'],
+            'records' => (int)$native['record_count'] - $normalized['collapsed'],
             'assets' => $native['media_images'],
             'settings' => $native['settings_count'],
+            'media_deduplicated' => $normalized['collapsed'],
         ], $adminUserId);
+    }
+
+    /**
+     * BARAMA_DEMO_MEDIA_PATH_UNIQUE_V111
+     * Normalize only redundant media records in an already-verified native ZIP.
+     * Preserve every unique media and attachment relationship; never mutate
+     * the original signed payload. Legacy envelope imports remain untouched.
+     *
+     * @return array{content:array,collapsed:int}
+     */
+    private function normalizeSignedNativeMedia(array $data): array
+    {
+        $canonical = [];
+        $remap = [];
+        $uniqueRows = [];
+        foreach ($data['tables']['media_assets'] ?? [] as $row) {
+            $path = (string)($row['path'] ?? '');
+            $id = (int)($row['id'] ?? 0);
+            if ($id < 1 || $path === '') {
+                throw new RuntimeException('DEMO_MEDIA_NORMALIZATION_INVALID');
+            }
+            // Identity fields cannot change file bytes or media rendering.
+            $semantic = $row;
+            foreach (['id','uuid','created_at','updated_at',
+                       'created_by_user_id','updated_by_user_id'] as $key) {
+                unset($semantic[$key]);
+            }
+            ksort($semantic, SORT_STRING);
+            if (isset($canonical[$path])) {
+                if ($semantic !== $canonical[$path]['semantic']) {
+                    // Do not silently discard differing captions/alt text or
+                    // other metadata just to satisfy a unique SQL index.
+                    throw new RuntimeException('DEMO_SHARED_MEDIA_METADATA_CONFLICT');
+                }
+                $remap[$id] = $canonical[$path]['id'];
+                continue;
+            }
+            $canonical[$path] = ['id' => $id, 'semantic' => $semantic];
+            $uniqueRows[] = $row;
+        }
+        if (!$remap) return ['content' => $data, 'collapsed' => 0];
+
+        $data['tables']['media_assets'] = $uniqueRows;
+        foreach ($data['tables'] as $table => &$rows) {
+            if ($table === 'media_assets') continue;
+            foreach ($rows as &$row) {
+                foreach ($row as $field => &$value) {
+                    if (preg_match('/(?:^|_)media_asset_id$/D', (string)$field) &&
+                        $value !== null && isset($remap[(int)$value])) {
+                        $value = $remap[(int)$value];
+                    }
+                }
+                unset($value);
+            }
+            unset($row);
+        }
+        unset($rows);
+        // Remapping must not create a duplicate of the declared DB unique
+        // attachment key (NULL collection is not unique in MySQL).
+        $attachmentKeys = [];
+        foreach ($data['tables']['media_attachments'] ?? [] as $row) {
+            $collection = $row['collection'] ?? null;
+            if ($collection === null) continue;
+            $key = json_encode([
+                $row['media_asset_id'] ?? null, $row['entity_type'] ?? null,
+                $row['entity_id'] ?? null, $collection
+            ], JSON_THROW_ON_ERROR);
+            if (isset($attachmentKeys[$key])) {
+                throw new RuntimeException('DEMO_SHARED_MEDIA_ATTACHMENT_CONFLICT');
+            }
+            $attachmentKeys[$key] = true;
+        }
+        return ['content' => $data, 'collapsed' => count($remap)];
     }
 
     /** Shared installation path; caller must independently verify its format. */
@@ -316,7 +392,8 @@ final class DemoImportPackageV1
                 'records' => $review['records'],
                 'settings' => $review['settings'],
                 'assets' => $review['assets'],
-                'pre_import_backup' => $backup['id']];
+                'pre_import_backup' => $backup['id'],
+                'media_deduplicated' => (int)($review['media_deduplicated'] ?? 0)];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             foreach (array_keys($written) as $dest) @unlink($dest);
