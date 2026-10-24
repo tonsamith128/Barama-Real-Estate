@@ -58,6 +58,17 @@ jobs:
         run: |
           node --check assets/js/barama-system-tool-v100.js
           python3 -m py_compile tools/aaPanel-system-tool-deploy.py
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          module = Path('tools/aaPanel-system-tool-deploy.py')
+          spec = importlib.util.spec_from_file_location('system_tool_deploy', module)
+          deploy = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(deploy)
+          files = deploy.source_checks()
+          assert len(files) == 5
+          print('AAPANEL_SOURCE_MARKERS=PASS')
+          PY
       - name: Security and routing contracts
         run: php tests/system_tool_contract_v100.php
       - name: Isolated MySQL backup and restore integration
