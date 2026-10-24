@@ -11,13 +11,13 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  <header class="btool-header">
    <div><span class="btool-eyebrow">Live demo delivery</span><h1 id="bdemo-title">Demo Importer</h1>
    <p>Bring the official Barama Real Estate Live Demo into your licensed installation using a verified publisher package.</p></div>
-   <span class="btool-status"><span aria-hidden="true">●</span> <?= !empty($demoReleaseAccepted) ? 'Publisher connected' : 'Integration preview' ?></span>
+   <span class="btool-status"><span aria-hidden="true">●</span> <?= !empty($demoDownloadEnabled) ? 'Verified download available' : 'Integration preview' ?></span>
  </header>
  <?php if ($demoFlash !== null): ?>
  <div role="status" class="btool-flash btool-flash--<?= ($demoFlash['tone'] ?? '') === 'success' ? 'success' : 'error' ?>"><?= e((string)($demoFlash['message'] ?? '')) ?></div>
  <?php endif; ?>
  <?php if (empty($demoReleaseAccepted)): ?>
- <div class="btool-warning" role="status">Publisher integration pending: Manual ZIP verification may be tested, but automatic download and live installation are disabled. No Barama demo package is confirmed as published on TonSamith.com.</div>
+ <div class="btool-warning" role="status">The official Barama package is published. Signed package discovery, verification and private staging are enabled. Installing database records, media and frontend content remains disabled until a fresh staging import and rollback test passes.</div>
  <?php endif; ?>
  <div class="bdemo-summary">
    <div class="bdemo-summary-icon" aria-hidden="true">✦</div>
@@ -62,7 +62,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <aside class="btool-guide">
         <div class="btool-step">01 <strong>Download from publisher</strong><span>Use the official licensed package provided in Demo Content</span></div>
         <div class="btool-step">02 <strong>Upload and verify</strong><span>Check Ed25519 signature, exact file digests, format, compatibility and media paths</span></div>
-        <div class="btool-step">03 <strong>Review and import</strong><span>Commercial license rechecked online, private database backup and explicit confirmation</span></div>
+        <div class="btool-step">03 <strong>Review package</strong><span>Inspect the signed package while the database importer remains disabled until staging acceptance</span></div>
        </aside>
      </div>
     <?php else: ?>
@@ -79,24 +79,24 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
           </div>
           <span class="btool-chip">Read-only diagnostics</span>
         </div>
-        <p>Connect to the real TonSamith.com Demo Content API. A successful connection does not mean the signing identity is pinned or that any demo is published.</p>
+        <p>Connect to the real TonSamith.com Demo Content API. The full public-key fingerprint is independently pinned; this panel checks the live key and currently published licensed packages.</p>
         <div class="btool-actions">
           <a class="btool-btn btool-btn-secondary" href="<?= e(url('/dashboard/system/demo-importer/connection')) ?>">Test HTTPS &amp; signing key</a>
           <a class="btool-btn btool-btn-secondary" href="<?= e(url('/dashboard/system/demo-importer/catalog')) ?>">Check licensed demo catalog</a>
         </div>
         <?php if (is_array($demoApiIdentity ?? null)): ?>
         <div class="bdemo-api-result">
-          <strong>Publisher signing identity observed</strong>
+          <strong>Publisher signing key verified</strong>
           <p>Key ID: <code><?= e((string)($demoApiIdentity['key_id'] ?? '')) ?></code></p>
           <p>Fingerprint: <code><?= e((string)($demoApiIdentity['fingerprint'] ?? '')) ?></code></p>
-          <p>Signer is not automatically trusted. An independently verified fingerprint must be pinned before package installation.</p>
+          <p>The public key must match the fingerprint independently verified on the publisher host. Any unapproved rotation is rejected.</p>
         </div>
         <?php endif; ?>
         <?php if (is_array($demoApiCatalog ?? null)): ?>
         <div class="bdemo-api-result">
           <strong>Published packages: <?= count((array)($demoApiCatalog['packages'] ?? [])) ?></strong>
           <?php if (empty($demoApiCatalog['packages'])): ?>
-            <p>No published Barama package is available to this activation. Your package #2 is Draft and is intentionally excluded.</p>
+            <p>No published Barama package is available to this particular activated license.</p>
           <?php else: ?>
             <?php foreach ((array)$demoApiCatalog['packages'] as $demoItem): ?>
             <div class="bdemo-api-package">
@@ -113,16 +113,16 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <h3>Get latest official demo package</h3>
        <p>Auto Import contacts TonSamith.com directly over HTTPS with your installation-bound activation. Publisher entitlement and package signature must both pass.</p>
        <div class="bdemo-requirements">
-         <span><b>01</b> Active commercial license</span>
+         <span><b>01</b> Active bound license</span>
          <span><b>02</b> Official published demo</span>
          <span><b>03</b> Signed content ZIP</span>
-         <span><b>04</b> Private preview and backup</span>
+         <span><b>04</b> Private staging; no installation</span>
        </div>
        <form method="post" action="<?= e(url('/dashboard/system/demo-importer/auto')) ?>" data-btool-protected>
          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-         <div class="btool-actions"><button type="submit" class="btool-btn btool-btn-primary" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Check &amp; download Live Demo</button></div>
+         <div class="btool-actions"><button type="submit" class="btool-btn btool-btn-primary" <?= empty($demoDownloadEnabled) ? 'disabled' : '' ?>>Download &amp; verify official ZIP</button></div>
        </form>
-       <p class="btool-help">The publisher must first publish an entitled Barama Live Demo package. If none is published, no installation is started.</p>
+       <p class="btool-help">The publisher issues a short-lived download ticket. The ZIP is verified and privately staged; it cannot modify this live website.</p>
       </section>
     <?php endif; ?>
 
@@ -136,17 +136,17 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <div><strong><?= (int)$demoReview['records'] ?></strong><span>Content records</span></div>
        <div><strong><?= (int)$demoReview['assets'] ?></strong><span>Image files</span></div>
        <div><strong><?= (int)$demoReview['settings'] ?></strong><span>Design/config groups</span></div>
-       <div><strong><?= e((string)$demoReview['expires_at']) ?></strong><span>Package expires</span></div>
+       <div><strong><?= e((string)$demoReview['expires_at']) ?></strong><span>Signature status</span></div>
       </div>
-      <p class="btool-help">Imported sections: <?= e(implode(' · ', array_slice(array_map('strval',(array)$demoReview['components']),0,15))) ?>.</p>
+      <p class="btool-help">Packaged sections: <?= e(implode(' · ', array_slice(array_map('strval',(array)$demoReview['components']),0,15))) ?>.</p>
       <div class="btool-warning">
-       Demo import is for a fresh content installation. Existing marketplace records are never deleted or silently replaced. A full private database backup must succeed before installation. This operation does not copy your license, user accounts, private customer messages or payment credentials.
+       Demo import is for a fresh content installation. Existing marketplace records are never deleted or silently replaced. Installation remains disabled until staging acceptance. Your live website is not changed by package staging.
       </div>
       <form method="post" action="<?= e(url('/dashboard/system/demo-importer/install')) ?>" data-btool-protected>
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <label for="bdemo-confirmation">Type <strong>IMPORT LIVE DEMO</strong> to confirm</label>
        <input id="bdemo-confirmation" type="text" name="confirmation" autocomplete="off" placeholder="IMPORT LIVE DEMO" required>
-       <p class="btool-help">Your license entitlement will be verified again at the publisher before the import.</p>
+       <p class="btool-help">Installation will become available only after the native importer passes an isolated staging backup and rollback test.</p>
        <div class="btool-actions"><button class="btool-btn btool-btn-primary" type="submit" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Install verified Live Demo</button></div>
       </form>
      </section>
