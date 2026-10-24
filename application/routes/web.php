@@ -34,6 +34,7 @@ use Barama\Http\Controllers\PaymentWebhookController;
 use Barama\Http\Controllers\SeoController;
 use Barama\Http\Controllers\SystemHealthController;
 use Barama\Http\Controllers\SystemCenterController;
+use Barama\Http\Controllers\SystemToolController;
 use Barama\Http\Controllers\PlanPurchaseController;
 use Barama\Http\Controllers\InvoiceTemplateController;
 use Barama\Http\Middleware\AuthMiddleware;
@@ -1107,6 +1108,16 @@ $router->post(
     [AdminManagementController::class, 'revokeUserSessions'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
+
+/* BARAMA_SYSTEM_TOOL_V100_ADMIN_ROUTES — Router also enforces ChangeConfirmation on all mutations. */
+$toolAuth = [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')];
+$toolWrite = [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()];
+$router->get('/dashboard/system/tool', [SystemToolController::class, 'index'], $toolAuth);
+$router->get('/dashboard/system/tool/export', [SystemToolController::class, 'export'], $toolAuth);
+$router->get('/dashboard/system/tool/download', [SystemToolController::class, 'download'], $toolAuth);
+$router->post('/dashboard/system/tool/import', [SystemToolController::class, 'import'], $toolWrite);
+$router->post('/dashboard/system/tool/backup', [SystemToolController::class, 'backup'], $toolWrite);
+$router->post('/dashboard/system/tool/restore', [SystemToolController::class, 'restore'], $toolWrite);
 
 /* BARAMA_SYSTEM_CENTER_V100_ADMIN_ROUTES */
 $router->get('/dashboard/system/about', [SystemCenterController::class, 'about'], [new AuthMiddleware(), new PermissionMiddleware('dashboard.access')]);
