@@ -249,8 +249,15 @@ final class DemoImportPackageV1
                 throw new RuntimeException('DEMO_TABLE_INVALID');
             }
             foreach ($rows as $row) {
-                if (!is_array($row) || !isset($row['id']) || (int)$row['id'] <= 0
-                    || count($row) > 80) throw new RuntimeException('DEMO_ROW_INVALID');
+                $pivot = in_array($table, ['project_amenities','property_amenities'], true);
+                $parent = $table === 'project_amenities' ? 'project_id' : 'property_id';
+                if (!is_array($row) || count($row) > 80 ||
+                    ($pivot
+                      ? (!isset($row[$parent], $row['amenity_id']) ||
+                         (int)$row[$parent] <= 0 || (int)$row['amenity_id'] <= 0)
+                      : (!isset($row['id']) || (int)$row['id'] <= 0))) {
+                    throw new RuntimeException('DEMO_ROW_INVALID');
+                }
                 foreach ($row as $field => $value) {
                     self::ident((string)$field);
                     if ($value !== null && !is_scalar($value)) throw new RuntimeException('DEMO_ROW_CELL_INVALID');
