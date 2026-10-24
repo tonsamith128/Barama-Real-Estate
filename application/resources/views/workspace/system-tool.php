@@ -36,7 +36,7 @@ $toolBase = '/dashboard/system/tool';
           'backup' => ['▤', 'Backup'],
           'restore' => ['↺', 'Restore'],
       ] as $key => $item): ?>
-        <a href="<?= e(url($toolBase . '?tab=' . $key)) ?>"
+        <a href="<?= e(url($toolBase)) ?>?tab=<?= e($key) ?>"
            class="btool-tab <?= $toolTab === $key ? 'is-active' : '' ?>"
            <?= $toolTab === $key ? 'aria-current="page"' : '' ?>>
           <span class="btool-tab-icon" aria-hidden="true"><?= e($item[0]) ?></span>
@@ -115,7 +115,7 @@ $toolBase = '/dashboard/system/tool';
           <?php foreach ($toolBackups as $snapshot): ?>
             <tr><td><code><?= e((string)$snapshot['id']) ?></code></td><td><?= e((string)$snapshot['created_at']) ?></td>
               <td><?= e(number_format(((int)$snapshot['size'])/1024/1024, 2)) ?> MB</td>
-              <td><a class="btool-link" href="<?= e(url($toolBase . '/download?id=' . rawurlencode((string)$snapshot['id']))) ?>">Download ZIP</a></td></tr>
+              <td><a class="btool-link" href="<?= e(url($toolBase . '/download')) ?>?id=<?= e(rawurlencode((string)$snapshot['id'])) ?>">Download ZIP</a></td></tr>
           <?php endforeach; ?>
           </tbody></table></div>
           <?php endif; ?>
