@@ -109,6 +109,10 @@ jobs:
         run: |
           php -l tests/demo_import_toast_v106.php
           php tests/demo_import_toast_v106.php
+      - name: Verify imported media paths match public media controller
+        run: |
+          php -l tests/demo_import_media_path_v112.php
+          php tests/demo_import_media_path_v112.php
       - name: Signed demo package contract
         run: |
           php tests/demo_import_package_v100.php
