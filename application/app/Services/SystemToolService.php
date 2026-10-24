@@ -87,6 +87,11 @@ final class SystemToolService
      */
     public function importCsv(string $table, array $upload, bool $preview): array
     {
+        return $this->exclusive(fn (): array => $this->importCsvUnlocked($table, $upload, $preview));
+    }
+
+    private function importCsvUnlocked(string $table, array $upload, bool $preview): array
+    {
         $this->dataset($table);
         if ((int) ($upload['error'] ?? -1) !== UPLOAD_ERR_OK ||
             !is_string($upload['tmp_name'] ?? null) ||
@@ -139,6 +144,11 @@ final class SystemToolService
 
     /** Consistent logical snapshot of all InnoDB base tables, database only. */
     public function backup(): array
+    {
+        return $this->exclusive(fn (): array => $this->backupUnlocked());
+    }
+
+    private function backupUnlocked(): array
     {
         if (!class_exists(ZipArchive::class)) throw new RuntimeException('ZIP_EXTENSION_REQUIRED');
         $dir = $this->vault(true);
@@ -238,6 +248,11 @@ final class SystemToolService
     /** Restore is database-only, exact-schema, all-or-nothing InnoDB DML. */
     public function restore(string $id): array
     {
+        return $this->exclusive(fn (): array => $this->restoreUnlocked($id));
+    }
+
+    private function restoreUnlocked(string $id): array
+    {
         $path = $this->verifiedBackup($id);
         $zip = new ZipArchive();
         if ($zip->open($path, ZipArchive::RDONLY) !== true) throw new RuntimeException('BACKUP_ZIP_UNREADABLE');
@@ -316,6 +331,28 @@ final class SystemToolService
             throw new RuntimeException('BACKUP_ROW_INTEGRITY_FAILED');
         }
         return $count;
+    }
+
+    private static int $lockDepth = 0;
+
+    /** Prevent overlapping backups/imports/restores and fail closed on busy. */
+    private function exclusive(callable $action): mixed
+    {
+        if (self::$lockDepth > 0) return $action();
+        $root = $this->vault(true);
+        $path = $root . '/operation.lock';
+        if (is_link($path)) throw new RuntimeException('OPERATION_LOCK_UNSAFE');
+        $stream = fopen($path, 'c+');
+        if ($stream === false) throw new RuntimeException('OPERATION_LOCK_UNAVAILABLE');
+        try {
+            chmod($path, 0600);
+            if (!flock($stream, LOCK_EX | LOCK_NB)) {
+                throw new RuntimeException('ANOTHER_OPERATION_IS_IN_PROGRESS');
+            }
+            self::$lockDepth++;
+            try { return $action(); }
+            finally { self::$lockDepth--; flock($stream, LOCK_UN); }
+        } finally { fclose($stream); }
     }
 
     private function dataset(string $table): void
