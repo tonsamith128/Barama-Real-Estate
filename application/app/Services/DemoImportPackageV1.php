@@ -251,8 +251,11 @@ final class DemoImportPackageV1
         $db->beginTransaction();
         try {
             foreach (self::ORDER as $table) {
-                foreach ($tables[$table] ?? [] as $row) {
-                    $fields = $this->existingColumns($table);
+                $rows = $tables[$table] ?? [];
+                if (!$rows) continue;
+                // A 5,000+ row demo must not query SHOW COLUMNS on every INSERT.
+                $fields = $this->existingColumns($table);
+                foreach ($rows as $row) {
                     foreach ($row as $name => $_) if (!isset($fields[$name])) {
                         throw new RuntimeException('DEMO_SCHEMA_COLUMN_MISMATCH');
                     }
