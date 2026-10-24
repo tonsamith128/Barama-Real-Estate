@@ -6,6 +6,9 @@
   const shell=root.querySelector('.btool-shell'),body=shell?.querySelector('.btool-content');
   if(!shell||!body)return;
   root.dataset.premiumV103='1';root.classList.add('bdemo-v103');shell.classList.add('bdemo-v103-shell');
+  // BARAMA_DEMO_FEEDBACK_TOAST_V106: server-rendered, accessible and dismissible.
+  const feedbackToast=root.querySelector('[data-demo-feedback-toast]');
+  feedbackToast?.querySelector('[data-demo-toast-close]')?.addEventListener('click',()=>feedbackToast.remove());
   root.querySelector('.btool-header')?.classList.add('bdemo-v103-head');
   const mode=root.querySelector('.btool-tab[href*="mode=auto"].is-active')?'auto':'manual';
   const link=root.querySelector('.bdemo-source a'),url=link?.href&&new URL(link.href).hostname==='baramarealestate.tonsamith.com'?link.href:'https://baramarealestate.tonsamith.com/';
@@ -18,7 +21,7 @@
   const oldCard=body.querySelector('.btool-card:not(.bdemo-review):not(.bdemo-api-check)');
   if(oldCard&&!oldCard.querySelector('form'))oldCard.remove();
   const oldHead=body.querySelector('.btool-content-head');if(oldHead)oldHead.hidden=true;
-  const good=!!body.querySelector('.bdemo-review'),bad=!!root.querySelector('.btool-flash--error');
+  const good=!!body.querySelector('.bdemo-review'),bad=!!root.querySelector('.btool-flash--error,.bdemo-notice-toast--error');
   const ring=document.createElement('section');ring.className='bdemo-v103-card bdemo-v103-ring';
   ring.dataset.state=good?'verified':bad?'rejected':'idle';
   const labels=mode==='auto'?['License check','Published package','Download ZIP','Verify signature','Private staging','Review package']:['Select ZIP','Check publisher','Match checksum','Verify signature','Private staging','Review package'];
