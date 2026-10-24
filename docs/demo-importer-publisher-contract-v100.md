@@ -1,3 +1,5 @@
+> **SUPERSEDED CONTRACT — DO NOT IMPLEMENT.** This v1.0.0 design assumed a nonexistent publisher API and an embedded ZIP signature. The real TonSamith.com API was verified in repository source. Use [Demo Importer Actual Publisher API v1.0.1](demo-importer-actual-publisher-api-v101.md) as the authoritative integration contract instead. This historical document is retained only for design audit.
+
 # Barama Live Demo Importer v1.0.0 — Publisher + Customer Contract
 
 **Integration status:** customer-side implementation on draft PR #130; **not live**. The publisher Demo Content integration at `https://tonsamith.com/dashboard/demo-content` has not yet been verified to support Barama. No complete Barama demo archive has been published or retrieved. Do not mark the end-to-end feature complete or deploy to customer production on the strength of a UI screenshot.
