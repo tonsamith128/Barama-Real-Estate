@@ -5,6 +5,13 @@ namespace Barama\Services\Updates {
         public static function keys(): string { return $GLOBALS['demo_it_keys']; }
     }
 }
+namespace Barama\Core {
+    final class Installation {
+        public static function runtimeConfig(): array {
+            return ['APP_URL'=>'https://customer.example.test'];
+        }
+    }
+}
 namespace {
     if (getenv('BARAMA_DEMO_IT') !== 'isolated-ci') {
         fwrite(STDERR, "STOP=ONLY_ISOLATED_CI\n"); exit(1);
@@ -45,7 +52,7 @@ namespace {
     ], JSON_THROW_ON_ERROR));
     $doc = json_encode([
         'schema'=>'barama-demo-content-v1','components'=>['Homepage','Footer','Locations'],
-        'settings'=>['cms.footer_content'=>['copyright'=>'Live Demo ©']],
+        'settings'=>['cms.footer_content'=>['copyright'=>'Visit {{APP_URL}} for more information']],
         'tables'=>['locations'=>[['id'=>299,'name'=>'Signed Sample City']]],
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     $manifest = [
@@ -73,7 +80,7 @@ namespace {
     checkDemo($installed['records']===1,'transaction_committed');
     checkDemo((int)$db->query('SELECT COUNT(*) FROM locations')->fetchColumn()===1,'data_row_visible');
     checkDemo($db->query('SELECT name FROM locations WHERE id=299')->fetchColumn()==='Signed Sample City','exact_content_row');
-    checkDemo($db->query("SELECT setting_value FROM application_settings WHERE setting_key='cms.footer_content'")->fetchColumn()!==false,'footer_configuration_written');
+    checkDemo(str_contains((string)$db->query("SELECT setting_value FROM application_settings WHERE setting_key='cms.footer_content'")->fetchColumn(), 'https://customer.example.test'), 'signed_footer_recipient_domain_mapped');
     checkDemo(count((new \Barama\Services\SystemToolService())->backups())===1,'preimport_safety_backup_created');
     $blocked=false;
     try{$service->install($archive,42);}catch(\RuntimeException $e){$blocked=$e->getMessage()==='DEMO_REQUIRES_EMPTY_CONTENT_TABLES';}
