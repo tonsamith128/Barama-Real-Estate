@@ -14,6 +14,7 @@ on:
     branches: ['feature/system-demo-importer-*']
 jobs:
   verify-and-package:
+    if: false # Retired preview artifact; superseded by guarded signed-download activation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
