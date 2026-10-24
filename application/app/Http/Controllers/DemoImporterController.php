@@ -271,7 +271,8 @@ final class DemoImporterController
         if ($host !== 'baramastaging.tonsamith.com') return false;
         $flag = APP_PATH . '/storage/private/demo-import-native-v107.acceptance';
         if (!is_file($flag) || is_link($flag) || filesize($flag) > 128 ||
-            fileowner($flag) !== 0 || (fileperms($flag) & 0077) !== 0) return false;
+            fileowner($flag) !== 0 || (fileperms($flag) & 0022) !== 0 ||
+            !is_readable($flag)) return false;
         return hash_equals(
             'BARAMA_NATIVE_DEMO_INSTALL_STAGE_ACCEPTED_V107',
             trim((string)file_get_contents($flag))
