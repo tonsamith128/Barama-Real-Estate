@@ -156,6 +156,11 @@ final class DemoImportPackageV1
         $review = $this->inspect($archive);
         $data = $review['content'];
         $db = Database::connection();
+        // Convert author-side placeholders to the current customer domain only.
+        $appUrl = rtrim((string)(Installation::runtimeConfig()['APP_URL'] ?? ''), '/');
+        if (!preg_match('~^https://[A-Za-z0-9.-]+(?::[0-9]{2,5})?$~D', $appUrl)) {
+            throw new RuntimeException('DEMO_CUSTOMER_DOMAIN_UNSAFE');
+        }
         $tables = $data['tables'];
         foreach (array_keys($tables) as $table) {
             if (!in_array($table, self::ORDER, true)) throw new RuntimeException('DEMO_TABLE_DENIED');
@@ -214,6 +219,7 @@ final class DemoImportPackageV1
                         chmod($dest, 0640);
                         $written[] = $dest;
                     }
+                    $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
                     $columns = array_keys($row);
                     $sql = 'INSERT INTO ' . self::ident($table) . ' (' .
@@ -223,7 +229,8 @@ final class DemoImportPackageV1
                 }
             }
             foreach ($data['settings'] as $key => $value) {
-                $json = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+                $json = json_encode($this->rewriteRecipientUrls($value, $appUrl),
+                    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
                 $db->prepare("INSERT INTO application_settings (setting_key,setting_value,value_type)
                     VALUES (?,?,'json') ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),value_type='json'")
                     ->execute([$key, $json]);
@@ -239,6 +246,20 @@ final class DemoImportPackageV1
             foreach ($written as $dest) @unlink($dest);
             throw $e;
         } finally { $zip->close(); }
+    }
+
+    private function rewriteRecipientUrls(mixed $value, string $url): mixed
+    {
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                $value[$key] = $this->rewriteRecipientUrls($item, $url);
+            }
+            return $value;
+        }
+        if (is_string($value)) {
+            return str_replace('{{APP_URL}}', $url, $value);
+        }
+        return $value;
     }
 
     private function validateContent(mixed $data, array $entries): void
