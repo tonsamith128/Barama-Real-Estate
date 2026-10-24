@@ -10,7 +10,7 @@ use Throwable;
 /**
  * BARAMA_DEMO_PUBLISHER_API_V101
  *
- * Existing TonSamith.com API, not the retired /license/v2/demo/package URL.
+ * Existing TonSamith.com API with the publisher's supported v1 routes.
  * Bounded HTTPS requests only, activation token in Authorization header only.
  * Publisher catalog is informational until its Ed25519 key is independently
  * pinned and a downloaded ZIP is verified against published metadata.
