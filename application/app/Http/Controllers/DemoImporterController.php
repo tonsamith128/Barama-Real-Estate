@@ -24,7 +24,6 @@ use Throwable;
 final class DemoImporterController
 {
     private const URL = '/dashboard/system/demo-importer';
-    private const AUTO_URL = 'https://tonsamith.com/license/v2/demo/package';
     // Production remains preview-only until actual publisher and staging acceptance.
     public const RELEASE_GATE = 'publisher_pending';
     private const SESSION = '_barama_demo_import_v100';
@@ -165,66 +164,17 @@ final class DemoImporterController
         } catch (Throwable $e) { return $this->failure('manual', $e); }
     }
 
-    /** Publisher-only HTTPS POST; the publisher must explicitly entitlement-gate this endpoint. */
+    /**
+     * Auto ZIP acquisition remains disabled until the real publisher download
+     * ticket + digest + pinned-signature + staging importer gates pass.
+     * This removes the obsolete /license/v2/demo/package implementation.
+     */
     public function automatic(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
-        if (self::RELEASE_GATE !== 'accepted') {
-            return $this->flash('auto', 'error', 'Auto Import is not available: no Barama publisher package and licensed endpoint have been accepted.');
-        }
-        try {
-            $license = $this->commercialLicense();
-            if (!extension_loaded('curl')) throw new RuntimeException('DEMO_HTTPS_UNAVAILABLE');
-            $runtime = Installation::runtimeConfig();
-            $payload = json_encode([
-                'activation_token' => $license['activation_token'],
-                'installation_id' => $license['installation_id'],
-                'domain' => $license['domain'],
-                'product_slug' => 'barama-real-estate',
-                'package' => 'barama-live-demo',
-                'mode' => 'download',
-            ], JSON_THROW_ON_ERROR);
-            $ch = curl_init(self::AUTO_URL);
-            if ($ch === false) throw new RuntimeException('DEMO_PUBLISHER_UNAVAILABLE');
-            $buffer = '';
-            try {
-                curl_setopt_array($ch, [
-                    CURLOPT_POST => true,
-                    CURLOPT_POSTFIELDS => $payload,
-                    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/zip'],
-                    CURLOPT_FOLLOWLOCATION => false,
-                    CURLOPT_SSL_VERIFYPEER => true,
-                    CURLOPT_SSL_VERIFYHOST => 2,
-                    CURLOPT_CONNECTTIMEOUT => 8,
-                    CURLOPT_TIMEOUT => 45,
-                    CURLOPT_RETURNTRANSFER => false,
-                    CURLOPT_HEADER => false,
-                    CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$buffer): int {
-                        if (strlen($buffer) + strlen($chunk) > 67108864) return 0;
-                        $buffer .= $chunk;
-                        return strlen($chunk);
-                    },
-                ]);
-                $ok = curl_exec($ch);
-                $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-                $type = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-            } finally { curl_close($ch); }
-            if ($ok !== true || $status !== 200 ||
-                !str_starts_with(strtolower($type), 'application/zip') || strlen($buffer) < 500) {
-                throw new RuntimeException('DEMO_PUBLISHER_PACKAGE_NOT_AVAILABLE');
-            }
-            $dir = $this->vault();
-            $candidate = tempnam($dir, 'demo-auto-');
-            if ($candidate === false) throw new RuntimeException('DEMO_PRIVATE_STAGE_UNAVAILABLE');
-            try {
-                chmod($candidate, 0600);
-                if (file_put_contents($candidate, $buffer, LOCK_EX) !== strlen($buffer)) {
-                    throw new RuntimeException('DEMO_PRIVATE_STAGE_WRITE_FAILED');
-                }
-                $this->storeVerified($candidate, 'auto');
-            } finally { @unlink($candidate); }
-            return $this->flash('auto', 'success', 'Publisher-entitled signed demo downloaded and verified. Nothing installed yet.');
-        } catch (Throwable $e) { return $this->failure('auto', $e); }
+        return $this->flash('auto', 'error',
+            'Automatic download is still disabled. Use the read-only catalog check '
+            . 'until the real publisher package is published and staging acceptance passes.');
     }
 
     /** Database mutation: fresh install only, backup and explicit owner approval. */
