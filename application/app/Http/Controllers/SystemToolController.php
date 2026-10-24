@@ -19,7 +19,7 @@ final class SystemToolController
 
     public function index(Request $request): Response
     {
-        $this->admin();
+        if (!$this->admin()) return Response::html('Forbidden', 403);
         $service = new SystemToolService();
         $tab = (string) $request->input('tab', 'importer');
         if (!in_array($tab, ['importer', 'exporter', 'backup', 'restore'], true)) $tab = 'importer';
@@ -63,7 +63,7 @@ final class SystemToolController
 
     public function export(Request $request): Response
     {
-        $this->admin();
+        if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
             $table = (string) $request->input('dataset', '');
             $csv = (new SystemToolService())->exportCsv($table);
@@ -79,7 +79,7 @@ final class SystemToolController
 
     public function import(Request $request): Response
     {
-        $this->admin();
+        if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
             $table = (string) $request->input('dataset', '');
             $mode = (string) $request->input('mode', '');
@@ -100,7 +100,7 @@ final class SystemToolController
 
     public function backup(Request $request): Response
     {
-        $this->admin();
+        if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
             $result = (new SystemToolService())->backup();
             return $this->succeeded('backup', 'Database snapshot created: ' . $result['id'] .
@@ -113,7 +113,7 @@ final class SystemToolController
 
     public function download(Request $request): Response
     {
-        $this->admin();
+        if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
             $id = (string) $request->input('id', '');
             $path = (new SystemToolService())->verifiedBackup($id);
@@ -132,7 +132,7 @@ final class SystemToolController
 
     public function restore(Request $request): Response
     {
-        $this->admin();
+        if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
             if ((string) $request->input('confirmation', '') !== 'RESTORE DATABASE') {
                 throw new RuntimeException('RESTORE_TYPED_APPROVAL_REQUIRED');
@@ -147,13 +147,10 @@ final class SystemToolController
         }
     }
 
-    private function admin(): void
+    private function admin(): bool
     {
         $auth = new AuthService();
-        if (!$auth->hasRole('administrator') && !$auth->hasRole('super-administrator')) {
-            // Never allow dashboard.access alone to access system-wide data.
-            throw new RuntimeException('SYSTEM_TOOL_ADMINISTRATOR_ONLY');
-        }
+        return $auth->hasRole('administrator') || $auth->hasRole('super-administrator');
     }
 
     private function succeeded(string $tab, string $message): Response
