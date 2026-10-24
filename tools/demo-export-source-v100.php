@@ -86,6 +86,39 @@ foreach (['locations','amenities','companies','projects','properties','listings'
         array_map(static fn(array $row): int => (int)$row['id'], $export['tables'][$table]), true
     );
 }
+// Enforce public-object foreign key closure; do not ship unpublished references.
+$export['tables']['projects'] = array_values(array_filter(
+    $export['tables']['projects'],
+    static fn(array $row): bool => isset($referenced['companies'][(int)$row['company_id']])
+));
+$referenced['projects'] = array_fill_keys(array_map(
+    static fn(array $row): int => (int)$row['id'], $export['tables']['projects']), true);
+$export['tables']['properties'] = array_values(array_filter(
+    $export['tables']['properties'],
+    static fn(array $row): bool =>
+        ((!isset($row['company_id']) || isset($referenced['companies'][(int)$row['company_id']])) &&
+         (!isset($row['project_id']) || isset($referenced['projects'][(int)$row['project_id']])))
+));
+$referenced['properties'] = array_fill_keys(array_map(
+    static fn(array $row): int => (int)$row['id'], $export['tables']['properties']), true);
+$export['tables']['listings'] = array_values(array_filter(
+    $export['tables']['listings'],
+    static fn(array $row): bool => isset($referenced['properties'][(int)$row['property_id']])
+));
+$referenced['listings'] = array_fill_keys(array_map(
+    static fn(array $row): int => (int)$row['id'], $export['tables']['listings']), true);
+foreach ([
+    'project_amenities' => ['project_id','projects'],
+    'property_amenities' => ['property_id','properties']
+] as $table => $parent) {
+    $export['tables'][$table] = array_values(array_filter(
+        $export['tables'][$table],
+        static fn(array $row): bool =>
+            isset($referenced[$parent[1]][(int)$row[$parent[0]]]) &&
+            isset($referenced['amenities'][(int)$row['amenity_id']])
+    ));
+}
+
 // Remove attachments whose associated marketplace object is not in this public snapshot.
 $relation = [
     'property'=>'properties','project'=>'projects','company'=>'companies',
