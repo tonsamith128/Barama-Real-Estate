@@ -71,6 +71,44 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
         <p>Check your commercial license with the publisher, securely retrieve the official signed ZIP, then review the exact contents before installation.</p></div>
         <span class="btool-chip">Authenticated publisher</span>
       </div>
+      <section class="btool-card bdemo-api-check" aria-label="Live publisher API connection">
+        <div class="bdemo-review-title">
+          <div>
+            <span class="btool-eyebrow">Live publisher API</span>
+            <h3>Publisher connection</h3>
+          </div>
+          <span class="btool-chip">Read-only diagnostics</span>
+        </div>
+        <p>Connect to the real TonSamith.com Demo Content API. A successful connection does not mean the signing identity is pinned or that any demo is published.</p>
+        <div class="btool-actions">
+          <a class="btool-btn btool-btn-secondary" href="<?= e(url('/dashboard/system/demo-importer/connection')) ?>">Test HTTPS &amp; signing key</a>
+          <a class="btool-btn btool-btn-secondary" href="<?= e(url('/dashboard/system/demo-importer/catalog')) ?>">Check licensed demo catalog</a>
+        </div>
+        <?php if (is_array($demoApiIdentity ?? null)): ?>
+        <div class="bdemo-api-result">
+          <strong>Publisher signing identity observed</strong>
+          <p>Key ID: <code><?= e((string)($demoApiIdentity['key_id'] ?? '')) ?></code></p>
+          <p>Fingerprint: <code><?= e((string)($demoApiIdentity['fingerprint'] ?? '')) ?></code></p>
+          <p>Signer is not automatically trusted. An independently verified fingerprint must be pinned before package installation.</p>
+        </div>
+        <?php endif; ?>
+        <?php if (is_array($demoApiCatalog ?? null)): ?>
+        <div class="bdemo-api-result">
+          <strong>Published packages: <?= count((array)($demoApiCatalog['packages'] ?? [])) ?></strong>
+          <?php if (empty($demoApiCatalog['packages'])): ?>
+            <p>No published Barama package is available to this activation. Your package #2 is Draft and is intentionally excluded.</p>
+          <?php else: ?>
+            <?php foreach ((array)$demoApiCatalog['packages'] as $demoItem): ?>
+            <div class="bdemo-api-package">
+              <span><?= e((string)($demoItem['name'] ?? 'Live Demo')) ?></span>
+              <span>v<?= e((string)($demoItem['version'] ?? '?')) ?></span>
+              <small><?= e((string)($demoItem['id'] ?? '')) ?></small>
+            </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
+      </section>
       <section class="btool-card">
        <h3>Get latest official demo package</h3>
        <p>Auto Import contacts TonSamith.com directly over HTTPS with your installation-bound activation. Publisher entitlement and package signature must both pass.</p>
