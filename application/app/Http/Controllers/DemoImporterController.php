@@ -89,7 +89,7 @@ final class DemoImporterController
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
-            $identity = (new DemoPublisherApiV1())->signingIdentity();
+            $identity = (new DemoPublisherApiV1())->pinnedSigningIdentity();
             $_SESSION['_barama_demo_api_identity'] = [
                 'key_id' => $identity['key_id'],
                 'fingerprint' => $identity['fingerprint'],
@@ -97,7 +97,7 @@ final class DemoImporterController
             ];
             return $this->flash('auto', 'success',
                 'Publisher API reachable over HTTPS. Signing key ID: '
-                . $identity['key_id'] . '. Identity observed; not yet pinned for installation.');
+                . $identity['key_id'] . '. Independently pinned signing fingerprint matches. Installation remains disabled.');
         } catch (Throwable $error) {
             return $this->failure('auto', $error);
         }
@@ -112,9 +112,15 @@ final class DemoImporterController
         if (!$this->admin()) return Response::html('Forbidden', 403);
         try {
             $license = $this->licenseBindingForPublisher();
-            $result = (new DemoPublisherApiV1())->discover(
+            $api = new DemoPublisherApiV1();
+            $identity = $api->pinnedSigningIdentity();
+            $result = $api->discover(
                 $license['token'], $license['domain'], $license['installation_id']
             );
+            if (isset($result['signing']['key_id']) &&
+                !hash_equals($identity['key_id'], (string)$result['signing']['key_id'])) {
+                throw new RuntimeException('DEMO_CATALOG_SIGNING_KEY_MISMATCH');
+            }
             $_SESSION['_barama_demo_api_catalog'] = [
                 'packages' => array_slice($result['packages'], 0, 20),
                 'checked_at' => time(),
