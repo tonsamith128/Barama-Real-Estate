@@ -11,6 +11,8 @@ on:
       - 'tests/demo_import_package_v100.php'
       - 'tests/demo_publisher_api_v101.php'
       - 'tests/demo_publisher_pin_v102.php'
+      - 'tests/demo_publisher_native_archive_v102.php'
+      - 'application/app/Services/DemoPublisherNativeArchiveV1.php'
       - 'tests/demo_publisher_download_v101.php'
       - 'tests/demo_publisher_integration_v101.php'
       - 'docs/demo-importer-actual-publisher-api-v101.md'
@@ -61,6 +63,8 @@ jobs:
           php -l tests/demo_import_package_v100.php
           php -l tests/demo_publisher_api_v101.php
           php -l tests/demo_publisher_pin_v102.php
+          php -l tests/demo_publisher_native_archive_v102.php
+          php -l application/app/Services/DemoPublisherNativeArchiveV1.php
           php -l tests/demo_publisher_download_v101.php
           php -l tests/demo_publisher_integration_v101.php
           php -l application/app/Services/DemoPublisherDownloadV1.php
@@ -73,6 +77,7 @@ jobs:
           php tests/demo_import_package_v100.php
           php tests/demo_publisher_api_v101.php
           php tests/demo_publisher_pin_v102.php
+          php tests/demo_publisher_native_archive_v102.php
           php tests/demo_publisher_download_v101.php
           php tests/demo_publisher_integration_v101.php
       - name: Isolated MySQL signed-demo installation and safety backup
