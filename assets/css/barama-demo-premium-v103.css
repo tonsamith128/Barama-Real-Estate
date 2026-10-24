@@ -102,3 +102,41 @@
 }
 :is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-pending{background:#fbfdff;border-color:#cadaed}
 :is([data-bs-theme="light"],[data-theme="light"]) .bdemo-v103 .bdemo-v103-ring[data-state="working"] .bdemo-v103-step.is-current{color:#163d79;background:#deecff;border-color:#3173df}
+
+/* BARAMA_DEMO_FEEDBACK_TOAST_V106: only Demo Importer PRG flash; no modal or passcode changes. */
+.bdemo-notice-toast{
+  position:fixed;top:88px;right:24px;z-index:11000;
+  display:flex;align-items:flex-start;gap:12px;
+  width:min(420px,calc(100vw - 32px));padding:15px 14px 15px 16px;
+  border:1px solid #b7e4ce;border-radius:15px;
+  background:#f8fffb;color:#153c2c;
+  box-shadow:0 16px 48px rgba(15,23,42,.17);
+  text-align:left;overflow-wrap:anywhere;
+}
+.bdemo-notice-toast--error{background:#fffafa;color:#702c35;border-color:#e9b7c0}
+.bdemo-notice-toast__symbol{
+  flex:none;display:grid;place-items:center;width:26px;height:26px;
+  border-radius:9px;background:#daf9e8;color:#087b50;font-size:16px;font-weight:800;
+}
+.bdemo-notice-toast--error .bdemo-notice-toast__symbol{background:#ffe5e7;color:#b12642}
+.bdemo-notice-toast__content{flex:1;min-width:0}
+.bdemo-notice-toast__content strong{display:block;font-size:14px;line-height:1.5;font-weight:750}
+.bdemo-notice-toast__content p{margin:3px 0 0;font-size:13px;line-height:1.55;color:inherit}
+.bdemo-notice-toast__close{
+  flex:none;border:0;background:transparent;color:inherit;border-radius:8px;
+  width:30px;height:30px;display:grid;place-items:center;
+  cursor:pointer;font-size:22px;line-height:1;opacity:.7;
+}
+.bdemo-notice-toast__close:hover,.bdemo-notice-toast__close:focus-visible{
+  background:rgba(128,145,161,.15);opacity:1;
+}
+.bdemo-notice-toast__close:focus-visible{outline:2px solid #3576ed;outline-offset:2px}
+:is(html,body):is([data-theme="dark"],[data-bs-theme="dark"]) .bdemo-notice-toast,
+:is([data-theme="dark"],[data-bs-theme="dark"]) .bdemo-notice-toast{
+  background:#182a35;color:#d5f3e3;border-color:#2f6851;box-shadow:0 18px 44px rgba(0,0,0,.42)
+}
+:is(html,body):is([data-theme="dark"],[data-bs-theme="dark"]) .bdemo-notice-toast--error,
+:is([data-theme="dark"],[data-bs-theme="dark"]) .bdemo-notice-toast--error{
+  background:#36242c;color:#ffd4da;border-color:#7f4551
+}
+@media(max-width:640px){.bdemo-notice-toast{top:70px;right:12px;width:calc(100vw - 24px);padding:12px}}

@@ -99,12 +99,16 @@ jobs:
           assert "https://baramarealestate.tonsamith.com/assets/images/barama-demo-preview-v103.webp" in premium
           assert "/assets/images/barama-homepage-hero-v1.webp" in premium
           assert "BARAMA_DEMO_LIGHT_CONTRAST_V105" in premium_css
-          assert "barama-demo-premium-v103.css') . '?v=105" in view
-          assert "barama-demo-premium-v103.js') . '?v=105" in view
+          assert "barama-demo-premium-v103.css') . '?v=106" in view
+          assert "barama-demo-premium-v103.js') . '?v=106" in view
           assert not Path('assets/images/barama-demo-preview-v103.webp').exists(), 'Out-of-band screenshot unexpectedly packaged'
           print('DEMO_PREVIEW_LIGHT_CONTRAST_V105_CONTRACT=PASS')
           print('MANUAL_UI_V104_CONTRACT=PASS')
           PY
+      - name: Demo Importer feedback toast contract
+        run: |
+          php -l tests/demo_import_toast_v106.php
+          php tests/demo_import_toast_v106.php
       - name: Signed demo package contract
         run: |
           php tests/demo_import_package_v100.php

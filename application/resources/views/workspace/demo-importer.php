@@ -6,7 +6,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/barama-system-tool-v100.css') . '?v=100') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-importer-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-demo-premium-v103.css') . '?v=105') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/barama-demo-premium-v103.css') . '?v=106') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/barama-demo-manual-v104.css') . '?v=104') ?>">
 <section id="barama-system-tool" class="btool bdemo" data-passcode-enabled="<?= !empty($demoPasscodeEnabled) ? '1' : '0' ?>" aria-labelledby="bdemo-title">
  <div class="btool-breadcrumb">Administration <span>/</span> System <span>/</span> Demo Importer</div>
@@ -16,7 +16,19 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
    <span class="btool-status"><span aria-hidden="true">●</span> <?= !empty($demoDownloadEnabled) ? 'Verified download available' : 'Integration preview' ?></span>
  </header>
  <?php if ($demoFlash !== null): ?>
- <div role="status" class="btool-flash btool-flash--<?= ($demoFlash['tone'] ?? '') === 'success' ? 'success' : 'error' ?>"><?= e((string)($demoFlash['message'] ?? '')) ?></div>
+ <?php $demoToastSuccess = ($demoFlash['tone'] ?? '') === 'success'; ?>
+ <div class="bdemo-notice-toast bdemo-notice-toast--<?= $demoToastSuccess ? 'success' : 'error' ?>"
+      data-demo-feedback-toast
+      role="<?= $demoToastSuccess ? 'status' : 'alert' ?>"
+      aria-live="<?= $demoToastSuccess ? 'polite' : 'assertive' ?>"
+      aria-atomic="true">
+   <span class="bdemo-notice-toast__symbol" aria-hidden="true"><?= $demoToastSuccess ? '✓' : '!' ?></span>
+   <div class="bdemo-notice-toast__content">
+     <strong><?= $demoToastSuccess ? 'Package verified' : 'Import stopped' ?></strong>
+     <p><?= e((string)($demoFlash['message'] ?? '')) ?></p>
+   </div>
+   <button type="button" class="bdemo-notice-toast__close" data-demo-toast-close aria-label="Dismiss notification">×</button>
+ </div>
  <?php endif; ?>
  <?php if (empty($demoReleaseAccepted)): ?>
  <div class="btool-warning" role="status">The official Barama package is published. Signed package discovery, verification and private staging are enabled. Installing database records, media and frontend content remains disabled until a fresh staging import and rollback test passes.</div>
@@ -175,5 +187,5 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  </div>
 </dialog>
 <script defer src="<?= e(asset('js/barama-system-tool-v100.js') . '?v=100') ?>"></script>
-<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=105') ?>"></script>
+<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=106') ?>"></script>
 <script defer src="<?= e(asset('js/barama-demo-manual-v104.js') . '?v=104') ?>"></script>
