@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'application/app/Services/DemoImportPackageV1.php'
+      - 'tests/demo_import_native_install_v107.php'
       - 'application/app/Http/Controllers/DemoImporterController.php'
       - 'application/resources/views/workspace/demo-importer.php'
       - 'assets/js/barama-demo-manual-v104.js'
@@ -74,6 +75,7 @@ jobs:
           php -l application/app/Services/DemoPublisherDownloadV1.php
           php -l application/app/Services/DemoPublisherApiV1.php
           php -l tests/demo_import_mysql_v100.php
+          php -l tests/demo_import_native_install_v107.php
           php -l application/app/Services/SystemToolService.php
           php -l tools/demo-export-source-v100.php
       - name: Manual Import premium UI contract
@@ -121,5 +123,9 @@ jobs:
         env:
           BARAMA_DEMO_IT: isolated-ci
         run: php tests/demo_import_mysql_v100.php
+      - name: Native publisher ZIP isolated install, rollback and empty-site guard
+        env:
+          BARAMA_DEMO_IT: isolated-ci
+        run: php tests/demo_import_native_install_v107.php
       - name: Offline signer Python syntax
         run: python3 -m py_compile tools/demo-package-offline-sign-v100.py
