@@ -9,6 +9,8 @@ on:
       - 'application/routes/web.php'
       - 'application/resources/views/layouts/app.php'
       - 'tests/demo_import_package_v100.php'
+      - 'tests/demo_publisher_api_v101.php'
+      - 'application/app/Services/DemoPublisherApiV1.php'
       - 'tests/demo_import_mysql_v100.php'
       - 'application/app/Services/SystemToolService.php'
       - 'tools/demo-export-source-v100.php'
@@ -52,11 +54,15 @@ jobs:
           php -l application/routes/web.php
           php -l application/resources/views/layouts/app.php
           php -l tests/demo_import_package_v100.php
+          php -l tests/demo_publisher_api_v101.php
+          php -l application/app/Services/DemoPublisherApiV1.php
           php -l tests/demo_import_mysql_v100.php
           php -l application/app/Services/SystemToolService.php
           php -l tools/demo-export-source-v100.php
       - name: Signed demo package contract
-        run: php tests/demo_import_package_v100.php
+        run: |
+          php tests/demo_import_package_v100.php
+          php tests/demo_publisher_api_v101.php
       - name: Isolated MySQL signed-demo installation and safety backup
         env:
           BARAMA_DEMO_IT: isolated-ci
