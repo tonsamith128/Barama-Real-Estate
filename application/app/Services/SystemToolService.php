@@ -57,7 +57,7 @@ final class SystemToolService
     public function exportCsv(string $table): string
     {
         $this->dataset($table);
-        $fields = array_keys($this->columns($table));
+        $fields = $this->writableColumns($table);
         $stream = fopen('php://temp/maxmemory:1048576', 'w+');
         if ($stream === false) throw new RuntimeException('CSV_OUTPUT_UNAVAILABLE');
         try {
@@ -109,7 +109,8 @@ final class SystemToolService
             $allowed = $this->columns($table);
             if (count($header) !== count(array_unique($header))) throw new RuntimeException('CSV_DUPLICATE_COLUMNS');
             foreach ($header as $column) {
-                if (!is_string($column) || !isset($allowed[$column])) {
+                if (!is_string($column) || !isset($allowed[$column]) ||
+                    stripos((string) ($allowed[$column]['Extra'] ?? ''), 'GENERATED') !== false) {
                     throw new RuntimeException('CSV_COLUMN_NOT_IN_DATABASE');
                 }
             }
@@ -173,7 +174,7 @@ final class SystemToolService
                 $output = fopen($file, 'xb');
                 if ($output === false) throw new RuntimeException('BACKUP_FILE_CREATE_FAILED');
                 $rowCount = 0;
-                $columns = array_keys($this->columns($name));
+                $columns = $this->writableColumns($name);
                 try {
                     $stmt = $db->query('SELECT * FROM ' . self::ident($name));
                     while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
@@ -268,7 +269,7 @@ final class SystemToolService
             }
             foreach ($entries as $name => $meta) {
                 if (!is_array($meta) || strtoupper($tables[$name]) !== 'INNODB' ||
-                    ($meta['columns'] ?? null) !== array_keys($this->columns($name)) ||
+                    ($meta['columns'] ?? null) !== $this->writableColumns($name) ||
                     ($meta['structure'] ?? null) !== $this->structure($name) ||
                     !is_int($meta['rows'] ?? null) || $meta['rows'] < 0 ||
                     preg_match('/^[a-f0-9]{64}$/D', (string) ($meta['sha256'] ?? '')) !== 1) {
@@ -385,6 +386,19 @@ final class SystemToolService
             $columns[(string) $row['Field']] = $row;
         }
         return $columns;
+    }
+
+    /** MySQL generated columns are computed by MySQL, never inserted manually. */
+    private function writableColumns(string $table): array
+    {
+        $columns = $this->columns($table);
+        $names = [];
+        foreach ($columns as $name => $meta) {
+            if (stripos((string) ($meta['Extra'] ?? ''), 'GENERATED') === false) {
+                $names[] = $name;
+            }
+        }
+        return $names;
     }
 
     private function structure(string $table): string
