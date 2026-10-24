@@ -24,6 +24,8 @@ final class DemoImporterController
 {
     private const URL = '/dashboard/system/demo-importer';
     private const AUTO_URL = 'https://tonsamith.com/license/v2/demo/package';
+    // Production remains preview-only until actual publisher and staging acceptance.
+    public const RELEASE_GATE = 'publisher_pending';
     private const SESSION = '_barama_demo_import_v100';
 
     public function index(Request $request): Response
@@ -65,6 +67,7 @@ final class DemoImporterController
             'workspaceNavigation' => (new WorkspaceSettingsController())->systemAdminNavigation(),
             'activeSection' => 'system-demo-importer',
             'demoMode' => $mode,
+            'demoReleaseAccepted' => self::RELEASE_GATE === 'accepted',
             'demoPasscodeEnabled' => $passcodeEnabled,
             'demoReview' => $review,
             'demoFlash' => is_array($flash) ? $flash : null,
@@ -96,6 +99,9 @@ final class DemoImporterController
     public function automatic(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
+        if (self::RELEASE_GATE !== 'accepted') {
+            return $this->flash('auto', 'error', 'Auto Import is not available: no Barama publisher package and licensed endpoint have been accepted.');
+        }
         try {
             $license = $this->commercialLicense();
             if (!extension_loaded('curl')) throw new RuntimeException('DEMO_HTTPS_UNAVAILABLE');
@@ -155,6 +161,9 @@ final class DemoImporterController
     public function install(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
+        if (self::RELEASE_GATE !== 'accepted') {
+            return $this->flash('manual', 'error', 'Import is disabled until publisher package and staging restore acceptance pass.');
+        }
         try {
             if ((string)$request->input('confirmation', '') !== 'IMPORT LIVE DEMO') {
                 throw new RuntimeException('DEMO_TYPED_CONFIRMATION_REQUIRED');
