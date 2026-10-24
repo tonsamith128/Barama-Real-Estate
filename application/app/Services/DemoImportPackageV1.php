@@ -370,6 +370,11 @@ final class DemoImportPackageV1
                         $this->writeVerifiedDemoMediaOnce(
                             $dest, $bytes, (string)$row['checksum_sha256'], $written
                         );
+                        // BARAMA_DEMO_PRIVATE_MEDIA_PATH_V112:
+                        // DB media paths are relative to storage/uploads.
+                        // The signature-verified asset is stored privately at
+                        // storage/uploads/private/demo, not uploads/demo.
+                        $row['path'] = 'private/' . $old;
                     }
                     $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
