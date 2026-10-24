@@ -11,6 +11,9 @@ on:
       - 'tests/demo_import_package_v100.php'
       - 'tests/demo_import_mysql_v100.php'
       - 'application/app/Services/SystemToolService.php'
+      - 'tools/demo-export-source-v100.php'
+      - 'tools/demo-package-offline-sign-v100.py'
+      - 'docs/demo-importer-publisher-contract-v100.md'
       - '.github/workflows/demo-importer.yml'
   push:
     branches: [main, 'feature/system-demo-importer-*']
@@ -51,9 +54,12 @@ jobs:
           php -l tests/demo_import_package_v100.php
           php -l tests/demo_import_mysql_v100.php
           php -l application/app/Services/SystemToolService.php
+          php -l tools/demo-export-source-v100.php
       - name: Signed demo package contract
         run: php tests/demo_import_package_v100.php
       - name: Isolated MySQL signed-demo installation and safety backup
         env:
           BARAMA_DEMO_IT: isolated-ci
         run: php tests/demo_import_mysql_v100.php
+      - name: Offline signer Python syntax
+        run: python3 -m py_compile tools/demo-package-offline-sign-v100.py
