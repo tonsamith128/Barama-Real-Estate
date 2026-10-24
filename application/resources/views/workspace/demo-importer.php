@@ -11,10 +11,13 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  <header class="btool-header">
    <div><span class="btool-eyebrow">Live demo delivery</span><h1 id="bdemo-title">Demo Importer</h1>
    <p>Bring the official Barama Real Estate Live Demo into your licensed installation using a verified publisher package.</p></div>
-   <span class="btool-status"><span aria-hidden="true">●</span> Publisher-verified content</span>
+   <span class="btool-status"><span aria-hidden="true">●</span> <?= !empty($demoReleaseAccepted) ? 'Publisher connected' : 'Integration preview' ?></span>
  </header>
  <?php if ($demoFlash !== null): ?>
  <div role="status" class="btool-flash btool-flash--<?= ($demoFlash['tone'] ?? '') === 'success' ? 'success' : 'error' ?>"><?= e((string)($demoFlash['message'] ?? '')) ?></div>
+ <?php endif; ?>
+ <?php if (empty($demoReleaseAccepted)): ?>
+ <div class="btool-warning" role="status">Publisher integration pending: Manual ZIP verification may be tested, but automatic download and live installation are disabled. No Barama demo package is confirmed as published on TonSamith.com.</div>
  <?php endif; ?>
  <div class="bdemo-summary">
    <div class="bdemo-summary-icon" aria-hidden="true">✦</div>
@@ -79,7 +82,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        </div>
        <form method="post" action="<?= e(url('/dashboard/system/demo-importer/auto')) ?>" data-btool-protected>
          <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
-         <div class="btool-actions"><button type="submit" class="btool-btn btool-btn-primary">Check &amp; download Live Demo</button></div>
+         <div class="btool-actions"><button type="submit" class="btool-btn btool-btn-primary" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Check &amp; download Live Demo</button></div>
        </form>
        <p class="btool-help">The publisher must first publish an entitled Barama Live Demo package. If none is published, no installation is started.</p>
       </section>
@@ -106,7 +109,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <label for="bdemo-confirmation">Type <strong>IMPORT LIVE DEMO</strong> to confirm</label>
        <input id="bdemo-confirmation" type="text" name="confirmation" autocomplete="off" placeholder="IMPORT LIVE DEMO" required>
        <p class="btool-help">Your license entitlement will be verified again at the publisher before the import.</p>
-       <div class="btool-actions"><button class="btool-btn btool-btn-primary" type="submit">Install verified Live Demo</button></div>
+       <div class="btool-actions"><button class="btool-btn btool-btn-primary" type="submit" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Install verified Live Demo</button></div>
       </form>
      </section>
     <?php else: ?>
