@@ -23,7 +23,7 @@ foreach (['/dashboard/system/tool', '/dashboard/system/tool/import', '/dashboard
           '/dashboard/system/tool/backup', '/dashboard/system/tool/restore', '/dashboard/system/tool/download'] as $path) {
     insist(str_contains($routes, "'" . $path . "'"), 'route_' . basename($path));
 }
-insist(substr_count((string)$controller, "if (!$this->admin())") === 6, 'admin_enforced_on_every_operation');
+insist(substr_count((string)$controller, 'if (!$this->admin())') === 6, 'admin_enforced_on_every_operation');
 insist(str_contains($routes, 'new CsrfMiddleware()'), 'csrf_middleware_on_writes');
 insist(str_contains($js, 'change_confirmation') && str_contains($js, '/security/change-confirmation')
     && str_contains($js, 'requestGrant'), 'passcode_single_use_grant_flow');
