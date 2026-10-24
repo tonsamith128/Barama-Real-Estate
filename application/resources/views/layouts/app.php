@@ -682,6 +682,7 @@ $appJsVersion = is_file($appJsFile)
                         ['Auto Updater', '/dashboard/system/auto-updater', 'clock'], // barama-system-auto-updater-v110
                         ['System Health', '/dashboard/system/health', 'check'],
                         ['Tool', '/dashboard/system/tool', 'settings'], // BARAMA_SYSTEM_TOOL_V100
+                        ['Demo Importer', '/dashboard/system/demo-importer', 'layers'], // BARAMA_DEMO_IMPORT_V100
                     ] as $sysItem): ?>
                     <?php $sysActive = rtrim((string) $authRoutePath, '/') === $sysItem[1]; ?>
                     <a class="<?= $sysActive ? 'is-active' : '' ?>" href="<?= e(url($sysItem[1])) ?>" <?= $sysActive ? 'aria-current="page"' : '' ?>>
