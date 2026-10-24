@@ -24,3 +24,16 @@
 [data-bs-theme="light"] .bdemo-summary{background:linear-gradient(120deg,#f5f9ff,#f4fcf9)}
 [data-bs-theme="light"] .bdemo-requirements span{background:#fbfcfe}
 @media(max-width:750px){.bdemo-summary{flex-wrap:wrap}.bdemo-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bdemo-requirements{grid-template-columns:1fr}}
+
+/* Publisher API diagnostics — neutral card, no artificial connected state. */
+.bdemo-api-check{margin-bottom:18px}
+.bdemo-api-check .btool-actions{margin:15px 0}
+.bdemo-api-check a.btool-btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.bdemo-api-result{background:rgba(87,120,182,.07);border:1px solid var(--bt-border);border-radius:12px;padding:15px;margin:12px 0;font-size:12px}
+.bdemo-api-result strong{font-size:13px}
+.bdemo-api-result p{line-height:1.65;color:var(--bt-muted);font-size:12px;margin:7px 0 0}
+.bdemo-api-result code{white-space:normal;overflow-wrap:anywhere;color:var(--bt-ink);font-size:11px}
+.bdemo-api-package{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bt-border)}
+.bdemo-api-package span:first-child{font-weight:750}
+.bdemo-api-package small{width:100%;color:var(--bt-muted)}
+[data-bs-theme="light"] .bdemo-api-result{background:#f8fbff}
