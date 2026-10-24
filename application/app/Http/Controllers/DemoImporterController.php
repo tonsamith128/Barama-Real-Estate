@@ -167,7 +167,7 @@ final class DemoImporterController
     /**
      * Auto ZIP acquisition remains disabled until the real publisher download
      * ticket + digest + pinned-signature + staging importer gates pass.
-     * This removes the obsolete /license/v2/demo/package implementation.
+     * This removes the obsolete, unsupported download endpoint.
      */
     public function automatic(Request $request): Response
     {
