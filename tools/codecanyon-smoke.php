@@ -89,7 +89,8 @@ foreach ([
     '/dashboard/system/demo-importer?mode=auto',
     'publisher-signed package',
     'Downloading and verifying do not themselves install demo content.',
-    'server-side release gate',
+    'Customer-release requirements:',
+    'v0.9.26 or newer',
 ] as $guide) {
     if (!str_contains($documentation, $guide)) {
         throw new RuntimeException(
