@@ -26,6 +26,7 @@ for ($index = 0; $index < $zip->numFiles; $index++) {
 
 foreach ([
     'documentation/index.html',
+    'application/app/Services/DemoCustomerReleasePolicyV1.php',
     'LICENSE.md',
     'THIRD_PARTY_NOTICES.md',
     'CUSTOMER_PACKAGE.md',
@@ -98,6 +99,12 @@ foreach ([
 }
 if (!str_contains($documentation, 'planned initial CodeCanyon release')) {
     throw new RuntimeException('Customer release is presented as already published.');
+}
+
+$releaseSource = (string) $zip->getFromName('application/app/Services/DemoCustomerReleasePolicyV1.php');
+if (!str_contains($releaseSource, 'FIRST_COMPLETE_DEMO_VERSION') ||
+    !str_contains($releaseSource, 'REQUIRED_PUBLIC_POLICIES')) {
+    throw new RuntimeException('Signed customer demo release gate missing from final ZIP.');
 }
 
 $runtimePrefixes = [
