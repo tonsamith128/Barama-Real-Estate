@@ -19,7 +19,7 @@ namespace {
     'database.charset'=>'utf8mb4'][$key]??$default;
  }
  foreach (['Core/Database.php','Services/SystemToolService.php','Services/DemoPublisherApiV1.php',
- 'Services/DemoPublisherNativeArchiveV1.php','Services/DemoImportPackageV1.php'] as $file) {
+ 'Services/DemoPublisherNativeArchiveV1.php','Services/DemoPolicySnapshotV1.php','Services/DemoImportPackageV1.php'] as $file) {
    require $root.'/application/app/'.$file;
  }
  function passNative(bool $yes,string $label):void {
@@ -51,7 +51,19 @@ namespace {
  $pub=sodium_crypto_sign_publickey($pair);
  $fp=hash('sha256',$pub);
  $identity=['fingerprint'=>$fp,'public_key'=>base64_encode($pub),'key_id'=>substr($fp,0,24)];
- $make=function(bool $fail) use($base,$tables,$image,$hash,$asset,$pair,$identity):array {
+ $policy=['version'=>1,'policies'=>[[
+   'id'=>'sample-policy','title'=>'Sample Public Policy',
+   'slug'=>'sample-policy','summary'=>'For testing.',
+   'content_html'=>'<p>See {{APP_URL}}/contact.</p>',
+   'category_id'=>'','category'=>'General',
+   'effective_date'=>'','seo_title'=>'Sample Public Policy',
+   'meta_description'=>'Sample description',
+   'created_at'=>'2026-10-01','updated_at'=>'2026-10-02',
+   'status'=>'published','visibility'=>'public',
+   'sort_order'=>1,'featured'=>false,
+   'version_number'=>1,'faqs'=>[]
+ ]],'categories'=>[],'faqs'=>[]];
+ $make=function(bool $fail) use($base,$tables,$image,$hash,$asset,$pair,$identity,$policy):array {
   $contentTables=array_fill_keys($tables,[]);
   $contentTables['locations']=[['id'=>12,'name'=>'Demo City']];
   $contentTables['companies']=[['id'=>14,'name'=>'Demo Co','location_id'=>12]];
@@ -69,7 +81,7 @@ namespace {
    'components'=>['Homepage','Companies','Images'],
    'settings'=>['cms.site_content'=>['home'=>'{{APP_URL}}/hello'],
     'cms.footer_content'=>['brand'=>'Demo'],'appearance.frontend'=>['theme'=>'light']],
-   'tables'=>$contentTables,'padding'=>bin2hex(random_bytes(800))];
+   'tables'=>$contentTables,'policy_center'=>$policy,'padding'=>bin2hex(random_bytes(800))];
   $path=$base.($fail?'/bad.zip':'/good.zip');
   $zip=new \ZipArchive();
   if($zip->open($path,\ZipArchive::CREATE|\ZipArchive::OVERWRITE)!==true)exit(3);
@@ -92,6 +104,7 @@ namespace {
  catch(\RuntimeException $e) {passNative($e->getMessage()==='DEMO_SCHEMA_COLUMN_MISMATCH','late_failure');}
  passNative((int)$db->query('SELECT COUNT(*) FROM locations')->fetchColumn()===0,'transaction_rollback');
  passNative(!is_file($assetDest),'failed_media_cleaned');
+ passNative(!is_file(BASE_PATH.'/storage/policy-center/data.json'),'failed_import_no_policy_writes');
  passNative(count((new \Barama\Services\SystemToolService())->backups())===1,'backup_before_failed_import');
  [$good,$meta]=$make(false);
  try {$engine->installNative($good,$meta,$identity,str_repeat('0',64),42);passNative(false,'pin_denied');}
@@ -119,6 +132,11 @@ namespace {
  passNative(hash_file('sha256',$assetDest)===$hash,'shared_image_sha256_verified');
  $stored=$db->query('SELECT path,size_bytes FROM media_assets WHERE id=20')->fetch(\PDO::FETCH_ASSOC);
  passNative($stored['path']==='private/'.$asset,'signed_media_public_path_correct');
+ $policyPath=BASE_PATH.'/storage/policy-center/data.json';
+ passNative(is_file($policyPath),'signed_public_policy_installed');
+ $installed=json_decode((string)file_get_contents($policyPath),true,32,JSON_THROW_ON_ERROR);
+ passNative(count($installed['policies'])===1 && $installed['feedback']===[],'signed_policy_public_only');
+ passNative(str_contains($installed['policies'][0]['content_html'],'https://customer.example.test/contact'),'signed_policy_domain_rewritten');
  passNative((int)$stored['size_bytes']===strlen($image),'signed_media_physical_length_correct');
  $setting=$db->query("SELECT setting_value FROM application_settings WHERE setting_key='cms.site_content'")->fetchColumn();
  passNative(str_contains((string)$setting,'https://customer.example.test/hello'),'recipient_url_rewritten');
