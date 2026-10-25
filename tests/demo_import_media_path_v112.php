@@ -12,6 +12,7 @@ if (!is_string($src) || !is_string($public)) exit(1);
 $checks=[
  'signed_demo_path_still_strict' => str_contains($src, "~^demo/[a-f0-9]{64}"),
  'private_storage_directory' => str_contains($src, "/storage/uploads/private/' . \$old"),
+ 'verified_size_recorded' => str_contains($src, "\$row['size_bytes'] = strlen(\$bytes);"),
  'db_path_has_private_prefix' => str_contains($src, "\$row['path'] = 'private/' . \$old;"),
  'written_path_before_insert' => strpos($src, "\$row['path'] = 'private/' . \$old;") < strpos($src, "\$row = \$this->rewriteRecipientUrls(\$row, \$appUrl);"),
  'public_resolver_matches_storage' => str_contains($public, "storage/uploads/' . ltrim((string) \$media['path']"),
