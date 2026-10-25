@@ -402,7 +402,7 @@ final class DemoImportPackageV1
             }
             if (array_key_exists('policy_center', $data)) {
                 $policyFile = DemoPolicySnapshotV1::installFresh(
-                    $data['policy_center'], BASE_PATH
+                    $this->rewriteRecipientUrls($data['policy_center'], $appUrl), BASE_PATH
                 );
             }
             $db->commit();
