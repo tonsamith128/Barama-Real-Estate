@@ -10,6 +10,12 @@
         <h1>Barama Real Estate</h1>
         <p>Property Marketplace &amp; Developer Management PHP Script</p>
         <p>Author: Ton Samith</p>
+        <p>Quick links:
+            <a href="https://baramarealestate.tonsamith.com">Live Demo</a> ·
+            <a href="https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script">Online Documentation</a> ·
+            <a href="https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script">Product Description</a> ·
+            <a href="https://tonsamith.com/contact">Support</a>
+        </p>
     </header>
 
     <nav aria-label="Documentation sections">
@@ -20,6 +26,7 @@
             <li><a href="#accounts">Accounts and workspaces</a></li>
             <li><a href="#email">Email delivery</a></li>
             <li><a href="#jobs">Scheduled notification jobs</a></li>
+            <li><a href="#demo-importer">Signed Live Demo importer</a></li>
             <li><a href="#upgrade">Upgrade</a></li>
             <li><a href="#third-party">Third-party assets</a></li>
             <li><a href="#version-history">Version history</a></li>
@@ -94,6 +101,21 @@
             <p>Run the command from the installed Barama package and use the PHP CLI version supported by the web application.</p>
         </section>
 
+        <section id="demo-importer">
+            <h2>Signed Live Demo importer</h2>
+            <p>Barama separates the clean customer installation from optional publisher-managed demo data. The installer does not prepopulate companies, projects, properties, listings, images, or policy text.</p>
+            <p>Where supported by the installed release, an activated administrator can open <code>/dashboard/system/demo-importer?mode=auto</code> to review the official demo preview, check their licensed access, and download a publisher-signed package.</p>
+            <ol>
+                <li>Complete the five-step installer, activate the applicable license, and make a current database/files backup.</li>
+                <li>Open the Demo Importer, review the publisher identity and available official package, and use <strong>Download &amp; Verify official ZIP</strong> where enabled.</li>
+                <li>Review the package details and verify the signature before considering installation. Downloading and verifying do not themselves install demo content.</li>
+                <li>Only use the guarded install action when the application explicitly enables it for your installation and confirms backup and empty-site readiness. Never bypass a disabled button or rerun the import over customer content.</li>
+                <li>After a successful installation, check properties, projects, companies, media galleries, design settings, and any included public Policy Center content.</li>
+            </ol>
+            <p><strong>Release availability:</strong> The current pre-1.0 development line includes staged signed-package verification; automatic installation is controlled by a server-side release gate and may remain disabled on customer/production sites pending final acceptance. A package that lacks a Policy Center snapshot cannot populate Policy Center automatically. Contact support if installation is not available.</p>
+            <p>Demo packages and application updater releases are separate: demo-data versions do not upgrade the Barama PHP application.</p>
+        </section>
+
         <section id="upgrade">
             <h2>Upgrade</h2>
             <ol>
@@ -120,9 +142,14 @@
         </section>
 
         <section id="support">
-            <h2>Documentation and support</h2>
-            <p>Online documentation: <a href="https://docs.tonsamith.com/docs?=228711-barama-real-estate-property-marketplace-developer-management-php-script">docs.tonsamith.com</a></p>
-            <p>Support: <a href="https://tonsamith.com/contact">tonsamith.com/contact</a></p>
+            <h2>Official resources and support</h2>
+            <ul>
+                <li><strong>Online Documentation:</strong> <a href="https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script">https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script</a></li>
+                <li><strong>Live Demo:</strong> <a href="https://baramarealestate.tonsamith.com">https://baramarealestate.tonsamith.com</a></li>
+                <li><strong>Product Description:</strong> <a href="https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script">https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script</a></li>
+                <li><strong>Support:</strong> <a href="https://tonsamith.com/contact">https://tonsamith.com/contact</a></li>
+            </ul>
+            <p>This packaged help is an offline guide; use the online documentation for extended feature walkthroughs and current updates.</p>
         </section>
     </main>
 
