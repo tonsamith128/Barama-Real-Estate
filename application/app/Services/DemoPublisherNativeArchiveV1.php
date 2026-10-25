@@ -83,6 +83,13 @@ final class DemoPublisherNativeArchiveV1
                 !is_array($payload['settings'] ?? null)) {
                 throw new RuntimeException('DEMO_NATIVE_SCHEMA_INVALID');
             }
+            // Optional in legacy signed ZIPs. New snapshots must be public-only
+            // and strictly validated while the ZIP SHA/signature remains pinned.
+            $policyCount = 0;
+            if (array_key_exists('policy_center', $payload)) {
+                DemoPolicySnapshotV1::validate($payload['policy_center']);
+                $policyCount = count($payload['policy_center']['policies']);
+            }
             $tables = $payload['tables'];
             $settings = $payload['settings'];
             $tableNames = array_keys($tables);
@@ -192,6 +199,7 @@ final class DemoPublisherNativeArchiveV1
                 'record_count' => $rowsCount,
                 'table_counts' => array_map('count', $tables),
                 'settings_count' => count($settings),
+                'policy_records' => $policyCount,
                 'media_records' => count($tables['media_assets']),
                 'media_images' => count($imagePaths),
                 'signature_verified' => false,
