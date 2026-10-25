@@ -224,6 +224,10 @@ final class DemoImportPackageV1
                         // storage/uploads/private/demo. Preserve the signed
                         // asset lookup above and store its actual relative path.
                         $row['path'] = 'private/' . $old;
+                        // BARAMA_DEMO_MEDIA_VERIFIED_SIZE_V113: The archive
+                        // itself is verified; record the actual bytes written
+                        // rather than trusting stale publisher DB size metadata.
+                        $row['size_bytes'] = strlen($bytes);
                     }
                     $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
