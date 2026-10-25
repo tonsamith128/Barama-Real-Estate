@@ -59,6 +59,47 @@ foreach ([
     }
 }
 
+// BARAMA_PACKAGED_CUSTOMER_RESOURCES_V102: validate the exact customer
+// archive rather than only source files. Links are external references;
+// the help document itself remains fully usable without live networking.
+$officialLinks = [
+    'Support' => 'https://tonsamith.com/contact',
+    'Live Demo' => 'https://baramarealestate.tonsamith.com',
+    'Online Documentation' => 'https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script',
+    'Product Description' => 'https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script',
+];
+$packageReadme = (string) $zip->getFromName('README.md');
+$packageNotes = (string) $zip->getFromName('CUSTOMER_PACKAGE.md');
+foreach ($officialLinks as $label => $url) {
+    foreach ([
+        'documentation/index.html' => $documentation,
+        'README.md' => $packageReadme,
+        'CUSTOMER_PACKAGE.md' => $packageNotes,
+    ] as $file => $content) {
+        if (!str_contains($content, $url)) {
+            throw new RuntimeException(
+                'Customer ZIP official ' . $label . ' link missing in ' . $file
+            );
+        }
+    }
+}
+foreach ([
+    'Signed Live Demo importer',
+    '/dashboard/system/demo-importer?mode=auto',
+    'publisher-signed package',
+    'Downloading and verifying do not themselves install demo content.',
+    'server-side release gate',
+] as $guide) {
+    if (!str_contains($documentation, $guide)) {
+        throw new RuntimeException(
+            'Customer ZIP demo import documentation missing: ' . $guide
+        );
+    }
+}
+if (!str_contains($documentation, 'planned initial CodeCanyon release')) {
+    throw new RuntimeException('Customer release is presented as already published.');
+}
+
 $runtimePrefixes = [
     'application/',
     'installer/',
