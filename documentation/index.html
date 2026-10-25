@@ -43,10 +43,11 @@
                 <li>PDO and PDO MySQL</li>
                 <li>JSON, Mbstring, Ctype, Session, OpenSSL, Fileinfo, and cURL extensions</li>
                 <li>Writable Barama application runtime directories</li>
-                <li>Apache or Nginx. Barama detects clean routing and uses an automatic no-configuration fallback when Nginx rewrites are unavailable.</li>
+                <li>Apache or Nginx. Apache uses the packaged rewrite rules; Nginx/aaPanel requires a secure front-controller rewrite (<code>try_files $uri $uri/ /index.php?$query_string;</code> or equivalent) for clean URLs. Existing query-compatible URLs remain supported where configured.</li>
                 <li>HTTPS is recommended for production use</li>
             </ul>
             <p>No Node.js production runtime, Composer install command, manual migration command, or customer-created .env file is required.</p>
+            <p>Nginx setup is explained in <code>NGINX_CLEAN_URLS.md</code> in this documentation folder. Make sure the installer Requirements routing check passes before continuing.</p>
         </section>
 
         <section id="installation">
