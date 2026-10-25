@@ -324,6 +324,7 @@ final class DemoImportPackageV1
         $zip = new ZipArchive();
         if ($zip->open($archive, ZipArchive::RDONLY) !== true) throw new RuntimeException('DEMO_ZIP_INVALID');
         $written = [];
+        $policyFile = null;
         $db->beginTransaction();
         try {
             foreach (self::ORDER as $table) {
@@ -389,12 +390,20 @@ final class DemoImportPackageV1
                     $db->prepare($sql)->execute(array_values($row));
                 }
             }
-            foreach ($data['settings'] as $key => $value) {
+            if (array_key_exists('policy_center', $data)) {
+            DemoPolicySnapshotV1::validate($data['policy_center']);
+        }
+        foreach ($data['settings'] as $key => $value) {
                 $json = json_encode($this->rewriteRecipientUrls($value, $appUrl),
                     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
                 $db->prepare("INSERT INTO application_settings (setting_key,setting_value,value_type)
                     VALUES (?,?,'json') ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),value_type='json'")
                     ->execute([$key, $json]);
+            }
+            if (array_key_exists('policy_center', $data)) {
+                $policyFile = DemoPolicySnapshotV1::installFresh(
+                    $data['policy_center'], BASE_PATH
+                );
             }
             $db->commit();
             return ['package_id' => $review['package_id'],
@@ -405,6 +414,7 @@ final class DemoImportPackageV1
                 'media_deduplicated' => (int)($review['media_deduplicated'] ?? 0)];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
+            if (is_string($policyFile)) @unlink($policyFile);
             foreach (array_keys($written) as $dest) @unlink($dest);
             throw $e;
         } finally { $zip->close(); }
