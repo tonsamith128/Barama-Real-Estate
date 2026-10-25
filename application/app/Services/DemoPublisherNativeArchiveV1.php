@@ -83,6 +83,20 @@ final class DemoPublisherNativeArchiveV1
                 !is_array($payload['settings'] ?? null)) {
                 throw new RuntimeException('DEMO_NATIVE_SCHEMA_INVALID');
             }
+            // Signed manifest declares the application versions tested for
+            // this demo. The customer release gate checks the installed app
+            // against this list before permitting installation.
+            $compatible = $manifest['compatible_app_versions'] ?? null;
+            if (!is_array($compatible) || count($compatible) < 1 ||
+                count($compatible) > 20 || array_values($compatible) !== $compatible) {
+                throw new RuntimeException('DEMO_NATIVE_APP_COMPATIBILITY_INVALID');
+            }
+            foreach ($compatible as $appVersion) {
+                if (!is_string($appVersion) ||
+                    preg_match('/^\\d+\\.\\d+\\.\\d+(?:-[A-Za-z0-9.]+)?$/D', $appVersion) !== 1) {
+                    throw new RuntimeException('DEMO_NATIVE_APP_COMPATIBILITY_INVALID');
+                }
+            }
             // Optional in legacy signed ZIPs. New snapshots must be public-only
             // and strictly validated while the ZIP SHA/signature remains pinned.
             $policyCount = 0;
@@ -200,6 +214,7 @@ final class DemoPublisherNativeArchiveV1
                 'table_counts' => array_map('count', $tables),
                 'settings_count' => count($settings),
                 'policy_records' => $policyCount,
+                'compatible_app_versions' => $compatible,
                 'media_records' => count($tables['media_assets']),
                 'media_images' => count($imagePaths),
                 'signature_verified' => false,
