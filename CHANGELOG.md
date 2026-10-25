@@ -14,7 +14,10 @@ Development-only 0.9.x milestones are intentionally not presented as separate Co
 
 ## Unreleased — v1.0.0
 
-Initial CodeCanyon release preparation.
+Initial CodeCanyon release preparation. This is not a published customer release.
+
+- Extended packaged offline help with signed Live Demo importer safety guidance and the four official product resource links.
+- Updated future-import image path and verified size handling, with optional public-only signed Policy Center snapshots (subject to release acceptance). Existing signed v0.9.25 demo packages remain unchanged.
 
 ### Marketplace
 - property sale/rent marketplace
