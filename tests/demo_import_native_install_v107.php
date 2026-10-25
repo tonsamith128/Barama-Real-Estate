@@ -36,7 +36,7 @@ namespace {
   $columns=match($table) {
    'locations'=>'id BIGINT PRIMARY KEY,name VARCHAR(120)',
    'companies'=>'id BIGINT PRIMARY KEY,name VARCHAR(120),location_id BIGINT',
-   'media_assets'=>'id BIGINT PRIMARY KEY,disk VARCHAR(20),path VARCHAR(255) UNIQUE,checksum_sha256 CHAR(64),mime_type VARCHAR(60)',
+   'media_assets'=>'id BIGINT PRIMARY KEY,disk VARCHAR(20),path VARCHAR(255) UNIQUE,checksum_sha256 CHAR(64),mime_type VARCHAR(60),size_bytes BIGINT',
    'media_attachments'=>'id BIGINT PRIMARY KEY,entity_type VARCHAR(40),entity_id BIGINT,media_asset_id BIGINT',
    default=>'id BIGINT PRIMARY KEY'
   };
@@ -117,6 +117,9 @@ namespace {
  passNative((int)$db->query('SELECT COUNT(*) FROM media_assets')->fetchColumn()===1,
    'database_unique_media_path_respected');
  passNative(hash_file('sha256',$assetDest)===$hash,'shared_image_sha256_verified');
+ $stored=$db->query('SELECT path,size_bytes FROM media_assets WHERE id=20')->fetch(\PDO::FETCH_ASSOC);
+ passNative($stored['path']==='private/'.$asset,'signed_media_public_path_correct');
+ passNative((int)$stored['size_bytes']===strlen($image),'signed_media_physical_length_correct');
  $setting=$db->query("SELECT setting_value FROM application_settings WHERE setting_key='cms.site_content'")->fetchColumn();
  passNative(str_contains((string)$setting,'https://customer.example.test/hello'),'recipient_url_rewritten');
  passNative(count((new \Barama\Services\SystemToolService())->backups())===3,'backup_before_success');
