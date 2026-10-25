@@ -31,7 +31,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  </div>
  <?php endif; ?>
  <?php if (empty($demoReleaseAccepted)): ?>
- <div class="btool-warning" role="status">The official Barama package is published. Signed package discovery, verification and private staging are enabled. Installing database records, media and frontend content remains disabled until a fresh staging import and rollback test passes.</div>
+ <div class="btool-warning" role="status">Signed package discovery and verification are available. Customer installation requires a newly published complete demo with 20 public policies, explicit app compatibility, an active licensed publisher entitlement, and an empty marketplace.</div>
  <?php endif; ?>
  <div class="bdemo-summary">
    <div class="bdemo-summary-icon" aria-hidden="true">✦</div>
@@ -150,21 +150,22 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <div><strong><?= (int)$demoReview['records'] ?></strong><span>Content records</span></div>
        <div><strong><?= (int)$demoReview['assets'] ?></strong><span>Image files</span></div>
        <div><strong><?= (int)$demoReview['settings'] ?></strong><span>Design/config groups</span></div>
+       <div><strong><?= (int)($demoReview['policies'] ?? 0) ?></strong><span>Public policies</span></div>
        <div><strong><?= e((string)$demoReview['expires_at']) ?></strong><span>Signature status</span></div>
       </div>
       <p class="btool-help">Packaged sections: <?= e(implode(' · ', array_slice(array_map('strval',(array)$demoReview['components']),0,15))) ?>.</p>
       <div class="btool-warning" role="status">
        <?php if (!empty($demoReleaseAccepted)): ?>
-       Staging pilot accepted. Importing requires an explicit confirmation and will write marketplace records, images and site design settings. A pre-import database backup is mandatory. Existing marketplace content is never deleted or overwritten. Nothing has been installed yet.
+       Customer release verified. Installation requires fresh publisher entitlement, explicit confirmation, an empty marketplace and a successful database backup. Existing marketplace records are never deleted.
        <?php else: ?>
-       Demo import is for a fresh content installation. Existing marketplace records are never deleted or silently replaced. Installation remains disabled until staging acceptance. Your website is not changed by package staging.
+       The signed ZIP was staged, but it does not meet the complete customer release requirements: v0.9.26 or newer, 20 public policies and declared compatibility with this app version. The database is unchanged.
        <?php endif; ?>
       </div>
       <form method="post" action="<?= e(url('/dashboard/system/demo-importer/install')) ?>" data-btool-protected>
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <label for="bdemo-confirmation">Type <strong>IMPORT LIVE DEMO</strong> to confirm</label>
        <input id="bdemo-confirmation" type="text" name="confirmation" autocomplete="off" placeholder="IMPORT LIVE DEMO" required>
-       <p class="btool-help"><?= !empty($demoReleaseAccepted) ? 'Staging pilot: review the signed package, confirm you have a recovery plan, and type the exact confirmation above. Importing changes staging content only.' : 'Installation will become available only after the native importer passes an isolated staging backup and rollback test.' ?></p>
+       <p class="btool-help"><?= !empty($demoReleaseAccepted) ? 'Customer installation: confirm your site is new/empty, verify your recovery plan, then type the exact confirmation above.' : 'This older or incomplete demo archive is not eligible for customer installation.' ?></p>
        <div class="btool-actions"><button class="btool-btn btool-btn-primary" type="submit" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Install verified Live Demo</button></div>
       </form>
      </section>
