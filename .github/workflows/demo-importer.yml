@@ -9,6 +9,8 @@ on:
       - 'tests/demo_import_shared_media_v110.php'
       - 'tests/demo_import_media_unique_v111.php'
       - 'application/app/Http/Controllers/DemoImporterController.php'
+      - 'application/app/Services/DemoCustomerReleasePolicyV1.php'
+      - 'tests/demo_customer_release_gate_v115.php'
       - 'application/resources/views/workspace/demo-importer.php'
       - 'assets/js/barama-demo-manual-v104.js'
       - 'assets/js/barama-demo-premium-v103.js'
@@ -124,6 +126,12 @@ jobs:
           php -l application/app/Services/DemoPolicySnapshotV1.php
           php -l tests/demo_policy_snapshot_v114.php
           php tests/demo_policy_snapshot_v114.php
+
+      - name: Licensed customer release safety contract
+        run: |
+          php -l application/app/Services/DemoCustomerReleasePolicyV1.php
+          php -l tests/demo_customer_release_gate_v115.php
+          php tests/demo_customer_release_gate_v115.php
 
       - name: Signed demo package contract
         run: |
