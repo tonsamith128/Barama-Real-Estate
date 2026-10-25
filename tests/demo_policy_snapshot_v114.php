@@ -26,12 +26,15 @@ file_put_contents($source,json_encode([
         'id'=>'private','slug'=>'private','visibility'=>'private'
     ])],
     'categories'=>[['id'=>'pcat-a','name'=>'Operations','slug'=>'operations',
-        'description'=>'Public','sort_order'=>1,'internal_notes'=>'SECRET_DO_NOT_EXPORT']],
+        'description'=>'Public','sort_order'=>1,'internal_notes'=>'SECRET_DO_NOT_EXPORT'],
+       ['id'=>'pcat-private','name'=>'Private Category','slug'=>'private',
+        'description'=>'SECRET_DO_NOT_EXPORT','sort_order'=>2]],
     'faqs'=>[['question'=>'Where?','answer'=>'Policy Center']],
     'feedback'=>['policy-1'=>['private'=>'SECRET_DO_NOT_EXPORT']],
 ],JSON_THROW_ON_ERROR));
 $s=Snap::exportPublic($source);
 ok(count($s['policies'])===1,'export_public_only');
+ok(count($s['categories'])===1,'unreferenced_private_categories_not_exported');
 ok(!str_contains(json_encode($s),'SECRET_DO_NOT_EXPORT'),'private_feedback_and_internal_notes_filtered');
 Snap::validate($s); ok(true,'snapshot_contract_valid');
 $invalid=$s;
