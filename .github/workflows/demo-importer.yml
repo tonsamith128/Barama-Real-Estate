@@ -60,7 +60,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: sodium, zip, pdo_mysql
+          extensions: sodium, zip, pdo_mysql, mbstring, fileinfo
           coverage: none
       - name: PHP source syntax
         run: |
@@ -119,6 +119,12 @@ jobs:
         run: |
           php -l tests/demo_import_toast_v106.php
           php tests/demo_import_toast_v106.php
+      - name: Signed public Policy Center snapshot contract
+        run: |
+          php -l application/app/Services/DemoPolicySnapshotV1.php
+          php -l tests/demo_policy_snapshot_v114.php
+          php tests/demo_policy_snapshot_v114.php
+
       - name: Signed demo package contract
         run: |
           php tests/demo_import_package_v100.php
