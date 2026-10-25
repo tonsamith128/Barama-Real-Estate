@@ -13,6 +13,7 @@ use Barama\Services\DemoPublisherNativeArchiveV1;
 use Barama\Services\DemoImportPackageV1;
 use Barama\Services\DemoPublisherDownloadV1;
 use Barama\Services\DemoPublisherApiV1;
+use Barama\Services\DemoCustomerReleasePolicyV1;
 use Barama\Services\LicenseManagerClient;
 use RuntimeException;
 use Throwable;
@@ -25,8 +26,9 @@ use Throwable;
 final class DemoImporterController
 {
     private const URL = '/dashboard/system/demo-importer';
-    // Production remains preview-only until actual publisher and staging acceptance.
-    public const RELEASE_GATE = 'download_only_staging_pending';
+    // Customer installation is authorized only for a newly published, complete
+    // Ed25519-verified package meeting DemoCustomerReleasePolicyV1.
+    public const RELEASE_GATE = 'customer_signed_demo_v1';
     private const SESSION = '_barama_demo_import_v100';
 
     public function index(Request $request): Response
@@ -38,6 +40,7 @@ final class DemoImporterController
         unset($_SESSION['_barama_demo_import_flash']);
         $stage = $_SESSION[self::SESSION] ?? null;
         $review = null;
+        $installReady = false;
         if (is_array($stage) && is_string($stage['sha256'] ?? null)) {
             try {
                 $file = $this->stagedFile();
@@ -52,12 +55,14 @@ final class DemoImporterController
                     (array)($stage['publisher_identity'] ?? []),
                     DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256
                 );
+                $installReady = DemoCustomerReleasePolicyV1::canInstall($proof, APP_VERSION);
                 $review = [
                     'package_id' => (string)($stage['publisher_metadata']['id'] ?? ''),
                     'version' => (string)$proof['package_version'],
                     'records' => (int)$proof['record_count'],
                     'assets' => (int)$proof['media_images'],
                     'settings' => (int)$proof['settings_count'],
+                    'policies' => (int)($proof['policy_records'] ?? 0),
                     'expires_at' => 'Publisher signed',
                     'components' => array_keys(array_filter($proof['table_counts'])),
                 ];
@@ -83,8 +88,8 @@ final class DemoImporterController
             'workspaceNavigation' => (new WorkspaceSettingsController())->systemAdminNavigation(),
             'activeSection' => 'system-demo-importer',
             'demoMode' => $mode,
-            'demoReleaseAccepted' => $this->stagingInstallAccepted(),
-            'demoDownloadEnabled' => self::RELEASE_GATE === 'download_only_staging_pending',
+            'demoReleaseAccepted' => $installReady,
+            'demoDownloadEnabled' => self::RELEASE_GATE === 'customer_signed_demo_v1',
             'demoPasscodeEnabled' => $passcodeEnabled,
             'demoReview' => $review,
             'demoFlash' => is_array($flash) ? $flash : null,
@@ -115,9 +120,7 @@ final class DemoImporterController
             return $this->flash('auto', 'success',
                 'Publisher API reachable over HTTPS. Signing key ID: '
                 . $identity['key_id'] . '. Independently pinned signing fingerprint matches. '
-                . ($this->stagingInstallAccepted()
-                    ? 'Staging installation gate accepted; no content has been installed.'
-                    : 'Installation remains disabled until staging acceptance.'));
+                . ' Installation requires a newly published, complete signed demo, an active bound license and a fresh website.');
         } catch (Throwable $error) {
             return $this->failure('auto', $error);
         }
@@ -197,7 +200,7 @@ final class DemoImporterController
     public function automatic(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
-        if (self::RELEASE_GATE !== 'download_only_staging_pending') {
+        if (self::RELEASE_GATE !== 'customer_signed_demo_v1') {
             return $this->flash('auto', 'error', 'Publisher download is not enabled.');
         }
         try {
@@ -239,9 +242,7 @@ final class DemoImporterController
             }
             // BARAMA_DEMO_IMPORT_READY_COPY_V108: describe the server gate truthfully.
             return $this->flash('auto', 'success',
-                $this->stagingInstallAccepted()
-                    ? 'Official signed demo downloaded and privately staged. Staging installation is available below after package review and explicit confirmation. Nothing has been installed yet.'
-                    : 'Official signed demo downloaded and privately staged. Installation remains disabled until staging acceptance. Nothing has been installed.');
+                'Official signed demo downloaded and privately staged. Check the verified-package review for customer installation eligibility; no records have been installed.');
         } catch (Throwable $e) { return $this->failure('auto', $e); }
     }
 
@@ -265,33 +266,16 @@ final class DemoImporterController
     }
 
     /**
-     * Customer production stays closed. Stage-only acceptance must be explicitly
-     * provided by the root operator AFTER isolated signed-import/rollback tests.
+     * Production installation requires a complete, independently signed
+     * customer release. No filesystem flag, requested host or UI toggle is
+     * sufficient to grant permission.
      */
-    private function stagingInstallAccepted(): bool
-    {
-        if (self::RELEASE_GATE !== 'download_only_staging_pending') return false;
-        $host = strtolower((string)parse_url(
-            (string)(Installation::runtimeConfig()['APP_URL'] ?? ''), PHP_URL_HOST
-        ));
-        if ($host !== 'baramastaging.tonsamith.com') return false;
-        $flag = APP_PATH . '/storage/private/demo-import-native-v107.acceptance';
-        if (!is_file($flag) || is_link($flag) || filesize($flag) > 128 ||
-            fileowner($flag) !== 0 || (fileperms($flag) & 0022) !== 0 ||
-            !is_readable($flag)) return false;
-        return hash_equals(
-            'BARAMA_NATIVE_DEMO_INSTALL_STAGE_ACCEPTED_V107',
-            trim((string)file_get_contents($flag))
-        );
-    }
-
-    /** No content changes except on explicitly accepted staging. */
     public function install(Request $request): Response
     {
         if (!$this->admin()) return Response::html('Forbidden', 403);
-        if (!$this->stagingInstallAccepted()) {
+        if (self::RELEASE_GATE !== 'customer_signed_demo_v1') {
             return $this->flash('auto', 'error',
-                'Database and media installation is disabled until fresh staging and rollback acceptance pass.');
+                'DEMO_CUSTOMER_RELEASE_NOT_ENABLED');
         }
         try {
             if (!hash_equals('IMPORT LIVE DEMO', trim((string)$request->input('confirmation', '')))) {
@@ -309,9 +293,26 @@ final class DemoImporterController
             if (!hash_equals((string)($stage['sha256'] ?? ''), hash_file('sha256', $archive))) {
                 throw new RuntimeException('DEMO_STAGE_DIGEST_FAILED');
             }
+            // Revalidate the live licensed publisher catalog immediately
+            // before DB backup/writes. Revoked or replaced packages fail.
+            $fresh = $this->publishedPackageForHash((string)$stage['sha256']);
+            $current = $fresh['metadata'];
+            $staged = (array)($stage['publisher_metadata'] ?? []);
+            foreach (['id', 'sha256', 'signature', 'key_id', 'version'] as $field) {
+                if (!is_string($current[$field] ?? null) ||
+                    !is_string($staged[$field] ?? null) ||
+                    !hash_equals($current[$field], $staged[$field])) {
+                    throw new RuntimeException('DEMO_PUBLISHED_PACKAGE_CHANGED');
+                }
+            }
+            $proof = (new DemoPublisherNativeArchiveV1())->inspectSigned(
+                $archive, $current, $fresh['identity'],
+                DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256
+            );
+            DemoCustomerReleasePolicyV1::assertInstallable($proof, APP_VERSION);
             $result = (new DemoImportPackageV1())->installNative(
-                $archive, (array)($stage['publisher_metadata'] ?? []),
-                (array)($stage['publisher_identity'] ?? []),
+                $archive, $current,
+                $fresh['identity'],
                 DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256, $adminId
             );
             unset($_SESSION[self::SESSION]);
