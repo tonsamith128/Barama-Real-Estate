@@ -220,6 +220,7 @@ $replace = static function(mixed $input) use (&$replace, $mediaPaths): mixed {
     return str_replace('https://baramarealestate.tonsamith.com', '{{APP_URL}}', $input);
 };
 $export['settings'] = $replace($export['settings']);
+$export['policy_center'] = $replace($export['policy_center']);
 foreach ($export['tables'] as $table => &$rows) {
     foreach ($rows as &$row) {
         if ($table === 'media_assets') continue;
