@@ -106,10 +106,19 @@ final class PortableCustomerUpdateV1
         self::fixtureGate($fixtureFeed,$fixtureTransfer);
         // Download-only: never depend on writable application code.
         // Installation and recovery retain their independent, strict gate().
-        if (!self::canStage() || !defined('APP_VERSION')) {
+        // The first authorized download POST may need to create the
+        // sibling private vault. Never require an unrelated writable code
+        // directory or an earlier manual preparation step. vault(true)
+        // retains all canonical-path, symlink and 0700 permissions checks.
+        if (!defined('APP_VERSION') || PublisherTrustPaths::isProtectedStaging()
+            || !extension_loaded('sodium') || !extension_loaded('curl')
+            || !class_exists(\ZipArchive::class)) {
             throw new RuntimeException('PORTABLE_STAGE_VAULT_OR_PHP_UNAVAILABLE');
         }
-        $vault=self::vault(false);
+        $vault=self::vault(true);
+        if (!self::canStage()) {
+            throw new RuntimeException('PORTABLE_STAGE_VAULT_OR_PHP_UNAVAILABLE');
+        }
         $lock=self::lock($vault);
         try {
             self::assertNoCurrent($vault);
