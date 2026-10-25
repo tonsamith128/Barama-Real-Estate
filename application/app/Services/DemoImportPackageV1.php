@@ -153,7 +153,159 @@ final class DemoImportPackageV1
 
     private function installLocked(string $archive, int $adminUserId): array
     {
-        $review = $this->inspect($archive);
+        return $this->applyVerifiedContent($archive, $this->inspect($archive), $adminUserId);
+    }
+
+    /**
+     * BARAMA_NATIVE_PUBLISHER_INSTALL_V107
+     * The native publisher format is signed OUTSIDE the ZIP over its exact
+     * SHA-256. Never treat structural inspection alone as an install grant.
+     *
+     * @param array<string,mixed> $metadata Published licensed catalog metadata
+     * @param array<string,string> $identity Independently pinned signing identity
+     */
+    public function installNative(
+        string $archive, array $metadata, array $identity,
+        string $pinnedFingerprint, int $adminUserId
+    ): array {
+        return (new SystemToolService())->exclusiveWork(
+            fn (): array => $this->installNativeLocked(
+                $archive, $metadata, $identity, $pinnedFingerprint, $adminUserId
+            )
+        );
+    }
+
+    private function installNativeLocked(
+        string $archive, array $metadata, array $identity,
+        string $pinnedFingerprint, int $adminUserId
+    ): array {
+        if ($adminUserId < 1 || !preg_match(
+            '/^DCP-[A-Za-z0-9-]{8,80}$/D', (string)($metadata['id'] ?? '')
+        )) {
+            throw new RuntimeException('DEMO_INSTALL_AUTHORIZATION_INVALID');
+        }
+        $native = (new DemoPublisherNativeArchiveV1())->inspectSigned(
+            $archive, $metadata, $identity, $pinnedFingerprint
+        );
+        if (($native['signature_verified'] ?? false) !== true ||
+            !hash_equals((string)$native['zip_sha256'], (string)($metadata['sha256'] ?? ''))) {
+            throw new RuntimeException('DEMO_NATIVE_SIGNATURE_REQUIRED');
+        }
+        if (($native['package_version'] ?? '') !== ($metadata['version'] ?? null)) {
+            throw new RuntimeException('DEMO_NATIVE_PUBLISHER_VERSION_MISMATCH');
+        }
+        $zip = new ZipArchive();
+        if ($zip->open($archive, ZipArchive::RDONLY) !== true) {
+            throw new RuntimeException('DEMO_NATIVE_ZIP_INVALID');
+        }
+        try {
+            $contents = $zip->getFromName('content.json');
+            if (!is_string($contents) || strlen($contents) > 8388608) {
+                throw new RuntimeException('DEMO_NATIVE_CONTENT_LIMIT');
+            }
+            $data = json_decode($contents, true, 32, JSON_THROW_ON_ERROR);
+            // Match the already authenticated native archive's bounded contract.
+            // Legacy envelope packages retain their original stricter limits.
+            $this->validateContent($data, [], 10000, 24000, 100);
+            $counts = array_map('count', $data['tables']);
+            if (array_sum($counts) !== (int)$native['record_count'] ||
+                count($data['settings']) !== (int)$native['settings_count']) {
+                throw new RuntimeException('DEMO_NATIVE_REVIEW_MISMATCH');
+            }
+        } finally {
+            $zip->close();
+        }
+        // Publisher signatures always cover the original unchanged ZIP.
+        // The database enforces media_assets.path UNIQUE: normalize strictly
+        // redundant signed rows only AFTER the signature and count checks.
+        $normalized = $this->normalizeSignedNativeMedia($data);
+        // Reuse the existing guarded backup, fresh-site check and transaction.
+        return $this->applyVerifiedContent($archive, [
+            'content' => $normalized['content'],
+            'package_id' => (string)$metadata['id'],
+            'records' => (int)$native['record_count'] - $normalized['collapsed'],
+            'assets' => $native['media_images'],
+            'settings' => $native['settings_count'],
+            'media_deduplicated' => $normalized['collapsed'],
+        ], $adminUserId);
+    }
+
+    /**
+     * BARAMA_DEMO_MEDIA_PATH_UNIQUE_V111
+     * Normalize only redundant media records in an already-verified native ZIP.
+     * Preserve every unique media and attachment relationship; never mutate
+     * the original signed payload. Legacy envelope imports remain untouched.
+     *
+     * @return array{content:array,collapsed:int}
+     */
+    private function normalizeSignedNativeMedia(array $data): array
+    {
+        $canonical = [];
+        $remap = [];
+        $uniqueRows = [];
+        foreach ($data['tables']['media_assets'] ?? [] as $row) {
+            $path = (string)($row['path'] ?? '');
+            $id = (int)($row['id'] ?? 0);
+            if ($id < 1 || $path === '') {
+                throw new RuntimeException('DEMO_MEDIA_NORMALIZATION_INVALID');
+            }
+            // Identity fields cannot change file bytes or media rendering.
+            $semantic = $row;
+            foreach (['id','uuid','created_at','updated_at',
+                       'created_by_user_id','updated_by_user_id'] as $key) {
+                unset($semantic[$key]);
+            }
+            ksort($semantic, SORT_STRING);
+            if (isset($canonical[$path])) {
+                if ($semantic !== $canonical[$path]['semantic']) {
+                    // Do not silently discard differing captions/alt text or
+                    // other metadata just to satisfy a unique SQL index.
+                    throw new RuntimeException('DEMO_SHARED_MEDIA_METADATA_CONFLICT');
+                }
+                $remap[$id] = $canonical[$path]['id'];
+                continue;
+            }
+            $canonical[$path] = ['id' => $id, 'semantic' => $semantic];
+            $uniqueRows[] = $row;
+        }
+        if (!$remap) return ['content' => $data, 'collapsed' => 0];
+
+        $data['tables']['media_assets'] = $uniqueRows;
+        foreach ($data['tables'] as $table => &$rows) {
+            if ($table === 'media_assets') continue;
+            foreach ($rows as &$row) {
+                foreach ($row as $field => &$value) {
+                    if (preg_match('/(?:^|_)media_asset_id$/D', (string)$field) &&
+                        $value !== null && isset($remap[(int)$value])) {
+                        $value = $remap[(int)$value];
+                    }
+                }
+                unset($value);
+            }
+            unset($row);
+        }
+        unset($rows);
+        // Remapping must not create a duplicate of the declared DB unique
+        // attachment key (NULL collection is not unique in MySQL).
+        $attachmentKeys = [];
+        foreach ($data['tables']['media_attachments'] ?? [] as $row) {
+            $collection = $row['collection'] ?? null;
+            if ($collection === null) continue;
+            $key = json_encode([
+                $row['media_asset_id'] ?? null, $row['entity_type'] ?? null,
+                $row['entity_id'] ?? null, $collection
+            ], JSON_THROW_ON_ERROR);
+            if (isset($attachmentKeys[$key])) {
+                throw new RuntimeException('DEMO_SHARED_MEDIA_ATTACHMENT_CONFLICT');
+            }
+            $attachmentKeys[$key] = true;
+        }
+        return ['content' => $data, 'collapsed' => count($remap)];
+    }
+
+    /** Shared installation path; caller must independently verify its format. */
+    private function applyVerifiedContent(string $archive, array $review, int $adminUserId): array
+    {
         $data = $review['content'];
         $db = Database::connection();
         // Convert author-side placeholders to the current customer domain only.
@@ -172,11 +324,15 @@ final class DemoImportPackageV1
         $zip = new ZipArchive();
         if ($zip->open($archive, ZipArchive::RDONLY) !== true) throw new RuntimeException('DEMO_ZIP_INVALID');
         $written = [];
+        $policyFile = null;
         $db->beginTransaction();
         try {
             foreach (self::ORDER as $table) {
-                foreach ($tables[$table] ?? [] as $row) {
-                    $fields = $this->existingColumns($table);
+                $rows = $tables[$table] ?? [];
+                if (!$rows) continue;
+                // A 5,000+ row demo must not query SHOW COLUMNS on every INSERT.
+                $fields = $this->existingColumns($table);
+                foreach ($rows as $row) {
                     foreach ($row as $name => $_) if (!isset($fields[$name])) {
                         throw new RuntimeException('DEMO_SCHEMA_COLUMN_MISMATCH');
                     }
@@ -212,12 +368,18 @@ final class DemoImportPackageV1
                             throw new RuntimeException('DEMO_PRIVATE_MEDIA_STORAGE_MISSING');
                         }
                         $dest = APP_PATH . '/storage/uploads/private/' . $old;
-                        if (is_file($dest) || is_link($dest)) throw new RuntimeException('DEMO_MEDIA_ALREADY_EXISTS');
-                        if (file_put_contents($dest, $bytes, LOCK_EX) !== strlen($bytes)) {
-                            throw new RuntimeException('DEMO_MEDIA_WRITE_FAILED');
-                        }
-                        chmod($dest, 0640);
-                        $written[] = $dest;
+                        $this->writeVerifiedDemoMediaOnce(
+                            $dest, $bytes, (string)$row['checksum_sha256'], $written
+                        );
+                        // BARAMA_DEMO_PRIVATE_MEDIA_PATH_V112:
+                        // DB media paths are relative to storage/uploads.
+                        // The signature-verified asset is stored privately at
+                        // storage/uploads/private/demo, not uploads/demo.
+                        $row['path'] = 'private/' . $old;
+                        // BARAMA_DEMO_MEDIA_VERIFIED_SIZE_V113: The archive
+                        // itself is verified; record the actual bytes written
+                        // rather than trusting stale publisher DB size metadata.
+                        $row['size_bytes'] = strlen($bytes);
                     }
                     $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
@@ -228,24 +390,82 @@ final class DemoImportPackageV1
                     $db->prepare($sql)->execute(array_values($row));
                 }
             }
-            foreach ($data['settings'] as $key => $value) {
+            if (array_key_exists('policy_center', $data)) {
+            DemoPolicySnapshotV1::validate($data['policy_center']);
+        }
+        foreach ($data['settings'] as $key => $value) {
                 $json = json_encode($this->rewriteRecipientUrls($value, $appUrl),
                     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
                 $db->prepare("INSERT INTO application_settings (setting_key,setting_value,value_type)
                     VALUES (?,?,'json') ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),value_type='json'")
                     ->execute([$key, $json]);
             }
+            if (array_key_exists('policy_center', $data)) {
+                $policyFile = DemoPolicySnapshotV1::installFresh(
+                    $this->rewriteRecipientUrls($data['policy_center'], $appUrl), BASE_PATH
+                );
+            }
             $db->commit();
             return ['package_id' => $review['package_id'],
                 'records' => $review['records'],
                 'settings' => $review['settings'],
                 'assets' => $review['assets'],
-                'pre_import_backup' => $backup['id']];
+                'pre_import_backup' => $backup['id'],
+                'media_deduplicated' => (int)($review['media_deduplicated'] ?? 0)];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            foreach ($written as $dest) @unlink($dest);
+            if (is_string($policyFile)) @unlink($policyFile);
+            foreach (array_keys($written) as $dest) @unlink($dest);
             throw $e;
         } finally { $zip->close(); }
+    }
+
+    /**
+     * BARAMA_DEMO_SHARED_MEDIA_V110
+     * Content-addressed images may be referenced by more than one DB row.
+     * Reuse only files created in this import; never adopt old site files.
+     *
+     * @param array<string,bool> $written Exact paths created by this import.
+     */
+    private function writeVerifiedDemoMediaOnce(
+        string $dest, string $bytes, string $expectedSha, array &$written
+    ): void {
+        if (isset($written[$dest])) {
+            if (!is_file($dest) || is_link($dest) ||
+                !hash_equals($expectedSha, (string)hash_file('sha256', $dest))) {
+                throw new RuntimeException('DEMO_MEDIA_SHARED_ASSET_CHANGED');
+            }
+            return;
+        }
+        if (file_exists($dest) || is_link($dest)) {
+            throw new RuntimeException('DEMO_MEDIA_ALREADY_EXISTS');
+        }
+        // Exclusive creation refuses races and protects customer files.
+        $handle = @fopen($dest, 'xb');
+        if ($handle === false) {
+            throw new RuntimeException('DEMO_MEDIA_EXCLUSIVE_CREATE_FAILED');
+        }
+        // Track immediately, including partial writes, for rollback cleanup.
+        $written[$dest] = true;
+        try {
+            $totalBytes = strlen($bytes);
+            $offset = 0;
+            while ($offset < $totalBytes) {
+                $size = fwrite($handle, substr($bytes, $offset, 65536));
+                if (!is_int($size) || $size < 1) {
+                    throw new RuntimeException('DEMO_MEDIA_WRITE_FAILED');
+                }
+                $offset += $size;
+            }
+            if (!fflush($handle)) {
+                throw new RuntimeException('DEMO_MEDIA_WRITE_FAILED');
+            }
+        } finally {
+            fclose($handle);
+        }
+        if (!chmod($dest, 0640)) {
+            throw new RuntimeException('DEMO_MEDIA_PERMISSIONS_FAILED');
+        }
     }
 
     private function rewriteRecipientUrls(mixed $value, string $url): mixed
@@ -262,8 +482,17 @@ final class DemoImportPackageV1
         return $value;
     }
 
-    private function validateContent(mixed $data, array $entries): void
-    {
+    private function validateContent(
+        mixed $data, array $entries, int $maxTableRows = 5000,
+        int $maxTotalRows = 12000, int $maxRowFields = 80
+    ): void {
+        // Native ZIP bounds are validated first by DemoPublisherNativeArchiveV1.
+        // These caller-selected limits preserve legacy compatibility and prevent
+        // the importer from rejecting a legitimate publisher-signed native ZIP.
+        if ($maxTableRows > 10000 || $maxTotalRows > 24000 || $maxRowFields > 100 ||
+            $maxTableRows < 1 || $maxTotalRows < 1 || $maxRowFields < 1) {
+            throw new RuntimeException('DEMO_CONTENT_LIMIT_INVALID');
+        }
         if (!is_array($data) || ($data['schema'] ?? '') !== 'barama-demo-content-v1'
             || !is_array($data['settings'] ?? null)
             || !is_array($data['tables'] ?? null)
@@ -277,13 +506,13 @@ final class DemoImportPackageV1
         }
         $count = 0;
         foreach ($data['tables'] as $table => $rows) {
-            if (!in_array($table, self::ORDER, true) || !is_array($rows) || count($rows) > 5000) {
+            if (!in_array($table, self::ORDER, true) || !is_array($rows) || count($rows) > $maxTableRows) {
                 throw new RuntimeException('DEMO_TABLE_INVALID');
             }
             foreach ($rows as $row) {
                 $pivot = in_array($table, ['project_amenities','property_amenities'], true);
                 $parent = $table === 'project_amenities' ? 'project_id' : 'property_id';
-                if (!is_array($row) || count($row) > 80 ||
+                if (!is_array($row) || count($row) > $maxRowFields ||
                     ($pivot
                       ? (!isset($row[$parent], $row['amenity_id']) ||
                          (int)$row[$parent] <= 0 || (int)$row['amenity_id'] <= 0)
@@ -294,7 +523,7 @@ final class DemoImportPackageV1
                     self::ident((string)$field);
                     if ($value !== null && !is_scalar($value)) throw new RuntimeException('DEMO_ROW_CELL_INVALID');
                 }
-                if (++$count > 12000) throw new RuntimeException('DEMO_ROW_LIMIT');
+                if (++$count > $maxTotalRows) throw new RuntimeException('DEMO_ROW_LIMIT');
             }
         }
         if (count($data['components']) > 30) throw new RuntimeException('DEMO_COMPONENT_LIMIT');

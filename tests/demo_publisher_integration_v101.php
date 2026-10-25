@@ -17,8 +17,11 @@ foreach (['/dashboard/system/demo-importer/connection',
 needed(str_contains($controller,"public const RELEASE_GATE = 'download_only_staging_pending';"),
     'download_enabled_but_install_staging_gate_closed');
 needed(str_contains($controller,"Database and media installation is disabled until fresh staging") &&
+    str_contains($controller,"baramastaging.tonsamith.com") &&
+    str_contains($controller,'stagingInstallAccepted()') &&
+    str_contains($controller,'installNative(') &&
     !str_contains($controller,'(new DemoImportPackageV1())->install('),
-    'database_install_kept_disabled');
+    'native_install_requires_explicit_staging_acceptance');
 needed(!str_contains($controller,'/license/v2/demo/package') &&
        !str_contains($client,'/license/v2/demo/package'),
     'invented_demo_download_url_removed');

@@ -14,14 +14,27 @@
   const link=root.querySelector('.bdemo-source a'),url=link?.href&&new URL(link.href).hostname==='baramarealestate.tonsamith.com'?link.href:'https://baramarealestate.tonsamith.com/';
   const grid=document.createElement('div');grid.className='bdemo-v103-grid';
   const preview=document.createElement('section');preview.className='bdemo-v103-card bdemo-v103-preview';
-  preview.innerHTML='<div class="bdemo-v103-card-head"><span class="bdemo-v103-icon">▣</span><div><h2>Live Demo Preview</h2><p>See the official Barama homepage before importing.</p></div></div><a class="bdemo-v103-shot" target="_blank" rel="noopener noreferrer" aria-label="Open official homepage; hover to scroll the screenshot"><img src="https://baramarealestate.tonsamith.com/assets/images/barama-demo-preview-v103.webp?v=103" loading="eager" decoding="async" alt="Barama Real Estate homepage, listings, projects, companies and footer"><span class="bdemo-v103-preview-label">◉ Preview ↗</span></a><div class="bdemo-v103-action-slot"></div><p class="bdemo-v103-helper">Official signed ZIP verification and private staging only. Database/media installation is disabled until staging acceptance.</p>';
+  preview.innerHTML='<div class="bdemo-v103-card-head"><span class="bdemo-v103-icon">▣</span><div><h2>Live Demo Preview</h2><p>See the official Barama homepage before importing.</p></div></div><a class="bdemo-v103-shot" target="_blank" rel="noopener noreferrer" aria-label="Open official homepage; hover to scroll the screenshot"><img src="https://baramarealestate.tonsamith.com/assets/images/barama-demo-preview-v103.webp?v=103" loading="eager" decoding="async" alt="Barama Real Estate homepage, listings, projects, companies and footer"><span class="bdemo-v103-preview-label">◉ Preview ↗</span></a><div class="bdemo-v103-action-slot"></div><p class="bdemo-v103-helper"></p>';
   preview.querySelector('.bdemo-v103-shot').href=url;
+  // BARAMA_DEMO_READY_PANEL_V108: only server-authorized staging can show install CTA.
+  const installReady=root.dataset.demoInstallReady==='1';
+  preview.querySelector('.bdemo-v103-helper').textContent=installReady
+    ? 'Official ZIP download and verification only. A signed staged package can be reviewed and installed after explicit confirmation below.'
+    : 'Official signed ZIP verification and private staging only. Database/media installation is disabled until staging acceptance.';
   const form=Array.from(body.querySelectorAll('form')).find(f=>f.action.endsWith('/dashboard/system/demo-importer/'+mode));
   if(form){preview.querySelector('.bdemo-v103-action-slot').append(form);form.querySelector('.btool-actions')?.classList.add('bdemo-v103-actions');if(mode==='auto')form.querySelector('[type=submit]').textContent='⇩  Download & Verify official ZIP';}
   const oldCard=body.querySelector('.btool-card:not(.bdemo-review):not(.bdemo-api-check)');
   if(oldCard&&!oldCard.querySelector('form'))oldCard.remove();
   const oldHead=body.querySelector('.btool-content-head');if(oldHead)oldHead.hidden=true;
   const good=!!body.querySelector('.bdemo-review'),bad=!!root.querySelector('.btool-flash--error,.bdemo-notice-toast--error');
+  if(good && installReady){
+    const reviewLink=document.createElement('a');
+    reviewLink.className='btool-btn btool-btn-secondary';
+    reviewLink.href='#bdemo-verified-package';
+    reviewLink.textContent='Review & Install staged demo ↓';
+    reviewLink.style.marginTop='10px';
+    preview.querySelector('.bdemo-v103-action-slot').append(reviewLink);
+  }
   const ring=document.createElement('section');ring.className='bdemo-v103-card bdemo-v103-ring';
   ring.dataset.state=good?'verified':bad?'rejected':'idle';
   const labels=mode==='auto'?['License check','Published package','Download ZIP','Verify signature','Private staging','Review package']:['Select ZIP','Check publisher','Match checksum','Verify signature','Private staging','Review package'];
@@ -35,6 +48,11 @@
   readout.innerHTML='<span class="bdemo-v103-readout-dot">●</span><div><strong data-progress-label></strong><p data-progress-detail></p></div>';
   readout.querySelector('[data-progress-label]').textContent=title;readout.querySelector('[data-progress-detail]').textContent=detail;
   ring.append(head,orbit,readout);grid.append(preview,ring);body.prepend(grid);
+  // Keep the actual review and confirmation visible BEFORE publisher diagnostics.
+  if(good){
+    const packageReview=body.querySelector('#bdemo-verified-package');
+    if(packageReview)grid.after(packageReview);
+  }
   root.querySelector('.bdemo-orbit-panel[data-bdemo-orbit]')?.remove();
   const about=document.createElement('section');about.className='bdemo-v103-bottom';
   const aboutTitle=document.createElement('h2');aboutTitle.textContent='About the Official Barama Live Demo';about.append(aboutTitle);

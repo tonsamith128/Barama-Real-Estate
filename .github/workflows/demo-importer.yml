@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - 'application/app/Services/DemoImportPackageV1.php'
+      - 'tests/demo_import_native_install_v107.php'
+      - 'tests/demo_import_status_v108.php'
+      - 'tests/demo_import_native_limits_v109.php'
+      - 'tests/demo_import_shared_media_v110.php'
+      - 'tests/demo_import_media_unique_v111.php'
       - 'application/app/Http/Controllers/DemoImporterController.php'
       - 'application/resources/views/workspace/demo-importer.php'
       - 'assets/js/barama-demo-manual-v104.js'
@@ -55,7 +60,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: sodium, zip, pdo_mysql
+          extensions: sodium, zip, pdo_mysql, mbstring, fileinfo
           coverage: none
       - name: PHP source syntax
         run: |
@@ -74,6 +79,11 @@ jobs:
           php -l application/app/Services/DemoPublisherDownloadV1.php
           php -l application/app/Services/DemoPublisherApiV1.php
           php -l tests/demo_import_mysql_v100.php
+          php -l tests/demo_import_native_install_v107.php
+          php -l tests/demo_import_status_v108.php
+          php -l tests/demo_import_native_limits_v109.php
+          php -l tests/demo_import_shared_media_v110.php
+          php -l tests/demo_import_media_unique_v111.php
           php -l application/app/Services/SystemToolService.php
           php -l tools/demo-export-source-v100.php
       - name: Manual Import premium UI contract
@@ -100,7 +110,7 @@ jobs:
           assert "/assets/images/barama-homepage-hero-v1.webp" in premium
           assert "BARAMA_DEMO_LIGHT_CONTRAST_V105" in premium_css
           assert "barama-demo-premium-v103.css') . '?v=106" in view
-          assert "barama-demo-premium-v103.js') . '?v=106" in view
+          assert "barama-demo-premium-v103.js') . '?v=108" in view
           assert not Path('assets/images/barama-demo-preview-v103.webp').exists(), 'Out-of-band screenshot unexpectedly packaged'
           print('DEMO_PREVIEW_LIGHT_CONTRAST_V105_CONTRACT=PASS')
           print('MANUAL_UI_V104_CONTRACT=PASS')
@@ -109,6 +119,12 @@ jobs:
         run: |
           php -l tests/demo_import_toast_v106.php
           php tests/demo_import_toast_v106.php
+      - name: Signed public Policy Center snapshot contract
+        run: |
+          php -l application/app/Services/DemoPolicySnapshotV1.php
+          php -l tests/demo_policy_snapshot_v114.php
+          php tests/demo_policy_snapshot_v114.php
+
       - name: Signed demo package contract
         run: |
           php tests/demo_import_package_v100.php
@@ -121,5 +137,19 @@ jobs:
         env:
           BARAMA_DEMO_IT: isolated-ci
         run: php tests/demo_import_mysql_v100.php
+      - name: Demo Importer real gate and review placement contract
+        run: |
+          node --check assets/js/barama-demo-premium-v103.js
+          php tests/demo_import_status_v108.php
+      - name: Verify DB path uniqueness reconciliation
+        run: php tests/demo_import_media_unique_v111.php
+      - name: Verify content-addressed media reuse and pre-existing file rejection
+        run: php tests/demo_import_shared_media_v110.php
+      - name: Publisher native and legacy import limits parity
+        run: php tests/demo_import_native_limits_v109.php
+      - name: Native publisher ZIP isolated install, rollback and empty-site guard
+        env:
+          BARAMA_DEMO_IT: isolated-ci
+        run: php tests/demo_import_native_install_v107.php
       - name: Offline signer Python syntax
         run: python3 -m py_compile tools/demo-package-offline-sign-v100.py

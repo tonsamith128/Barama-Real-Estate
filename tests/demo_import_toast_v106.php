@@ -13,7 +13,7 @@ foreach ([
   'correct live region' => str_contains($view, "role=\"<?= \$demoToastSuccess ? 'status' : 'alert' ?>\""),
   'persistent installation warning' => str_contains($view, "if (empty(\$demoReleaseAccepted))"),
   'exact CSS cache bust' => str_contains($view, "asset('css/barama-demo-premium-v103.css') . '?v=106'"),
-  'exact JS cache bust' => str_contains($view, "asset('js/barama-demo-premium-v103.js') . '?v=106'"),
+  'exact JS cache bust' => str_contains($view, "asset('js/barama-demo-premium-v103.js') . '?v=108'"),
   'scoped fixed feedback' => is_string($css) && str_contains($css, 'BARAMA_DEMO_FEEDBACK_TOAST_V106') && str_contains($css, 'position:fixed'),
   'error progress compatibility' => is_string($js) && str_contains($js, '.bdemo-notice-toast--error'),
   'dismiss action' => str_contains($js, '[data-demo-toast-close]') && str_contains($js, 'feedbackToast.remove()'),
