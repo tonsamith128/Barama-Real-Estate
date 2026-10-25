@@ -73,11 +73,22 @@ When a newer supported package is uploaded over an installed copy, Barama detect
 Create a current files/database backup before upgrading. The updater requires administrator re-authentication and applies only pending ordered migrations.
 
 
+## Official customer resources
+
+All four resources below are maintained separately from the customer ZIP:
+
+- **Support:** https://tonsamith.com/contact
+- **Live Demo:** https://baramarealestate.tonsamith.com
+- **Online Documentation:** https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
+- **Product Description:** https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
+
+The public demo is a showcase and is **not** automatically installed with a fresh customer database. Demo-content releases are separate from Barama application updates. Official signed demo download is subject to licensing; installation is further controlled by the installed release's security gates.
+
 ## Customer documentation
 
 Open `documentation/index.html` after extraction for the packaged help file covering system requirements, installation, licensing, account/workspace URLs, email delivery, scheduled notification jobs, upgrades, third-party credits, and support.
 
-The public online documentation remains the extended reference; the packaged HTML file is the customer-safe offline starting point.
+The public online documentation remains the extended reference; the packaged HTML file is the customer-safe offline starting point. It also explains the signed Demo Importer, its release-controlled installation gate, and the four official resource links.
 
 ## Package integrity
 

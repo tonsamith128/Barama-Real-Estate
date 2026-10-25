@@ -13,10 +13,20 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 - CodeCanyon target: `v1.0.0`
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
-- Demo target: https://baramarealestate.tonsamith.com
-- Marketplace: CodeCanyon
-- Online Documentation: https://docs.tonsamith.com/docs?=228711-barama-real-estate-property-marketplace-developer-management-php-script
+- Live Demo: https://baramarealestate.tonsamith.com
+- Product Description: https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
+- Marketplace: CodeCanyon (target release v1.0.0; not yet approved)
+- Online Documentation: https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
 - Support: https://tonsamith.com/contact
+
+## Official product resources
+
+- **Support:** https://tonsamith.com/contact
+- **Live Demo:** https://baramarealestate.tonsamith.com
+- **Online Documentation:** https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
+- **Product Description:** https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
+
+The CodeCanyon customer ZIP includes `documentation/index.html`, the offline setup and operations guide. The public demo content is distributed separately through licensed, publisher-signed Demo Content packages; its install action is gated per release and may not be enabled on production buyers' sites. The separate application Auto Updater does not install marketplace demo records.
 
 ## Account areas
 
@@ -294,7 +304,7 @@ The 0.9.13 development line adds a packaged customer help file and an exact-ZIP 
 - CodeCanyon package QA rejects inline JavaScript event-handler attributes, runtime `eval()`, unsafe PHP short tags, and runtime debug dumps
 - development-only CodeCanyon QA scripts remain excluded from the customer ZIP
 
-GitHub-hosted Actions runners are currently not being assigned to new Quality jobs (`runner_id: 0`, no executed steps). Therefore the 0.9.11–0.9.13 automated gates are implemented but remain pending execution; they are not being represented as passed. See `docs/CODECANYON_SUBMISSION.md` and `docs/RELEASE_GATES.md`.
+The earlier October 2026 Actions budget/runner-assignment interruption was resolved; Main's signed Demo Importer and exact-package Quality checks subsequently passed. Any new customer ZIP still requires its own exact-package CI and human release acceptance. See `docs/CODECANYON_SUBMISSION.md` and `docs/RELEASE_GATES.md`.
 
 
 ## Pre-RC structural integrity
