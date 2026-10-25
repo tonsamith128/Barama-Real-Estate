@@ -53,9 +53,14 @@ final class DemoPolicySnapshotV1
             $out['faqs'] = self::faqList((array)($entry['faqs'] ?? []), 30);
             $policies[] = $out;
         }
+        $usedCategories = [];
+        foreach ($policies as $entry) {
+            if ($entry['category_id'] !== '') $usedCategories[$entry['category_id']] = true;
+        }
         $categories = [];
         foreach ($stored['categories'] as $entry) {
-            if (!is_array($entry)) continue;
+            if (!is_array($entry) ||
+                !isset($usedCategories[(string)($entry['id'] ?? '')])) continue;
             $categories[] = [
                 'id' => mb_substr(trim((string)($entry['id'] ?? '')), 0, 64),
                 'name' => mb_substr(trim((string)($entry['name'] ?? '')), 0, 80),
