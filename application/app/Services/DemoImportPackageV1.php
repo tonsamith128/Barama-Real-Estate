@@ -375,6 +375,10 @@ final class DemoImportPackageV1
                         // The signature-verified asset is stored privately at
                         // storage/uploads/private/demo, not uploads/demo.
                         $row['path'] = 'private/' . $old;
+                        // BARAMA_DEMO_MEDIA_VERIFIED_SIZE_V113: The archive
+                        // itself is verified; record the actual bytes written
+                        // rather than trusting stale publisher DB size metadata.
+                        $row['size_bytes'] = strlen($bytes);
                     }
                     $row = $this->rewriteRecipientUrls($row, $appUrl);
                     if (!$row) continue;
