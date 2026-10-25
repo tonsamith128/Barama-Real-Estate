@@ -195,6 +195,17 @@ foreach ($export['tables']['media_assets'] as &$row) {
 }
 unset($row);
 
+// BARAMA_SIGNED_DEMO_POLICY_CENTER_V114: public-only legal demo preview.
+// The publisher owner must review these texts and their jurisdiction before
+// signing a commercial starter package. Operator feedback and internal audit
+// notes are deliberately excluded from the source export.
+$export['policy_center'] = \Barama\Services\DemoPolicySnapshotV1::exportPublic(
+    BASE_PATH . '/storage/policy-center/data.json'
+);
+$export['components'][] = 'Policy Center';
+echo "DEMO_PUBLIC_POLICIES=" . count($export['policy_center']['policies']) . "\n";
+echo "POLICY_CONTENT_REQUIRES_AUTHOR_LEGAL_REVIEW=YES\n";
+
 // Replace known demo-host absolute URLs with an installation-local placeholder.
 // Do not encode publisher/proprietor domains into commercial customer websites.
 $replace = static function(mixed $input) use (&$replace, $mediaPaths): mixed {
