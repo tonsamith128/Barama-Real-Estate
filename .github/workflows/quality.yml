@@ -62,6 +62,17 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Verify Media Library shared-hosting fixes
+        run: |
+          php -l application/routes/web.php
+          php -l application/app/Http/Middleware/CsrfMiddleware.php
+          php -l application/resources/views/workspace/index.php
+          php -l application/resources/views/workspace/media-upload.php
+          node --check assets/js/media-library-index-v137.js
+          node --check assets/js/media-library-upload-v134.js
+          node --check assets/js/media-library-upload-limits-v102.js
+          php tools/media-library-shared-hosting-smoke.php
+
       - name: Verify Plans page actions, theme and accessibility controls
         run: |
           php -l application/resources/views/workspace/finance-plans.php
