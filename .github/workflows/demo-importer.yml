@@ -24,6 +24,10 @@ on:
       - 'tests/demo_publisher_pin_v102.php'
       - 'tests/demo_publisher_native_archive_v102.php'
       - 'application/app/Services/DemoPublisherNativeArchiveV1.php'
+      - 'application/app/Services/DemoPolicySnapshotV1.php'
+      - 'application/app/Repositories/PolicyCenterRepository.php'
+      - 'application/resources/views/workspace/policy-builder.php'
+      - 'tests/demo_policy_customer_templates_v116.php'
       - 'tests/demo_publisher_download_v101.php'
       - 'tests/demo_publisher_integration_v101.php'
       - 'docs/demo-importer-actual-publisher-api-v101.md'
@@ -62,7 +66,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: sodium, zip, pdo_mysql, mbstring, fileinfo
+          extensions: sodium, zip, pdo_mysql, mbstring, dom, fileinfo
           coverage: none
       - name: PHP source syntax
         run: |
@@ -126,6 +130,13 @@ jobs:
           php -l application/app/Services/DemoPolicySnapshotV1.php
           php -l tests/demo_policy_snapshot_v114.php
           php tests/demo_policy_snapshot_v114.php
+
+      - name: Customer legal templates private-draft and publication-denial contract
+        run: |
+          php -l application/app/Repositories/PolicyCenterRepository.php
+          php -l application/resources/views/workspace/policy-builder.php
+          php -l tests/demo_policy_customer_templates_v116.php
+          php tests/demo_policy_customer_templates_v116.php
 
       - name: Licensed customer release safety contract
         run: |
