@@ -72,7 +72,7 @@ $maxBytes = (int) ($capabilities['max_bytes'] ?? 52428800);
     </div>
     <div class="media-upload__notice is-error" role="alert" data-media-upload-client-error hidden></div>
 
-    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" data-media-upload-form data-media-max-files="<?= $maxFiles ?>" data-media-max-bytes="<?= $maxBytes ?>">
+    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" novalidate data-media-upload-form data-media-max-files="<?= $maxFiles ?>" data-media-max-bytes="<?= $maxBytes ?>">
         <?= csrf_field() ?>
         <div class="media-upload__dropzone" data-media-dropzone tabindex="0" role="button" aria-label="Choose files or drag and drop media">
             <div class="media-upload__drop-icon" aria-hidden="true">
