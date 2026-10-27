@@ -15,9 +15,16 @@ $acceptExtensions = is_array($capabilities['accepted_extensions'] ?? null)
     : [];
 $uploadStatus = trim((string) ($_GET['upload_status'] ?? ''));
 $uploadError = trim((string) ($_GET['upload_error'] ?? ''));
+$disk = (string) ($mediaUploadDisk ?? 'private');
+$storageLabel = match ($disk) {
+    's3' => 'Amazon S3 (configured active cloud provider)',
+    'r2' => 'Cloudflare R2 (configured active cloud provider)',
+    default => 'Private local server storage (default)',
+};
+$maxBytes = (int) ($capabilities['max_bytes'] ?? 52428800);
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-v135.css') . '?v=135') ?>">
-<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134') ?>" defer></script>
+<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134a') ?>" defer></script>
 
 <section class="workspace-page media-upload" data-media-upload>
     <header class="media-upload__hero">
@@ -57,7 +64,15 @@ $uploadError = trim((string) ($_GET['upload_error'] ?? ''));
         <?php endforeach; ?>
     </div>
 
-    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" data-media-upload-form>
+    <div class="media-upload__notice" role="status">
+        <?= app_icon('lock') ?>
+        <div><strong>Upload destination: <?= e($storageLabel) ?></strong>
+            <span>Files are private and served through administrator-authorized preview. Cloud storage is used only if activated in Storage settings.</span>
+        </div>
+    </div>
+    <div class="media-upload__notice is-error" role="alert" data-media-upload-client-error hidden></div>
+
+    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" data-media-upload-form data-media-max-files="<?= $maxFiles ?>" data-media-max-bytes="<?= $maxBytes ?>">
         <?= csrf_field() ?>
         <div class="media-upload__dropzone" data-media-dropzone tabindex="0" role="button" aria-label="Choose files or drag and drop media">
             <div class="media-upload__drop-icon" aria-hidden="true">
