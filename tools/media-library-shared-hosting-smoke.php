@@ -27,7 +27,10 @@ $check(substr_count($routes, "'/dashboard/media/preview/{uuid}'") === 1, 'PRIVAT
 $check(strpos($routes, "'/dashboard/media/upload'") < strpos($routes, "'/dashboard/{section}'"), 'ROUTE_ORDER');
 $check(str_contains($routes, "PermissionMiddleware('media.manage')"), 'PERMISSION_GUARD');
 $check(str_contains($routes, "new CsrfMiddleware()"), 'CSRF_GUARD');
-$check(str_contains($index, "url('/dashboard/media/preview/' . rawurlencode($uuid))"), 'THUMBNAIL_URL');
+$check(str_contains($index, <<<'PHP'
+url('/dashboard/media/preview/' . rawurlencode($uuid))
+PHP
+), 'THUMBNAIL_URL');
 $check(str_contains($index, 'data-media-preview'), 'THUMBNAIL_PREVIEW');
 $check(str_contains($index, 'media-library-preview-repair-v101.css'), 'PREVIEW_STYLE');
 $check(str_contains($picker, 'event.target !== input'), 'FILE_PICKER_RECURSION');
