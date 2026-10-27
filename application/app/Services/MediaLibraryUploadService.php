@@ -137,12 +137,18 @@ final class MediaLibraryUploadService
                 $categoryCounts[$category] = ($categoryCounts[$category] ?? 0) + 1;
             }
 
-            (new SecurityAuditService())->record(
-                'admin.media_library_uploaded',
-                (int) $user['id'],
-                null,
-                ['count' => count($stored), 'categories' => $categoryCounts, 'collection' => self::COLLECTION, 'storage_disk' => $disk]
-            );
+            // Asset records and files are already committed. An audit-log outage
+            // must not make a successful upload appear rolled back or delete files.
+            try {
+                (new SecurityAuditService())->record(
+                    'admin.media_library_uploaded',
+                    (int) $user['id'],
+                    null,
+                    ['count' => count($stored), 'categories' => $categoryCounts, 'collection' => self::COLLECTION, 'storage_disk' => $disk]
+                );
+            } catch (Throwable) {
+                error_log('Barama Media Library upload completed but its audit event could not be recorded.');
+            }
 
             return ['count' => count($stored), 'assets' => $stored];
         } catch (Throwable $exception) {
