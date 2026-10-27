@@ -61,7 +61,7 @@ final class PolicyCenterRepository
     {
         $rows = array_values(array_filter(
             $this->read()['policies'],
-            static fn (array $policy): bool =>
+            fn (array $policy): bool =>
                 (string) ($policy['status'] ?? 'draft') === 'published'
                 && (string) ($policy['visibility'] ?? 'public') === 'public'
                 // Fail closed if an imported template was never explicitly
