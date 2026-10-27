@@ -33,6 +33,7 @@ use Barama\Services\SecurityIncidentService;
 
 use Barama\Services\MediaLibraryUploadService;
 use Barama\Services\MediaLibraryPreviewService;
+use Barama\Services\CloudStorageService;
 
 final class DashboardController
 {
@@ -424,6 +425,7 @@ final class DashboardController
             'workspaceNavigation' => $this->navigation(),
             'activeSection' => 'media',
             'mediaUploadCapabilities' => $service->capabilities(),
+            'mediaUploadDisk' => (new CloudStorageService())->activeDisk(),
         ]));
     }
 
