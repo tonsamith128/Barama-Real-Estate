@@ -950,6 +950,23 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 
+// Admin Media Library: protected upload, batch store, and authenticated preview.
+$router->get(
+    '/dashboard/media/upload',
+    [DashboardController::class, 'mediaUpload'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage')]
+);
+$router->post(
+    '/dashboard/media/upload',
+    [DashboardController::class, 'storeMediaUpload'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/media/preview/{uuid}',
+    [DashboardController::class, 'mediaPreview'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage')]
+);
+
 $router->get(
     '/dashboard/{section}',
     [DashboardController::class, 'section'],
