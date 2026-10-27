@@ -62,6 +62,16 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Protect shared-hosting Media Library upload and preview routes
+        run: |
+          php -l application/routes/web.php
+          php -l application/app/Http/Controllers/DashboardController.php
+          php -l application/app/Services/MediaLibraryUploadService.php
+          php -l application/app/Services/MediaLibraryPreviewService.php
+          php -l application/resources/views/workspace/media-upload.php
+          node --check assets/js/media-library-upload-v134.js
+          php tools/media-library-upload-route-smoke.php
+
       - name: Verify Plans page actions, theme and accessibility controls
         run: |
           php -l application/resources/views/workspace/finance-plans.php
