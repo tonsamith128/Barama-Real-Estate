@@ -112,6 +112,9 @@
             return;
         }
         setError('');
+        // The global change-passcode dialog may have intercepted this submit.
+        // Disable the button only when a real POST will proceed.
+        if (event.defaultPrevented) return;
         if (submit) submit.disabled = true;
         if (submitLabel) submitLabel.textContent = 'Uploading…';
     });
