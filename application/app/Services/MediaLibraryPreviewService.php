@@ -62,22 +62,23 @@ final class MediaLibraryPreviewService
             return Response::html('', 404);
         }
 
-        $storageRoot = realpath(APP_PATH . '/storage/uploads');
-        $path = realpath(
-            APP_PATH . '/storage/uploads/' . ltrim((string) $media['path'], '/')
-        );
-
-        if (
-            $storageRoot === false
-            || $path === false
-            || !str_starts_with($path, $storageRoot . DIRECTORY_SEPARATOR)
-            || !is_file($path)
-        ) {
+        $disk = strtolower(trim((string) ($media['disk'] ?? 'private')));
+        $path = null;
+        $size = (int) ($media['size_bytes'] ?? 0);
+        if ($disk === 'private') {
+            $storageRoot = realpath(APP_PATH . '/storage/uploads');
+            $path = realpath(APP_PATH . '/storage/uploads/' . ltrim((string) $media['path'], '/'));
+            if ($storageRoot === false || $path === false
+                || !str_starts_with($path, $storageRoot . DIRECTORY_SEPARATOR)
+                || !is_file($path)) {
+                return Response::html('', 404);
+            }
+            $actualSize = filesize($path);
+            $size = $actualSize === false ? 0 : (int) $actualSize;
+        } elseif (!in_array($disk, ['s3', 'r2'], true)) {
             return Response::html('', 404);
         }
-
-        $size = filesize($path);
-        if ($size === false || $size < 1) {
+        if ($size < 1) {
             return Response::html('', 404);
         }
 
@@ -102,6 +103,38 @@ final class MediaLibraryPreviewService
 
         $rangeCapable = str_starts_with($mime, 'video/')
             || str_starts_with($mime, 'audio/');
+
+        if ($disk !== 'private') {
+            try {
+                $range = $rangeCapable ? $request->header('Range') : null;
+                $cloud = new CloudObjectStorageService($disk);
+                $response = $cloud->get(
+                    $cloud->objectKey((string) $media['path']),
+                    is_string($range) ? $range : null
+                );
+            } catch (\Throwable) {
+                error_log('Barama private cloud preview could not read the requested asset.');
+                return Response::html('', 502);
+            }
+            $status = (int) ($response['status'] ?? 0);
+            if (!in_array($status, [200, 206], true)) {
+                return Response::html('', $status === 404 ? 404 : 502);
+            }
+            $content = (string) ($response['body'] ?? '');
+            $remoteHeaders = (array) ($response['headers'] ?? []);
+            if ($rangeCapable) {
+                $headers['Accept-Ranges'] = 'bytes';
+            }
+            if ($status === 206) {
+                $contentRange = (string) ($remoteHeaders['content-range'] ?? '');
+                if (preg_match('/^bytes \d+-\d+\/\d+$/', $contentRange) !== 1) {
+                    return Response::html('', 502);
+                }
+                $headers['Content-Range'] = $contentRange;
+            }
+            $headers['Content-Length'] = (string) strlen($content);
+            return Response::binary($content, $mime, $headers, $status);
+        }
 
         if ($rangeCapable) {
             $headers['Accept-Ranges'] = 'bytes';
