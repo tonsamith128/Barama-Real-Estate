@@ -213,4 +213,13 @@
             hide();
         }
     });
+
+    // BARAMA_MEDIA_THUMBNAIL_FALLBACK_V101: leave text fallback visible
+    // if the browser cannot load an authenticated media thumbnail.
+    document.addEventListener('error', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLImageElement)) return;
+        if (!target.closest('.barama-media-focus-thumb')) return;
+        target.remove();
+    }, true);
 })();

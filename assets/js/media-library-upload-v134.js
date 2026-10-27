@@ -56,10 +56,10 @@
     const openPicker = () => input.click();
     choose?.addEventListener('click', openPicker);
     dropzone.addEventListener('click', (event) => {
-        if (!event.target.closest('button')) openPicker();
+        if (event.target !== input && !event.target.closest('button')) openPicker();
     });
     dropzone.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (event.target === dropzone && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault(); openPicker();
         }
     });
