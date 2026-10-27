@@ -950,6 +950,24 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 
+// BARAMA_MEDIA_LIBRARY_UPLOAD_CPanel_HOTFIX_V100
+$router->get(
+    '/dashboard/media/upload',
+    [DashboardController::class, 'mediaUpload'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage')]
+);
+$router->post(
+    '/dashboard/media/upload',
+    [DashboardController::class, 'storeMediaUpload'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage'), new CsrfMiddleware()]
+);
+$router->get(
+    '/dashboard/media/preview/{uuid}',
+    [DashboardController::class, 'mediaPreview'],
+    [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage')]
+);
+// /BARAMA_MEDIA_LIBRARY_UPLOAD_CPanel_HOTFIX_V100
+
 $router->get(
     '/dashboard/{section}',
     [DashboardController::class, 'section'],
