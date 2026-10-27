@@ -76,10 +76,12 @@
     const openPicker = () => input.click();
     choose?.addEventListener('click', openPicker);
     dropzone.addEventListener('click', (event) => {
-        if (!event.target.closest('button')) openPicker();
+        // A programmatic input.click() bubbles back through the dropzone.
+        // Ignore the native file input to prevent recursive picker invocation.
+        if (event.target !== input && !event.target.closest('button')) openPicker();
     });
     dropzone.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (event.target === dropzone && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault(); openPicker();
         }
     });
