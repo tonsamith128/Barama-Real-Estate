@@ -1,6 +1,44 @@
-# Barama Demo v0.9.26 — Revised Owner-Reviewed Unsigned Publisher Draft v1.1.8
+# Barama Demo v0.9.26 — Publisher-signed Draft handoff v1.1.9
 
-**Status:** COMPLETE for offline candidate preparation and content QA; **NOT** publisher-signed, DCP-created, production-published, or customer-installed. Keep PR #140 unmerged until signed customer acceptance. **Do not repeat old v1.1.7 preflight on the old ZIP.**
+**Current status:** Official **publisher-signed Draft** independently signature-verified; NOT published or customer-installed. Keep PR #140 unmerged until fresh customer acceptance. Older statements below describe the historical preparation state. Do not repeat existing checks.
+
+## Publisher Draft signature — VERIFIED 2026-10-28 (LATEST STATUS)
+
+The owner supplied a screenshot from `https://tonsamith.com/dashboard/demo-content/packages/7` confirming the actual publisher **Draft**, and the assistant independently verified the detached Ed25519 signature against the owner-reviewed ZIP's SHA256 digest and Barama's previously pinned trusted public-key fingerprint.
+
+| Field | Verification |
+|---|---|
+| Publisher package database ID | **7** (observed screenshot URL) |
+| DCP release ID | **DCP-20261028-BB4A3B29** |
+| Display name | Official Barama Real Estate Live Demo |
+| Version | **0.9.26** |
+| Demo slug | `live` |
+| Status | **Draft** — NOT published |
+| Downloads at screenshot | **0** |
+| Package size shown | **33.70 MB** |
+| Exact ZIP SHA256 | `b577010057631afef2364ed51456f1ab1849ba41918548169109e103b482662e` — matches original locally retained ZIP |
+| Key ID | `be53fa7e3e531da5a7a21e9f` — matches trusted fingerprint prefix |
+| Pinned public key SHA256 | `be53fa7e3e531da5a7a21e9f12eaaf15dfcf8633af4fd65640d27bb21bb03287` — matches `DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256` |
+| Cryptographic signature | **Ed25519 VERIFIED** over the **raw 32-byte SHA256 digest** (not hex text, ZIP contents or manifest text) using screenshot public key and signature |
+| GitHub acceptance CI (current pre-checkpoint commit) | **14 success, one configured skip, zero failure**, PR #140 OPEN/mergeable-clean |
+
+This was independently checked using a local copy of the **exact** ZIP (hash calculated again) with `cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey.verify()`; the public key base64 hash matched the prior repo trust anchor. This establishes authenticity of the **screenshot-supplied** signature for the locally retained bytes; it does **not** by itself independently query publisher's live database/catalog, prove customer entitlement or authorize publication.
+
+Public verification material (not secret):
+- Public key (base64): `Snx8bURtBMx9bBilso+SUZAAA8I7elfLOHT7R00XkMI=`
+- Detached signature (base64): `19/TDsxg9ezr/ehqA2szP8dS57CeRgybV3LaFjH5Ub9xWUxceiYPfi0Z3/plb67HzdtWbEHNnGAu0d97eBOlCA==`
+- Signed SHA256 hex: `b577010057631afef2364ed51456f1ab1849ba41918548169109e103b482662e`
+
+**No repeat signing or ZIP rebuild is required for this exact immutable candidate.** Do NOT click `Publish` yet: Draft approval is not customer install acceptance. Do NOT click `Move to Draft` (already Draft) or `Disable Downloads` without a documented purpose. Keep existing v0.9.25 publisher record intact.
+
+### Next: two isolated customer QA installations
+
+1. Confirm two disposable clean, licensed test origins (manual and auto) with empty fresh DBs and absent `storage/policy-center/data.json`; do not reuse production or populated staging.
+2. Check whether the publisher offers **test-only entitled access to a Draft**. Current importer requires an independently verified **published** catalog record before installation; **do not bypass** this gate, fabricate a published response, or globally publish without explicit owner authorization and a controlled QA plan.
+3. Prepare backups, sign-in/license test fixtures and rollback drills. After the release is explicitly authorized for entitled test distribution, verify exact DCP ID/key/SHA, 5,255 records, 53 images, 73 attachments, 20 private customer legal drafts, and manual/auto import plus injected-failure cleanup.
+4. Only promote to production/commercial publication after owner approval of rights/legal declarations and actual isolated customer acceptance. Retain PR #140 unmerged pending acceptance.
+
+---
 
 ## Why the candidate was revised
 
