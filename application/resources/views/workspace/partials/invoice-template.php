@@ -5,6 +5,7 @@ declare(strict_types=1);
 $invoiceTemplateService = new \Barama\Services\InvoiceTemplateService();
 $invoiceTemplate = $invoiceTemplateService->get();
 $invoiceTemplateVariables = $invoiceTemplateService->variables();
+$invoiceTemplateMigrationRequired = !empty($invoiceTemplate['__migration_required']);
 $templateNotice = (string) ($_GET['invoice_template'] ?? '');
 $templateMessage = trim((string) ($_GET['message'] ?? ''));
 $checked = static fn (string $key): string => !empty($invoiceTemplate[$key]) ? ' checked' : '';
@@ -19,6 +20,13 @@ $checked = static fn (string $key): string => !empty($invoiceTemplate[$key]) ? '
         <?php elseif ($templateNotice === 'reset'): ?>Invoice template reset to defaults.
         <?php else: ?><?= e($templateMessage !== '' ? $templateMessage : 'Invoice template update failed.') ?>
         <?php endif; ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($invoiceTemplateMigrationRequired): ?>
+    <div class="workspace-notice invoice-template-schema-notice" role="status">
+        <strong>Invoice template setup is pending.</strong>
+        <span> The invoice ledger remains available. Back up this installation and apply the pending database migration through <code>/updater/</code> before editing invoice templates.</span>
     </div>
 <?php endif; ?>
 
@@ -248,10 +256,10 @@ $checked = static fn (string $key): string => !empty($invoiceTemplate[$key]) ? '
         </div>
 
         <footer class="invoice-template-modal__footer">
-            <button type="submit" form="invoice-template-reset-form" class="btn btn-outline-secondary" data-template-reset>Reset defaults</button>
+            <button type="submit" form="invoice-template-reset-form" class="btn btn-outline-secondary" data-template-reset<?= $invoiceTemplateMigrationRequired ? ' disabled title="Apply database migration first"' : '' ?>>Reset defaults</button>
             <div>
                 <button type="button" class="btn btn-outline-secondary" data-invoice-template-close>Cancel</button>
-                <button type="submit" form="invoice-template-form" class="btn btn-primary">Save template</button>
+                <button type="submit" form="invoice-template-form" class="btn btn-primary"<?= $invoiceTemplateMigrationRequired ? ' disabled title="Apply database migration first"' : '' ?>>Save template</button>
             </div>
         </footer>
     </section>

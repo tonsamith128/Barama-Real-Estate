@@ -74,6 +74,14 @@ jobs:
           node --check assets/js/page-builder.js
           node --check assets/js/public-location-picker.js
 
+      - name: Guard invoice template migration and light-mode Turnstile contrast
+        run: |
+          php -l application/database/migrations/0032_create_invoice_templates.php
+          php -l application/app/Repositories/InvoiceTemplateRepository.php
+          php -l application/resources/views/workspace/partials/invoice-template.php
+          php -l tools/invoices-turnstile-release-smoke.php
+          php tools/invoices-turnstile-release-smoke.php
+
       - name: Verify Media Library shared-hosting fixes
         run: |
           php -l application/routes/web.php

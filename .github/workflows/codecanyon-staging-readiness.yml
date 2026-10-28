@@ -91,6 +91,13 @@ jobs:
           node --check assets/js/public-location-picker.js
           node --check assets/js/page-builder.js
 
+      - name: Verify Invoices/Turnstile v1.0.0 regression guard
+        run: |
+          php -l application/database/migrations/0032_create_invoice_templates.php
+          php -l application/app/Repositories/InvoiceTemplateRepository.php
+          php -l application/resources/views/workspace/partials/invoice-template.php
+          php tools/invoices-turnstile-release-smoke.php
+
       - name: Verify Media Library upload entrypoint, storage, and preview
         run: |
           php -l application/app/Services/MediaLibraryUploadService.php
