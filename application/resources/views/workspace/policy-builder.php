@@ -48,31 +48,11 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/policy-center-v1.0.10.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/policy-center-publish-feedback-v100.css') . '?v=100') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center-guidance-v100.css') . '?v=100') ?>">
 
 <main class="pc-builder">
     <form method="post" action="<?= e(url($action)) ?>" data-pc-builder>
         <?= csrf_field() ?>
-
-        <div class="pc-legal-review" role="note">
-            <strong>Legal governance enabled</strong>
-            <span>
-                A new version is created only after a successful save. For publishing,
-                review legal content, complete the checklist and reviewer details.
-                Rejected publication attempts do not create versions.
-            </span>
-        </div>
-
-        <?php if (!empty($record['imported_demo_template'])): ?>
-            <div class="pc-legal-review" role="note">
-                <strong>Imported demo legal template — operator review required</strong>
-                <span>This is an editable template, not finalized legal advice.
-                    Replace all administrator placeholders with accurate operator-specific
-                    language, complete the eight review checks, record your reviewer
-                    and review date, and then select Publish. The template stays private
-                    until an authorized review succeeds.
-                </span>
-            </div>
-        <?php endif; ?>
 
         <?php if ($editing): ?>
             <input type="hidden" name="id" value="<?= e((string) ($record['id'] ?? '')) ?>">
@@ -86,6 +66,18 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                     Build policy content, maintain compliance evidence, and
                     preserve every approved revision.
                 </p>
+                <button type="button" class="pc-guide-reopen"
+                    aria-haspopup="dialog" aria-controls="pc-policy-publishing-guide"
+                    data-pc-guide-open>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"></path>
+                        <path d="M12 17h.01"></path>
+                    </svg>
+                    Publishing guide
+                </button>
             </div>
 
             <div>
@@ -946,4 +938,81 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
     </form>
 </main>
 
+<dialog id="pc-policy-publishing-guide"
+    class="pc-guide-dialog"
+    data-pc-guide-dialog
+    data-pc-guide-kind="<?= !empty($record['imported_demo_template']) ? 'demo' : 'general' ?>"
+    aria-labelledby="pc-guide-title"
+    aria-describedby="pc-guide-description">
+    <div class="pc-guide-frame">
+        <div class="pc-guide-banner" aria-hidden="true">
+            <span class="pc-guide-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+                    <path d="m9 12 2 2 4-4"></path>
+                </svg>
+            </span>
+            <span class="pc-guide-eyebrow">BARAMA · POLICY CENTER</span>
+        </div>
+        <button type="button" class="pc-guide-close"
+            data-pc-guide-dismiss aria-label="Close publishing guide">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+                <path d="M5 5 19 19M19 5 5 19"></path>
+            </svg>
+        </button>
+        <div class="pc-guide-content">
+            <h2 id="pc-guide-title">Before you publish</h2>
+            <p id="pc-guide-description" class="pc-guide-description">
+                A quick overview of how Barama protects your legal policies and revisions.
+            </p>
+            <div class="pc-guide-steps">
+                <section class="pc-guide-step">
+                    <span class="pc-guide-number" aria-hidden="true">01</span>
+                    <div>
+                        <h3>Safe version history</h3>
+                        <p>A new version is created only after a successful save.
+                            If publication is blocked, no version is created and
+                            the editor explains what to correct.</p>
+                    </div>
+                </section>
+                <?php if (!empty($record['imported_demo_template'])): ?>
+                    <section class="pc-guide-step">
+                        <span class="pc-guide-number" aria-hidden="true">02</span>
+                        <div>
+                            <h3>Review your imported legal template</h3>
+                            <p>Demo content is a private draft, not finalized legal advice.
+                                Replace administrator placeholders with your own reviewed
+                                legal text. Complete all eight compliance checks, record
+                                the reviewer and review date, then select Publish.</p>
+                        </div>
+                    </section>
+                <?php else: ?>
+                    <section class="pc-guide-step">
+                        <span class="pc-guide-number" aria-hidden="true">02</span>
+                        <div>
+                            <h3>Complete legal governance</h3>
+                            <p>Check the policy wording, compliance checklist,
+                                reviewer details and dates before publishing.
+                                Incomplete reviews must remain drafts.</p>
+                        </div>
+                    </section>
+                <?php endif; ?>
+            </div>
+            <div class="pc-guide-footer">
+                <span>Shown once in this browser. Reopen from <strong>Publishing guide</strong>.</span>
+                <button type="button" class="pc-guide-confirm" data-pc-guide-dismiss>
+                    Got it
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="m5 12 14 0m-5-5 5 5-5 5"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</dialog>
+
 <script defer src="<?= e(asset('js/policy-center-v1.0.10.js')) ?>"></script>
+<script defer src="<?= e(asset('js/policy-center-guidance-v100.js') . '?v=100') ?>"></script>

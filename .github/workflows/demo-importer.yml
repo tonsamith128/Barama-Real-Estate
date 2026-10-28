@@ -27,6 +27,9 @@ on:
       - 'application/app/Services/DemoPolicySnapshotV1.php'
       - 'application/app/Repositories/PolicyCenterRepository.php'
       - 'application/resources/views/workspace/policy-builder.php'
+      - 'assets/css/policy-center-guidance-v100.css'
+      - 'assets/js/policy-center-guidance-v100.js'
+      - 'tests/policy_center_guidance_v100.cjs'
       - 'tests/demo_policy_customer_templates_v116.php'
       - 'tests/demo_publisher_download_v101.php'
       - 'tests/demo_publisher_integration_v101.php'
@@ -137,6 +140,12 @@ jobs:
           php -l application/resources/views/workspace/policy-builder.php
           php -l tests/demo_policy_customer_templates_v116.php
           php tests/demo_policy_customer_templates_v116.php
+
+      - name: First-visit Policy Center publishing guide UX
+        run: |
+          node --check assets/js/policy-center-guidance-v100.js
+          node --check tests/policy_center_guidance_v100.cjs
+          node tests/policy_center_guidance_v100.cjs
 
       - name: Licensed customer release safety contract
         run: |

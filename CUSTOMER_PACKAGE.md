@@ -90,6 +90,8 @@ The public demo is a showcase and is **not** automatically installed with a fres
 
 ## Imported legal policy publication
 
+The Policy Center editor shows its governance and imported-template help in a one-time browser dialog, not as permanent page banners. Dismiss with Got it, Close, Escape, or the backdrop; the small Publishing guide control reopens it. Real publication errors remain inline and actionable.
+
 Imported demo legal policies are private drafts until a responsible operator replaces instructional sample language, completes all eight Legal Compliance checklist items, selects Compliant, records the reviewer and Last Review date, and explicitly publishes. A rejected Publish attempt now displays specific, linked reasons without saving or incrementing version history. The form retains the attempted edits on screen so an operator can correct them or separately Save Draft; previously published policy content is not overwritten by a rejected attempt. This does not automatically approve legal content and does not erase prior history snapshots.
 
 ## Customer documentation
