@@ -72,14 +72,14 @@ $settingsTabs = [
 <script src="<?= e(asset('js/account-settings-full-v1130.js') . '?v=1130r3') ?>" defer></script>
 <?php if ($workspace === 'account' && $section === 'profile'): ?>
 <link rel="stylesheet" href="<?= e(asset('css/account-profile-v1131.css') . '?v=1131r1') ?>">
-<script src="<?= e(asset('js/account-profile-v1131r2.js') . '?v=1131r2') ?>" defer></script>
+<script src="<?= e(asset('js/account-profile.js') . '?v=1.0.0-clean1') ?>" defer></script>
 <?php endif; ?>
 <?php endif; ?>
 <?php if ($section === 'mail' && $workspace === 'dashboard'): ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-mail-settings-v100.css') . '?v=102') ?>">
 <?php endif; ?>
 <?php if ($section === 'locations' && $workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-global-locations-v110.css') . '?v=110') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/admin-global-locations.css') . '?v=1.0.0-clean1') ?>">
 <?php endif; ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-settings-default-theme-v101.css') . '?v=101') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/admin-settings-flat-v130.css') . '?v=130') ?>">
@@ -91,7 +91,7 @@ $settingsTabs = [
 <link rel="stylesheet" href="<?= e(asset('css/admin-branding-identity-v104.css') . '?v=104') ?>">
 <?php endif; ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-v131.css') . '?v=131') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-factors-v133.css') . '?v=133') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-factors.css') . '?v=1.0.0-clean1') ?>">
 <?php if ($section === 'security' && $workspace === 'dashboard'): ?>
 <link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-protection-v134.css') . '?v=134') ?>">
 <?php endif; ?>
@@ -1214,7 +1214,7 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
 
 <?php if ($section === 'security'): ?>
 <script src="<?= e(asset('js/vendor/qrcode-v133.js') . '?v=133') ?>" defer></script>
-<script src="<?= e(asset('js/admin-settings-security-factors-v133.js') . '?v=133') ?>" defer></script>
+<script src="<?= e(asset('js/admin-settings-security-factors.js') . '?v=1.0.0-clean1') ?>" defer></script>
 <?php if ($workspace === 'dashboard'): ?><script src="<?= e(asset('js/admin-settings-security-protection-v134.js') . '?v=134') ?>" defer></script><?php endif; ?>
 <?php endif; ?>
 <script src="<?= e(asset('js/admin-settings-v120.js') . '?v=120') ?>" defer></script>

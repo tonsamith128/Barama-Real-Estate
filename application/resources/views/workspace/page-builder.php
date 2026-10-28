@@ -69,7 +69,7 @@ $svg = static function (string $name): string {
     href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>"
 >
 <script
-    src="<?= e(asset('js/page-builder-v120.js') . '?v=120') ?>"
+    src="<?= e(asset('js/page-builder.js') . '?v=1.0.0-clean1') ?>"
     defer
 ></script>
 

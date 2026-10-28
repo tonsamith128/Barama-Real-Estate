@@ -288,7 +288,7 @@ $appJsVersion = is_file($appJsFile)
         <!-- BARAMA_HERO_SEARCH_V1123 -->
         <link href="<?= e(asset('css/hero-search-v1123.css') . '?v=1123') ?>" rel="stylesheet">
         <!-- BARAMA_POPULAR_LOCATION_MARQUEE_V1125 -->
-        <link href="<?= e(asset('css/popular-location-marquee-v1125.css') . '?v=1125') ?>" rel="stylesheet">
+        <link href="<?= e(asset('css/popular-location-marquee.css') . '?v=1.0.0-clean1') ?>" rel="stylesheet">
         <!-- BARAMA_PUBLIC_HEADER_INLINE_V1119 -->
         <link href="<?= e(asset('css/public-header-inline-v1119.css') . '?v=1119') ?>" rel="stylesheet">
         <!-- BARAMA_PUBLIC_HEADER_INLINE_V1120 -->

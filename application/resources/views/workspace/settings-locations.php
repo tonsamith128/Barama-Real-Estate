@@ -221,4 +221,4 @@ $packCountries = (int) ($locationSummary['pack_countries'] ?? 0);
         </footer>
     </section>
 </section>
-<script src="<?= e(asset('js/admin-global-locations-v110.js') . '?v=110') ?>" defer></script>
+<script src="<?= e(asset('js/admin-global-locations.js') . '?v=1.0.0-clean1') ?>" defer></script>

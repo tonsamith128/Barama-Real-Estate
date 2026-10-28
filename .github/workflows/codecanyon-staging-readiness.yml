@@ -84,6 +84,13 @@ jobs:
       - name: Verify complete repository quality baseline
         run: php tools/qa.php
 
+      - name: Verify canonical production asset references
+        run: |
+          php tools/canonical-assets-smoke.php
+          node --check assets/js/admin-email-template-builder.js
+          node --check assets/js/public-location-picker.js
+          node --check assets/js/page-builder.js
+
       - name: Verify Media Library upload entrypoint, storage, and preview
         run: |
           php -l application/app/Services/MediaLibraryUploadService.php
@@ -158,6 +165,7 @@ jobs:
           ZIP="build/Barama-Real-Estate-$PACKAGE_VERSION.zip"
           php tools/package-compliance-smoke.php "$ZIP"
           php tools/codecanyon-smoke.php "$ZIP"
+          php tools/canonical-assets-smoke.php "$ZIP"
 
       - name: Install exact customer ZIP on disposable MySQL
         shell: bash

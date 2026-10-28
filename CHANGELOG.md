@@ -17,6 +17,7 @@ Development-only 0.9.x milestones are intentionally not presented as separate Co
 Initial public-release source and customer-package documentation prepared for CodeCanyon. This is a versioned candidate, not proof of Envato approval, live installation certification, or marketplace publication.
 
 - Updated packaged offline help with v1.0.0 version identity, signed Demo Importer format/database compatibility safety guidance, Media Library Upload instructions and all four official product resource links.
+- Consolidate 49 superseded historical CSS/JS files from 15 single-active-version asset families into stable feature filenames with asset URL cache keys; retain genuinely layered legacy assets pending a separate dependency/cascade review. See `docs/CODECANYON_CANONICAL_ASSET_AUDIT_V100.md`.
 - Replace persistent Policy Center legal-governance and imported-template banners with a premium, accessible, first-visit dismissible dialog; provide a small permanent reopening link while keeping real Publish validation errors visible.
 - Fix Policy Center imported legal-template publishing: show actionable checklist and editorial placeholders; do not write or advance version history on denied publication; publish action makes an approved template public.
 - Reuse unchanged signed demo-content releases across compatible application version updates; historic app version labels are advisory, while immutable SHA-256/Ed25519 signature, licensed publisher catalog, required policies, read-only destination schema preflight, empty-site and backup protections remain enforced.

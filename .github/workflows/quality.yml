@@ -62,6 +62,18 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Enforce canonical customer CSS/JS assets
+        run: |
+          php -l tools/canonical-assets-smoke.php
+          php tools/canonical-assets-smoke.php
+          node --check assets/js/account-profile.js
+          node --check assets/js/admin-email-template-builder.js
+          node --check assets/js/admin-email-templates.js
+          node --check assets/js/admin-global-locations.js
+          node --check assets/js/admin-settings-security-factors.js
+          node --check assets/js/page-builder.js
+          node --check assets/js/public-location-picker.js
+
       - name: Verify Media Library shared-hosting fixes
         run: |
           php -l application/routes/web.php
@@ -356,6 +368,8 @@ jobs:
 
       - name: Validate CodeCanyon package preparation
         run: php tools/codecanyon-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
+      - name: Require canonical assets in the exact customer ZIP
+        run: php tools/canonical-assets-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip
 
       - name: Validate exact customer package installer
         run: php tools/package-smoke.php build/Barama-Real-Estate-$(cat VERSION).zip

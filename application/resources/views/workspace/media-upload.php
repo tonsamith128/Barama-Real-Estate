@@ -49,7 +49,7 @@ $effectiveLabel = $formatMediaBytes($effectiveMax);
 $hostingConstrained = $effectiveMax < $baramaMaxBytes;
 
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/media-library-upload-v135.css') . '?v=135') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/media-library-upload.css') . '?v=1.0.0-clean1') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-contrast-v101.css') . '?v=101') ?>">
 <script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134b-merge') ?>" defer></script>
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-limits-v102.css') . '?v=102') ?>">
