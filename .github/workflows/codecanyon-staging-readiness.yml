@@ -70,7 +70,7 @@ jobs:
           import re, os
           version=Path('VERSION').read_text().strip()
           assert re.fullmatch(r'(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)',version), 'VERSION_NOT_SEMVER'
-          assert version=='0.9.25', 'UNREVIEWED_VERSION_CHANGE: update readiness gate deliberately'
+          assert version=='1.0.0', 'UNREVIEWED_VERSION_CHANGE: CodeCanyon submission is scoped to v1.0.0'
           readme=Path('README.md').read_text()
           changelog=Path('CHANGELOG.md').read_text()
           assert '- Current development line: '+chr(96)+version+chr(96) in readme, 'README_VERSION_MISMATCH'

@@ -12,11 +12,11 @@ Development-only 0.9.x milestones are intentionally not presented as separate Co
 - Portable signed update installation still requires host-appropriate private vault and controlled write permissions; this version promotion alone does not certify that `Update Now` can install a future release.
 
 
-## Unreleased — v1.0.0
+## 1.0.0 — 2026-10-28 (CodeCanyon package candidate; not yet published)
 
-Initial CodeCanyon release preparation. This is not a published customer release.
+Initial public-release source and customer-package documentation prepared for CodeCanyon. This is a versioned candidate, not proof of Envato approval, live installation certification, or marketplace publication.
 
-- Extended packaged offline help with signed Live Demo importer safety guidance and the four official product resource links.
+- Updated packaged offline help with v1.0.0 version identity, signed Demo Importer compatibility/safety guidance, Media Library Upload instructions and all four official product resource links.
 - Updated future-import image path and verified size handling, with optional public-only signed Policy Center snapshots (subject to release acceptance). Existing signed v0.9.25 demo packages remain unchanged.
 
 ### Marketplace
@@ -38,7 +38,7 @@ Initial CodeCanyon release preparation. This is not a published customer release
 - projects
 - properties
 - sale/rent listings
-- private media management
+- private Media Library with drag-and-drop uploads, MIME validation, storage provider selection, authenticated previews, permission/CSRF checks and shared-hosting upload-size handling
 - inquiries and leads
 - controlled lifecycle/status transitions
 
@@ -59,4 +59,4 @@ Initial CodeCanyon release preparation. This is not a published customer release
 - third-party notices and CodeCanyon package compliance gates
 - customer HTML help documentation
 
-The final v1.0.0 entry will receive its release date only after all live-server, human visual/content, online-documentation, and final package acceptance gates are completed.
+This entry records the v1.0.0 source/package-candidate preparation date. The CodeCanyon public publishing date and final acceptance evidence must be recorded separately after all required live-server, human visual/content, online-documentation, signed demo compatibility and exact-package acceptance gates pass.

@@ -8,14 +8,14 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 
 ## Release target
 
-- Live Demo application release: `0.9.25` (pre-1.0; GitHub Main is the source of truth)
-- Current development line: `0.9.25`
-- CodeCanyon target: `v1.0.0`
+- Live Demo deployment: `0.9.25` (existing installation; not automatically upgraded by the CodeCanyon release)
+- Current development line: `1.0.0`
+- CodeCanyon target: `v1.0.0` (customer-package candidate; marketplace publication pending final acceptance)
 - Author: Ton Samith
 - Author URL: https://tonsamith.com
 - Live Demo: https://baramarealestate.tonsamith.com
 - Product Description: https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
-- Marketplace: CodeCanyon (target release v1.0.0; not yet approved)
+- Marketplace: CodeCanyon (v1.0.0 source and customer-package candidate; not yet submitted or approved)
 - Online Documentation: https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
 - Support: https://tonsamith.com/contact
 
@@ -26,7 +26,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 - **Online Documentation:** https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
 - **Product Description:** https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
 
-The CodeCanyon customer ZIP includes `documentation/index.html`, the offline setup and operations guide. The public demo content is distributed separately through licensed, publisher-signed Demo Content packages; its install action is gated per release and may not be enabled on production buyers' sites. The separate application Auto Updater does not install marketplace demo records.
+The v1.0.0 CodeCanyon customer ZIP includes `documentation/index.html`, the offline setup and operations guide. The public demo content is distributed separately through licensed, publisher-signed Demo Content packages; its install action is gated per release and may not be enabled on production buyers' sites. The separate application Auto Updater does not install marketplace demo records.
 
 ## Account areas
 
@@ -73,7 +73,7 @@ The current development line includes ordered database migrations, customer regi
 
 The installer will create the first administrator account from customer-supplied credentials. Administrator credentials are never hard-coded in the repository.
 
-The final CodeCanyon package will include installer, upgrade, licensing, documentation, and release QA layers before \`v1.0.0\`.
+The v1.0.0 customer-package candidate contains installer, updater, licensing, offline documentation and release QA. CodeCanyon publication is a separate decision after the exact ZIP, live installer, license, browser, content-rights and recovery acceptance gates are verified.
 
 
 ## Domain write infrastructure
