@@ -231,6 +231,50 @@ final class DemoImportPackageV1
     }
 
     /**
+     * BARAMA_DEMO_SCHEMA_CONTRACT_V100.
+     * Read-only compatibility check for the CURRENT customer's database.
+     * A previously signed content snapshot remains reusable on app updates
+     * only while its verified table/column contract is supported.
+     * No database writes, file changes or backup actions occur here.
+     *
+     * @param array<string,mixed> $proof Output of inspectSigned(), never a
+     * client-supplied or unsigned manifest.
+     */
+    public function assertNativeTargetSchemaCompatible(array $proof): void
+    {
+        if (($proof['signature_verified'] ?? null) !== true ||
+            ($proof['format'] ?? null) !== 'tonsamith-manifest-json' ||
+            ($proof['manifest_schema_version'] ?? null) !== 1 ||
+            ($proof['content_schema'] ?? null) !== 'barama-demo-content-v1') {
+            throw new RuntimeException('DEMO_CUSTOMER_CONTENT_SCHEMA_UNSUPPORTED');
+        }
+        $source = $proof['columns_by_table'] ?? null;
+        if (!is_array($source) || count($source) !== count(self::ORDER) ||
+            array_diff(array_keys($source), self::ORDER) !== []) {
+            throw new RuntimeException('DEMO_CUSTOMER_TARGET_SCHEMA_INCOMPATIBLE');
+        }
+        foreach (self::ORDER as $table) {
+            $fields = $source[$table] ?? null;
+            if (!is_array($fields) || count($fields) > 100 ||
+                array_values($fields) !== $fields) {
+                throw new RuntimeException('DEMO_CUSTOMER_TARGET_SCHEMA_INCOMPATIBLE');
+            }
+            try {
+                $available = $this->existingColumns($table);
+            } catch (Throwable) {
+                throw new RuntimeException('DEMO_CUSTOMER_TARGET_SCHEMA_INCOMPATIBLE');
+            }
+            foreach ($fields as $field) {
+                if (!is_string($field) ||
+                    preg_match('/^[a-z][a-z0-9_]{0,63}$/D', $field) !== 1 ||
+                    !isset($available[$field])) {
+                    throw new RuntimeException('DEMO_CUSTOMER_TARGET_SCHEMA_INCOMPATIBLE');
+                }
+            }
+        }
+    }
+
+    /**
      * BARAMA_DEMO_MEDIA_PATH_UNIQUE_V111
      * Normalize only redundant media records in an already-verified native ZIP.
      * Preserve every unique media and attachment relationship; never mutate

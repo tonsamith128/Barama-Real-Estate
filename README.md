@@ -26,7 +26,7 @@ Barama Real Estate is a PHP, Bootstrap, and JavaScript real-estate marketplace a
 - **Online Documentation:** https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
 - **Product Description:** https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
 
-The v1.0.0 CodeCanyon customer ZIP includes `documentation/index.html`, the offline setup and operations guide. The public demo content is distributed separately through licensed, publisher-signed Demo Content packages; its install action is gated per release and may not be enabled on production buyers' sites. The separate application Auto Updater does not install marketplace demo records.
+The v1.0.0 CodeCanyon customer ZIP includes `documentation/index.html`, the offline setup and operations guide. The public demo content is distributed separately through licensed, publisher-signed Demo Content packages. The same signed content archive can be reused across application version updates when its authenticated content schema and destination database schema remain supported; a new package is needed only for real content/format changes. The installation action remains gated by commercial entitlement, signature, fresh-site and backup checks. The separate application Auto Updater does not install marketplace demo records.
 
 ## Account areas
 

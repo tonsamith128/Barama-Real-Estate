@@ -37,7 +37,7 @@ Marketplace listings, properties, projects, companies, developer workspace, cust
 - First administrator created by customer installer, never seeded.
 - Media Library: up to 20 files per batch; app cap 50 MB/file, further limited by host/PHP settings; permissions, CSRF and MIME enforcement; private previews.
 - Private local media is the safe default. Cloud S3/R2 needs an existing verified active configuration.
-- Demo Content v0.9.26 was accepted on **application v0.9.25** on real cPanel sites. Application **v1.0.0 does NOT automatically inherit that compatibility**. A newly approved, publisher-signed manifest explicitly including v1.0.0 is required; never bypass signed release, license/domain, backup, policy, empty-marketplace or confirmation guards.
+- Demo Content v0.9.26 was successfully installed on **application v0.9.25** on real cPanel sites. With the format-based importer correction, the same immutable, correctly signed ZIP is eligible on **v1.0.0** if its signed content schema is supported and a read-only destination database-column preflight passes. App-version labels in older manifests are advisory. A new signed demo is required only for incompatible content/schema changes. Preserve license/domain, SHA-256/Ed25519, backup, policy, empty-marketplace and confirmation guards.
 - A source version bump never deploys code to live servers or performs a database upgrade.
 
 ## Release gates and evidence
@@ -52,7 +52,7 @@ Real-host/human gates **remain NOT VERIFIED by this version change**:
 - Valid/invalid Envato purchase-code behavior, installation lock and safe upgrade behavior.
 - Protected Media Library upload, preview, max-size rejection, unauthenticated access, CSRF rejection.
 - Files + database backup verification; restore rehearsal, guarded rollback, and repeat/demo import denial after installation.
-- New signed Demo Content compatible with v1.0.0 if demo import is advertised.
+- Verify re-use of the exact previously signed Demo Content v0.9.26 archive under the v1.0.0 importer on a disposable licensed domain, with successful database-schema preflight and no signature modifications.
 - Production email delivery and scheduled jobs; desktop, tablet and mobile; light/dark; Safari/Edge/Chrome; English/Khmer/Chinese review.
 - Artwork rights, third-party notices and actual marketplace upload-form/package review.
 - Public online documentation parity and support contact verification.

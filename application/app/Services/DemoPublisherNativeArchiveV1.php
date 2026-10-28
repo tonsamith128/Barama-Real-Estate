@@ -86,15 +86,21 @@ final class DemoPublisherNativeArchiveV1
             // Signed manifest declares the application versions tested for
             // this demo. The customer release gate checks the installed app
             // against this list before permitting installation.
+            // Legacy publisher manifests may list the application versions
+            // used during author QA. Keep this signed metadata well-formed,
+            // but do not confuse application release labels with content schema
+            // compatibility. New publishers may omit the advisory field.
             $compatible = $manifest['compatible_app_versions'] ?? null;
-            if (!is_array($compatible) || count($compatible) < 1 ||
-                count($compatible) > 20 || array_values($compatible) !== $compatible) {
-                throw new RuntimeException('DEMO_NATIVE_APP_COMPATIBILITY_INVALID');
-            }
-            foreach ($compatible as $appVersion) {
-                if (!is_string($appVersion) ||
-                    preg_match('/^\\d+\\.\\d+\\.\\d+(?:-[A-Za-z0-9.]+)?$/D', $appVersion) !== 1) {
+            if ($compatible !== null) {
+                if (!is_array($compatible) || count($compatible) < 1 ||
+                    count($compatible) > 20 || array_values($compatible) !== $compatible) {
                     throw new RuntimeException('DEMO_NATIVE_APP_COMPATIBILITY_INVALID');
+                }
+                foreach ($compatible as $appVersion) {
+                    if (!is_string($appVersion) ||
+                        preg_match('/^\\d+\\.\\d+\\.\\d+(?:-[A-Za-z0-9.]+)?$/D', $appVersion) !== 1) {
+                        throw new RuntimeException('DEMO_NATIVE_APP_COMPATIBILITY_INVALID');
+                    }
                 }
             }
             // Optional in legacy signed ZIPs. New snapshots must be public-only
@@ -118,6 +124,7 @@ final class DemoPublisherNativeArchiveV1
                 throw new RuntimeException('DEMO_NATIVE_UNEXPECTED_COMPONENTS');
             }
             $ids = [];
+            $columnsByTable = [];
             $rowsCount = 0;
             foreach ($tables as $table => $records) {
                 if (!is_array($records) || count($records) > 10000) {
@@ -126,6 +133,7 @@ final class DemoPublisherNativeArchiveV1
                 $rowsCount += count($records);
                 if ($rowsCount > 24000) throw new RuntimeException('DEMO_NATIVE_TOTAL_LIMIT');
                 $ids[$table] = [];
+                $columnsByTable[$table] = [];
                 foreach ($records as $row) {
                     if (!is_array($row) || count($row) > 100) {
                         throw new RuntimeException('DEMO_NATIVE_ROW_INVALID');
@@ -144,6 +152,7 @@ final class DemoPublisherNativeArchiveV1
                             ($value !== null && !is_scalar($value))) {
                             throw new RuntimeException('DEMO_NATIVE_FIELD_INVALID');
                         }
+                        $columnsByTable[$table][$field] = true;
                     }
                 }
             }
@@ -210,6 +219,11 @@ final class DemoPublisherNativeArchiveV1
                 'zip_sha256' => hash_file('sha256', $path),
                 'package_version' => (string)$manifest['version'],
                 'format' => 'tonsamith-manifest-json',
+                'manifest_schema_version' => (int)$manifest['schema_version'],
+                'content_schema' => (string)$payload['schema'],
+                'columns_by_table' => array_map(
+                    static fn (array $fields): array => array_keys($fields), $columnsByTable
+                ),
                 'record_count' => $rowsCount,
                 'table_counts' => array_map('count', $tables),
                 'settings_count' => count($settings),
