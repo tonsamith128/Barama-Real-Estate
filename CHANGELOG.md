@@ -17,6 +17,7 @@ Development-only 0.9.x milestones are intentionally not presented as separate Co
 Initial public-release source and customer-package documentation prepared for CodeCanyon. This is a versioned candidate, not proof of Envato approval, live installation certification, or marketplace publication.
 
 - Updated packaged offline help with v1.0.0 version identity, signed Demo Importer format/database compatibility safety guidance, Media Library Upload instructions and all four official product resource links.
+- Fix Policy Center imported legal-template publishing: show actionable checklist and editorial placeholders; do not write or advance version history on denied publication; publish action makes an approved template public.
 - Reuse unchanged signed demo-content releases across compatible application version updates; historic app version labels are advisory, while immutable SHA-256/Ed25519 signature, licensed publisher catalog, required policies, read-only destination schema preflight, empty-site and backup protections remain enforced.
 - Updated future-import image path and verified size handling, with optional public-only signed Policy Center snapshots (subject to release acceptance). Existing signed v0.9.25 demo packages remain unchanged.
 

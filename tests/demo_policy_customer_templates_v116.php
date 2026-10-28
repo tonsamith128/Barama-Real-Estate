@@ -56,11 +56,57 @@ if (extension_loaded('dom') && extension_loaded('mbstring')) {
         'reviewed_by'=>'Reviewer','last_reviewed_at'=>gmdate('Y-m-d'),
         'compliance_check'=>Repository::complianceCheckKeys()
     ];
+
+    // Rejected publish must be a read-only validation event:
+    // it cannot create immutable versions or alter the published store.
+    $before = $repo->findById('sample-terms');
+    $beforeBytes = (string) file_get_contents($path);
+    $input['version_note'] = 'My unsaved publish note';
     $saved = $repo->save($input,'sample-terms');
     check($saved['status']==='draft' && $saved['visibility']==='private','editorial_instruction_blocks_publish');
+    check(!empty($saved['_publication_blocked']) &&
+        (int)$saved['version_number']===(int)$before['version_number'] &&
+        count($saved['versions'])===count($before['versions']),
+        'blocked_publish_no_extra_version');
+    check((string)file_get_contents($path)===$beforeBytes,
+        'blocked_publish_store_byte_identical');
+    check(($saved['version_note']??'')==='My unsaved publish note',
+        'blocked_publish_keeps_form_version_note');
+    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
+    check(count(array_filter($messages,static fn(string $s):bool=>
+        str_contains($s,'Replace the imported demo editorial instructions')))>0,
+        'blocked_publish_explains_editorial_placeholder');
     check(count($repo->published())===0,'unreviewed_content_not_public');
+
     $input['content_html']='<p>Reviewed operator-specific sample policy.</p>';
+    $input['compliance_check']=['operator_identity'];
     $saved = $repo->save($input,'sample-terms');
+    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
+    check(!empty($saved['_publication_blocked']) &&
+        str_contains(implode(' ',$messages),'Review checklist') &&
+        (string)file_get_contents($path)===$beforeBytes,
+        'blocked_publish_lists_missing_checks_without_snapshot');
+
+    $input['compliance_check']=Repository::complianceCheckKeys();
+    $input['reviewed_by']='';
+    $saved = $repo->save($input,'sample-terms');
+    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
+    check(str_contains(implode(' ',$messages),'person who completed the legal review') &&
+        (string)file_get_contents($path)===$beforeBytes,
+        'blocked_publish_explains_missing_reviewer');
+    $input['reviewed_by']='Reviewer';
+
+    $input['next_review_date']=gmdate('Y-m-d',strtotime('-4 days'));
+    $saved=$repo->save($input,'sample-terms');
+    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
+    check(str_contains(implode(' ',$messages),'Next Review date') &&
+        (string)file_get_contents($path)===$beforeBytes,
+        'blocked_publish_explains_stale_review_date');
+    $input['next_review_date']=gmdate('Y-m-d',strtotime('+30 days'));
+    $input['visibility']='private';
+    $saved = $repo->save($input,'sample-terms');
+    check((int)$saved['version_number']===(int)$before['version_number']+1,
+        'successful_publication_single_version_increment');
     check($saved['status']==='published' && $saved['visibility']==='public','explicit_compliance_allows_publication');
     check($saved['demo_template_approved']===true && count($repo->published())===1,'approved_only_public');
     $input['save_mode']='draft';

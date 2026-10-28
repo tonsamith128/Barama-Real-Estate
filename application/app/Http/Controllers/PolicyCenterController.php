@@ -298,14 +298,18 @@ final class PolicyCenterController
             );
         }
 
-        $blocked = !empty($record['_publication_blocked']);
+        if (!empty($record['_publication_blocked'])) {
+            // The request was rejected without writing to disk. Re-render
+            // sanitized submitted values and exact blockers; keep version
+            // history and any previously published policy unchanged.
+            return $this->builder(
+                $record, false, (array) ($record['_publication_issues'] ?? [])
+            );
+        }
 
         return Response::redirect(
-            url(
-                '/dashboard/policies/edit?id='
-                . rawurlencode((string) $record['id'])
-                . ($blocked ? '&compliance_blocked=1' : '&saved=1')
-            )
+            url('/dashboard/policies/edit?id='
+                . rawurlencode((string) $record['id']) . '&saved=1')
         );
     }
 
@@ -353,14 +357,15 @@ final class PolicyCenterController
             );
         }
 
-        $blocked = !empty($record['_publication_blocked']);
+        if (!empty($record['_publication_blocked'])) {
+            return $this->builder(
+                $record, true, (array) ($record['_publication_issues'] ?? [])
+            );
+        }
 
         return Response::redirect(
-            url(
-                '/dashboard/policies/edit?id='
-                . rawurlencode($id)
-                . ($blocked ? '&compliance_blocked=1' : '&saved=1')
-            )
+            url('/dashboard/policies/edit?id='
+                . rawurlencode($id) . '&saved=1')
         );
     }
 
@@ -394,7 +399,9 @@ final class PolicyCenterController
     /**
      * @param array<string, mixed> $record
      */
-    private function builder(array $record, bool $editing): Response
+    private function builder(
+        array $record, bool $editing, array $publicationIssues = []
+    ): Response
     {
         return Response::html(View::render('workspace/policy-builder', [
             'pageTitle' => ($editing ? 'Edit Policy' : 'Create Policy') . ' · Admin',
@@ -407,6 +414,8 @@ final class PolicyCenterController
             'editing' => $editing,
             'categories' => (new PolicyCenterRepository())->categories(),
             'complianceCheckKeys' => PolicyCenterRepository::complianceCheckKeys(),
+            'publicationBlocked' => !empty($record['_publication_blocked']),
+            'publicationIssues' => $publicationIssues,
         ]));
     }
 
