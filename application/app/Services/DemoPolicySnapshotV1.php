@@ -170,6 +170,39 @@ final class DemoPolicySnapshotV1
     }
 
     /**
+     * Recipient-side only: signed source policies are validated as published
+     * public demonstration data, but must never become the buyer's legal terms.
+     * Keep text intact for editing; require a new local review and effective date.
+     * Provenance markers are intentionally added AFTER signature verification.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private static function recipientTemplates(array $policies): array
+    {
+        $result = [];
+        foreach ($policies as $source) {
+            $draft = $source;
+            $draft['status'] = 'draft';
+            $draft['visibility'] = 'private';
+            $draft['effective_date'] = '';
+            $draft['featured'] = false;
+            $draft['version_number'] = 1;
+            $draft['imported_demo_template'] = true;
+            $draft['demo_template_approved'] = false;
+            $draft['compliance_status'] = 'not_reviewed';
+            $draft['compliance_gate_enabled'] = true;
+            $draft['compliance_checks'] = [];
+            $draft['compliance_progress'] = 0;
+            $draft['reviewed_by'] = '';
+            $draft['last_reviewed_at'] = '';
+            $draft['next_review_date'] = '';
+            $draft['versions'] = [];
+            $result[] = $draft;
+        }
+        return $result;
+    }
+
+    /**
      * Returns the created path for rollback if the surrounding DB transaction
      * cannot commit. Linking a verified temporary file is no-clobber atomic.
      */
@@ -201,7 +234,7 @@ final class DemoPolicySnapshotV1
         }
         $json = json_encode([
             'version'=>1,
-            'policies'=>$snapshot['policies'],
+            'policies'=>self::recipientTemplates($snapshot['policies']),
             'categories'=>$snapshot['categories'],
             'faqs'=>$snapshot['faqs'],
             'feedback'=>[],

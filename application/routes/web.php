@@ -950,7 +950,7 @@ $router->post(
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new CsrfMiddleware()]
 );
 
-// Admin Media Library: protected upload, batch store, and authenticated preview.
+// BARAMA_MEDIA_LIBRARY_UPLOAD_CPanel_HOTFIX_V100
 $router->get(
     '/dashboard/media/upload',
     [DashboardController::class, 'mediaUpload'],
@@ -966,6 +966,7 @@ $router->get(
     [DashboardController::class, 'mediaPreview'],
     [new AuthMiddleware(), new PermissionMiddleware('dashboard.access'), new PermissionMiddleware('media.manage')]
 );
+// /BARAMA_MEDIA_LIBRARY_UPLOAD_CPanel_HOTFIX_V100
 
 $router->get(
     '/dashboard/{section}',

@@ -1,0 +1,8 @@
+/* BARAMA_MEDIA_UPLOAD_SIZE_GUARD_V102 */
+.media-upload__limit-panel{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;padding:14px 17px;border:1px solid #9fbaea;border-radius:13px;color:#20375d;background:rgba(48,112,238,.065);font-size:13px;line-height:1.5}
+.media-upload__limit-panel strong{font-weight:750;color:#1452bb}
+.media-upload__limit-error:not([hidden]){display:block;background:#fff0f0;border:1px solid #e99da1;border-radius:13px;color:#9a222c;padding:15px 18px;font-size:13px;line-height:1.55;font-weight:650}
+.media-upload__limit-panel+.media-upload__limit-error[hidden]{display:none}
+html[data-bs-theme="dark"] .media-upload__limit-panel{border-color:#44699d;background:rgba(44,91,159,.22);color:#dce9ff}
+html[data-bs-theme="dark"] .media-upload__limit-panel strong{color:#a9c7ff}
+html[data-bs-theme="dark"] .media-upload__limit-error:not([hidden]){background:#421f29;border-color:#b75c6b;color:#ffd2d8}

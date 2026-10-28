@@ -14,14 +14,15 @@ foreach (['/dashboard/system/demo-importer/connection',
           '/dashboard/system/demo-importer/catalog'] as $uri) {
     needed(str_contains($routes,"'".$uri."'"),'admin_readonly_route_'.basename($uri));
 }
-needed(str_contains($controller,"public const RELEASE_GATE = 'download_only_staging_pending';"),
-    'download_enabled_but_install_staging_gate_closed');
-needed(str_contains($controller,"Database and media installation is disabled until fresh staging") &&
-    str_contains($controller,"baramastaging.tonsamith.com") &&
-    str_contains($controller,'stagingInstallAccepted()') &&
+needed(str_contains($controller,"public const RELEASE_GATE = 'customer_signed_demo_v1';") &&
+    !str_contains($controller,'demo-import-native-v107.acceptance'),
+    'customer_release_requires_verified_package_instead_of_staging_host');
+needed(str_contains($controller,'DemoCustomerReleasePolicyV1::assertInstallable') &&
+    str_contains($controller,'publishedPackageForHash((string)$stage') &&
+    str_contains($controller,'DEMO_PUBLISHED_PACKAGE_CHANGED') &&
     str_contains($controller,'installNative(') &&
     !str_contains($controller,'(new DemoImportPackageV1())->install('),
-    'native_install_requires_explicit_staging_acceptance');
+    'customer_install_requires_fresh_entitlement_and_complete_signed_release');
 needed(!str_contains($controller,'/license/v2/demo/package') &&
        !str_contains($client,'/license/v2/demo/package'),
     'invented_demo_download_url_removed');

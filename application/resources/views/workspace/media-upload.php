@@ -22,9 +22,38 @@ $storageLabel = match ($disk) {
     default => 'Private local server storage (default)',
 };
 $maxBytes = (int) ($capabilities['max_bytes'] ?? 52428800);
+// BARAMA_MEDIA_UPLOAD_SIZE_GUARD_V102: report actual PHP upload limits.
+$parseUploadIni = static function (string $value): int {
+    $value = trim($value);
+    if ($value === '0' || $value === '') {
+        return PHP_INT_MAX;
+    }
+    if (preg_match('/^([0-9]+)([KMG])?$/i', $value, $match) !== 1) {
+        return 0;
+    }
+    $factor = match (strtoupper($match[2] ?? '')) {
+        'K' => 1024, 'M' => 1048576, 'G' => 1073741824, default => 1,
+    };
+    $amount = (int) $match[1];
+    return $amount > intdiv(PHP_INT_MAX, $factor) ? PHP_INT_MAX : $amount * $factor;
+};
+$baramaMaxBytes = max(1, (int) ($capabilities['max_bytes'] ?? (50 * 1048576)));
+$phpSingleLimit = $parseUploadIni((string) ini_get('upload_max_filesize'));
+$phpPostLimit = $parseUploadIni((string) ini_get('post_max_size'));
+$phpPostBudget = $phpPostLimit === PHP_INT_MAX ? PHP_INT_MAX : max(0, $phpPostLimit - 1048576);
+$effectiveMax = max(0, min($baramaMaxBytes, $phpSingleLimit, $phpPostBudget));
+$formatMediaBytes = static fn (int $n): string => $n >= 1048576
+    ? rtrim(rtrim(number_format($n / 1048576, 1), '0'), '.') . ' MB'
+    : ($n >= 1024 ? (int) floor($n / 1024) . ' KB' : $n . ' bytes');
+$effectiveLabel = $formatMediaBytes($effectiveMax);
+$hostingConstrained = $effectiveMax < $baramaMaxBytes;
+
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-v135.css') . '?v=135') ?>">
-<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134a') ?>" defer></script>
+<link rel="stylesheet" href="<?= e(asset('css/media-library-upload-contrast-v101.css') . '?v=101') ?>">
+<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134b-merge') ?>" defer></script>
+<link rel="stylesheet" href="<?= e(asset('css/media-library-upload-limits-v102.css') . '?v=102') ?>">
+<script src="<?= e(asset('js/media-library-upload-limits-v102.js') . '?v=102') ?>" defer></script>
 
 <section class="workspace-page media-upload" data-media-upload>
     <header class="media-upload__hero">
@@ -72,8 +101,15 @@ $maxBytes = (int) ($capabilities['max_bytes'] ?? 52428800);
     </div>
     <div class="media-upload__notice is-error" role="alert" data-media-upload-client-error hidden></div>
 
-    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" novalidate data-media-upload-form data-media-max-files="<?= $maxFiles ?>" data-media-max-bytes="<?= $maxBytes ?>">
+    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" novalidate data-media-upload-form data-media-max-files="<?= $maxFiles ?>" data-media-max-bytes="<?= $effectiveMax ?>" data-size-max-files="<?= $maxFiles ?>" data-size-file-limit="<?= $effectiveMax ?>" data-size-request-budget="<?= $phpPostBudget ?>">
         <?= csrf_field() ?>
+        <div class="media-upload__limit-panel" role="note">
+            <strong><?= $hostingConstrained ? 'Hosting size limit applies' : 'Upload size limit' ?></strong>
+            <span>Up to <?= e($effectiveLabel) ?> per file<?= $hostingConstrained
+                ? ' (lower than the Barama ' . e($maxLabel) . ' application limit due to PHP hosting settings)'
+                : '' ?>. Choose smaller images or ask your administrator to increase verified PHP/web-server limits.</span>
+        </div>
+        <div class="media-upload__limit-error" data-size-error role="alert" aria-live="polite" hidden></div>
         <div class="media-upload__dropzone" data-media-dropzone tabindex="0" role="button" aria-label="Choose files or drag and drop media">
             <div class="media-upload__drop-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -83,7 +119,7 @@ $maxBytes = (int) ($capabilities['max_bytes'] ?? 52428800);
             <strong>Drag &amp; drop media here</strong>
             <p>Or choose files from your computer. Upload up to <?= $maxFiles ?> files at once.</p>
             <button class="btn btn-primary" type="button" data-media-choose>Choose files</button>
-            <small>Maximum <?= e($maxLabel) ?> per file. Files are MIME-validated and stored privately.</small>
+            <small>Maximum <?= e($effectiveLabel) ?> per file on this server. Files are MIME-validated and stored privately.</small>
             <input class="media-upload__native-input" type="file" name="media_files[]" multiple required accept="<?= e('.' . implode(',.', $acceptExtensions)) ?>" data-media-input>
         </div>
 

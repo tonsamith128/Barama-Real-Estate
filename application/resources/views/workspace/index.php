@@ -121,7 +121,7 @@ $formatCell = static function (string $key, array $row) use ($humanize, $workspa
         $uuid = trim((string) ($row['uuid'] ?? ''));
         $mime = trim((string) ($row['mime_type'] ?? ''));
         $name = trim((string) ($row['original_name'] ?? 'Media asset'));
-        $mediaUrl = $uuid !== '' ? url('/media/' . rawurlencode($uuid)) : '';
+        $mediaUrl = $uuid !== '' ? url('/dashboard/media/preview/' . rawurlencode($uuid)) : '';
         $isImage = str_starts_with($mime, 'image/');
         $size = (int) ($row['size_bytes'] ?? 0);
         $sizeLabel = $size >= 1048576
@@ -139,17 +139,36 @@ $formatCell = static function (string $key, array $row) use ($humanize, $workspa
         };
         $alt = trim((string) ($row['alt_text'] ?? ''));
 
+        // BARAMA_MEDIA_PREVIEW_V101: admin-owned media is served through the
+        // authenticated preview, not the public listing-media endpoint.
+        $previewKind = match (true) {
+            $isImage => 'image',
+            str_starts_with($mime, 'video/') => 'video',
+            str_starts_with($mime, 'audio/') => 'audio',
+            $mime === 'application/pdf' => 'pdf',
+            default => 'document',
+        };
+        $previewAttributes = ' data-media-preview'
+            . ' data-media-url="' . e($mediaUrl) . '"'
+            . ' data-media-name="' . e($name) . '"'
+            . ' data-media-mime="' . e($mime) . '"'
+            . ' data-media-kind="' . e($previewKind) . '"'
+            . ' data-media-alt="' . e($alt) . '"'
+            . ' data-media-dimensions="' . e($dimensions) . '"'
+            . ' aria-label="Preview ' . e($name) . '"';
+
         $preview = '<span class="barama-media-focus-thumb"><span class="barama-media-focus-thumb__fallback">'
             . e($typeLabel) . '</span></span>';
         if ($mediaUrl !== '') {
             if ($isImage) {
                 $preview = '<a class="barama-media-focus-thumb" href="' . e($mediaUrl)
-                    . '" target="_blank" rel="noopener noreferrer" title="Open media">'
+                    . '"' . $previewAttributes . ' title="Preview media">'
+                    . '<span class="barama-media-focus-thumb__fallback" aria-hidden="true">Image</span>'
                     . '<img src="' . e($mediaUrl) . '" alt="" loading="lazy" decoding="async">'
                     . '</a>';
             } else {
                 $preview = '<a class="barama-media-focus-thumb" href="' . e($mediaUrl)
-                    . '" target="_blank" rel="noopener noreferrer" title="Open media">'
+                    . '"' . $previewAttributes . ' title="Preview media">'
                     . '<span class="barama-media-focus-thumb__fallback">' . e($typeLabel) . '</span></a>';
             }
         }
@@ -1150,6 +1169,7 @@ $renderActions = static function (array $row) use (
 <script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
 <?php if ($mediaLibraryFocus): ?>
     <link rel="stylesheet" href="<?= e(asset('css/media-library-focus-v145.css') . '?v=145') ?>">
+    <link rel="stylesheet" href="<?= e(asset('css/media-library-preview-repair-v101.css') . '?v=101') ?>">
 <?php endif; ?>
 <?php if ($workspaceType === 'developer' && in_array($activeSection, ['company', 'projects', 'properties', 'listings'], true)): ?>
     <link rel="stylesheet" href="<?= e(asset('css/developer-create-pages-v109.css') . '?v=109') ?>">
