@@ -1,11 +1,12 @@
-# CodeCanyon Submission Readiness
+# Barama Real Estate v1.0.0 — CodeCanyon Submission Readiness
 
-This checklist tracks repository-controlled preparation for Barama Real Estate before the final marketplace submission.
+This checklist tracks repository-controlled preparation of the **v1.0.0 source/customer-package candidate** before final marketplace submission. A source VERSION bump and a green CI run are not themselves proof of a published or fully certified marketplace item.
 
 ## Automated package requirements
 
 The exact customer ZIP must:
 
+- match source `VERSION=1.0.0`, embedded customer ZIP `VERSION`, ZIP filename, archive comment, README and SHA-256 artifact manifest
 - contain the complete runtime PHP source
 - contain `documentation/index.html`
 - contain one customer-facing `CHANGELOG.md` without duplicate source-version trees
@@ -33,6 +34,8 @@ The packaged HTML documentation must cover:
 - third-party asset credits
 - customer version history / changelog reference
 - online documentation and support links
+- Media Library Upload instructions including permissions, private previews and PHP/shared-hosting upload limits
+- signed Demo Importer version compatibility, backup, signature and empty-site prerequisites
 
 ## Final manual gates
 
@@ -45,6 +48,9 @@ Do not label the item v1.0.0-ready until the remaining human/live gates in `docs
 - human English/Khmer/Chinese content review
 - Safari/iOS and Edge/Chrome acceptance
 - online documentation parity review
+- exact signed demo-content compatibility for app v1.0.0 (do not infer from v0.9.25 acceptance)
+- private Media Library upload/preview, unauthorized/CSRF rejection and file-size failure testing
+- disposable database + file backup integrity and recovery/rollback rehearsal
 - final CodeCanyon upload-form/package review
 
 ## Envato alignment

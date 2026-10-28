@@ -3,11 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Barama Real Estate Documentation</title>
+    <title>Barama Real Estate v1.0.0 — Customer Documentation</title>
 </head>
 <body>
     <header>
-        <h1>Barama Real Estate</h1>
+        <h1>Barama Real Estate v1.0.0</h1>
+        <p>CodeCanyon customer-package documentation · Release-candidate source dated 28 October 2026</p>
         <p>Property Marketplace &amp; Developer Management PHP Script</p>
         <p>Author: Ton Samith</p>
         <p>Quick links:
@@ -26,6 +27,7 @@
             <li><a href="#accounts">Accounts and workspaces</a></li>
             <li><a href="#email">Email delivery</a></li>
             <li><a href="#jobs">Scheduled notification jobs</a></li>
+            <li><a href="#media-library">Media Library Upload</a></li>
             <li><a href="#demo-importer">Signed Live Demo importer</a></li>
             <li><a href="#upgrade">Upgrade</a></li>
             <li><a href="#third-party">Third-party assets</a></li>
@@ -102,6 +104,19 @@
             <p>Run the command from the installed Barama package and use the PHP CLI version supported by the web application.</p>
         </section>
 
+        <section id="media-library">
+            <h2>Media Library Upload</h2>
+            <p>Sign in as an administrator with the <code>media.manage</code> permission, open <code>/dashboard/media</code> and select <strong>Upload</strong>, or visit <code>/dashboard/media/upload</code>.</p>
+            <ol>
+                <li>Drag files into the upload area or choose files from your computer. The application accepts up to 20 files per batch.</li>
+                <li>Review selected names, file types and per-file sizes, then select <strong>Upload files</strong>. The application maximum is 50 MB per file; your PHP/web-server upload or POST limit can be lower and takes precedence.</li>
+                <li>After upload, return to <strong>Media Library</strong> to locate the new records, edit missing alt text and confirm any required attachment context.</li>
+                <li>Use an authorized preview to inspect media. Private stored files are not intended as unauthenticated public download URLs.</li>
+            </ol>
+            <p>The server checks uploaded file types using MIME validation, enforces authenticated permissions and CSRF protection, and records successful uploads. Files are stored in private local storage by default. S3 or Cloudflare R2 is used only when a supported provider is configured and active.</p>
+            <p>For upload failures, verify the selected file's MIME type, actual size, <code>upload_max_filesize</code>, <code>post_max_size</code>, write permissions and your hosting provider's request-body limits; do not grant world-write access or bypass validation.</p>
+        </section>
+
         <section id="demo-importer">
             <h2>Signed Live Demo importer</h2>
             <p>Barama separates the clean customer installation from optional publisher-managed demo data. The installer does not prepopulate companies, projects, properties, listings, images, or policy text.</p>
@@ -113,7 +128,7 @@
                 <li>Only use the guarded install action when the application explicitly enables it for your installation and confirms backup and empty-site readiness. Never bypass a disabled button or rerun the import over customer content.</li>
                 <li>After a successful installation, check properties, projects, companies, media galleries, design settings, and any included public Policy Center content.</li>
             </ol>
-            <p><strong>Customer-release requirements:</strong> Downloading and verifying a package does not enable installation. The customer importer requires an active domain-bound license, a new officially published Ed25519-signed Demo Content release v0.9.26 or newer, an explicit signed manifest compatibility match with this exact application version, 20 reviewed public Policy Center entries, an empty marketplace, an available database backup, and your exact confirmation. Legacy v0.9.25 demo archives can be verified but cannot be installed. The new complete signed demo release has not yet been approved/published for customers; contact support if unavailable.</p>
+            <p><strong>Customer-release requirements:</strong> Downloading and verifying a package does not enable installation. The customer importer requires an active domain-bound license, a new officially published Ed25519-signed Demo Content release v0.9.26 or newer, an explicit signed manifest compatibility match with this exact application version, 20 reviewed public Policy Center entries, an empty marketplace, an available database backup, and your exact confirmation. Legacy v0.9.25 demo archives can be verified but cannot be installed. A previously accepted v0.9.26 signed demo-content release was compatible with application v0.9.25, not automatically v1.0.0. Only install a newly approved, signed demo manifest that explicitly lists application v1.0.0 as compatible; otherwise the importer must remain blocked. Contact support if such a release is unavailable.</p>
             <p>Demo packages and application updater releases are separate: demo-data versions do not upgrade the Barama PHP application.</p>
         </section>
 
@@ -138,7 +153,7 @@
 
         <section id="version-history">
             <h2>Version history</h2>
-            <p>The planned initial CodeCanyon release is v1.0.0; it has not been published yet. Development-only 0.9.x milestones are not separate customer releases.</p>
+            <p>Application/customer-package version: <strong>v1.0.0</strong> (source and documentation prepared 28 October 2026). This versioned candidate is not yet published or approved on CodeCanyon. Marketplace submission and approval are separate from the source version. Development-only 0.9.x milestones were not separate CodeCanyon customer releases.</p>
             <p>See <code>../CHANGELOG.md</code> in the customer package for the current release notes and future customer-facing changes.</p>
         </section>
 

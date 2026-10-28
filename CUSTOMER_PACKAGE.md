@@ -1,6 +1,6 @@
-# Barama Real Estate Customer Package
+# Barama Real Estate Customer Package — v1.0.0
 
-This file describes the supported CodeCanyon customer ZIP.
+This file describes the versioned Barama Real Estate v1.0.0 CodeCanyon customer-package candidate. The package version does not certify a public marketplace release; exact ZIP and live acceptance must be recorded before publishing.
 
 ## Install
 
@@ -29,6 +29,10 @@ The customer ZIP contains only the runtime product and customer-facing support f
 - packaged HTML help file: `documentation/index.html`
 - customer-facing `CHANGELOG.md`
 - package README and version metadata
+
+## Media Library Upload
+
+Administrators with the `media.manage` permission can use `/dashboard/media` and `/dashboard/media/upload` to add images, PDF/documents, video or audio with the protected uploader. The Media Library provides access-controlled previews and image attachments. Maximum 20 files per upload batch and 50 MB per file are application limits; PHP and hosting limits may be lower. Files are inspected using MIME validation. The default destination is private local server storage; S3/R2 is available only when a supported provider has been configured, tested and activated.
 
 ## Not included
 
@@ -82,7 +86,7 @@ All four resources below are maintained separately from the customer ZIP:
 - **Online Documentation:** https://docs.tonsamith.com/docs/?=228711-barama-real-estate-property-marketplace-developer-management-php-script
 - **Product Description:** https://demo.tonsamith.com/demo/257404-barama-real-estate-property-marketplace-developer-management-php-script
 
-The public demo is a showcase and is **not** automatically installed with a fresh customer database. Demo-content releases are separate from Barama application updates. Official signed demo download is subject to licensing; installation is further controlled by the installed release's security gates.
+The public demo is a showcase and is **not** automatically installed with a fresh customer database. Demo-content releases are separate from Barama application updates. Official signed demo download is subject to licensing; installation is further controlled by the installed release's security gates. Demo Content v0.9.26 previously accepted for application v0.9.25 is not assumed compatible with application v1.0.0: require an explicit signed manifest matching the exact installed application version. Never bypass signature, backup or empty-marketplace checks.
 
 ## Customer documentation
 

@@ -98,8 +98,10 @@ foreach ([
         );
     }
 }
-if (!str_contains($documentation, 'planned initial CodeCanyon release')) {
-    throw new RuntimeException('Customer release is presented as already published.');
+// A versioned customer package is not proof of marketplace publication.
+// Keep the release status explicit until CodeCanyon actually approves the item.
+if (!str_contains($documentation, 'not yet published or approved on CodeCanyon')) {
+    throw new RuntimeException('Customer release status is missing or presented as already published.');
 }
 
 $releaseSource = (string) $zip->getFromName('application/app/Services/DemoCustomerReleasePolicyV1.php');

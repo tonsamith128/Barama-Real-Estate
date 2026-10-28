@@ -8,9 +8,9 @@ The Quality workflow is designed to validate the source repository, MySQL schema
 
 The automated gates enforce one canonical first-party stylesheet and one canonical first-party JavaScript file.
 
-## Last fully executed automated baseline
+## Recent fully executed automated baseline
 
-The last fully executed green baseline is the 0.9.10 development line at commit `fa77adcf6b6fe388e9a3b8cca6cd310bbd2829b6` (Quality run 35529203163).
+The v0.9.25 Media Library Upload PR #142 completed a green Quality workflow (run 40641840365) and CodeCanyon Staging Readiness (run 40641840476) on 28 October 2026, before the v1.0.0 version/documentation candidate. Re-run both workflows for the **exact v1.0.0 commit and ZIP**; previously passing workflows do not certify a newly labeled package. Earlier 0.9.10 QA history is retained below for background.
 
 That run completed with assigned GitHub-hosted runners and passed:
 
@@ -25,9 +25,9 @@ That run completed with assigned GitHub-hosted runners and passed:
 - Chromium responsive/accessibility QA
 - Firefox and WebKit critical-flow compatibility QA
 
-## Implemented gates pending runner execution
+## Earlier release-gate history (historical runner outage)
 
-Beginning with the localization milestone, GitHub Actions jobs have been created but GitHub has not assigned a hosted runner. The raw Actions job records show `runner_id: 0` and `steps: []`, so these runs are infrastructure/startup failures rather than executed Barama test failures.
+Earlier in the release program, GitHub Actions jobs were created but GitHub had not assigned a hosted runner. The raw Actions job records show `runner_id: 0` and `steps: []`, so these runs are infrastructure/startup failures rather than executed Barama test failures.
 
 The following gates are implemented in the repository but must be rerun before they can be marked closed:
 
@@ -47,7 +47,7 @@ The following gates are implemented in the repository but must be rerun before t
 - packaged HTML customer help file at `documentation/index.html`
 - CodeCanyon preparation scan for inline CSS attributes, inline JavaScript event handlers, runtime `eval()`, unsafe PHP short tags, and runtime debug dumps
 
-These gates remain pending until a Quality run receives a real runner and completes all workflow jobs successfully.
+The earlier runner-outage notes above are historical. Current CI must be evaluated on the exact candidate commit; live human/customer acceptance remains independent of CI.
 
 ## Development rules
 
@@ -92,7 +92,7 @@ These gates remain pending until a Quality run receives a real runner and comple
 
 These remain intentionally open:
 
-- successful rerun of all implemented 0.9.11–0.9.13 automated gates after GitHub hosted-runner execution resumes
+- all Quality and CodeCanyon Staging Readiness checks green on the exact v1.0.0 candidate commit and generated customer ZIP
 - live Ton Samith License Manager success using Barama-specific Direct and Envato test credentials through the installer/live-server test
 - final live-server Apache/shared-hosting installer acceptance test
 - final live-server Nginx installer acceptance test
@@ -108,7 +108,7 @@ These remain intentionally open:
 - online documentation review against the exact v1.0.0 package
 - successful execution of the strengthened 0.9.15 route/controller contract gate before RC1 promotion
 
-No open or pending gate should be represented as complete until it has been exercised on the applicable environment.
+No open or pending gate should be represented as complete until it has been exercised on the applicable environment. `VERSION=1.0.0` identifies a candidate package; it does not make outstanding RC1 acceptance evidence or public CodeCanyon submission automatically pass.
 
 
 ## RC1 promotion

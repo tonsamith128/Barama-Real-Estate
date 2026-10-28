@@ -1,6 +1,6 @@
 # Barama Real Estate — CodeCanyon Staging Acceptance
 
-**Version:** The actual GitHub Main VERSION (currently **0.9.25**). **CodeCanyon v1.0.0 is not yet certified.** This artifact is for cPanel and aaPanel fresh-site acceptance.
+**Version:** CodeCanyon customer-package candidate **1.0.0** (source VERSION, customer ZIP and checksum must match). **Marketplace submission/approval and full release certification remain pending independent evidence.** This artifact is for cPanel and aaPanel fresh-site acceptance.
 
 ## Download and package structure
 
@@ -42,11 +42,13 @@ The GitHub Actions artifact is a wrapper containing the following files:
 
 ## Release-version and feature boundary
 
-- GitHub Main currently uses **0.9.25**. The already deployed earlier Production server was last confirmed at 0.9.24, and must not be overwritten to make versions match.
+- The **v1.0.0 source/package candidate** is not an automatic deployment. Existing real customer/demo sites may still run **0.9.25** or other validated versions. Do not overwrite them merely to align displayed labels.
 - CodeCanyon public v1.0.0 submission requires the independent human/live acceptance gates in docs/RELEASE_GATES.md and docs/CODECANYON_SUBMISSION.md.
 - The Demo Content package published at TonSamith.com, with its properties, images, menus and footer, is separately publisher-signed and is NOT part of this customer installer ZIP.
 - Successfully staging or verifying Demo Content does not mean the complete DB/media import is enabled or accepted. Do not bypass installation safety gates.
 - Run backup/restore rehearsals only against disposable staging databases. Capture failures as FAIL / NOT TESTED, never silently as PASS.
+- Signed Demo Content v0.9.26 previously accepted on app v0.9.25 requires a separately approved signed manifest explicitly compatible with **1.0.0**; never bypass compatibility or signature checks.
+- Verify authorized Media Library Upload (JPG/WebP, private preview, file-size limits, permissions, CSRF rejection, and rollback) on both hosting families.
 
 ## Minimum cPanel + aaPanel acceptance record
 
