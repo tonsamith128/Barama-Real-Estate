@@ -38,12 +38,12 @@ function inputArgs(array $args): array {
     return $params;
 }
 function copyAtomically(string $source, string $dest): void {
-    if (!is_file($source) || is_link($source)) stopPatch('PATCH_SOURCE_UNSAFE');
+    if (!is_file($source) || is_link($source)) throw new RuntimeException('PATCH_SOURCE_UNSAFE');
     $temp = dirname($dest) . '/.barama-qa-' . bin2hex(random_bytes(12)) . '.tmp';
-    if (!copy($source, $temp)) stopPatch('TEMP_COPY_FAILED');
+    if (!copy($source, $temp)) throw new RuntimeException('TEMP_COPY_FAILED');
     if (!chmod($temp, 0644) || !rename($temp, $dest)) {
         @unlink($temp);
-        stopPatch('ATOMIC_REPLACE_FAILED');
+        throw new RuntimeException('ATOMIC_REPLACE_FAILED');
     }
 }
 $opt = inputArgs($argv);
@@ -58,7 +58,7 @@ if ($kit === $root || str_starts_with($kit . '/', $root . '/')) {
     stopPatch('KIT_MUST_BE_OUTSIDE_PUBLIC_HTML');
 }
 if (!is_file($root . '/VERSION') || trim((string)file_get_contents($root . '/VERSION')) !== '0.9.25') {
-    stopPatch('BAR​​AMA_INSTALLED_VERSION_NOT_0925');
+    stopPatch('BARAMA_INSTALLED_VERSION_NOT_0925');
 }
 $manifest = json_decode((string)file_get_contents($kit . '/manifest.json'), true);
 if (!is_array($manifest) || ($manifest['kind'] ?? '') !== 'barama-salabandet-demo-policy-code-only-v1' ||
