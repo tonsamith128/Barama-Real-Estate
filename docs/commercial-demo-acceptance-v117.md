@@ -1,6 +1,16 @@
 # Barama commercial Demo v0.9.26 — Owner release acceptance v1.1.7
 
-**Status (2026-10-28): NOT CLEARED FOR SIGNING, PUBLISHING, OR CUSTOMER INSTALLATION.** Related: [previous pinned handoff](barama-demo-v0926-customer-release-handoff.md), [PR #140](https://github.com/tonsamith128/Barama-Real-Estate/pull/140). This is an evidence ledger and fail-closed release procedure; **do not repeat completed discovery/exports/keyword scans**.
+**Status (2026-10-28): PUBLISHER-SIGNED DRAFT VERIFIED (ID #7 / DCP-20261028-BB4A3B29); NOT APPROVED FOR PUBLICATION OR CUSTOMER INSTALLATION.** Related: [previous pinned handoff](barama-demo-v0926-customer-release-handoff.md), [PR #140](https://github.com/tonsamith128/Barama-Real-Estate/pull/140). This is an evidence ledger and fail-closed release procedure; **do not repeat completed discovery/exports/keyword scans**.
+
+## Publisher signed-Draft checkpoint verified — 2026-10-28
+
+Owner screenshot: `https://tonsamith.com/dashboard/demo-content/packages/7`, package **#7 / DCP-20261028-BB4A3B29**, version 0.9.26, `Draft`, zero downloads, SHA256 `b577010057631afef2364ed51456f1ab1849ba41918548169109e103b482662e`.
+
+This is **stronger than a screenshot-only status check**: the assistant cryptographically verified the detached Ed25519 signature shown in the owner's screenshot over the raw SHA-256 digest of the exact locally retained ZIP, with the screenshot public key fingerprint matching the independent Barama trust pin `be53fa7e3e531da5a7a21e9f12eaaf15dfcf8633af4fd65640d27bb21bb03287` in `DemoPublisherApiV1`. Signature math **PASS**. The live publisher catalog response / entitlement was **not separately fetched**; the screenshot establishes Draft status, not public installation access.
+
+Full non-repeat signature evidence and public verification values are in [publisher handoff v1.1.9](barama-demo-v0926-publisher-draft-handoff-v118.md).
+
+**Completed and do not repeat:** splitting/download SHA parity, native ZIP CRC, 53 image-byte parity, publisher Draft creation and screenshot signature verification. **Still blocked:** actual fresh license-bound manual/auto installations and rollback, plus owner final license/legal adoption and commercial publication authorization. The importer requires a **published publisher catalog record**; do not make global live publication solely to get through QA. Establish restricted QA entitlement and access control in the publisher first, or obtain explicit owner-approved release activation after a guarded plan. PR #140 remains unmerged.
 
 ## Verified baseline — no need to redo
 
