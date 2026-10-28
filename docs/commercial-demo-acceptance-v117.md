@@ -56,6 +56,22 @@ CSV SHA-256:
 
 **Disposition: STOP for signing, publisher Draft, customer installation, Main merge or public CodeCanyon sale.** Operator/legal signoff and provenance-based per-asset rights clearance remain unverified; source record contact and illustrative-listing truthfulness need review. A manual viewer's observation of no obvious people/logos does **not** change any review status. Do not mark images approved en masse or re-run integrity audits unless source hashes change.
 
+## 2026-10-28 owner factual-data correction and revised signable draft (LATEST)
+
+The owner has **explicitly confirmed** that all Live Demo identities, company/contact details, usernames/passwords, addresses, prices, property inventory and other content are **fictional demo testing data**; earlier owner statements identify the 53 images as ChatGPT-generated. The previous potential-real-contact-data question is **resolved as a fictional-data source classification**, not as a claim of legal identity/third-party rights clearance. Do not ask the owner to re-prove that these test personas are real people. The native signed source archive contains no account/password tables.
+
+**Updated owner-review candidate prepared**: `Barama-Demo-Content-v0.9.26-OWNER-REVIEWED-UNSIGNED.zip`, SHA256 **`b577010057631afef2364ed51456f1ab1849ba41918548169109e103b482662e`**, 35,336,780 bytes. This is **NEW**, not the prior `250c918...` candidate. The original remains intact. Full handoff `Barama-v0.9.26-Publisher-Draft-Handoff-v1.0.0.zip` SHA256 `d32ba4a6ddaca7c7cc2e2a4d0faaf1338d530b7d723c7206eb3db12eed6c1d1a`.
+
+The new native ZIP retains 56 entries, 53 byte-identical images and digests, 73 media attachments, all 20 exact source policies, 5,255 records and app 0.9.25 compatibility. Changed only: `manifest.description`, the homepage hero's notice about fictional sample data, a single company email/phone replaced with reserved `example.com` and `555` testing values, and `review.json` documenting **owner statements, not publisher or legal approval**. Native ZIP CRC, records, media SHA/byte parity and policy-object preservation pass offline.
+
+**Do not confuse:** the new candidate is ready to be offered to the **owner-controlled publisher as an unpublished DRAFT for signature review**, but the publisher has not actually signed it. The signature has to cover the **new** SHA `b577010...`. Owner adoption of illustrative-image license and licensing decisions are documented as draft and not digitally signed; third-party rights are not independently proven. Imported policies still require PR #140's draft/private guard and customer editing before public use.
+
+See permanent targeted guides:
+- [Owner fictional-demo statement and illustrative-image license](barama-demo-v0926-owner-content-license-v118.md)
+- [New exact candidate and publisher Draft-only procedure](barama-demo-v0926-publisher-draft-handoff-v118.md)
+
+**Next protected actions:** actual publisher upload/signature; domain-bound signed release authorization; real fresh isolated Manual + Auto customer imports and rollback receipts. None is achievable by changing repository docs or unsigned ZIP metadata alone. No Main merge, public publisher publication or customer install has been done.
+
 ## Stage A — legal decisions (technical source review done, formal review still pending)
 
 1. Resolve per-owner operator name/address and support/privacy/IP/accessibility contacts; billing/cancellation/refund implementation; governing law and dispute provisions; actual privacy disclosures, cookie consent, processors, retention and cross-border data; platform and accessibility representations.
