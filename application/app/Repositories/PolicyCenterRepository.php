@@ -61,9 +61,16 @@ final class PolicyCenterRepository
     {
         $rows = array_values(array_filter(
             $this->read()['policies'],
-            static fn (array $policy): bool =>
+            fn (array $policy): bool =>
                 (string) ($policy['status'] ?? 'draft') === 'published'
                 && (string) ($policy['visibility'] ?? 'public') === 'public'
+                // Fail closed if an imported template was never explicitly
+                // approved, even when a stale/forged status says published.
+                && (empty($policy['imported_demo_template']) || (
+                    !empty($policy['demo_template_approved'])
+                    && $this->isComplianceReady($policy)
+                    && !self::hasUnresolvedDemoInstructions((string) ($policy['content_html'] ?? ''))
+                ))
         ));
 
         usort($rows, static function (array $left, array $right): int {
@@ -213,7 +220,22 @@ final class PolicyCenterRepository
             $restored['version_number'] = $this->nextVersionNumber($policy);
             $restored['versions'] = $versions;
 
-            if (
+            if (!empty($policy['imported_demo_template'])) {
+                // Historical versions may contain obsolete legal promises.
+                // A restore is ALWAYS a new private draft requiring approval.
+                $restored['imported_demo_template'] = true;
+                $restored['demo_template_approved'] = false;
+                $restored['status'] = 'draft';
+                $restored['visibility'] = 'private';
+                $restored['compliance_gate_enabled'] = true;
+                $restored['compliance_status'] = 'not_reviewed';
+                $restored['compliance_progress'] = 0;
+                $restored['compliance_checks'] = $this->blankComplianceChecks();
+                $restored['reviewed_by'] = '';
+                $restored['last_reviewed_at'] = '';
+                $restored['next_review_date'] = '';
+                $restored['effective_date'] = '';
+            } elseif (
                 !empty($restored['compliance_gate_enabled'])
                 && (string) ($restored['status'] ?? 'draft') === 'published'
                 && !$this->isComplianceReady($restored)
@@ -287,6 +309,12 @@ final class PolicyCenterRepository
             null
         );
         $copy['status'] = 'draft';
+        if (!empty($source['imported_demo_template'])) {
+            $copy['visibility'] = 'private';
+            $copy['effective_date'] = '';
+            $copy['demo_template_approved'] = false;
+            $copy['compliance_gate_enabled'] = true;
+        }
         $copy['compliance_status'] = 'not_reviewed';
         $copy['compliance_progress'] = 0;
         $copy['compliance_checks'] = $this->blankComplianceChecks();
@@ -970,8 +998,26 @@ final class PolicyCenterRepository
             && (string) ($existing['status'] ?? 'draft') === 'published';
 
         $publicationBlocked = false;
-
-        if (
+        $importedTemplate = !empty($existing['imported_demo_template']);
+        if ($importedTemplate) {
+            // Ignore untrusted form fields claiming this template is approved,
+            // or attempting to disable the compliance gate. Publication must
+            // be an explicit action with evidence and resolved template text.
+            $record['imported_demo_template'] = true;
+            $record['compliance_gate_enabled'] = true;
+            $ready = $saveMode === 'publish'
+                && $status === 'published'
+                && $visibility === 'public'
+                && $this->isComplianceReady($record)
+                && !self::hasUnresolvedDemoInstructions((string) $record['content_html']);
+            $record['demo_template_approved'] = $ready;
+            if (!$ready) {
+                $publicationBlocked = $saveMode === 'publish'
+                    || $requestedStatus === 'published';
+                $record['status'] = 'draft';
+                $record['visibility'] = 'private';
+            }
+        } elseif (
             $saveMode === 'publish'
             && !$wasPublished
             && $gateEnabled
@@ -984,6 +1030,29 @@ final class PolicyCenterRepository
         $record['_publication_blocked'] = $publicationBlocked;
 
         return $record;
+    }
+
+    /** Editorial instructions must not become binding customer policies. */
+    private static function hasUnresolvedDemoInstructions(string $html): bool
+    {
+        $text = mb_strtolower(html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        foreach ([
+            'administrator review required before publication',
+            'confirm the operator legal name',
+            'insert the operator',
+            'before publication, insert',
+            'configure actual periods before publication',
+            'configure the official support',
+            'configure a copyright',
+            'configure an accessibility contact',
+            'do not publish until',
+            'limitation of liability should be finalized',
+        ] as $marker) {
+            if (str_contains($text, $marker)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** @param array<string, mixed> $policy */

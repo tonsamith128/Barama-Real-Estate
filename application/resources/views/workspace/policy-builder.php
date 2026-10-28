@@ -58,6 +58,17 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
             </span>
         </div>
 
+        <?php if (!empty($record['imported_demo_template'])): ?>
+            <div class="pc-legal-review" role="note">
+                <strong>Imported demo legal template — operator review required</strong>
+                <span>Not a finalized legal policy. Adapt the text to this operator,
+                    configure the effective date and contacts, complete every
+                    compliance check, then explicitly publish. Imported templates
+                    are private drafts until approved.
+                </span>
+            </div>
+        <?php endif; ?>
+
         <?php if ($editing): ?>
             <input type="hidden" name="id" value="<?= e((string) ($record['id'] ?? '')) ?>">
         <?php endif; ?>

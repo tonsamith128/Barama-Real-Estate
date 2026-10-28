@@ -27,6 +27,7 @@ foreach ([
     'application/config/update-feed-v2.json',
     'assets/js/barama-portable-auto-updater-v1.js',
     'application/app/Http/Controllers/SystemCenterController.php',
+    'application/app/Services/DemoCustomerReleasePolicyV1.php',
 ] as $updateComponent) {
     if (!is_file($root . '/' . $updateComponent)) {
         throw new RuntimeException('V2 updater component missing from customer source: ' . $updateComponent);
