@@ -31,7 +31,7 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
  </div>
  <?php endif; ?>
  <?php if (empty($demoReleaseAccepted)): ?>
- <div class="btool-warning" role="status">Signed package discovery and verification are available. Customer installation requires a newly published complete demo with 20 public policies, explicit app compatibility, an active licensed publisher entitlement, and an empty marketplace.</div>
+ <div class="btool-warning" role="status">Signed package discovery and verification are available. Customer installation requires a publisher-signed complete demo with 20 public policies, supported content/database schema, an active bound license, and an empty marketplace. Application version labels alone do not require a new demo.</div>
  <?php endif; ?>
  <div class="bdemo-summary">
    <div class="bdemo-summary-icon" aria-hidden="true">✦</div>
@@ -158,14 +158,14 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
        <?php if (!empty($demoReleaseAccepted)): ?>
        Customer release verified. Installation requires fresh publisher entitlement, explicit confirmation, an empty marketplace and a successful database backup. Existing marketplace records are never deleted.
        <?php else: ?>
-       The signed ZIP was staged, but it does not meet the complete customer release requirements: v0.9.26 or newer, 20 public policies and declared compatibility with this app version. The database is unchanged.
+       <?= e((string)($demoCompatibilityMessage ?? '') !== '' ? (string)$demoCompatibilityMessage : 'The signed ZIP needs demo v0.9.26 or newer, 20 public policies, a supported demo schema and a compatible destination database. The database is unchanged.') ?>
        <?php endif; ?>
       </div>
       <form method="post" action="<?= e(url('/dashboard/system/demo-importer/install')) ?>" data-btool-protected>
        <input type="hidden" name="_token" value="<?= e(\Barama\Core\Csrf::token()) ?>">
        <label for="bdemo-confirmation">Type <strong>IMPORT LIVE DEMO</strong> to confirm</label>
        <input id="bdemo-confirmation" type="text" name="confirmation" autocomplete="off" placeholder="IMPORT LIVE DEMO" required>
-       <p class="btool-help"><?= !empty($demoReleaseAccepted) ? 'Customer installation: confirm your site is new/empty, verify your recovery plan, then type the exact confirmation above.' : 'This older or incomplete demo archive is not eligible for customer installation.' ?></p>
+       <p class="btool-help"><?= !empty($demoReleaseAccepted) ? 'Customer installation: confirm your site is new/empty, verify your recovery plan, then type the exact confirmation above.' : 'This package is not currently eligible for installation; check signed format, required policies and database schema.' ?></p>
        <div class="btool-actions"><button class="btool-btn btool-btn-primary" type="submit" <?= empty($demoReleaseAccepted) ? 'disabled' : '' ?>>Install verified Live Demo</button></div>
       </form>
      </section>

@@ -9,7 +9,7 @@ use RuntimeException;
 /**
  * BARAMA_DEMO_CUSTOMER_RELEASE_GATE_V115.
  * Independently restrict customer installation to the NEW publisher-signed
- * release containing a full Policy Center snapshot and explicit app support.
+ * release containing a full Policy Center snapshot and a supported content schema.
  * This class cannot authorize any ZIP by itself: the controller MUST perform
  * fresh publisher catalog entitlement, SHA-256 and Ed25519 verification.
  */
@@ -34,18 +34,28 @@ final class DemoCustomerReleasePolicyV1
             preg_match('/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?$/D', $installedAppVersion) !== 1) {
             throw new RuntimeException('DEMO_CUSTOMER_APP_VERSION_INVALID');
         }
+        // Demo content has an independent, signed format contract. Application
+        // release labels are NOT a content-schema version: a valid snapshot
+        // must remain usable across compatible app upgrades without re-signing.
+        // The older compatible_app_versions field is retained for audit but
+        // does not veto an otherwise compatible importer/database schema.
+        if (($proof['format'] ?? null) !== 'tonsamith-manifest-json' ||
+            ($proof['manifest_schema_version'] ?? null) !== 1 ||
+            ($proof['content_schema'] ?? null) !== 'barama-demo-content-v1') {
+            throw new RuntimeException('DEMO_CUSTOMER_CONTENT_SCHEMA_UNSUPPORTED');
+        }
         $compatible = $proof['compatible_app_versions'] ?? null;
-        if (!is_array($compatible) || count($compatible) < 1 || count($compatible) > 20) {
-            throw new RuntimeException('DEMO_CUSTOMER_APP_NOT_DECLARED_COMPATIBLE');
-        }
-        foreach ($compatible as $value) {
-            if (!is_string($value) ||
-                preg_match('/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?$/D', $value) !== 1) {
-                throw new RuntimeException('DEMO_CUSTOMER_APP_NOT_DECLARED_COMPATIBLE');
+        if ($compatible !== null) {
+            if (!is_array($compatible) || count($compatible) < 1 ||
+                count($compatible) > 20 || array_values($compatible) !== $compatible) {
+                throw new RuntimeException('DEMO_CUSTOMER_LEGACY_VERSION_METADATA_INVALID');
             }
-        }
-        if (!in_array($installedAppVersion, $compatible, true)) {
-            throw new RuntimeException('DEMO_CUSTOMER_APP_NOT_DECLARED_COMPATIBLE');
+            foreach ($compatible as $value) {
+                if (!is_string($value) ||
+                    preg_match('/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?$/D', $value) !== 1) {
+                    throw new RuntimeException('DEMO_CUSTOMER_LEGACY_VERSION_METADATA_INVALID');
+                }
+            }
         }
         if (($proof['policy_records'] ?? null) !== self::REQUIRED_PUBLIC_POLICIES) {
             throw new RuntimeException('DEMO_CUSTOMER_PUBLIC_POLICIES_REQUIRED');

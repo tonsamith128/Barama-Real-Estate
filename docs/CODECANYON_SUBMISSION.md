@@ -35,7 +35,7 @@ The packaged HTML documentation must cover:
 - customer version history / changelog reference
 - online documentation and support links
 - Media Library Upload instructions including permissions, private previews and PHP/shared-hosting upload limits
-- signed Demo Importer version compatibility, backup, signature and empty-site prerequisites
+- signed Demo Importer content-format and destination-schema compatibility, backup, signature and empty-site prerequisites
 
 ## Final manual gates
 
@@ -48,7 +48,7 @@ Do not label the item v1.0.0-ready until the remaining human/live gates in `docs
 - human English/Khmer/Chinese content review
 - Safari/iOS and Edge/Chrome acceptance
 - online documentation parity review
-- exact signed demo-content compatibility for app v1.0.0 (do not infer from v0.9.25 acceptance)
+- actual immutable v0.9.26 signed demo format and recipient database compatibility on v1.0.0 (without a version-label override, signature bypass or unsigned repackaging)
 - private Media Library upload/preview, unauthorized/CSRF rejection and file-size failure testing
 - disposable database + file backup integrity and recovery/rollback rehearsal
 - final CodeCanyon upload-form/package review

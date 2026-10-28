@@ -23,7 +23,8 @@ checkStatus(str_contains($view,'data-demo-install-ready')
 checkStatus(str_contains($view,"asset('js/barama-demo-premium-v103.js') . '?v=108'"),
     'cache_bust_real_php_asset');
 checkStatus(str_contains($view,'Customer release verified.')
-    && str_contains($view,'it does not meet the complete customer release requirements')
+    && str_contains($view,'The signed ZIP needs demo v0.9.26 or newer')
+    && str_contains($view,'destination database')
     && str_contains($view,'Install verified Live Demo'),
     'both_gate_states_described');
 checkStatus(str_contains($js,"installReady=root.dataset.demoInstallReady==='1'")

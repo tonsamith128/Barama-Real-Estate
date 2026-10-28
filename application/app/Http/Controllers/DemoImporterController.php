@@ -41,6 +41,7 @@ final class DemoImporterController
         $stage = $_SESSION[self::SESSION] ?? null;
         $review = null;
         $installReady = false;
+        $demoCompatibilityMessage = '';
         if (is_array($stage) && is_string($stage['sha256'] ?? null)) {
             try {
                 $file = $this->stagedFile();
@@ -55,7 +56,17 @@ final class DemoImporterController
                     (array)($stage['publisher_identity'] ?? []),
                     DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256
                 );
-                $installReady = DemoCustomerReleasePolicyV1::canInstall($proof, APP_VERSION);
+                try {
+                    DemoCustomerReleasePolicyV1::assertInstallable($proof, APP_VERSION);
+                    (new DemoImportPackageV1())->assertNativeTargetSchemaCompatible($proof);
+                    $installReady = true;
+                } catch (Throwable) {
+                    // Fail closed for new/unsupported schemas and database changes;
+                    // never bypass a signed artifact, entitlement or backup check.
+                    $demoCompatibilityMessage = 'The signed demo format or the '
+                        . 'current database schema is not supported by this importer. '
+                        . 'A new reviewed demo-content release may be required.';
+                }
                 $review = [
                     'package_id' => (string)($stage['publisher_metadata']['id'] ?? ''),
                     'version' => (string)$proof['package_version'],
@@ -89,6 +100,7 @@ final class DemoImporterController
             'activeSection' => 'system-demo-importer',
             'demoMode' => $mode,
             'demoReleaseAccepted' => $installReady,
+            'demoCompatibilityMessage' => $demoCompatibilityMessage,
             'demoDownloadEnabled' => self::RELEASE_GATE === 'customer_signed_demo_v1',
             'demoPasscodeEnabled' => $passcodeEnabled,
             'demoReview' => $review,
@@ -310,6 +322,9 @@ final class DemoImporterController
                 DemoPublisherApiV1::PINNED_PUBLIC_KEY_SHA256
             );
             DemoCustomerReleasePolicyV1::assertInstallable($proof, APP_VERSION);
+            // Check the current destination schema before creating a backup or
+            // beginning any import transaction, regardless of app version label.
+            (new DemoImportPackageV1())->assertNativeTargetSchemaCompatible($proof);
             $result = (new DemoImportPackageV1())->installNative(
                 $archive, $current,
                 $fresh['identity'],

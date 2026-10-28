@@ -11,7 +11,7 @@ namespace {
  $base=sys_get_temp_dir().'/native-demo-it-'.bin2hex(random_bytes(8));
  mkdir($base,0700); mkdir($base.'/site',0700); mkdir($base.'/site/application',0700);
  define('BASE_PATH',$base.'/site'); define('APP_PATH',BASE_PATH.'/application');
- define('APP_VERSION','0.9.25');
+ define('APP_VERSION','1.0.0');
  function config(string $key,mixed $default=null): mixed {
   return ['database.driver'=>'mysql','database.host'=>'127.0.0.1',
     'database.port'=>3306,'database.database'=>'barama_demo_test',
@@ -86,7 +86,7 @@ namespace {
   $zip=new \ZipArchive();
   if($zip->open($path,\ZipArchive::CREATE|\ZipArchive::OVERWRITE)!==true)exit(3);
   $zip->addFromString('manifest.json',json_encode(['product'=>'barama-real-estate',
-    'demo_slug'=>'live','version'=>'0.9.25','schema_version'=>1,
+    'demo_slug'=>'live','version'=>'0.9.26','schema_version'=>1,
     'compatible_app_versions'=>['0.9.25']],JSON_THROW_ON_ERROR));
   $zip->addFromString('content.json',json_encode($payload,JSON_THROW_ON_ERROR));
   $zip->addFromString('review.json','{"source":"test"}');
@@ -94,19 +94,35 @@ namespace {
   $zip->close();
   $sha=hash_file('sha256',$path);
   return [$path,['id'=>$fail?'DCP-20261024-TEST-FAIL':'DCP-20261024-TEST-GOOD',
-    'version'=>'0.9.25','sha256'=>$sha,'key_id'=>$identity['key_id'],
+    'version'=>'0.9.26','sha256'=>$sha,'key_id'=>$identity['key_id'],
     'signature'=>base64_encode(sodium_crypto_sign_detached(hex2bin($sha),
      sodium_crypto_sign_secretkey($pair)))]];
  };
  $engine=new \Barama\Services\DemoImportPackageV1();
+ // Package is signed for a legacy app label 0.9.25, but this fixture
+ // installs on 1.0.0 because its actual schema remains compatible.
+ [$good,$meta]=$make(false);
+ $proof=(new \Barama\Services\DemoPublisherNativeArchiveV1())
+   ->inspectSigned($good,$meta,$identity,$fp);
+ $engine->assertNativeTargetSchemaCompatible($proof);
+ passNative(APP_VERSION==='1.0.0' &&
+   $proof['compatible_app_versions']===['0.9.25'],
+   'legacy_signed_demo_schema_preflight_on_new_app');
  [$bad,$badMeta]=$make(true);
+ $badProof=(new \Barama\Services\DemoPublisherNativeArchiveV1())
+   ->inspectSigned($bad,$badMeta,$identity,$fp);
+ try {$engine->assertNativeTargetSchemaCompatible($badProof);
+   passNative(false,'changed_destination_schema_denied_before_writes');}
+ catch(\RuntimeException $e) {
+   passNative($e->getMessage()==='DEMO_CUSTOMER_TARGET_SCHEMA_INCOMPATIBLE',
+     'changed_destination_schema_denied_before_writes');
+ }
  try {$engine->installNative($bad,$badMeta,$identity,$fp,42);passNative(false,'late_failure');}
  catch(\RuntimeException $e) {passNative($e->getMessage()==='DEMO_SCHEMA_COLUMN_MISMATCH','late_failure');}
  passNative((int)$db->query('SELECT COUNT(*) FROM locations')->fetchColumn()===0,'transaction_rollback');
  passNative(!is_file($assetDest),'failed_media_cleaned');
  passNative(!is_file(BASE_PATH.'/storage/policy-center/data.json'),'failed_import_no_policy_writes');
  passNative(count((new \Barama\Services\SystemToolService())->backups())===1,'backup_before_failed_import');
- [$good,$meta]=$make(false);
  try {$engine->installNative($good,$meta,$identity,str_repeat('0',64),42);passNative(false,'pin_denied');}
  catch(\RuntimeException $e) {passNative(true,'pin_denied');}
  // Existing data must never be silently reused or overwritten.

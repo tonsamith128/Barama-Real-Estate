@@ -38,10 +38,12 @@ $manifest=[
     'schema_version'=>1,'compatible_app_versions'=>['0.9.24']
 ];
 $make=function(string $path,array $tables,string $imageBytes,
-               bool $extra=false)use($manifest,$settings,$name,$hash):void {
+               bool $extra=false,bool $omitVersions=false)use($manifest,$settings,$name,$hash):void {
     $z=new ZipArchive();
     if($z->open($path,ZipArchive::CREATE|ZipArchive::OVERWRITE)!==true)exit(1);
-    $z->addFromString('manifest.json',json_encode($manifest,JSON_THROW_ON_ERROR));
+    $m=$manifest;
+    if($omitVersions)unset($m['compatible_app_versions']);
+    $z->addFromString('manifest.json',json_encode($m,JSON_THROW_ON_ERROR));
     $z->addFromString('content.json',json_encode([
         'schema'=>'barama-demo-content-v1',
         'components'=>['Homepage','Navigation','Footer','Appearance','Marketplace','Images'],
@@ -59,6 +61,10 @@ $inspector=new DemoPublisherNativeArchiveV1();
 $review=$inspector->inspect($file);
 okNative($review['record_count']===4 && $review['media_images']===1,
     'real_native_manifest_and_public_relationships');
+okNative(($review['manifest_schema_version']??null)===1 &&
+    ($review['content_schema']??'')==='barama-demo-content-v1' &&
+    ($review['columns_by_table']['companies']??[])===['id','name','location_id'],
+    'signed_content_schema_and_table_column_contract');
 okNative(!$review['signature_verified'] && !$review['install_authorized'],
     'unsigned_structure_never_claimed_as_trusted_or_installable');
 
@@ -79,6 +85,11 @@ okNative($verified['signature_verified']===true && $verified['install_authorized
 rejectNative(fn()=>$inspector->inspectSigned($file,$metadata,$identity,str_repeat('0',64)),
     'unexpected_signing_key_denied');
 
+$noLabels=$dir.'/schema-only.zip';
+$make($noLabels,$tables,$image,false,true);
+$schemaOnly=$inspector->inspect($noLabels);
+okNative($schemaOnly['compatible_app_versions']===null &&
+    $schemaOnly['manifest_schema_version']===1,'schema_only_without_app_version_list');
 $wrong=$dir.'/wrong-reference.zip';
 $broken=$tables;
 $broken['media_attachments'][0]['entity_id']=999;
