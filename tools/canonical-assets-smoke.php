@@ -4,8 +4,8 @@ declare(strict_types=1);
 /**
  * CODECANYON_CANONICAL_ASSET_CONTRACT_V100
  * Prevent obsolete historical CSS/JS copies from returning to the
- * v1.0.0 customer package. Layered asset families are intentionally
- * not in this first, reference-audited migration wave.
+ * v1.0.0 customer package. Wave 2 consolidates the safely audited layered families while
+ * preserving source order and signed customer package behavior.
  */
 $root = dirname(__DIR__);
 $assets = [
@@ -17,6 +17,15 @@ $assets = [
     'assets/css/media-library-upload.css',
     'assets/css/popular-location-marquee.css',
     'assets/css/public-location-picker.css',
+    'assets/css/security-center.css',
+    'assets/css/hero-search.css',
+    'assets/css/public-header-inline.css',
+    'assets/css/about-editor.css',
+    'assets/css/finance-plans.css',
+    'assets/css/plans-packages.css',
+    'assets/css/marketplace-search-glass.css',
+    'assets/css/finance-payment-methods.css',
+    'assets/css/change-confirmation.css',
     'assets/js/account-profile.js',
     'assets/js/admin-email-template-builder.js',
     'assets/js/admin-email-templates.js',
@@ -24,6 +33,9 @@ $assets = [
     'assets/js/admin-settings-security-factors.js',
     'assets/js/page-builder.js',
     'assets/js/public-location-picker.js',
+    'assets/js/about-editor.js',
+    'assets/js/change-confirmation.js',
+    'assets/js/finance-payment-methods.js',
 ];
 $views = [
     'application/resources/views/workspace/email-template-builder.php' => [
@@ -42,9 +54,25 @@ $views = [
     'application/resources/views/workspace/media-upload.php' => [
         'css/media-library-upload.css'],
     'application/resources/views/layouts/app.php' => [
-        'css/popular-location-marquee.css'],
+        'css/popular-location-marquee.css',
+        'css/hero-search.css', 'css/public-header-inline.css',
+        'css/change-confirmation.css', 'js/change-confirmation.js'],
     'application/resources/views/home.php' => [
         'css/homepage-agent.css'],
+    'application/resources/views/workspace/security-center.php' => [
+        'css/security-center.css'],
+    'application/resources/views/workspace/builtin-page.php' => [
+        'css/about-editor.css', 'js/about-editor.js'],
+    'application/resources/views/workspace/finance-payment-providers.php' => [
+        'css/finance-payment-methods.css', 'js/finance-payment-methods.js'],
+    'application/resources/views/workspace/finance-plans.php' => [
+        'css/finance-plans.css', 'css/plans-packages.css'],
+    'application/resources/views/public/plans.php' => [
+        'css/plans-packages.css'],
+    'application/resources/views/public/plan-purchase.php' => [
+        'css/plans-packages.css'],
+    'application/resources/views/components/marketplace-page-hero.php' => [
+        'css/marketplace-search-glass.css'],
 ];
 $fail = static function (string $reason): never {
     fwrite(STDERR, "CANONICAL_ASSET_CONTRACT_FAIL: {$reason}\n");
@@ -85,6 +113,32 @@ foreach ($views as $view => $references) {
         }
     }
 }
+// Check every literal CSS/JS asset() reference to prevent broken 404s
+// in customer pages, including accidental references to files never shipped.
+$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
+    $root . '/application/resources/views', FilesystemIterator::SKIP_DOTS
+));
+foreach ($iterator as $file) {
+    if (!$file->isFile() || $file->getExtension() !== 'php') {
+        continue;
+    }
+    $source = (string) file_get_contents($file->getPathname());
+    preg_match_all('~asset\(\x27((?:css|js)/[^\x27]+\.(?:css|js))\x27\)~',
+        $source, $matches);
+    foreach ($matches[1] as $assetName) {
+        if (!is_file($root . '/assets/' . $assetName)) {
+            $fail('Missing statically requested customer asset ' . $assetName
+                . ' from ' . $file->getFilename());
+        }
+    }
+}
+$footerView = (string) file_get_contents(
+    $root . '/application/resources/views/workspace/footer.php'
+);
+if (str_contains($footerView, 'admin-footer-editor-v100.css')) {
+    $fail('Footer view requests obsolete missing stylesheet');
+}
+
 if (isset($argv[1])) {
     $zip = new ZipArchive();
     if ($zip->open((string)$argv[1]) !== true) {

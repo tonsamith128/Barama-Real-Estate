@@ -1,3 +1,6 @@
+/* Barama v1.0.0 canonical stylesheet; assembled in original cascade order. */
+
+/* -- plans-packages-v140.css -- */
 /*
  Barama Plans & Packages v1.4.0
  User image is used for visual direction only. No reference-image content is used.
@@ -106,3 +109,26 @@
 @media(max-width:760px){.finance-plans__tiers{padding:18px!important;border-radius:22px!important}.finance-plan-tier{min-height:0!important;border-radius:26px!important}}
 @media(max-width:640px){.barama-plans-public,.barama-plan-purchase{width:min(100% - 22px,1320px);padding-top:28px}.barama-plans-public__grid{grid-template-columns:1fr;padding:16px;border-radius:24px}.barama-public-plan{min-height:0;padding:24px 20px 18px;border-radius:28px}.barama-public-plan__description{min-height:0}.barama-plans-public__note{flex-direction:column}.barama-plans-public__note strong{white-space:normal}.barama-plan-purchase__panel{padding:22px 18px;border-radius:22px}}
 @media(prefers-reduced-motion:reduce){.barama-public-plan__select{transition:none}}
+
+
+/* -- plans-packages-v143.css -- */
+/* Barama Plans Public Grid Background Cleanup v1.4.3 */
+.barama-plans-public__grid{
+  padding:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+}
+.barama-plans-public__grid:before,
+.barama-plans-public__grid:after{
+  display:none !important;
+  content:none !important;
+}
+@media(max-width:640px){
+  .barama-plans-public__grid{
+    padding:0 !important;
+    border-radius:0 !important;
+  }
+}
+

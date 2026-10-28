@@ -1,4 +1,7 @@
-/* BARAMA_CHANGE_CONFIRMATION_V132 */
+/* Barama v1.0.0 canonical JavaScript; original independent IIFEs preserved. */
+
+/* -- change-confirmation-v133.js -- */
+/* BARAMA_CHANGE_CONFIRMATION_V133 */
 (() => {
     'use strict';
 
@@ -7,26 +10,83 @@
 
     const endpoint = body.dataset.changeConfirmationEndpoint || '';
     const dialog = document.querySelector('[data-change-confirmation-dialog]');
-    const input = dialog?.querySelector('[data-change-confirmation-passcode]');
+    const group = dialog?.querySelector('[data-change-confirmation-code]');
+    const digits = Array.from(group?.querySelectorAll('[data-change-confirmation-digit]') || []);
+    const hidden = group?.querySelector('[data-change-confirmation-passcode]');
     const errorBox = dialog?.querySelector('[data-change-confirmation-error]');
     const approve = dialog?.querySelector('[data-change-confirmation-approve]');
     const cancelButtons = dialog?.querySelectorAll('[data-change-confirmation-cancel]') || [];
-    if (!endpoint || !dialog || !input || !approve || !errorBox) return;
+    if (!endpoint || !dialog || !group || digits.length !== 6 || !(hidden instanceof HTMLInputElement) || !approve || !errorBox) return;
 
     let pendingForm = null;
     let pendingSubmitter = null;
 
+    const sync = () => {
+        hidden.value = digits.map((input) => input.value.replace(/\D/g, '').slice(0, 1)).join('');
+        group.classList.toggle('is-complete', hidden.value.length === 6);
+        if (hidden.value.length === 6) group.classList.remove('is-error');
+        return hidden.value;
+    };
+
+    const clearCode = () => {
+        digits.forEach((input) => { input.value = ''; });
+        hidden.value = '';
+        group.classList.remove('is-complete', 'is-error');
+    };
+
+    const fill = (value) => {
+        const numeric = String(value || '').replace(/\D/g, '').slice(0, 6);
+        digits.forEach((input, index) => { input.value = numeric[index] || ''; });
+        sync();
+        (digits[Math.min(numeric.length, 5)] || digits[0]).focus();
+    };
+
+    digits.forEach((input, index) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/g, '').slice(-1);
+            sync();
+            if (input.value !== '' && index < digits.length - 1) digits[index + 1].focus();
+        });
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Backspace' && input.value === '' && index > 0) {
+                digits[index - 1].value = '';
+                digits[index - 1].focus();
+                sync();
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                approve.click();
+            }
+            if (event.key === 'Escape') close();
+        });
+    });
+
+    group.addEventListener('paste', (event) => {
+        const text = event.clipboardData?.getData('text') || '';
+        if (!/\d/.test(text)) return;
+        event.preventDefault();
+        fill(text);
+    });
+
     const setError = (message = '') => {
         errorBox.textContent = message;
         errorBox.hidden = message === '';
+        group.classList.toggle('is-error', message !== '');
     };
 
-    const close = () => {
+    const close = (approved = false) => {
+        // BARAMA_SECURITY_CANCEL_SIGNAL_V117A13
+        // Only cancellation restores a pending Appearance switch; successful
+        // passcode approval deliberately retains the requested state for replay.
+        const cancelledForm = approved ? null : pendingForm;
         pendingForm = null;
         pendingSubmitter = null;
-        input.value = '';
+        clearCode();
         setError('');
         if (dialog.open) dialog.close();
+        if (cancelledForm) {
+            cancelledForm.dispatchEvent(new Event('barama:change-confirmation-cancelled', { bubbles: true }));
+        }
     };
 
     const exempt = (form) => {
@@ -36,9 +96,7 @@
         if (method !== 'post') return true;
         const action = new URL(form.action || window.location.href, window.location.href);
         if (action.origin !== window.location.origin) return true;
-        const route = action.pathname;
-        if (!/(^|\/)(dashboard|developer|account)(\/|$)/.test(route)) return true;
-        return false;
+        return !/(^|\/)(dashboard|developer|account)(\/|$)/.test(action.pathname);
     };
 
     document.addEventListener('submit', (event) => {
@@ -51,21 +109,28 @@
 
         event.preventDefault();
         pendingForm = form;
+        // An earlier single-use grant must never leak into a subsequent action.
+        const staleGrant = form.querySelector('input[name="change_confirmation"]');
+        if (staleGrant instanceof HTMLInputElement) staleGrant.value = '';
         pendingSubmitter = event.submitter instanceof HTMLElement ? event.submitter : null;
-        input.value = '';
+        clearCode();
         setError('');
         dialog.showModal();
-        window.setTimeout(() => input.focus(), 40);
+        window.setTimeout(() => digits[0].focus(), 40);
     }, true);
 
-    cancelButtons.forEach((button) => button.addEventListener('click', close));
+    cancelButtons.forEach((button) => button.addEventListener('click', () => close()));
+    dialog.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        close();
+    });
 
     approve.addEventListener('click', async () => {
         if (!pendingForm) return;
-        const passcode = input.value.trim();
+        const passcode = sync();
         if (!/^\d{6}$/.test(passcode)) {
-            setError('Enter exactly 6 digits.');
-            input.focus();
+            setError('Complete all six passcode digits.');
+            digits.find((input) => input.value === '')?.focus() || digits[0].focus();
             return;
         }
 
@@ -94,7 +159,8 @@
             const data = await response.json().catch(() => null);
             if (!response.ok || !data || data.ok !== true) {
                 setError(data?.message || 'The change could not be authorized.');
-                input.select();
+                clearCode();
+                digits[0].focus();
                 return;
             }
 
@@ -110,7 +176,7 @@
 
             const form = pendingForm;
             const submitter = pendingSubmitter;
-            close();
+            close(true);
             if (typeof form.requestSubmit === 'function') {
                 submitter ? form.requestSubmit(submitter) : form.requestSubmit();
             } else {
@@ -122,12 +188,5 @@
             approve.disabled = false;
         }
     });
-
-    input.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            approve.click();
-        }
-        if (event.key === 'Escape') close();
-    });
 })();
+

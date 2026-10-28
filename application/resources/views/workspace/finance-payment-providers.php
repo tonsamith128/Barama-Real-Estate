@@ -99,11 +99,8 @@ $paymentNativeError = trim((string) ($_GET['payment_error'] ?? ''));
     <!-- BARAMA_PAYMENT_METHODS_CONFIRMATION_COMPLETION_V116 -->
     <!-- BARAMA_PAYMENT_METHODS_CONFIRMATION_LIVE_FORM_V117 -->
     <!-- BARAMA_PAYMENT_METHODS_NATIVE_CONFIRMATION_V120 -->
-    <link rel="stylesheet" href="<?= e(asset('css/finance-payment-methods-v210.css')) ?>?v=210">
-    <link rel="stylesheet" href="<?= e(asset('css/finance-payment-native-post-v228.css')) ?>?v=228">
-    <link rel="stylesheet" href="<?= e(asset('css/finance-payment-methods-v230.css')) ?>?v=230">
-    <script defer src="<?= e(asset('js/finance-payment-methods-v228.js')) ?>?v=228"></script>
-    <script defer src="<?= e(asset('js/finance-payment-methods-v230.js')) ?>?v=230"></script>
+    <link rel="stylesheet" href="<?= e(asset('css/finance-payment-methods.css')) ?>?v=1.0.0-clean2">
+    <script defer src="<?= e(asset('js/finance-payment-methods.js')) ?>?v=1.0.0-clean2"></script>
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>

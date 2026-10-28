@@ -1,3 +1,6 @@
+/* Barama v1.0.0 canonical stylesheet; assembled in original cascade order. */
+
+/* -- about-editor-v117a24.css -- */
 /* Dashboard A24, strictly About-specific */
 .barama-about-admin-a24 .workspace-page__header{padding-bottom:1.1rem}
 .barama-about-admin-a24__notice{display:flex;gap:.65rem;align-items:center;border:1px solid #bfd5fb;border-radius:14px;background:#f1f6ff;padding:1rem 1.25rem;margin:1.1rem 0;color:#284570;font-size:.9rem}
@@ -13,3 +16,20 @@
 .barama-about-admin-a24__item-head button{min-height:32px;padding:.28rem .7rem;border-radius:8px}
 .barama-about-admin-a24__add{margin-top:1rem;border-radius:10px}
 @media(max-width:640px){.barama-about-admin-a24__shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.barama-about-admin-a24__item-head{align-items:flex-start}}
+
+
+/* -- about-editor-v117a26.css -- */
+/* A26: About editor only, no public page or Contact overrides. */
+.barama-about-admin-a24 .barama-about-a26__count{display:inline-block;margin-inline-start:.75rem;font-size:.82rem;font-weight:650;color:#526886}
+.barama-about-admin-a24 .barama-about-a26__actions{display:flex;gap:.35rem;flex-wrap:wrap}
+.barama-about-admin-a24 [data-a24-move]:disabled{opacity:.35;cursor:not-allowed}
+.barama-about-admin-a24 [data-a24-items] input:focus-visible,.barama-about-admin-a24 [data-a24-items] textarea:focus-visible{outline:2px solid #3b82f6;outline-offset:1px}
+@media(max-width:640px){
+  .barama-about-admin-a24 .config-dialog__panel{max-width:100%;min-width:0}
+  .barama-about-admin-a24 .barama-about-admin-a24__item{min-width:0;padding:.85rem}
+  .barama-about-admin-a24 .barama-about-admin-a24__item-head{display:grid;grid-template-columns:minmax(0,1fr);align-items:start}
+  .barama-about-admin-a24 .barama-about-a26__actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .barama-about-admin-a24 .barama-about-a26__actions button{padding:.48rem .2rem;min-width:0}
+  .barama-about-admin-a24 .barama-about-admin-a24__item input,.barama-about-admin-a24 .barama-about-admin-a24__item textarea{max-width:100%;width:100%;min-width:0}
+}
+

@@ -161,14 +161,14 @@ $slugs = array_map(
 ?>
 <link
     rel="stylesheet"
-    href="<?= e(asset('css/finance-plans-v140.css') . '?v=140') ?>"
+    href="<?= e(asset('css/finance-plans.css') . '?v=140') ?>"
 >
 <script
     src="<?= e(asset('js/finance-plans-v139.js') . '?v=139') ?>"
     defer
 ></script>
 
-<link rel="stylesheet" href="<?= e(asset('css/plans-packages-v140.css') . '?v=141') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/plans-packages.css') . '?v=141') ?>">
 
 <link rel="stylesheet" href="<?= e(asset('css/finance-plans-section-cleanup-v145.css') . '?v=145') ?>">
 

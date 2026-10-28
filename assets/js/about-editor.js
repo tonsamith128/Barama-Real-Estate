@@ -1,3 +1,6 @@
+/* Barama v1.0.0 canonical JavaScript; original independent IIFEs preserved. */
+
+/* -- about-editor-v117a26.js -- */
 /* Barama About A26: repeatable editor, exact field names, responsive actions. */
 (function(){
   'use strict';
@@ -73,3 +76,4 @@
     if(event.target instanceof Element&&event.target.closest('.barama-about-admin-a24'))init(document);
   });
 })();
+

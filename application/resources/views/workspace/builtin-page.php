@@ -57,7 +57,7 @@ $messages = is_array($contactMessages ?? null) ? $contactMessages : [];
 $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSummary : [];
 ?>
 <?php if (!$isContact): ?>
-<link rel="stylesheet" href="<?= e(asset('css/about-editor-v117a24.css')) ?>?v=117a24">
+<link rel="stylesheet" href="<?= e(asset('css/about-editor.css')) ?>?v=1.0.0-clean2">
 <?php endif; ?>
 <section class="workspace-page content-config-page builtin-admin-page<?= $isContact ? '' : ' barama-about-admin-a24' ?>">
     <div class="workspace-page__header">
@@ -304,7 +304,6 @@ $messageSummary = is_array($contactMessageSummary ?? null) ? $contactMessageSumm
 </section>
 
 <?php if (!$isContact): ?>
-<link rel="stylesheet" href="<?= e(asset('css/about-editor-v117a26.css')) ?>?v=117a26" media="all">
 <link rel="stylesheet" href="<?= e(asset('css/about-table-v117a28.css')) ?>?v=117a28" media="all">
-<script src="<?= e(asset('js/about-editor-v117a26.js')) ?>?v=117a26" defer></script>
+<script src="<?= e(asset('js/about-editor.js')) ?>?v=1.0.0-clean2" defer></script>
 <?php endif; ?>

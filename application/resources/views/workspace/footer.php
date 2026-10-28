@@ -20,7 +20,6 @@ $networks = [
     'linkedin' => 'LinkedIn',
 ];
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-footer-editor-v100.css') . '?v=100') ?>">
 <section class="workspace-page barama-footer-editor" aria-labelledby="footer-editor-title">
     <header class="workspace-page__header barama-footer-editor__header">
         <div>
