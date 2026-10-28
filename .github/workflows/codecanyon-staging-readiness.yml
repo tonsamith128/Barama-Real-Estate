@@ -84,6 +84,14 @@ jobs:
       - name: Verify complete repository quality baseline
         run: php tools/qa.php
 
+      - name: Verify Media Library upload entrypoint, storage, and preview
+        run: |
+          php -l application/app/Services/MediaLibraryUploadService.php
+          php -l application/app/Services/MediaLibraryPreviewService.php
+          php -l application/resources/views/workspace/media-upload.php
+          node --check assets/js/media-library-upload-v134.js
+          php tools/media-library-upload-route-smoke.php
+
       - name: Verify hosting installer and customer source syntax
         run: |
           set -Eeuo pipefail

@@ -63,9 +63,11 @@ final class MediaLibraryUploadService
             $validated[] = $this->validate($file);
         }
 
+        $disk = (new CloudStorageService())->activeDisk();
+        $cloud = $disk === 'private' ? null : new CloudObjectStorageService($disk);
         $pdo = Database::connection();
         $repository = new MediaRepository();
-        $movedPaths = [];
+        $writtenPaths = [];
         $stored = [];
 
         try {
@@ -73,25 +75,34 @@ final class MediaLibraryUploadService
 
             foreach ($validated as $file) {
                 $relativeDirectory = date('Y/m');
-                $directory = APP_PATH . '/storage/uploads/private/' . $relativeDirectory;
-
-                if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-                    throw new RuntimeException('Media Library storage directory could not be created.');
-                }
-
                 $filename = str_replace('-', '', IdGenerator::uuid()) . '.' . $file['extension'];
-                $destination = $directory . '/' . $filename;
-
-                if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
-                    throw new RuntimeException('One of the selected media files could not be stored.');
+                $relativePath = 'private/' . $relativeDirectory . '/' . $filename;
+                $temporaryPath = (string) $file['tmp_name'];
+                $checksum = hash_file('sha256', $temporaryPath);
+                if (!is_string($checksum)) {
+                    throw new RuntimeException('One of the selected media checksums could not be generated.');
                 }
 
-                @chmod($destination, 0640);
-                $movedPaths[] = $destination;
+                if ($disk === 'private') {
+                    $directory = APP_PATH . '/storage/uploads/private/' . $relativeDirectory;
+                    if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+                        throw new RuntimeException('Media Library storage directory could not be created.');
+                    }
+                    $destination = $directory . '/' . $filename;
+                    if (!move_uploaded_file($temporaryPath, $destination)) {
+                        throw new RuntimeException('One of the selected media files could not be stored.');
+                    }
+                    @chmod($destination, 0640);
+                    $writtenPaths[] = ['disk' => 'private', 'path' => $destination];
+                } else {
+                    $cloud->putFile($temporaryPath, $cloud->objectKey($relativePath), (string) $file['mime_type']);
+                    $writtenPaths[] = ['disk' => $disk, 'path' => $relativePath];
+                }
 
                 $mediaId = $repository->create([
                     'created_by_user_id' => (int) $user['id'],
-                    'path' => 'private/' . $relativeDirectory . '/' . $filename,
+                    'disk' => $disk,
+                    'path' => $relativePath,
                     'original_name' => $file['name'],
                     'mime_type' => $file['mime_type'],
                     'extension' => $file['extension'],
@@ -99,7 +110,7 @@ final class MediaLibraryUploadService
                     'width_px' => $file['width_px'],
                     'height_px' => $file['height_px'],
                     'alt_text' => null,
-                    'checksum_sha256' => hash_file('sha256', $destination),
+                    'checksum_sha256' => $checksum,
                 ]);
 
                 $repository->attach($mediaId, 'site', 1, self::COLLECTION, 0, false);
@@ -126,20 +137,34 @@ final class MediaLibraryUploadService
                 $categoryCounts[$category] = ($categoryCounts[$category] ?? 0) + 1;
             }
 
-            (new SecurityAuditService())->record(
-                'admin.media_library_uploaded',
-                (int) $user['id'],
-                null,
-                ['count' => count($stored), 'categories' => $categoryCounts, 'collection' => self::COLLECTION]
-            );
+            // Asset records and files are already committed. An audit-log outage
+            // must not make a successful upload appear rolled back or delete files.
+            try {
+                (new SecurityAuditService())->record(
+                    'admin.media_library_uploaded',
+                    (int) $user['id'],
+                    null,
+                    ['count' => count($stored), 'categories' => $categoryCounts, 'collection' => self::COLLECTION, 'storage_disk' => $disk]
+                );
+            } catch (Throwable) {
+                error_log('Barama Media Library upload completed but its audit event could not be recorded.');
+            }
 
             return ['count' => count($stored), 'assets' => $stored];
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            foreach ($movedPaths as $path) {
-                @unlink($path);
+            foreach (array_reverse($writtenPaths) as $written) {
+                if ($written['disk'] === 'private') {
+                    @unlink((string) $written['path']);
+                } elseif ($cloud instanceof CloudObjectStorageService) {
+                    try {
+                        $cloud->delete($cloud->objectKey((string) $written['path']));
+                    } catch (Throwable) {
+                        error_log('Barama Media Library cloud rollback could not remove an uploaded object.');
+                    }
+                }
             }
             throw $exception;
         }

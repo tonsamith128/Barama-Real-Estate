@@ -15,7 +15,15 @@
     const submitLabel = root.querySelector('[data-media-submit-label]');
     if (!form || !dropzone || !input || !selection || !list) return;
 
-    const maxFiles = 20;
+    const maxFiles = Number(form.dataset.mediaMaxFiles || 20);
+    const maxBytes = Number(form.dataset.mediaMaxBytes || 52428800);
+    const clientError = root.querySelector('[data-media-upload-client-error]');
+    const allowed = new Set((input.accept || '').toLowerCase().split(',').map(v => v.trim()));
+    const setError = (message) => {
+        if (!clientError) return;
+        clientError.textContent = message;
+        clientError.hidden = !message;
+    };
     const ext = (name) => String(name || '').split('.').pop().toLowerCase();
     const category = (file) => {
         const type = String(file.type || '').toLowerCase();
@@ -30,6 +38,7 @@
         : `${Math.max(1, Number(bytes) / 1024).toFixed(1)} KB`;
 
     const render = () => {
+        setError('');
         const files = Array.from(input.files || []);
         list.innerHTML = '';
         selection.hidden = files.length === 0;
@@ -53,9 +62,22 @@
         });
     };
 
+    const validSelection = () => {
+        const files = Array.from(input.files || []);
+        if (!files.length) return 'Choose at least one file to upload.';
+        if (files.length > maxFiles) return `Choose no more than ${maxFiles} files per batch.`;
+        for (const file of files) {
+            if (!file.size || file.size > maxBytes) return `${file.name}: file is empty or exceeds the per-file limit.`;
+            if (!allowed.has(`.${ext(file.name)}`)) return `${file.name}: unsupported file extension.`;
+        }
+        return '';
+    };
+
     const openPicker = () => input.click();
     choose?.addEventListener('click', openPicker);
     dropzone.addEventListener('click', (event) => {
+        // A programmatic input.click() bubbles back through the dropzone.
+        // Ignore the native file input to prevent recursive picker invocation.
         if (event.target !== input && !event.target.closest('button')) openPicker();
     });
     dropzone.addEventListener('keydown', (event) => {
@@ -73,12 +95,26 @@
         const files = Array.from(event.dataTransfer?.files || []);
         if (!files.length) return;
         const transfer = new DataTransfer();
-        files.slice(0, maxFiles).forEach((file) => transfer.items.add(file));
-        input.files = transfer.files; render();
+        files.forEach((file) => transfer.items.add(file));
+        input.files = transfer.files;
+        render();
+        const error = validSelection();
+        if (error) setError(error);
     });
     input.addEventListener('change', render);
     clear?.addEventListener('click', () => { input.value = ''; render(); });
-    form.addEventListener('submit', () => {
+    form.addEventListener('submit', (event) => {
+        const error = validSelection();
+        if (error) {
+            event.preventDefault();
+            setError(error);
+            clientError?.scrollIntoView({block: 'nearest'});
+            return;
+        }
+        setError('');
+        // The global change-passcode dialog may have intercepted this submit.
+        // Disable the button only when a real POST will proceed.
+        if (event.defaultPrevented) return;
         if (submit) submit.disabled = true;
         if (submitLabel) submitLabel.textContent = 'Uploading…';
     });

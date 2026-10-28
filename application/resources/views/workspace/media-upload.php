@@ -15,6 +15,13 @@ $acceptExtensions = is_array($capabilities['accepted_extensions'] ?? null)
     : [];
 $uploadStatus = trim((string) ($_GET['upload_status'] ?? ''));
 $uploadError = trim((string) ($_GET['upload_error'] ?? ''));
+$disk = (string) ($mediaUploadDisk ?? 'private');
+$storageLabel = match ($disk) {
+    's3' => 'Amazon S3 (configured active cloud provider)',
+    'r2' => 'Cloudflare R2 (configured active cloud provider)',
+    default => 'Private local server storage (default)',
+};
+$maxBytes = (int) ($capabilities['max_bytes'] ?? 52428800);
 // BARAMA_MEDIA_UPLOAD_SIZE_GUARD_V102: report actual PHP upload limits.
 $parseUploadIni = static function (string $value): int {
     $value = trim($value);
@@ -44,7 +51,7 @@ $hostingConstrained = $effectiveMax < $baramaMaxBytes;
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-v135.css') . '?v=135') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-contrast-v101.css') . '?v=101') ?>">
-<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134a-hotfix') ?>" defer></script>
+<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134b-merge') ?>" defer></script>
 <link rel="stylesheet" href="<?= e(asset('css/media-library-upload-limits-v102.css') . '?v=102') ?>">
 <script src="<?= e(asset('js/media-library-upload-limits-v102.js') . '?v=102') ?>" defer></script>
 
@@ -86,7 +93,15 @@ $hostingConstrained = $effectiveMax < $baramaMaxBytes;
         <?php endforeach; ?>
     </div>
 
-    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" data-media-upload-form data-size-max-files="<?= $maxFiles ?>" data-size-file-limit="<?= $effectiveMax ?>" data-size-request-budget="<?= $phpPostBudget ?>">
+    <div class="media-upload__notice" role="status">
+        <?= app_icon('lock') ?>
+        <div><strong>Upload destination: <?= e($storageLabel) ?></strong>
+            <span>Files are private and served through administrator-authorized preview. Cloud storage is used only if activated in Storage settings.</span>
+        </div>
+    </div>
+    <div class="media-upload__notice is-error" role="alert" data-media-upload-client-error hidden></div>
+
+    <form class="media-upload__form" action="<?= e(url('/dashboard/media/upload')) ?>" method="post" enctype="multipart/form-data" novalidate data-media-upload-form data-media-max-files="<?= $maxFiles ?>" data-media-max-bytes="<?= $effectiveMax ?>" data-size-max-files="<?= $maxFiles ?>" data-size-file-limit="<?= $effectiveMax ?>" data-size-request-budget="<?= $phpPostBudget ?>">
         <?= csrf_field() ?>
         <div class="media-upload__limit-panel" role="note">
             <strong><?= $hostingConstrained ? 'Hosting size limit applies' : 'Upload size limit' ?></strong>
