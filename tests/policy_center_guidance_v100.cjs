@@ -13,8 +13,8 @@ assert.match(view,/<dialog id="pc-policy-publishing-guide"/);
 assert.ok(view.indexOf('</form>')<view.indexOf('<dialog id="pc-policy-publishing-guide"'),'modal outside save form');
 assert.match(view,/data-pc-guide-open/);
 assert.match(view,/data-pc-guide-kind=/);
-assert.match(view,/assets\('js\/policy-center-guidance-v100\.js'\)/);
-assert.match(view,/assets\('css\/policy-center-guidance-v100\.css'\)/);
+assert.match(view,/asset\('js\/policy-center-guidance-v100\.js'\)/);
+assert.match(view,/asset\('css\/policy-center-guidance-v100\.css'\)/);
 assert.match(view,/Review your imported legal template/); // Optional content exists only in the dialog guidance text.
 assert.match(view,/data-pc-publish-feedback/); // Actual errors remain visible on page.
 assert.match(css,/\.pc-guide-dialog::backdrop/);
