@@ -1,0 +1,79 @@
+name: Barama Subdomain Manual Demo cPanel Policy Safety ZIP
+
+on:
+  push:
+    branches:
+      - fix/customer-signed-demo-release-gate-v115-20261025
+    paths:
+      - .github/workflows/barama-subdomain-manual-demo-cpanel-patch.yml
+      - tools/build-barama-subdomain-manual-demo-cpanel-patch-v100.py
+      - tools/barama-subdomain-manual-demo-cpanel-code-only-apply-v100.php
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-reviewed-qa-overlay:
+    name: Build code-only cPanel QA ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact PR source and baseline history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install PHP linter
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: none
+
+      - name: Check installer and seven application source files
+        run: |
+          set -Eeuo pipefail
+          php -l tools/barama-subdomain-manual-demo-cpanel-code-only-apply-v100.php
+          php -l application/app/Http/Controllers/DemoImporterController.php
+          php -l application/app/Repositories/PolicyCenterRepository.php
+          php -l application/app/Services/DemoCustomerReleasePolicyV1.php
+          php -l application/app/Services/DemoPolicySnapshotV1.php
+          php -l application/app/Services/DemoPublisherNativeArchiveV1.php
+          php -l application/resources/views/workspace/demo-importer.php
+          php -l application/resources/views/workspace/policy-builder.php
+          python3 -m py_compile tools/build-barama-subdomain-manual-demo-cpanel-patch-v100.py
+
+      - name: Build immutable 7-file cPanel patch
+        run: |
+          set -Eeuo pipefail
+          python3 tools/build-barama-subdomain-manual-demo-cpanel-patch-v100.py
+
+      - name: Inspect created archive and offline payload checksums
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib, zipfile
+          zip_path=pathlib.Path("dist/Barama-Manual-Demo-Policy-Safety-CPanel-v1.0.0.zip")
+          with zipfile.ZipFile(zip_path) as z:
+              assert z.testzip() is None
+              root="Barama-Manual-Demo-Policy-Safety-CPanel-v1.0.0/"
+              j=json.loads(z.read(root+"manifest.json"))
+              assert j["target_domain"]=="barama.salabandet.com"
+              assert j["target_application_version"]=="0.9.25"
+              assert len(j["files"])==7
+              for row in j["files"]:
+                  data=z.read(root+"payload/"+row["path"])
+                  assert hashlib.sha256(data).hexdigest()==row["new_sha256"]
+              for line in z.read(root+"SHA256SUMS.txt").decode().splitlines():
+                  hash_expected, name = line.split("  ", 1)
+                  assert hashlib.sha256(z.read(root+name)).hexdigest()==hash_expected
+              print("PACKAGE_OFFLINE_INTEGRITY=PASS")
+          PY
+
+      - name: Upload private download artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Barama-Manual-Demo-Policy-Safety-CPanel-v1.0.0
+          path: dist/Barama-Manual-Demo-Policy-Safety-CPanel-v1.0.0.zip
+          if-no-files-found: error
+          retention-days: 14
