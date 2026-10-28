@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 $record = is_array($record ?? null) ? $record : [];
 $editing = (bool) ($editing ?? false);
+$publicationBlocked = (bool) ($publicationBlocked ?? false);
+$publicationIssues = is_array($publicationIssues ?? null)
+    ? $publicationIssues : [];
 $faqs = is_array($record['faqs'] ?? null) ? $record['faqs'] : [];
 $versions = is_array($record['versions'] ?? null)
     ? array_reverse(array_values($record['versions']))
@@ -44,6 +47,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
 }
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/policy-center-v1.0.10.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center-publish-feedback-v100.css') . '?v=100') ?>">
 
 <main class="pc-builder">
     <form method="post" action="<?= e(url($action)) ?>" data-pc-builder>
@@ -52,19 +56,20 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
         <div class="pc-legal-review" role="note">
             <strong>Legal governance enabled</strong>
             <span>
-                Policy versions are snapshotted automatically. Complete the
-                compliance review, record evidence, and keep the next review
-                date current before publishing regulated legal content.
+                A new version is created only after a successful save. For publishing,
+                review legal content, complete the checklist and reviewer details.
+                Rejected publication attempts do not create versions.
             </span>
         </div>
 
         <?php if (!empty($record['imported_demo_template'])): ?>
             <div class="pc-legal-review" role="note">
                 <strong>Imported demo legal template — operator review required</strong>
-                <span>Not a finalized legal policy. Adapt the text to this operator,
-                    configure the effective date and contacts, complete every
-                    compliance check, then explicitly publish. Imported templates
-                    are private drafts until approved.
+                <span>This is an editable template, not finalized legal advice.
+                    Replace all administrator placeholders with accurate operator-specific
+                    language, complete the eight review checks, record your reviewer
+                    and review date, and then select Publish. The template stays private
+                    until an authorized review succeeds.
                 </span>
             </div>
         <?php endif; ?>
@@ -113,10 +118,35 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
             </div>
         <?php endif; ?>
 
-        <?php if (isset($_GET['compliance_blocked'])): ?>
-            <div class="pc-warning">
-                Publication was blocked because the compliance gate is enabled
-                and the legal review is not yet complete. The policy remains a draft.
+        <?php if ($publicationBlocked): ?>
+            <section id="pc-publish-feedback" class="pc-publish-feedback" role="alert"
+                aria-labelledby="pc-publish-feedback-title" tabindex="-1" data-pc-publish-feedback>
+                <strong id="pc-publish-feedback-title">
+                    Publication was not completed — no new version was created.
+                </strong>
+                <p>Your changes are still in this form but have <b>not been saved</b>.
+                   Correct the items below, then choose Publish again.
+                   Alternatively, choose Save Draft to preserve your edits as a draft.</p>
+                <?php if ($publicationIssues !== []): ?>
+                    <ol>
+                        <?php foreach ($publicationIssues as $issue): ?>
+                            <?php if (is_array($issue)): ?>
+                                <li><a href="#<?= e((string) ($issue['field'] ?? 'pc-legal-compliance')) ?>">
+                                    <?= e((string) ($issue['message'] ?? 'Complete the legal review.')) ?>
+                                </a></li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ol>
+                <?php else: ?>
+                    <p>Review the legal compliance requirements and unresolved
+                       template instructions before publishing.</p>
+                <?php endif; ?>
+            </section>
+        <?php elseif (isset($_GET['compliance_blocked'])): ?>
+            <div class="pc-warning" role="alert">
+                The previous publication attempt was not approved.
+                Check the Legal Compliance panel and replace imported template
+                instructions before trying again.
             </div>
         <?php endif; ?>
 
@@ -392,6 +422,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                     </div>
 
                     <div
+                        id="pc-policy-content"
                         class="pc-editor"
                         contenteditable="true"
                         role="textbox"
@@ -461,6 +492,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                         <input
                             name="version_note"
                             maxlength="240"
+                            value="<?= e((string) ($record['version_note'] ?? '')) ?>"
                             placeholder="e.g. Updated retention section"
                         >
                         <small>
@@ -537,7 +569,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                     </label>
                 </section>
 
-                <section class="pc-compliance-panel">
+                <section class="pc-compliance-panel" id="pc-legal-compliance">
                     <div class="pc-side-heading">
                         <div>
                             <h2>Legal Compliance</h2>
@@ -560,7 +592,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
 
                     <div class="pc-field">
                         <label>Compliance status</label>
-                        <select name="compliance_status">
+                        <select name="compliance_status" id="pc-compliance-status">
                             <?php
                             $statuses = [
                                 'not_reviewed' => 'Not reviewed',
@@ -631,6 +663,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                         <label>Reviewed by</label>
                         <input
                             name="reviewed_by"
+                            id="pc-reviewed-by"
                             maxlength="160"
                             value="<?= e((string) ($record['reviewed_by'] ?? '')) ?>"
                             placeholder="Reviewer name / role"
@@ -713,7 +746,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                         >
                     </div>
 
-                    <div class="pc-compliance-checklist">
+                    <div class="pc-compliance-checklist" id="pc-review-checklist">
                         <strong>Review checklist</strong>
 
                         <?php foreach ($checkLabels as $key => $label): ?>

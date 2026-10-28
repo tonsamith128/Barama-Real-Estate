@@ -140,7 +140,24 @@ final class PolicyCenterRepository
 
         $record = $this->normalize($input, $store, $existing);
         $publicationBlocked = (bool) ($record['_publication_blocked'] ?? false);
-        unset($record['_publication_blocked']);
+        $publicationIssues = (array) ($record['_publication_issues'] ?? []);
+        unset($record['_publication_blocked'], $record['_publication_issues']);
+
+        // A rejected Publish request is NOT a saved draft or a revision.
+        // Preserve the form values in memory for an actionable error page,
+        // but leave the policy store, public state and version history intact.
+        if ($publicationBlocked) {
+            $record['version_number'] = (int) ($existing['version_number'] ?? 0);
+            $record['versions'] = is_array($existing['versions'] ?? null)
+                ? array_values($existing['versions'])
+                : [];
+            $record['_publication_blocked'] = true;
+            $record['_publication_issues'] = $publicationIssues;
+            $record['version_note'] = mb_substr(
+                trim((string) ($input['version_note'] ?? '')), 0, 240
+            );
+            return $record;
+        }
 
         if ($existingIndex === null) {
             $record['version_number'] = 1;
@@ -889,14 +906,21 @@ final class PolicyCenterRepository
         $requestedStatus = (string) ($input['status'] ?? 'draft');
         $status = $saveMode === 'publish'
             ? 'published'
-            : (in_array($requestedStatus, ['draft', 'published'], true)
-                ? $requestedStatus
-                : 'draft');
+            : ($saveMode === 'draft'
+                ? 'draft'
+                : (in_array($requestedStatus, ['draft', 'published'], true)
+                    ? $requestedStatus
+                    : 'draft'));
 
         $requestedVisibility = (string) ($input['visibility'] ?? 'public');
-        $visibility = in_array($requestedVisibility, ['public', 'private'], true)
-            ? $requestedVisibility
-            : 'public';
+        // The explicit Publish button means publish publicly. Imported
+        // demo templates start Private by default, so do not ask customers
+        // to guess that they also need to change a separate dropdown.
+        $visibility = $saveMode === 'publish'
+            ? 'public'
+            : (in_array($requestedVisibility, ['public', 'private'], true)
+                ? $requestedVisibility
+                : 'public');
 
         $faqQuestions = is_array($input['faq_question'] ?? null)
             ? $input['faq_question']
@@ -998,38 +1022,128 @@ final class PolicyCenterRepository
             && (string) ($existing['status'] ?? 'draft') === 'published';
 
         $publicationBlocked = false;
+        $publicationIssues = [];
         $importedTemplate = !empty($existing['imported_demo_template']);
+        $publicationRequested = $saveMode === 'publish'
+            || ($saveMode !== 'draft' && $requestedStatus === 'published');
         if ($importedTemplate) {
             // Ignore untrusted form fields claiming this template is approved,
             // or attempting to disable the compliance gate. Publication must
             // be an explicit action with evidence and resolved template text.
             $record['imported_demo_template'] = true;
             $record['compliance_gate_enabled'] = true;
+            $publicationIssues = $this->publicationIssues($record);
             $ready = $saveMode === 'publish'
                 && $status === 'published'
                 && $visibility === 'public'
-                && $this->isComplianceReady($record)
-                && !self::hasUnresolvedDemoInstructions((string) $record['content_html']);
+                && $publicationIssues === [];
             $record['demo_template_approved'] = $ready;
             if (!$ready) {
-                $publicationBlocked = $saveMode === 'publish'
-                    || $requestedStatus === 'published';
+                $publicationBlocked = $publicationRequested;
                 $record['status'] = 'draft';
                 $record['visibility'] = 'private';
             }
         } elseif (
-            $saveMode === 'publish'
+            $publicationRequested
             && !$wasPublished
             && $gateEnabled
             && !$this->isComplianceReady($record)
         ) {
+            $publicationIssues = $this->publicationIssues($record);
             $record['status'] = 'draft';
             $publicationBlocked = true;
         }
 
         $record['_publication_blocked'] = $publicationBlocked;
+        $record['_publication_issues'] = $publicationBlocked
+            ? $publicationIssues
+            : [];
 
         return $record;
+    }
+
+    /**
+     * Exact user-facing reasons for blocking a publication attempt.
+     * Reuses the same requirements as isComplianceReady(), so reviewers
+     * don't face an unspecific "compliance incomplete" message.
+     *
+     * @param array<string,mixed> $policy
+     * @return list<array{field:string,message:string}>
+     */
+    public function publicationIssues(array $policy): array
+    {
+        $issues = [];
+        $imported = !empty($policy['imported_demo_template']);
+        if (!empty($policy['compliance_gate_enabled']) || $imported) {
+            if (($policy['compliance_status'] ?? '') !== 'compliant') {
+                $issues[] = [
+                    'field' => 'pc-compliance-status',
+                    'message' => 'Set Compliance status to Compliant after completing the legal review.',
+                ];
+            }
+            $checked = is_array($policy['compliance_checks'] ?? null)
+                ? $policy['compliance_checks'] : [];
+            $labels = [
+                'operator_identity' => 'operator/company identity',
+                'jurisdiction' => 'governing jurisdiction',
+                'legal_contact' => 'legal/support contacts',
+                'product_behavior' => 'actual product behavior',
+                'privacy_data' => 'privacy/data practices',
+                'billing_refund' => 'billing/refund rules',
+                'third_parties' => 'third-party services',
+                'accessibility_consumer' => 'accessibility/consumer obligations',
+            ];
+            $missing = [];
+            foreach (self::COMPLIANCE_CHECKS as $key) {
+                if (empty($checked[$key])) {
+                    $missing[] = $labels[$key];
+                }
+            }
+            if ($missing !== []) {
+                $issues[] = [
+                    'field' => 'pc-review-checklist',
+                    'message' => 'Complete the Review checklist: '
+                        . implode(', ', $missing) . '.',
+                ];
+            } elseif ((int) ($policy['compliance_progress'] ?? 0) < 100) {
+                $issues[] = [
+                    'field' => 'pc-review-checklist',
+                    'message' => 'Complete all Review checklist items.',
+                ];
+            }
+            if (trim((string) ($policy['reviewed_by'] ?? '')) === '') {
+                $issues[] = [
+                    'field' => 'pc-reviewed-by',
+                    'message' => 'Enter the name of the person who completed the legal review.',
+                ];
+            }
+            if (trim((string) ($policy['last_reviewed_at'] ?? '')) === '') {
+                $issues[] = [
+                    'field' => 'pc-last-reviewed-at',
+                    'message' => 'Enter a valid Last Review date.',
+                ];
+            }
+            $next = trim((string) ($policy['next_review_date'] ?? ''));
+            if ($next !== '' && strtotime($next . ' 23:59:59 UTC') !== false
+                && strtotime($next . ' 23:59:59 UTC') < time()) {
+                $issues[] = [
+                    'field' => 'pc-next-review-date',
+                    'message' => 'Update the Next Review date; the existing date has passed.',
+                ];
+            }
+        }
+        if ($imported && self::hasUnresolvedDemoInstructions(
+            (string) ($policy['content_html'] ?? '')
+        )) {
+            $issues[] = [
+                'field' => 'pc-policy-content',
+                'message' => 'Replace the imported demo editorial instructions in Policy content '
+                    . '(such as "Administrator review required before publication" '
+                    . 'or "Confirm the operator legal name") with reviewed, '
+                    . 'operator-specific legal text. Check the policy carefully before publishing.',
+            ];
+        }
+        return $issues;
     }
 
     /** Editorial instructions must not become binding customer policies. */

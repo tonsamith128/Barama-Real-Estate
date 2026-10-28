@@ -88,6 +88,10 @@ All four resources below are maintained separately from the customer ZIP:
 
 The public demo is a showcase and is **not** automatically installed with a fresh customer database. Demo-content releases are separate from Barama application updates. Official signed demo download is subject to licensing; installation is further controlled by the installed release's security gates. The publisher-signed Demo Content v0.9.26 archive can be reused by application v1.0.0 when its signed v1 content format and all destination database columns are supported. Legacy `compatible_app_versions` labels describe tested historical application builds but are advisory, not an exact-version installation lock. A changed or unsupported content schema still requires a new publisher-reviewed signed demo package. License, immutable ZIP digest, Ed25519 signature, 20 policies, backup, fresh-site and rollback safeguards remain mandatory.
 
+## Imported legal policy publication
+
+Imported demo legal policies are private drafts until a responsible operator replaces instructional sample language, completes all eight Legal Compliance checklist items, selects Compliant, records the reviewer and Last Review date, and explicitly publishes. A rejected Publish attempt now displays specific, linked reasons without saving or incrementing version history. The form retains the attempted edits on screen so an operator can correct them or separately Save Draft; previously published policy content is not overwritten by a rejected attempt. This does not automatically approve legal content and does not erase prior history snapshots.
+
 ## Customer documentation
 
 Open `documentation/index.html` after extraction for the packaged help file covering system requirements, installation, licensing, account/workspace URLs, email delivery, scheduled notification jobs, upgrades, third-party credits, and support.
