@@ -101,7 +101,7 @@ $hasHeroBackground = $heroEnabled && (
     || ($backgroundType === 'video' && ($videoSrc !== '' || $youtubeEmbed !== null))
 );
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/homepage-agent-v1112.css') . '?v=1112') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/homepage-agent.css') . '?v=1.0.0-clean1') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/homepage-search-icon-v117a29.css') . '?v=117a29') ?>">
 <!-- BARAMA_HOMEPAGE_AGENT_V114 -->
 <!-- BARAMA_HOMEPAGE_AGENT_V116 -->

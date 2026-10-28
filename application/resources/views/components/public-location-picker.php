@@ -7,7 +7,7 @@ $pickerLabel = trim((string) ($label ?? 'All locations'));
 $pickerLabel = $pickerLabel !== '' ? $pickerLabel : 'All locations';
 $pickerId = 'barama-location-' . substr(hash('sha256', $pickerName . '|' . $pickerValue . '|' . uniqid('', true)), 0, 12);
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/public-location-picker-v115.css') . '?v=115') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/public-location-picker.css') . '?v=1.0.0-clean1') ?>">
 <div class="barama-public-location-picker" data-public-location-picker data-location-endpoint="<?= e(url('/location-options')) ?>" data-selected-location="<?= e($pickerValue) ?>" data-empty-label="<?= e($pickerLabel) ?>">
     <input type="hidden" name="<?= e($pickerName) ?>" value="<?= e($pickerValue) ?>" data-public-location-value>
     <button class="barama-public-location-picker__trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="<?= e($pickerId) ?>-quick" data-public-location-trigger>
@@ -46,4 +46,4 @@ $pickerId = 'barama-location-' . substr(hash('sha256', $pickerName . '|' . $pick
         </div>
     </div>
 </div>
-<script src="<?= e(asset('js/public-location-picker-v115.js') . '?v=115') ?>" defer></script>
+<script src="<?= e(asset('js/public-location-picker.js') . '?v=1.0.0-clean1') ?>" defer></script>

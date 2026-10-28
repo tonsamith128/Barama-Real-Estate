@@ -41,7 +41,7 @@ $statusTone = static fn (string $status): string => match ($status) {
     default => 'fallback',
 };
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-email-templates-v142.css') . '?v=142') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/admin-email-templates.css') . '?v=1.0.0-clean1') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/email-templates-theme-v117a41r3.css') . '?v=117a41r3') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/email-templates-premium-table-v117a41r5.css') . '?v=117a41r5') ?>">
 
@@ -180,4 +180,4 @@ $statusTone = static fn (string $status): string => match ($status) {
     </section>
 </section>
 
-<script src="<?= e(asset('js/admin-email-templates-v142.js') . '?v=142') ?>" defer></script>
+<script src="<?= e(asset('js/admin-email-templates.js') . '?v=1.0.0-clean1') ?>" defer></script>
