@@ -11,6 +11,32 @@
 - Public author legal JSON includes 20 \`published/public\` policies with administrator-review notices. **These are not authorized customer legal documents.** Source-specific issues include incomplete refund, jurisdiction/disputes, data-retention, privacy/cookie, contact and service-provider terms. Prior per-policy review tracker exists in the private owner review kit.
 - PR #140 (\`d8afa2bb7186be84be942119468ac5c74498716c\` last accepted baseline) passed Demo Importer PHP 8.2/8.4 with private/legal template tests; Foundation QA and Browser/Accessibility QA passed on Quality retry #2. **CI acceptance is not commercial permission.** Existing published publisher release \`DCP-20261024-0F8516E6\` (v0.9.25) must remain untouched.
 
+
+## Verified OWNER-SERVER preflight — completed 2026-10-28 (do not repeat)
+
+Owner pasted terminal output from the **actual aaPanel host**, not from a local synthetic fixture. The command's final line was mangled in the interactive paste, but the independent final output printed the JSON report and exit status. The verification steps completed and the private read-only preflight returned **exit code 2**, which is the intended fail-closed outcome.
+
+| Evidence from aaPanel stdout | Verified value |
+|---|---|
+| Review-only kit ZIP SHA-256 and archive test | **PASS** (`sha256sum -c` OK; `unzip -tq` no errors) |
+| Disposable offline fixture tests | **2/2 PASS** |
+| Preflight action | `READ_ONLY` |
+| Draft | Version **0.9.26**, ZIP SHA-256 `250c918ff1e17681ac9a18e0d64e98473f907de45be9488133f95b060c11b5c5` |
+| Compatible app versions | **[`0.9.25`]** (not 1.0.0) |
+| Policy source | SHA-256 `3a01f0b6d83672895c22f482d3ca81740be232863cc5cd07dfdec99a29664021`, **20** policies, **7** categories, **20** with editorial notices |
+| Demo content | **5,255** marketplace records, **53** media records, **53** archived image files, **73** media attachments |
+| Media rights inventory | **53** rows; **53 unapproved** |
+| Blockers | `IMAGE_RIGHTS_REVIEW_PENDING`; `POLICIES_REQUIRE_OPERATOR_LEGAL_REVIEW` |
+| Human approvals | Legal: **false**; image rights: **false** |
+| Publisher signature verified | **false** |
+| Ready to submit to publisher | **false** |
+| Exit code | **2** — expected review hold, NOT tool failure |
+| Private result path | `/root/Barama-Commercial-QA-MxyqU9tV/preflight-results.json` |
+
+**Attestation boundary:** this is authenticated as a user-supplied aaPanel terminal transcript, not a live assistant SSH session or a formal owner signature. Do not infer counsel approval, title/property/person clearances, signing or customer installation from a checksum pass. No release, publisher, production or customer writes were requested or performed.
+
+**Next single prerequisite:** complete and document an individual rights disposition for all 53 media records and operator/legal dispositions for all 20 policy templates. Keep the original private rights CSV and signed-source contract intact; record reviewer, date, claim of rights, specific asset hash, visual/model/property/brand review and supporting evidence. Do not flip all rows to approved in bulk, and do not insert the buyer's legal identity into an author-owned public template. Once supported human decisions are recorded, rebuild or recheck the frozen candidate (if assets/text changed), then request an explicitly authorized **publisher Draft-only** signing workflow. Real customer installation follows separately and requires a published verified catalog record plus license-bound isolated customer test.
+
 ## Stage A — legal decisions (technical source review done, formal review still pending)
 
 1. Resolve per-owner operator name/address and support/privacy/IP/accessibility contacts; billing/cancellation/refund implementation; governing law and dispute provisions; actual privacy disclosures, cookie consent, processors, retention and cross-border data; platform and accessibility representations.
@@ -59,6 +85,6 @@ Two **new** disposable licensed domains with separate empty MySQL databases and 
 
 ## Release-block ledger
 
-- **Completed:** author export, draft ZIP structural checks (owner-reported), full policy source review, 53 image integrity hashes (owner-reported), PR #140 core/private-template CI, Quality browser retry, read-only synthetic preflight test kit.
-- **Not completed:** human 20-policy authorization; **53/53** asset rights decisions; actual private aaPanel preflight run; live-versus-frozen snapshot parity; authenticated publisher signature and Draft record; owner approval to publish; genuine new licensed manual+auto imports; real rollback receipts; merge approval.
+- **Completed:** author export, draft ZIP structural checks (owner-reported), full policy source review, 53 image integrity hashes (owner-reported), PR #140 core/private-template CI, Quality browser retry, read-only synthetic preflight test kit, **owner's private aaPanel v1.1.7 preflight (report exit code 2, legitimate review hold).**
+- **Not completed:** human 20-policy authorization; **53/53** asset rights decisions; live-versus-frozen snapshot parity; authenticated publisher signature and Draft record; owner approval to publish; genuine new licensed manual+auto imports; real rollback receipts; merge approval.
 - **No protected action performed:** no customer install, publisher signing/upload, production edit, published release change, or Main merge.
