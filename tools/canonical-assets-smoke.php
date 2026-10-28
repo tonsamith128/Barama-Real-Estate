@@ -78,7 +78,9 @@ foreach ($views as $view => $references) {
     foreach ($legacyPatterns as $pattern) {
         $legacyName = basename($pattern);
         $prefix = substr($legacyName, 0, strpos($legacyName, '-v*'));
-        if (preg_match('/' . preg_quote($prefix, '/') . '-v[0-9][a-z0-9]*\\.(?:css|js)/i', $source)) {
+        $ext = pathinfo($pattern, PATHINFO_EXTENSION);
+        if (preg_match('/' . preg_quote($prefix, '/') . '-v[0-9][a-z0-9]*\\.'
+            . preg_quote($ext, '/') . '(?![a-z0-9])/i', $source)) {
             $fail('View references superseded asset ' . $view . ': ' . $prefix);
         }
     }
