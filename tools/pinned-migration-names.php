@@ -35,4 +35,5 @@ return [
     '0029_create_global_location_hierarchy.php',
     '0030_update_homepage_hero_copy.php',
     '0031_add_account_profile_details.php',
+    '0032_create_invoice_templates.php',
 ];

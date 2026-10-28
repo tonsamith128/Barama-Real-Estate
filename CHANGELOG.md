@@ -14,6 +14,9 @@ Development-only 0.9.x milestones are intentionally not presented as separate Co
 
 ## 1.0.0 — 2026-10-28 (CodeCanyon package candidate; not yet published)
 
+- Fix first-install Invoices Admin page: add missing invoice-template migration, gracefully handle old un-migrated installations with clear editor guidance, and protect template writes until schema upgrade.
+- Correct Cloudflare Turnstile feature row's title, description, status and Configure button contrast in light mode; preserve dark-mode behavior. See `docs/CODECANYON_V1_0_0_INVOICES_TURNSTILE_FIX.md`.
+
 Initial public-release source and customer-package documentation prepared for CodeCanyon. This is a versioned candidate, not proof of Envato approval, live installation certification, or marketplace publication.
 
 - Updated packaged offline help with v1.0.0 version identity, signed Demo Importer format/database compatibility safety guidance, Media Library Upload instructions and all four official product resource links.

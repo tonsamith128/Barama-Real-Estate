@@ -68,3 +68,53 @@ body.br-ts-modal-active{overflow:hidden}
 .br-ts-verified-notice strong{display:block;font-size:14px}
 .br-ts-dialog [hidden]{display:none!important}
 @media(max-width:720px){.br-ts-appearance-choices{grid-template-columns:1fr}}
+
+/* BARAMA_CODECANYON_TURNSTILE_LIGHT_CONTRAST_V100
+ * The row is embedded in the light-theme Security settings table; modal
+ * presentation retains its deliberately dark neutral background. */
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-table-row {
+    background: #f8faff;
+    color: #1f2937;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-table-row:hover {
+    background: #f0f5ff;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-feature-title {
+    color: #17243d;
+    opacity: 1;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-feature-description,
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-td-description {
+    color: #475569;
+    opacity: 1;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-feature-icon {
+    color: #1d4ed8;
+    background: #e8efff;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-status {
+    color: #854d0e;
+    background: #fff4dc;
+    border-color: #edcf95;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-status.enabled {
+    color: #086044;
+    background: #dcfce7;
+    border-color: #93d9bb;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-status.disabled {
+    color: #334155;
+    background: #e9edf4;
+    border-color: #cbd5e1;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-row-btn {
+    color: #1d4ed8;
+    background: #eff5ff;
+    border-color: #94b5ef;
+}
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-row-btn:hover,
+:root[data-bs-theme="light"] .barama-settings--flat .br-ts-row-btn:focus-visible {
+    color: #153d9c;
+    background: #dbeafe;
+    border-color: #4477da;
+}

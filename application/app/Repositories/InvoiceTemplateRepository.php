@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Barama\Repositories;
 
 use Barama\Core\Database;
+use PDOException;
 
 final class InvoiceTemplateRepository
 {
@@ -12,13 +13,24 @@ final class InvoiceTemplateRepository
     public function getDefault(): array
     {
         $pdo = Database::connection();
-        $statement = $pdo->prepare(
-            'SELECT * FROM invoice_templates WHERE template_key = :template_key LIMIT 1'
-        );
-        $statement->execute(['template_key' => 'default']);
-        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        try {
+            $statement = $pdo->prepare(
+                'SELECT * FROM invoice_templates WHERE template_key = :template_key LIMIT 1'
+            );
+            $statement->execute(['template_key' => 'default']);
+            $row = $statement->fetch(\PDO::FETCH_ASSOC);
 
-        return is_array($row) ? $row : [];
+            return is_array($row) ? $row : [];
+        } catch (PDOException $exception) {
+            // Older v1.0.0 customer installs lacked the invoice-template
+            // migration. Keep the Admin layout intact without issuing DDL
+            // from a GET request; the authenticated updater applies 0032.
+            if ((string) $exception->getCode() === '42S02') {
+                return ['__migration_required' => true];
+            }
+
+            throw $exception;
+        }
     }
 
     /** @param array<string,mixed> $data */
