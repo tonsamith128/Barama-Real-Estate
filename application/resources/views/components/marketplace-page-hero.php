@@ -132,7 +132,7 @@ $saleLabel = trim((string) ($saleRentConfig['sale_label'] ?? 'For sale'));
 $rentLabel = trim((string) ($saleRentConfig['rent_label'] ?? 'For rent'));
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/marketplace-hero-heading-v112.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/marketplace-search-glass-v117a31.css') . '?v=117a31') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/marketplace-search-glass.css') . '?v=117a31') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/marketplace-search-focus-v117a32.css') . '?v=117a32') ?>">
 <section class="marketplace-hero marketplace-hero--discovery marketplace-hero--<?= e($pageKind) ?> marketplace-config-hero marketplace-config-hero--background-<?= e($backgroundType) ?> <?= $hasHeroBackground ? 'marketplace-config-hero--rich-background' : '' ?>">
     <?php if ($heroEnabled && $backgroundType === 'color'): ?>

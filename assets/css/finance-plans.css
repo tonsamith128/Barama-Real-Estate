@@ -1,3 +1,6 @@
+/* Barama v1.0.0 canonical stylesheet; assembled in original cascade order. */
+
+/* -- finance-plans-v140.css -- */
 /* BARAMA_FINANCE_PLANS_PREMIUM_V139 */
 .finance-plans {
     display: grid;
@@ -831,3 +834,4 @@ html[data-bs-theme="dark"] .finance-plans__stats article:hover {
         min-height:122px !important;
     }
 }
+

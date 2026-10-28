@@ -27,7 +27,7 @@ $availableCompanies = array_values(array_filter(
     }
 ));
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/plans-packages-v140.css') . '?v=140') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/plans-packages.css') . '?v=140') ?>">
 <link rel="stylesheet" href="<?= e(asset('css/plans-purchase-theme-v144.css') . '?v=144') ?>">
 
 <section class="barama-plan-purchase">

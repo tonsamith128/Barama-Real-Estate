@@ -1,3 +1,6 @@
+/* Barama v1.0.0 canonical stylesheet; assembled in original cascade order. */
+
+/* -- marketplace-search-glass-v117a31.css -- */
 /* Barama A31 — truly transparent, narrowly scoped marketplace Hero search UI.
    Fixes A30 broad child selector that manufactured phantom form boxes from the
    location-picker partial. Works only with barama-hero-glass-a31. */
@@ -229,3 +232,4 @@
     background: rgba(9,22,40,.82) !important;
   }
 }
+

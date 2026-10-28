@@ -167,12 +167,7 @@ $securityPagerUrl = static function (
     return $anchorId !== '' ? $url . '#' . $anchorId : $url;
 };
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/security-center-v125.css') . '?v=125') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/security-center-v127.css') . '?v=127') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/security-center-v130.css') . '?v=130') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/security-center-v131.css') . '?v=131') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/security-center-v132.css') . '?v=132') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/security-center-v133.css') . '?v=133') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/security-center.css') . '?v=1.0.0-clean2') ?>">
 
 <section class="workspace-page security-center" data-security-center>
     <header class="security-center__hero">

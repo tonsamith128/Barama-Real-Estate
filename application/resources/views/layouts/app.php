@@ -273,28 +273,23 @@ $appJsVersion = is_file($appJsFile)
         <!-- BARAMA_WORKSPACE_ICON_RAIL_V117A15: Admin / Account / Developer desktop-only icon rail -->
         <link href="<?= e(asset('css/workspace-sidebar-icon-rail-v117a15.css') . '?v=117a15') ?>" rel="stylesheet">
         <?php if ($changeConfirmationRequired): ?>
-            <link href="<?= e(asset('css/change-confirmation-v133.css') . '?v=133') ?>" rel="stylesheet">
+            <link href="<?= e(asset('css/change-confirmation.css') . '?v=133') ?>" rel="stylesheet">
         <?php endif; ?>
     <?php endif; ?>
     <?php if (!$isWorkspacePage): ?>
         <!-- BARAMA_PUBLIC_MOBILE_V1114 -->
         <link href="<?= e(asset('css/public-mobile-v1114.css') . '?v=1114') ?>" rel="stylesheet">
-        <!-- BARAMA_HERO_SEARCH_V1117 -->
-        <link href="<?= e(asset('css/hero-search-v1117.css') . '?v=1117') ?>" rel="stylesheet">
-        <!-- BARAMA_HERO_SEARCH_V1118 -->
-        <link href="<?= e(asset('css/hero-search-v1118.css') . '?v=1118') ?>" rel="stylesheet">
-        <!-- BARAMA_HERO_SEARCH_V1122 -->
-        <link href="<?= e(asset('css/hero-search-v1122.css') . '?v=1122') ?>" rel="stylesheet">
-        <!-- BARAMA_HERO_SEARCH_V1123 -->
-        <link href="<?= e(asset('css/hero-search-v1123.css') . '?v=1123') ?>" rel="stylesheet">
+        <!-- BARAMA_CANONICAL_HERO_SEARCH -->
+        <link href="<?= e(asset('css/hero-search.css') . '?v=1.0.0-clean2') ?>" rel="stylesheet">
+
+
+
         <!-- BARAMA_POPULAR_LOCATION_MARQUEE_V1125 -->
         <link href="<?= e(asset('css/popular-location-marquee.css') . '?v=1.0.0-clean1') ?>" rel="stylesheet">
-        <!-- BARAMA_PUBLIC_HEADER_INLINE_V1119 -->
-        <link href="<?= e(asset('css/public-header-inline-v1119.css') . '?v=1119') ?>" rel="stylesheet">
-        <!-- BARAMA_PUBLIC_HEADER_INLINE_V1120 -->
-        <link href="<?= e(asset('css/public-header-inline-v1120.css') . '?v=1120') ?>" rel="stylesheet">
-        <!-- BARAMA_PUBLIC_HEADER_INLINE_V1121 -->
-        <link href="<?= e(asset('css/public-header-inline-v1121.css') . '?v=1121') ?>" rel="stylesheet">
+        <!-- BARAMA_CANONICAL_PUBLIC_HEADER_INLINE -->
+        <link href="<?= e(asset('css/public-header-inline.css') . '?v=1.0.0-clean2') ?>" rel="stylesheet">
+
+
         <script src="<?= e(asset('js/public-header-inline-v1121.js') . '?v=1121') ?>" defer></script>
                 <?php if (!empty($publicContentProtection['enabled'])): ?>
             <link href="<?= e(asset('css/right-click-protection-v134.css') . '?v=134') ?>" rel="stylesheet">
@@ -893,7 +888,7 @@ $appJsVersion = is_file($appJsFile)
         <script src="<?= e(asset('js/workspace-sidebar-scroll-v115.js') . '?v=115') ?>" defer></script>
         <script src="<?= e(asset('js/workspace-sidebar-tooltips-v117a15.js') . '?v=117a15') ?>" defer></script>
         <?php if ($changeConfirmationRequired): ?>
-            <script src="<?= e(asset('js/change-confirmation-v133.js') . '?v=117a13') ?>" defer></script>
+            <script src="<?= e(asset('js/change-confirmation.js') . '?v=117a13') ?>" defer></script>
         <?php endif; ?>
     <?php elseif (!empty($publicContentProtection['enabled'])): ?>
         <script src="<?= e(asset('js/right-click-protection-v134.js') . '?v=134') ?>" defer></script>

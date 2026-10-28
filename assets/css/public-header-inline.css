@@ -1,0 +1,582 @@
+/* Barama v1.0.0 canonical stylesheet; assembled in original cascade order. */
+
+/* -- public-header-inline-v1119.css -- */
+/* BARAMA_PUBLIC_HEADER_INLINE_V1119 */
+/* Desktop (>=1200px) intentionally inherits the existing labeled navigation. */
+
+@media (max-width: 1199.98px) {
+    /* The smaller-screen header is the navigation surface: no hamburger overlay. */
+    .site-header [data-site-menu-toggle],
+    .site-header .site-menu-toggle {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        position: static !important;
+        inset: auto !important;
+        z-index: auto !important;
+        display: flex !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        flex: 0 1 auto !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: .35rem !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        pointer-events: auto !important;
+        backdrop-filter: none !important;
+    }
+
+    .site-header [data-site-navigation][hidden] {
+        display: flex !important;
+    }
+
+    .site-header [data-site-navigation]::before,
+    .site-header [data-site-navigation]::after,
+    .site-header .site-navigation::before,
+    .site-header .site-navigation::after {
+        content: none !important;
+        display: none !important;
+    }
+
+    .site-header [data-site-navigation] hr,
+    .site-header .site-navigation hr {
+        display: none !important;
+    }
+
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        display: flex !important;
+        width: auto !important;
+        min-width: 0 !important;
+        flex: 0 0 auto !important;
+        grid-template-columns: none !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: .25rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        display: grid !important;
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+        max-width: 38px !important;
+        flex: 0 0 38px !important;
+        place-items: center !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 11px !important;
+        background: transparent !important;
+        color: var(--barama-muted, #64748b) !important;
+        font-size: 0 !important;
+        line-height: 1 !important;
+        text-indent: 0 !important;
+        box-shadow: none !important;
+        white-space: nowrap !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        display: block !important;
+        width: 19px !important;
+        height: 19px !important;
+        margin: 0 !important;
+        flex: 0 0 19px !important;
+        color: currentColor !important;
+    }
+
+    .site-header .main-nav a:hover,
+    .site-header .main-nav a:focus-visible {
+        background: color-mix(in srgb, var(--barama-primary, #2563eb) 8%, transparent) !important;
+        color: var(--barama-text, #0f172a) !important;
+    }
+
+    .site-header .main-nav a.is-active,
+    .site-header .main-nav a[aria-current="page"] {
+        background: color-mix(in srgb, var(--barama-primary, #2563eb) 10%, transparent) !important;
+        color: var(--barama-text, #0f172a) !important;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--barama-primary, #2563eb) 16%, transparent) !important;
+    }
+
+    /* Flatten any utility/action row that previously lived inside the mobile panel. */
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr),
+    .site-header .site-navigation > :not(.main-nav):not(hr) {
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+    .site-header [data-site-navigation] button,
+    .site-header [data-site-navigation] > a:not(.main-nav a),
+    .site-header .site-navigation button,
+    .site-header .site-navigation > a:not(.main-nav a) {
+        flex: 0 0 auto !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        gap: .2rem !important;
+    }
+
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        gap: .12rem !important;
+    }
+
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        max-width: 34px !important;
+        flex-basis: 34px !important;
+        border-radius: 10px !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 18px !important;
+        height: 18px !important;
+        flex-basis: 18px !important;
+    }
+}
+
+@media (max-width: 419.98px) {
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        width: 31px !important;
+        height: 31px !important;
+        min-width: 31px !important;
+        min-height: 31px !important;
+        max-width: 31px !important;
+        flex-basis: 31px !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 17px !important;
+        height: 17px !important;
+        flex-basis: 17px !important;
+    }
+}
+
+
+/* -- public-header-inline-v1120.css -- */
+/* BARAMA_PUBLIC_HEADER_INLINE_V1120 */
+/* >=1200px intentionally inherits the current desktop icon + label header. */
+
+@media (max-width: 1199.98px) {
+    /* No hamburger / no overlay on compact screens. */
+    .site-header [data-site-menu-toggle],
+    .site-header .site-menu-toggle {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        position: static !important;
+        inset: auto !important;
+        display: flex !important;
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: calc(100% - 96px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 4px !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        pointer-events: auto !important;
+        backdrop-filter: none !important;
+    }
+
+    .site-header [data-site-navigation][hidden] {
+        display: flex !important;
+    }
+
+    .site-header [data-site-navigation]::before,
+    .site-header [data-site-navigation]::after,
+    .site-header .site-navigation::before,
+    .site-header .site-navigation::after,
+    .site-header [data-site-navigation] hr,
+    .site-header .site-navigation hr {
+        content: none !important;
+        display: none !important;
+    }
+
+    /* Exact visual order: 1 Home, 2 Properties, 3 Projects, 4 Companies, then utilities. */
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        order: 1 !important;
+        display: flex !important;
+        flex: 0 0 auto !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        min-width: 0 !important;
+        gap: 2px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+    }
+
+    /* Utilities (Language then Profile) stay after the four main links. */
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr),
+    .site-header .site-navigation > :not(.main-nav):not(hr) {
+        order: 2 !important;
+        display: flex !important;
+        flex: 0 0 auto !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 2px !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Four main navigation links become true icon-only buttons. */
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        position: relative !important;
+        display: grid !important;
+        place-items: center !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        max-width: 36px !important;
+        flex: 0 0 36px !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
+        border-radius: 10px !important;
+        background: transparent !important;
+        color: var(--barama-muted, #64748b) !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        text-indent: 0 !important;
+        white-space: nowrap !important;
+        box-shadow: none !important;
+    }
+
+    /* Explicitly neutralize nested label spans that defeated v1.1.19's font-size:0. */
+    .site-header .main-nav a > span:not(:has(svg)),
+    .site-header .main-nav a > strong,
+    .site-header .main-nav a > em,
+    .site-header .main-nav a svg ~ span,
+    .site-header .main-nav a .nav-label,
+    .site-header .main-nav a .menu-label,
+    .site-header .main-nav a .label,
+    .site-header.is-menu-open .main-nav a > span:not(:has(svg)),
+    .site-header.is-menu-open .main-nav a svg ~ span {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0 0 0 0) !important;
+        clip-path: inset(50%) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+        max-width: 18px !important;
+        max-height: 18px !important;
+        margin: 0 !important;
+        flex: 0 0 18px !important;
+        color: currentColor !important;
+    }
+
+    .site-header .main-nav a:hover,
+    .site-header .main-nav a:focus-visible {
+        background: color-mix(in srgb, var(--barama-primary, #2563eb) 8%, transparent) !important;
+        color: var(--barama-text, #0f172a) !important;
+    }
+
+    .site-header .main-nav a.is-active,
+    .site-header .main-nav a[aria-current="page"] {
+        background: color-mix(in srgb, var(--barama-primary, #2563eb) 10%, transparent) !important;
+        color: var(--barama-text, #0f172a) !important;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--barama-primary, #2563eb) 16%, transparent) !important;
+    }
+
+    /* Language and Profile are icon-only square controls and retain their DOM order. */
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr) button,
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr) > a,
+    .site-header .site-navigation > :not(.main-nav):not(hr) button,
+    .site-header .site-navigation > :not(.main-nav):not(hr) > a {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        max-width: 36px !important;
+        flex: 0 0 36px !important;
+        display: grid !important;
+        place-items: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        white-space: nowrap !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        max-width: calc(100% - 84px) !important;
+        gap: 2px !important;
+    }
+
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav,
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr),
+    .site-header .site-navigation > :not(.main-nav):not(hr) {
+        gap: 1px !important;
+    }
+
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a,
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr) button,
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr) > a,
+    .site-header .site-navigation > :not(.main-nav):not(hr) button,
+    .site-header .site-navigation > :not(.main-nav):not(hr) > a {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        max-width: 32px !important;
+        flex-basis: 32px !important;
+        border-radius: 9px !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 17px !important;
+        height: 17px !important;
+        min-width: 17px !important;
+        min-height: 17px !important;
+        max-width: 17px !important;
+        max-height: 17px !important;
+        flex-basis: 17px !important;
+    }
+}
+
+@media (max-width: 419.98px) {
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation {
+        max-width: calc(100% - 76px) !important;
+        gap: 0 !important;
+    }
+
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a,
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr) button,
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr) > a,
+    .site-header .site-navigation > :not(.main-nav):not(hr) button,
+    .site-header .site-navigation > :not(.main-nav):not(hr) > a {
+        width: 29px !important;
+        height: 29px !important;
+        min-width: 29px !important;
+        min-height: 29px !important;
+        max-width: 29px !important;
+        flex-basis: 29px !important;
+        border-radius: 8px !important;
+    }
+
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        max-width: 16px !important;
+        max-height: 16px !important;
+        flex-basis: 16px !important;
+    }
+}
+
+
+/* -- public-header-inline-v1121.css -- */
+/* BARAMA_PUBLIC_HEADER_INLINE_V1121 */
+/* Desktop >=1200px intentionally inherits the accepted icon + label header. */
+
+@media (max-width: 1199.98px) {
+    /* v1.1.21 hard-stop: compact main navigation is icon-only regardless of wrapper depth. */
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a,
+    .site-header .main-nav a *,
+    .site-header.is-menu-open .main-nav a * {
+        font-size: 0 !important;
+        line-height: 0 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+        text-decoration-thickness: 0 !important;
+    }
+
+    /* Text nodes normalized by v1.1.21 JS are never rendered on compact screens. */
+    .site-header .main-nav .barama-nav-label-v1121,
+    .site-header.is-menu-open .main-nav .barama-nav-label-v1121 {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    /* The link itself stays a fixed icon button, preventing any leaked text from changing layout. */
+    .site-header .main-nav a,
+    .site-header.is-menu-open .main-nav a {
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+    }
+
+    /* Preserve the existing SVG icon dimensions despite the descendant font reset. */
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+        max-width: 18px !important;
+        max-height: 18px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: 0 0 18px !important;
+        overflow: visible !important;
+        visibility: visible !important;
+    }
+
+    /* Keep nested icon wrappers compact even when the original markup combines icon + label. */
+    .site-header .main-nav a > span,
+    .site-header .main-nav a > div,
+    .site-header .main-nav a > i,
+    .site-header .main-nav a > b,
+    .site-header .main-nav a > strong,
+    .site-header.is-menu-open .main-nav a > span,
+    .site-header.is-menu-open .main-nav a > div,
+    .site-header.is-menu-open .main-nav a > i,
+    .site-header.is-menu-open .main-nav a > b,
+    .site-header.is-menu-open .main-nav a > strong {
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+    /* Preserve v1.1.20 exact visual order and prevent wrapping. */
+    .site-header [data-site-navigation],
+    .site-header.is-menu-open [data-site-navigation],
+    .site-header .site-navigation,
+    .site-header.is-menu-open .site-navigation,
+    .site-header .main-nav,
+    .site-header.is-menu-open .main-nav {
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
+    }
+
+    .site-header .main-nav {
+        order: 1 !important;
+    }
+
+    .site-header [data-site-navigation] > :not(.main-nav):not(hr),
+    .site-header .site-navigation > :not(.main-nav):not(hr) {
+        order: 2 !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 17px !important;
+        height: 17px !important;
+        min-width: 17px !important;
+        min-height: 17px !important;
+        max-width: 17px !important;
+        max-height: 17px !important;
+        flex-basis: 17px !important;
+    }
+}
+
+@media (max-width: 419.98px) {
+    .site-header .main-nav a svg,
+    .site-header.is-menu-open .main-nav a svg {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        max-width: 16px !important;
+        max-height: 16px !important;
+        flex-basis: 16px !important;
+    }
+}
+
