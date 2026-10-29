@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?= e(asset('css/users-premium-v117.css') . '?v=117a') ?>">
+<?= barama_css_once('admin') ?>
 <section class="workspace-page barama-user-create-v117">
   <div class="workspace-page__header"><div><span class="eyebrow">Admin · Users</span><h1>Add New User</h1><p>Create a real customer account. Email verification remains required before business access.</p></div><a class="btn btn-outline-secondary" href="<?= e(url('/dashboard/users')) ?>">Back to users</a></div>
   <div class="barama-user-create-v117__panel">

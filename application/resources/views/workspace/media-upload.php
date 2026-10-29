@@ -49,11 +49,11 @@ $effectiveLabel = $formatMediaBytes($effectiveMax);
 $hostingConstrained = $effectiveMax < $baramaMaxBytes;
 
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/media-library-upload.css') . '?v=1.0.0-clean1') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/media-library-upload-contrast-v101.css') . '?v=101') ?>">
-<script src="<?= e(asset('js/media-library-upload-v134.js') . '?v=134b-merge') ?>" defer></script>
-<link rel="stylesheet" href="<?= e(asset('css/media-library-upload-limits-v102.css') . '?v=102') ?>">
-<script src="<?= e(asset('js/media-library-upload-limits-v102.js') . '?v=102') ?>" defer></script>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="media-library-upload"></script>
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="media-library-upload-limits"></script>
 
 <section class="workspace-page media-upload" data-media-upload>
     <header class="media-upload__hero">

@@ -53,7 +53,7 @@ if (!function_exists('barama_change_confirmation_page_render')) {
   }catch(e){}
 }());
 </script>
-<link rel="stylesheet" href="/assets/css/barama-change-confirmation-v1.0.0.css">
+<link rel="stylesheet" href="/assets/css/change-confirmation-page.css">
 </head>
 <body>
 <main class="bcc-page">
@@ -105,7 +105,7 @@ if (!function_exists('barama_change_confirmation_page_render')) {
     </article>
   </section>
 </main>
-<script src="/assets/js/barama-change-confirmation-v1.0.0.js" defer></script>
+<script src="/assets/js/change-confirmation-page.js" defer></script>
 </body>
 </html>
 HTML;

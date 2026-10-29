@@ -7,7 +7,7 @@ $toolStorageReady = !empty($toolStorageReady);
 $toolFlash = is_array($toolFlash ?? null) ? $toolFlash : null;
 $toolBase = '/dashboard/system/tool';
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/barama-system-tool-v100.css') . '?v=100') ?>">
+<?= barama_css_once('admin') ?>
 <section class="btool" id="barama-system-tool" data-passcode-enabled="<?= !empty($toolPasscodeEnabled) ? '1' : '0' ?>" aria-labelledby="btool-heading">
   <div class="btool-breadcrumb">Administration <span aria-hidden="true">/</span> System <span aria-hidden="true">/</span> Tool</div>
   <header class="btool-header">
@@ -163,4 +163,4 @@ $toolBase = '/dashboard/system/tool';
   </div>
 </dialog>
 <noscript><p class="btool-help">Actions protected by Change Confirmation require JavaScript to submit the passcode grant.</p></noscript>
-<script defer src="<?= e(asset('js/barama-system-tool-v100.js') . '?v=100') ?>"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-system-tool"></script>

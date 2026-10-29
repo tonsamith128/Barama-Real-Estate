@@ -86,7 +86,7 @@ $editorIcon = static function (string $name): string {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
 };
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-email-template-builder.css') . '?v=1.0.0-clean1') ?>">
+<?= barama_css_once('admin') ?>
 
 <section
     class="workspace-page email-builder"
@@ -475,4 +475,4 @@ $editorIcon = static function (string $name): string {
     <script type="application/json" data-email-template-samples><?= json_encode($samples, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) ?></script>
     <script type="application/json" data-email-template-defaults><?= json_encode($defaults, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) ?></script>
 </section>
-<script src="<?= e(asset('js/admin-email-template-builder.js') . '?v=1.0.0-clean1') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-email-template-builder"></script>

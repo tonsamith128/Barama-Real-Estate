@@ -1,7 +1,7 @@
 <?php
 /** @var array<string,mixed> $location */
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/catalog-location-edit-v117a9.css') . '?v=117a9') ?>">
+<?= barama_css_once('admin') ?>
 <section class="barama-location-edit-v117a9">
   <header class="barama-location-edit-v117a9__header">
     <div>

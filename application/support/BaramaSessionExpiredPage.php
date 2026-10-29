@@ -61,7 +61,7 @@ if (!function_exists('barama_session_expired_page_render')) {
   }catch(e){}
 }());
 </script>
-<link rel="stylesheet" href="/assets/css/barama-session-expired-v1.0.1.css">
+<link rel="stylesheet" href="/assets/css/session-expired.css">
 </head>
 <body>
 <main class="bse-page">
@@ -131,7 +131,7 @@ if (!function_exists('barama_session_expired_page_render')) {
     </article>
   </section>
 </main>
-<script src="/assets/js/barama-session-expired-v1.0.0.js" defer></script>
+<script src="/assets/js/session-expired.js" defer></script>
 </body>
 </html>
 HTML;

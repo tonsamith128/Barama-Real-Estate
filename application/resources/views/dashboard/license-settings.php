@@ -58,7 +58,7 @@ $rows = [
     ['id' => 'channel', 'item' => 'Verification channel', 'state' => 'neutral', 'status' => 'HTTPS', 'value' => 'Authenticated installation request', 'updated' => '—', 'details' => 'Verification and deactivation are sent over HTTPS using the installed application domain and installation identifier. No request is made merely by viewing this page.'],
 ];
 ?>
-<link rel="stylesheet" href="<?= $escape(asset('css/license-settings.css')) ?>?v=1440">
+<?= barama_css_once('admin') ?>
 <section class="bl-settings" data-bl-settings data-bl-license-state="<?= $escape($state) ?>" aria-labelledby="bl-page-title">
   <div class="bl-breadcrumb" aria-label="Breadcrumb"><span>System</span><span class="bl-breadcrumb-sep" aria-hidden="true">/</span><span>License &amp; Activation</span></div>
 
@@ -168,4 +168,4 @@ $rows = [
 
   <footer class="bl-page-footer"><a href="https://tonsamith.com/contact" target="_blank" rel="noopener noreferrer">Product support <span aria-hidden="true">↗</span></a><a href="<?= $escape(url('/dashboard/system/auto-updater')) ?>">Auto Updater ↗</a><span>Protected installation · Barama License Center</span></footer>
 </section>
-<script defer src="<?= $escape(asset('js/license-settings.js')) ?>?v=1440"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="license-settings"></script>

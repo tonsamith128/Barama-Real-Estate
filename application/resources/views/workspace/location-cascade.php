@@ -39,6 +39,6 @@ $mapboxEnabled = (new \Barama\Repositories\LocationProviderRepository())->active
 </div>
 
 <?php if ($mapboxEnabled): ?>
-<link rel="stylesheet" href="<?= e(asset('css/location-provider-v117a7.css') . '?v=117a7') ?>">
-<script src="<?= e(asset('js/location-provider-v117a7.js') . '?v=117a7') ?>" defer></script>
+<?= barama_css_once('frontend') ?>
+<?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="location-provider"></script>
 <?php endif; ?>

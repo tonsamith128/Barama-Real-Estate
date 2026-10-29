@@ -16,10 +16,10 @@ $createRequirements = [
 $needsCompany = in_array($createSection, ['projects','properties'], true) && $companies === [];
 $needsProperty = $createSection === 'listings' && $properties === [];
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/developer-create-pages-v109.css') . '?v=109') ?>">
-<script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
-<link rel="stylesheet" href="<?= e(asset('css/global-location-cascade-v110.css') . '?v=110') ?>">
-<script src="<?= e(asset('js/developer-create-pages-v109.js') . '?v=109') ?>" defer></script>
+<?= barama_css_once('developer') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="global-location-cascade"></script>
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('developer') ?><script type="application/x-barama-module" data-barama-module="developer-create-pages"></script>
 <section class="workspace-page developer-create-page" data-developer-create-page>
     <header class="workspace-page__header developer-create-page__header">
         <div>

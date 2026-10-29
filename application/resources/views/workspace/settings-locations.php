@@ -30,7 +30,7 @@ $packCountries = (int) ($locationSummary['pack_countries'] ?? 0);
     </div>
 
     <?php $providerState = is_array($locationProvider ?? null) ? $locationProvider : []; ?>
-    <link rel="stylesheet" href="<?= e(asset('css/location-provider-v117a7.css') . '?v=117a7') ?>">
+    <?= barama_css_once('frontend') ?>
     <section class="barama-location-provider-v117a7" aria-labelledby="barama-location-provider-title">
         <div class="barama-location-provider-v117a7__head">
             <span class="eyebrow">ADMIN CONFIGURATION</span>
@@ -221,4 +221,4 @@ $packCountries = (int) ($locationSummary['pack_countries'] ?? 0);
         </footer>
     </section>
 </section>
-<script src="<?= e(asset('js/admin-global-locations.js') . '?v=1.0.0-clean1') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-global-locations"></script>

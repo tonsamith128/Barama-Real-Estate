@@ -1155,52 +1155,49 @@ $renderActions = static function (array $row) use (
     $workspaceType === 'admin'
     && $activeSection === 'pages'
 ): ?>
-    <link
-        rel="stylesheet"
-        href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>"
-    >
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($workspaceType === 'admin' && $activeSection === 'catalog'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/catalog-quick-actions-v117a6.css') . '?v=117a10') ?>">
-    <script src="<?= e(asset('js/catalog-quick-actions-v117a6.js') . '?v=117a8') ?>" defer></script>
+    <?= barama_css_once('admin') ?>
+    <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="catalog-quick-actions"></script>
 <?php endif; ?>
 <!-- BARAMA_GLOBAL_LOCATION_CASCADE_INDEX_V110 -->
-<link rel="stylesheet" href="<?= e(asset('css/global-location-cascade-v110.css') . '?v=110') ?>">
-<script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="global-location-cascade"></script>
 <?php if ($mediaLibraryFocus): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/media-library-focus-v145.css') . '?v=145') ?>">
-    <link rel="stylesheet" href="<?= e(asset('css/media-library-preview-repair-v101.css') . '?v=101') ?>">
+    <?= barama_css_once('admin') ?>
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($workspaceType === 'developer' && in_array($activeSection, ['company', 'projects', 'properties', 'listings'], true)): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/developer-create-pages-v109.css') . '?v=109') ?>">
+    <?= barama_css_once('developer') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'listings'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/listings-focus-v148.css') . '?v=148') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'projects'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/projects-focus-v152.css') . '?v=152') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if (in_array($activeSection, ['companies', 'company'], true)): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/companies-focus-v156.css') . '?v=156') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'leads'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/leads-focus-v161.css') . '?v=161') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'viewings'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/viewings-focus-v164.css') . '?v=164') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'catalog'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/catalog-focus-v167.css') . '?v=167') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'seo'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/seo-focus-v170.css') . '?v=170') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'users'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/users-focus-v172.css') . '?v=172') ?>">
-    <link rel="stylesheet" href="<?= e(asset('css/users-premium-v117.css') . '?v=117a') ?>">
+    <?= barama_css_once('admin') ?>
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($activeSection === 'verification'): ?>
-    <link rel="stylesheet" href="<?= e(asset('css/verification-focus-v174.css') . '?v=174') ?>">
+    <?= barama_css_once('admin') ?>
 <?php endif; ?>
 <section class="workspace-page<?= $workspaceType === 'developer' && $activeSection === 'overview' ? ' workspace-page--a46r4' : '' ?><?= $hasMarketplacePageConfiguration ? ' workspace-page--marketplace-config' : '' ?><?= $workspaceType === 'admin' && $activeSection === 'pages' ? ' workspace-page--pages' : '' ?>">
     <?php /* BARAMA_A46_OVERVIEW_BEGIN */ if (($workspaceType ?? '') === 'admin' && ($activeSection ?? '') === 'overview'): ?>
@@ -1513,7 +1510,7 @@ $renderActions = static function (array $row) use (
     <?php endif; ?>
 
     <?php if ($hasMarketplacePageConfiguration): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/marketplace-config-v109.css')) ?>">
+        <?= barama_css_once('frontend') ?>
         <dialog class="config-dialog config-dialog--wide marketplace-page-config-dialog" id="marketplace-page-configuration-control" data-config-dialog>
             <form
                 class="config-dialog__panel"
@@ -1643,7 +1640,7 @@ $renderActions = static function (array $row) use (
                 </footer>
             </form>
         </dialog>
-        <script src="<?= e(asset('js/marketplace-config-v109.js')) ?>"></script>
+        <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="marketplace-config"></script>
     <?php endif; ?>
 
     <div class="workspace-stats" aria-label="Workspace summary">
@@ -1832,13 +1829,8 @@ $renderActions = static function (array $row) use (
             <div><span><?= app_icon('check') ?></span><strong>Status, not deletion</strong><small>Catalog records are activated or deactivated without destroying historical real-estate references.</small></div>
         </section>
     <?php elseif ($workspaceType === 'admin' && $activeSection === 'media'): ?>
-        <link
-            rel="stylesheet"
-            href="<?= e(asset('css/media-library-index-v137.css') . '?v=137') ?>"
-        >
-        <script
-            src="<?= e(asset('js/media-library-index-v137.js') . '?v=137') ?>"
-            defer
+        <?= barama_css_once('admin') ?>
+        <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="media-library-index"
         ></script>        <section class="workspace-management-guide workspace-management-guide--media" aria-label="Platform media safeguards">
             <div><span><?= app_icon('image') ?></span><strong>Attachment context</strong><small>Every attached asset shows the first real-estate record, attachment count and primary-image usage.</small></div>
             <div><span><?= app_icon('shield') ?></span><strong>Owned media protected</strong><small>Attached assets stay under their Company, Project, Property or Listing workflow.</small></div>
@@ -1961,7 +1953,7 @@ $renderActions = static function (array $row) use (
         <div class="workspace-table-wrap">
             <table class="workspace-table<?= $workspaceType === 'admin' && $activeSection === 'listings'
                 ? ' workspace-table--admin-listings-v1128'
-                : '' ?><?= $activeSection === 'listings' ? ' workspace-table--listings-focus-v148' : '' ?>">
+                : '' ?><?= $activeSection === 'listings' ? ' workspace-table--listings-focus-v148' : '' ?><?= $workspaceType === 'admin' && $activeSection === 'users' ? ' workspace-table--users' : '' ?>">
                 <thead>
                     <tr>
                         <?php if ($bulkMode): ?>

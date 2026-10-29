@@ -17,7 +17,7 @@ $typeLabel = ucwords(str_replace('_', ' ', (string) ($listing['property_type'] ?
 $furnishingLabel = ucwords(str_replace('_', ' ', (string) ($listing['furnishing_status'] ?? '—')));
 $areaLabel = trim((string) ($listing['area_value'] ?? '') . ' ' . (string) ($listing['area_unit'] ?? '')) ?: '—';
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/property-detail-flow-v113.css')) ?>">
+<?= barama_css_once('frontend') ?>
 <section class="listing-detail listing-detail--premium single-detail single-detail--property">
     <div class="container app-container">
         <nav class="detail-breadcrumb" aria-label="Breadcrumb">

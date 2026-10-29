@@ -474,7 +474,7 @@ $propertySearchUrl = static function (array $search): string {
             </section>
         </div>
     <?php elseif ($activeSection === 'company'): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/account-company-access-v114.css') . '?v=117a3') ?>">
+        <?= barama_css_once('account') ?>
         <?php
         $canRequestCompany = true;
         foreach ($ownedCompanies as $ownedCompany) {
@@ -632,8 +632,8 @@ $propertySearchUrl = static function (array $search): string {
             <?php endif; ?>
         </div>
     <?php elseif ($activeSection === 'apply'): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/developer-application-v115.css') . '?v=117a5') ?>">
-        <script src="<?= e(asset('js/developer-application-v115.js') . '?v=115') ?>" defer></script>
+        <?= barama_css_once('developer') ?>
+        <?= barama_js_once('developer') ?><script type="application/x-barama-module" data-barama-module="developer-application"></script>
         <?php
         $pendingApplication = false;
         foreach ($ownedCompanies as $applicationCompany) {
@@ -746,9 +746,9 @@ $propertySearchUrl = static function (array $search): string {
             <?php endif; ?>
         </div>
     <?php elseif ($activeSection === 'profile'): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/customer-profile-avatar-v110.css') . '?v=110') ?>">
-        <script src="<?= e(asset('js/profile-avatar-unified-v107.js') . '?v=107') ?>" defer></script>
-        <script src="<?= e(asset('js/customer-profile-avatar-v110.js') . '?v=110') ?>" defer></script>
+        <?= barama_css_once('account') ?>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="profile-avatar-unified"></script>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="customer-profile-avatar"></script>
         <div class="account-settings-grid">
             <section class="account-panel">
                 <div class="account-panel__head"><h2>Personal profile</h2><span>Your login email is managed separately under Security.</span></div>

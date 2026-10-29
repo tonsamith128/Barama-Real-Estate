@@ -159,28 +159,20 @@ $slugs = array_map(
     $plans
 );
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-plans.css') . '?v=140') ?>"
->
-<script
-    src="<?= e(asset('js/finance-plans-v139.js') . '?v=139') ?>"
-    defer
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="finance-plans"
 ></script>
 
-<link rel="stylesheet" href="<?= e(asset('css/plans-packages.css') . '?v=141') ?>">
+<?= barama_css_once('frontend') ?>
 
-<link rel="stylesheet" href="<?= e(asset('css/finance-plans-section-cleanup-v145.css') . '?v=145') ?>">
+<?= barama_css_once('admin') ?>
 
-<link rel="stylesheet" href="<?= e(asset('css/finance-plans-typography-v146.css') . '?v=146') ?>">
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-plans-focus-v180.css') . '?v=180') ?>"
->
-<link rel="stylesheet" href="<?= e(asset('css/finance-plans-premium-white-v181.css') . '?v=181') ?>">
-<script src="<?= e(asset('js/finance-plans-actions-v181.js') . '?v=181') ?>" defer></script>
-<link rel="stylesheet" href="<?= e(asset('css/finance-plans-modal-theme-v182.css') . '?v=182') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="finance-plans-actions"></script>
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-plans" data-plans-workspace>
     <!-- BARAMA_PLANS_VERTICAL_GLOBAL_OVERFLOW_V100 -->

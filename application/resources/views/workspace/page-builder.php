@@ -64,13 +64,8 @@ $svg = static function (string $name): string {
         . '</svg>';
 };
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/page-builder-v116.css') . '?v=116') ?>"
->
-<script
-    src="<?= e(asset('js/page-builder.js') . '?v=1.0.0-clean1') ?>"
-    defer
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="page-builder"
 ></script>
 
 <section

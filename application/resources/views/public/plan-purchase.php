@@ -27,8 +27,8 @@ $availableCompanies = array_values(array_filter(
     }
 ));
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/plans-packages.css') . '?v=140') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/plans-purchase-theme-v144.css') . '?v=144') ?>">
+<?= barama_css_once('frontend') ?>
+<?= barama_css_once('frontend') ?>
 
 <section class="barama-plan-purchase">
     <a class="barama-plan-purchase__back" href="<?= e(url('/plans')) ?>">← Back to plans</a>

@@ -72,20 +72,11 @@ $webhookOpsPageUrl = static function (
 };
 
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-billing-operations-pagination-v1815.css') . '?v=1815') ?>"
->
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-billing-operations-focus-v1819.css') . '?v=1819') ?>"
->
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-billing-operations-empty-state-v1822.css') . '?v=1822') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--billing-operations">
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->

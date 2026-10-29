@@ -86,15 +86,9 @@ $invoicePageUrl = static function (int $target) use ($invoiceQuery): string {
 };
 
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-invoices-pagination-v1824.css') . '?v=1824') ?>"
->
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-invoices-focus-v1827.css') . '?v=1827') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--invoices">
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->

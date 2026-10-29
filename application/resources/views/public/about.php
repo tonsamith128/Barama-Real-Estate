@@ -16,8 +16,8 @@ $linkHref = static function (string $value): string {
 };
 ?>
 <main class="builtin-public-page builtin-about-page barama-about-a24 barama-about-a25">
-    <link rel="stylesheet" href="<?= e(asset('css/about-premium-v117a24.css')) ?>?v=117a24" media="all">
-    <link rel="stylesheet" href="<?= e(asset('css/about-visual-v117a25.css')) ?>?v=117a25" media="all">
+    <?= barama_css_once('frontend') ?>
+    <?= barama_css_once('frontend') ?>
     <?php if (!empty($hero['enabled'])): ?>
         <section class="builtin-hero">
             <div class="container app-container">

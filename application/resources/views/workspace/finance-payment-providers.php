@@ -88,8 +88,8 @@ $paymentNativeError = trim((string) ($_GET['payment_error'] ?? ''));
 ?>
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--payment-providers">
     <!-- BARAMA_PAYMENT_PROVIDERS_PREMIUM_V100 -->
-    <link rel="stylesheet" href="<?= e(asset('css/finance-payment-providers-v200.css')) ?>?v=200">
-    <script defer src="<?= e(asset('js/finance-payment-providers-v200.js')) ?>?v=200"></script>
+    <?= barama_css_once('admin') ?>
+    <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="finance-payment-providers"></script>
     <!-- BARAMA_PAYMENT_METHODS_V110 -->
     <!-- BARAMA_PAYMENT_METHODS_CHANGE_CONFIRMATION_V111 -->
     <!-- BARAMA_PAYMENT_METHODS_CHANGE_CONFIRMATION_V112 -->
@@ -99,8 +99,8 @@ $paymentNativeError = trim((string) ($_GET['payment_error'] ?? ''));
     <!-- BARAMA_PAYMENT_METHODS_CONFIRMATION_COMPLETION_V116 -->
     <!-- BARAMA_PAYMENT_METHODS_CONFIRMATION_LIVE_FORM_V117 -->
     <!-- BARAMA_PAYMENT_METHODS_NATIVE_CONFIRMATION_V120 -->
-    <link rel="stylesheet" href="<?= e(asset('css/finance-payment-methods.css')) ?>?v=1.0.0-clean2">
-    <script defer src="<?= e(asset('js/finance-payment-methods.js')) ?>?v=1.0.0-clean2"></script>
+    <?= barama_css_once('admin') ?>
+    <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="finance-payment-methods"></script>
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->
     <div class="workspace-page__header">
         <div>
@@ -622,15 +622,9 @@ $paymentNativeError = trim((string) ($_GET['payment_error'] ?? ''));
         </div>
     </section>
 
-    <link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-payment-providers-webhook-v1811.css') . '?v=1811') ?>"
->
+    <?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-payment-providers-webhook-focus-v1813.css') . '?v=1813') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-table-section finance-payment-webhook-section">
         <div class="workspace-table-head">

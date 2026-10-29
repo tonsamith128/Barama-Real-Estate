@@ -77,10 +77,7 @@ $pageUrl = static function (int $target) use ($query): string {
     );
 };
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-taxes-pagination-v186.css') . '?v=186') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--taxes" data-taxes-workspace>
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->

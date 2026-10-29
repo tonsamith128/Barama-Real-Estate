@@ -46,7 +46,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
     }
 }
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
+<?= barama_css_once('policy-center') ?>
 
 <main class="pc-builder">
     <form method="post" action="<?= e(url($action)) ?>" data-pc-builder>
@@ -1010,5 +1010,5 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
     </div>
 </dialog>
 
-<script defer src="<?= e(asset('js/policy-center-v1.0.10.js')) ?>"></script>
-<script defer src="<?= e(asset('js/policy-center-guidance-v100.js') . '?v=100') ?>"></script>
+<?= barama_js_once('policy-center') ?><script type="application/x-barama-module" data-barama-module="policy-center/editor-and-publishing"></script>
+<?= barama_js_once('policy-center') ?><script type="application/x-barama-module" data-barama-module="policy-center-guidance"></script>

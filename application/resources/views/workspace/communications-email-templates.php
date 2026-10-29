@@ -41,9 +41,9 @@ $statusTone = static fn (string $status): string => match ($status) {
     default => 'fallback',
 };
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-email-templates.css') . '?v=1.0.0-clean1') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/email-templates-theme-v117a41r3.css') . '?v=117a41r3') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/email-templates-premium-table-v117a41r5.css') . '?v=117a41r5') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page email-template-manager" data-email-template-manager data-email-template-version="142">
     <div class="workspace-page__header email-template-manager__hero">
@@ -180,4 +180,4 @@ $statusTone = static fn (string $status): string => match ($status) {
     </section>
 </section>
 
-<script src="<?= e(asset('js/admin-email-templates.js') . '?v=1.0.0-clean1') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-email-templates"></script>

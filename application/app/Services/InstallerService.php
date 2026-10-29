@@ -57,8 +57,8 @@ final class InstallerService
             'application/bootstrap/runtime.php',
             'application/app/Services/UpgradeService.php',
             'application/routes/web.php',
-            'assets/css/app.css',
-            'assets/js/app.js',
+            'assets/css/frontend.css',
+            'assets/js/frontend.js',
         ] as $relative) {
             $checks[] = $this->requiredCheck(
                 'Required file: ' . $relative,
@@ -99,15 +99,15 @@ final class InstallerService
         // Other feature CSS/JS files are permitted. Only require the canonical assets.
         $checks[] = $this->requiredCheck(
             'Canonical stylesheet',
-            is_file(BASE_PATH . '/assets/css/app.css')
-                && is_readable(BASE_PATH . '/assets/css/app.css'),
-            'assets/css/app.css'
+            is_file(BASE_PATH . '/assets/css/frontend.css')
+                && is_readable(BASE_PATH . '/assets/css/frontend.css'),
+            'assets/css/frontend.css'
         );
         $checks[] = $this->requiredCheck(
             'Canonical JavaScript',
-            is_file(BASE_PATH . '/assets/js/app.js')
-                && is_readable(BASE_PATH . '/assets/js/app.js'),
-            'assets/js/app.js'
+            is_file(BASE_PATH . '/assets/js/frontend.js')
+                && is_readable(BASE_PATH . '/assets/js/frontend.js'),
+            'assets/js/frontend.js'
         );
 
         $checks[] = [
@@ -1007,15 +1007,15 @@ SQL);
         // Health uses the same existence/readability contract as Requirements.
         $checks[] = $this->healthCheck(
             'Canonical stylesheet',
-            is_file(BASE_PATH . '/assets/css/app.css')
-                && is_readable(BASE_PATH . '/assets/css/app.css'),
-            'assets/css/app.css'
+            is_file(BASE_PATH . '/assets/css/frontend.css')
+                && is_readable(BASE_PATH . '/assets/css/frontend.css'),
+            'assets/css/frontend.css'
         );
         $checks[] = $this->healthCheck(
             'Canonical JavaScript',
-            is_file(BASE_PATH . '/assets/js/app.js')
-                && is_readable(BASE_PATH . '/assets/js/app.js'),
-            'assets/js/app.js'
+            is_file(BASE_PATH . '/assets/js/frontend.js')
+                && is_readable(BASE_PATH . '/assets/js/frontend.js'),
+            'assets/js/frontend.js'
         );
 
         $healthy = true;

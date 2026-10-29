@@ -557,7 +557,7 @@ final class FinanceRepository
              VALUES
                 (:uuid, :invoice_number, :company_id, :subscription_id, :coupon_id, :tax_rule_id, "draft",
                  :currency, :subtotal, :discount_total, :taxable_total, :tax_rate, :tax_total,
-                 :total, :due_at, :notes, :actor_id, :actor_id)'
+                 :total, :due_at, :notes, :created_actor_id, :updated_actor_id)'
         );
         $statement->execute([
             'uuid' => $uuid,
@@ -575,7 +575,8 @@ final class FinanceRepository
             'total' => $data['total'],
             'due_at' => $data['due_at'],
             'notes' => $data['notes'],
-            'actor_id' => $data['actor_id'],
+            'created_actor_id' => $data['actor_id'],
+            'updated_actor_id' => $data['actor_id'],
         ]);
 
         return (int) Database::connection()->lastInsertId();

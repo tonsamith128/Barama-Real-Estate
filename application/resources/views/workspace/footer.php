@@ -133,4 +133,4 @@ $networks = [
     </form>
 </section>
 
-<script src="<?= e(asset('js/admin-footer-links-v100.js') . '?v=100') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-footer-links"></script>

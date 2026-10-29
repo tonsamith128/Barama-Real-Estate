@@ -1,6 +1,6 @@
 <section class="auth-premium auth-premium--standalone auth-premium--a43r1">
     <!-- BARAMA_RESET_PASSWORD_A43R1 -->
-    <link rel="stylesheet" href="<?= e(asset('css/reset-password-a43r1.css') . '?v=117a43r2') ?>">
+    <?= barama_css_once('account') ?>
     <div class="container app-container auth-standalone__container">
         <div class="auth-premium__grid auth-premium__grid--standalone">
 <div class="auth-panel">

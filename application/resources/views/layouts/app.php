@@ -204,8 +204,8 @@ $seoRobots = trim((string) ($metaRobots ?? (
 $seoImage = trim((string) ($metaImage ?? ''));
 $seoType = trim((string) ($metaType ?? 'website'));
 
-$appCssFile = BASE_PATH . '/assets/css/app.css';
-$appJsFile = BASE_PATH . '/assets/js/app.js';
+$appCssFile = BASE_PATH . '/assets/css/frontend.css';
+$appJsFile = BASE_PATH . '/assets/js/frontend.js';
 $appCssVersion = is_file($appCssFile)
     ? (string) (filemtime($appCssFile) ?: APP_VERSION)
     : APP_VERSION;
@@ -261,48 +261,48 @@ $appJsVersion = is_file($appJsFile)
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
     >
-    <link href="<?= e(asset('css/app.css') . '?v=' . rawurlencode($appCssVersion)) ?>" rel="stylesheet">
-    <link href="<?= e(asset('css/footer-management-v100.css') . '?v=100') ?>" rel="stylesheet">
-    <link href="<?= e(asset('css/profile-avatar-unified-v107.css') . '?v=107') ?>" rel="stylesheet">
-    <link href="<?= e(asset('css/shared-notifications-v111.css') . '?v=111') ?>" rel="stylesheet">
-    <link href="<?= e(asset('css/notification-interaction-v112.css') . '?v=112') ?>" rel="stylesheet">
-    <script src="<?= e(asset('js/notification-tray-v112.js') . '?v=112') ?>" defer></script>
-    <link href="<?= e(asset('css/footer-social-inline-v105.css') . '?v=105') ?>" rel="stylesheet">
+    <?= barama_css_once('frontend') ?>
+    <?= barama_css_once('admin') ?>
+    <?= barama_css_once('account') ?>
+    <?= barama_css_once('frontend') ?>
+    <?= barama_css_once('frontend') ?>
+    <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="notification-tray"></script>
+    <?= barama_css_once('frontend') ?>
     <?php if ($isWorkspacePage): ?>
-        <link href="<?= e(asset('css/workspace-sidebar-scroll-v115.css') . '?v=115') ?>" rel="stylesheet">
+        <?= barama_css_once('admin') ?>
         <!-- BARAMA_WORKSPACE_ICON_RAIL_V117A15: Admin / Account / Developer desktop-only icon rail -->
-        <link href="<?= e(asset('css/workspace-sidebar-icon-rail-v117a15.css') . '?v=117a15') ?>" rel="stylesheet">
+        <?= barama_css_once('admin') ?>
         <?php if ($changeConfirmationRequired): ?>
-            <link href="<?= e(asset('css/change-confirmation.css') . '?v=133') ?>" rel="stylesheet">
+            <?= barama_css_once('admin') ?>
         <?php endif; ?>
     <?php endif; ?>
     <?php if (!$isWorkspacePage): ?>
         <!-- BARAMA_PUBLIC_MOBILE_V1114 -->
-        <link href="<?= e(asset('css/public-mobile-v1114.css') . '?v=1114') ?>" rel="stylesheet">
+        <?= barama_css_once('frontend') ?>
         <!-- BARAMA_CANONICAL_HERO_SEARCH -->
-        <link href="<?= e(asset('css/hero-search.css') . '?v=1.0.0-clean2') ?>" rel="stylesheet">
+        <?= barama_css_once('frontend') ?>
 
 
 
         <!-- BARAMA_POPULAR_LOCATION_MARQUEE_V1125 -->
-        <link href="<?= e(asset('css/popular-location-marquee.css') . '?v=1.0.0-clean1') ?>" rel="stylesheet">
+        <?= barama_css_once('frontend') ?>
         <!-- BARAMA_CANONICAL_PUBLIC_HEADER_INLINE -->
-        <link href="<?= e(asset('css/public-header-inline.css') . '?v=1.0.0-clean2') ?>" rel="stylesheet">
+        <?= barama_css_once('frontend') ?>
 
 
-        <script src="<?= e(asset('js/public-header-inline-v1121.js') . '?v=1121') ?>" defer></script>
+        <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="public-header-inline"></script>
                 <?php if (!empty($publicContentProtection['enabled'])): ?>
-            <link href="<?= e(asset('css/right-click-protection-v134.css') . '?v=134') ?>" rel="stylesheet">
+            <?= barama_css_once('frontend') ?>
         <?php endif; ?>
     <?php endif; ?>
     <?php if (!$isWorkspacePage): ?>
-        <link href="<?= e(asset('css/frontend-back-to-top-v102.css') . '?v=102') ?>" rel="stylesheet">
-        <link href="<?= e(asset('css/footer-back-to-top-clearance-v106.css') . '?v=106') ?>" rel="stylesheet">
+        <?= barama_css_once('frontend') ?>
+        <?= barama_css_once('frontend') ?>
     <?php endif; ?>
 <script>document.addEventListener('DOMContentLoaded',()=>{const apply=()=>{const dark=document.documentElement.getAttribute('data-bs-theme')==='dark';document.querySelectorAll('img[data-barama-logo-light]').forEach(i=>{const src=i.getAttribute(dark?'data-barama-logo-dark':'data-barama-logo-light');if(src&&i.getAttribute('src')!==src)i.setAttribute('src',src)})};apply();new MutationObserver(apply).observe(document.documentElement,{attributes:true,attributeFilter:['data-bs-theme']})});</script>
     <?php if (!$isWorkspacePage && !$isStandaloneAuthPage && ($activeArea ?? '') === 'contact'): ?>
         <!-- BARAMA_CONTACT_HERO_V117A17 -->
-        <link href="<?= e(asset('css/contact-hero-v117a17.css') . '?v=117a17') ?>" rel="stylesheet">
+        <?= barama_css_once('frontend') ?>
     <?php endif; ?>
     <?php if (!$isWorkspacePage): ?>
         <!-- BARAMA_APPEARANCE_LAST_PUBLIC_STYLESHEET_V117A10 -->
@@ -310,44 +310,44 @@ $appJsVersion = is_file($appJsFile)
     <?php endif; ?>
     <!-- BARAMA_AUTH_PREMIUM_V117A33_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-premium-v117a33.css') . '?v=117a33-r2') ?>">
-        <script src="<?= e(asset('js/auth-premium-v117a33.js') . '?v=117a33-r2') ?>" defer></script>
+        <?= barama_css_once('account') ?>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="auth-premium"></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_PREMIUM_V117A33_END -->
     <!-- BARAMA_AUTH_COPY_V117A34_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-copy-v117a34.css') . '?v=117a34-r2') ?>">
-        <script src="<?= e(asset('js/auth-copy-v117a34.js') . '?v=117a34-r2') ?>" data-barama-website-name="<?= e(trim((string) ($websiteName ?? '')) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>" defer></script>
+        <?= barama_css_once('account') ?>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="auth-copy" data-barama-website-name="<?= e(trim((string) ($websiteName ?? '')) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>"></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_COPY_V117A34_END -->
     <!-- BARAMA_AUTH_CENTERED_V117A35_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-centered-v117a35.css') . '?v=117a35-r2') ?>">
-        <script src="<?= e(asset('js/auth-centered-v117a35.js') . '?v=117a35-r2') ?>" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>" defer></script>
+        <?= barama_css_once('account') ?>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="auth-centered" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Barama Real Estate') ?>"></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_CENTERED_V117A35_END -->
     <!-- BARAMA_AUTH_TITLE_CENTERING_V117A36_BEGIN -->
     <?php if ($isStandaloneAuthPage && in_array($authRoutePath, ['/login', '/register', '/forgot-password'], true)): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/auth-title-centering-v117a36.css') . '?v=117a36-r2') ?>">
-        <script src="<?= e(asset('js/auth-title-centering-v117a36.js') . '?v=117a36-r2') ?>" defer></script>
+        <?= barama_css_once('account') ?>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="auth-title-centering"></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_TITLE_CENTERING_V117A36_END -->
     <!-- BARAMA_AUTH_POLICY_LINKS_V117A37_BEGIN -->
     <?php if ($isStandaloneAuthPage && $authRoutePath === '/register'): ?>
-        <script src="<?= e(asset('js/auth-policy-links-v117a37.js') . '?v=117a37-r2') ?>" data-terms-url="<?= e(url('/policies?=terms-of-service')) ?>" data-privacy-url="<?= e(url('/policies?=privacy-policy')) ?>" defer></script>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="auth-policy-links" data-terms-url="<?= e(url('/policies?=terms-of-service')) ?>" data-privacy-url="<?= e(url('/policies?=privacy-policy')) ?>"></script>
     <?php endif; ?>
     <!-- BARAMA_AUTH_POLICY_LINKS_V117A37_END -->
     <!-- BARAMA_VERIFY_EMAIL_V117A38_BEGIN -->
     <?php if (rtrim((string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: ''), '/') === '/verify-email'): ?>
-        <link rel="stylesheet" href="<?= e(asset('css/verify-email-auth-v117a38.css') . '?v=117a38') ?>">
-        <script src="<?= e(asset('js/verify-email-auth-v117a38.js') . '?v=117a38') ?>" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Website') ?>" defer></script>
+        <?= barama_css_once('account') ?>
+        <?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="verify-email-auth" data-site-logo-light="<?= e(asset($websiteLightLogo)) ?>" data-site-logo-dark="<?= e(asset($websiteDarkLogo)) ?>" data-site-name="<?= e(trim((string) $websiteName) !== '' ? trim((string) $websiteName) : 'Website') ?>"></script>
     <?php endif; ?>
     <!-- BARAMA_VERIFY_EMAIL_V117A38_END -->
     <!-- CodeCanyon compliant external UI styling; no inline CSS. -->
-    <link href="<?= e(asset('css/codecanyon-ui-compliance-v1.css') . '?v=1') ?>" rel="stylesheet">
+    <?= barama_css_once('frontend') ?>
     <?php if ($isWorkspacePage): ?>
-        <script src="<?= e(asset('js/branding-file-name-v1.js') . '?v=1') ?>" defer></script>
-        <script src="<?= e(asset('js/workspace-confirm-v1.js') . '?v=1') ?>" defer></script>
+        <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="branding-file-name"></script>
+        <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="workspace-confirm"></script>
     <?php endif; ?>
 </head>
 <body class="<?= e(trim(
@@ -879,19 +879,19 @@ $appJsVersion = is_file($appJsFile)
         </button>
     <?php endif; ?>
 
-    <script src="<?= e(asset('js/app.js') . '?v=' . rawurlencode($appJsVersion)) ?>" defer></script>
+    <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="app"></script>
     <?php if (!$isWorkspacePage): ?>
-        <script src="<?= e(asset('js/frontend-back-to-top-v102.js') . '?v=102') ?>" defer></script>
-        <script src="<?= e(asset('js/footer-back-to-top-clearance-v106.js') . '?v=106') ?>" defer></script>
+        <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="frontend-back-to-top"></script>
+        <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="footer-back-to-top-clearance"></script>
     <?php endif; ?>
     <?php if ($isWorkspacePage): ?>
-        <script src="<?= e(asset('js/workspace-sidebar-scroll-v115.js') . '?v=115') ?>" defer></script>
-        <script src="<?= e(asset('js/workspace-sidebar-tooltips-v117a15.js') . '?v=117a15') ?>" defer></script>
+        <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="workspace-sidebar-scroll"></script>
+        <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="workspace-sidebar-tooltips"></script>
         <?php if ($changeConfirmationRequired): ?>
-            <script src="<?= e(asset('js/change-confirmation.js') . '?v=117a13') ?>" defer></script>
+            <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="change-confirmation"></script>
         <?php endif; ?>
     <?php elseif (!empty($publicContentProtection['enabled'])): ?>
-        <script src="<?= e(asset('js/right-click-protection-v134.js') . '?v=134') ?>" defer></script>
+        <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="right-click-protection"></script>
     <?php endif; ?>
 
     <!-- BARAMA_TURNSTILE_REAL_V110_LAYOUT -->
@@ -899,10 +899,10 @@ $appJsVersion = is_file($appJsFile)
     try { $baramaTurnstile = \Barama\Security\TurnstileGuard::publicConfig(); }
     catch (\Throwable) { $baramaTurnstile = ['site' => '', 'forms' => []]; }
     if ($baramaTurnstile['site'] !== '' && $baramaTurnstile['forms'] !== []): ?>
-        <script src="<?= e(asset('js/barama-turnstile.js') . '?v=113') ?>"
+        <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="barama-turnstile"
                 data-sitekey="<?= e($baramaTurnstile['site']) ?>"
                 data-forms="<?= e(implode(',', $baramaTurnstile['forms'])) ?>"
-                data-appearance="<?= e($baramaTurnstile['appearance'] ?? 'always') ?>" defer></script>
+                data-appearance="<?= e($baramaTurnstile['appearance'] ?? 'always') ?>"></script>
     <?php endif; ?>
 </body>
 </html>

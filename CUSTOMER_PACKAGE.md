@@ -20,8 +20,10 @@ The customer ZIP contains only the runtime product and customer-facing support f
 - five-step installer
 - secure updater
 - application PHP source
-- one first-party stylesheet: `assets/css/app.css`
-- one first-party JavaScript file: `assets/js/app.js`
+- five canonical CSS area bundles in `assets/css/`: `frontend.css`, `admin.css`, `developer.css`, `account.css`, and `policy-center.css`
+- five corresponding stable JavaScript area bundles in `assets/js/`, with per-page feature activation
+- independent, version-free standalone error-page CSS/JS and third-party QR library with license notice
+- CSS/JS historical versions are not shipped; Git preserves source history
 - runtime storage directories without customer data
 - notification worker CLI entry point
 - product license notice

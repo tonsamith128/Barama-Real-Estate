@@ -59,7 +59,7 @@ final class ChangeConfirmationMiddleware implements MiddlewareInterface
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Change confirmation required | Barama</title>
-<link rel="stylesheet" href="/assets/css/barama-change-confirmation-v1.0.0.css">
+<link rel="stylesheet" href="/assets/css/change-confirmation-page.css">
 </head>
 <body>
 <main class="bcc-page">

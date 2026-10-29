@@ -13,7 +13,7 @@ $order = is_array($page['section_order'] ?? null)
 ?>
 <main class="builtin-public-page builtin-contact-page barama-a20-contact barama-a21-contact barama-a23-contact">
     <!-- Page-only stylesheet: all Admin section switches/order remain authoritative. -->
-    <link rel="stylesheet" href="<?= e(asset('css/contact-premium-v117a20.css')) ?>?v=117a20" media="all">
+    <?= barama_css_once('frontend') ?>
     <?php if (!empty($hero['enabled'])): ?>
         <?php
         // Contact Hero text always comes from the existing Admin-editable CMS fields.
@@ -24,7 +24,7 @@ $order = is_array($page['section_order'] ?? null)
             : $contactHeroDefaultImage;
         ?>
         <!-- Versioned Contact-only stylesheet; safe even when the shared head caches A17/A18. -->
-        <link rel="stylesheet" href="<?= e(asset('css/contact-hero-v117a17.css')) ?>?v=117a19" media="all">
+        <?= barama_css_once('frontend') ?>
         <section class="builtin-contact-hero-v117a17 builtin-contact-hero-v117a18 builtin-contact-hero-v117a19<?= $contactHeroRawImage !== '' ? ' has-custom-contact-hero' : '' ?>">
             <div class="builtin-contact-hero-v117a18__ambient" aria-hidden="true"></div>
             <div class="builtin-contact-hero-v117a18__subject" aria-hidden="true">
@@ -43,11 +43,11 @@ $order = is_array($page['section_order'] ?? null)
     <?php endif; ?>
 
     <!-- A21 contact-only visual layer, loaded after the A19 Hero styles when present. -->
-    <link rel="stylesheet" href="<?= e(asset('css/contact-polish-v117a21.css')) ?>?v=117a21" media="all">
+    <?= barama_css_once('frontend') ?>
     <!-- A22: remove old decorative Hero pseudo-elements; keep the photographic overlay. -->
-    <link rel="stylesheet" href="<?= e(asset('css/contact-hero-circle-fix-v117a22.css')) ?>?v=117a22" media="all">
-    <link rel="stylesheet" href="<?= e(asset('css/contact-hero-isolation-v117a23.css')) ?>?v=117a23" media="all">
-    <script src="<?= e(asset('js/contact-polish-v117a21.js')) ?>?v=117a21" defer></script>
+    <?= barama_css_once('frontend') ?>
+    <?= barama_css_once('frontend') ?>
+    <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="contact-polish"></script>
 
     <?php foreach ($order as $sectionKey): ?>
         <?php $section = is_array($sections[$sectionKey] ?? null) ? $sections[$sectionKey] : []; ?>
