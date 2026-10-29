@@ -1026,12 +1026,6 @@ final class PolicyCenterRepository
 
         if ($publicationRequested) {
             $publicationIssues = $this->publicationIssues($record);
-            if ($importedTemplate && $saveMode !== 'publish') {
-                $publicationIssues[] = [
-                    'field' => 'pc-publish-actions',
-                    'message' => 'Use the Publish button to approve an imported demo policy.',
-                ];
-            }
             $publicationBlocked = $publicationIssues !== [];
             if ($publicationBlocked) {
                 $record['status'] = 'draft';
@@ -1044,7 +1038,7 @@ final class PolicyCenterRepository
             // explicitly publishes it. Save Draft and Restore revoke approval.
             // Never trust an incoming demo_template_approved form value.
             $record['imported_demo_template'] = true;
-            $record['demo_template_approved'] = $saveMode === 'publish'
+            $record['demo_template_approved'] = $publicationRequested
                 && !$publicationBlocked;
             if (!$record['demo_template_approved']) {
                 $record['status'] = 'draft';

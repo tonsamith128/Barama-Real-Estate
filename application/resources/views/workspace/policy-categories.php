@@ -348,5 +348,4 @@ $editingUsage = $editingId !== ''
         </aside>
     </div>
 </main>
-
-<script defer src="<?= e(asset('js/policy-center-v1.0.6.js')) ?>"></script>
+<script defer src="<?= e(asset('js/policy-center.js') . '?v=stable-20261029') ?>"></script>
