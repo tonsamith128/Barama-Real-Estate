@@ -87,6 +87,7 @@ jobs:
       - name: Verify canonical production asset references
         run: |
           php tools/canonical-assets-smoke.php
+          php tools/policy-center-css-bundles-smoke.php
           node --check assets/js/admin-email-template-builder.js
           node --check assets/js/public-location-picker.js
           node --check assets/js/page-builder.js

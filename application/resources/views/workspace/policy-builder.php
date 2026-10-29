@@ -46,9 +46,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
     }
 }
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-v1.0.10.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-publish-feedback-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-guidance-v100.css') . '?v=100') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
 
 <main class="pc-builder">
     <form method="post" action="<?= e(url($action)) ?>" data-pc-builder>

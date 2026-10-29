@@ -62,6 +62,11 @@ jobs:
       - name: Run repository QA
         run: php tools/qa.php
 
+      - name: Verify consolidated Policy Center CSS sections
+        run: |
+          php -l tools/policy-center-css-bundles-smoke.php
+          php tools/policy-center-css-bundles-smoke.php
+
       - name: Enforce canonical customer CSS/JS assets
         run: |
           php -l tools/canonical-assets-smoke.php

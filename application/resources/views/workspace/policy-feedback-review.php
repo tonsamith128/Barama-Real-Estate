@@ -249,12 +249,7 @@ $criticalCount = (int) ($severityCounts['critical'] ?? 0);
 $highCount = (int) ($severityCounts['high'] ?? 0);
 $mediumCount = (int) ($severityCounts['medium'] ?? 0);
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-v1.0.6.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-feedback-v1.0.22.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-feedback-analytics-v1.0.23.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-feedback-review-v1.0.25.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-review-decision-v1.0.26.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-review-impact-v1.0.27.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
 
 <main class="pc-admin-main pc-feedback-review" data-pc-feedback-review>
     <header class="pc-admin-head pc-feedback-review__head">
