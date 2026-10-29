@@ -98,6 +98,27 @@ if (extension_loaded('dom') && extension_loaded('mbstring')) {
     check($copy['status']==='draft' && $copy['visibility']==='private'
         && !$copy['demo_template_approved'],'duplicate_requires_explicit_publish');
     check(count($repo->published())===0,'restored_and_duplicate_remain_private');
+    // Non-demo historical restores still have their legacy optional-governance
+    // compatibility helper. Its presence must never block normal publishing.
+    $ordinary=$repo->save([
+        'title'=>'Ordinary operator terms',
+        'content_html'=>'<p>Operator terms ready for publication.</p>',
+        'save_mode'=>'publish',
+        'compliance_gate_enabled'=>'1',
+        'compliance_status'=>'not_reviewed',
+        'compliance_check'=>[],
+    ]);
+    check($ordinary['status']==='published'
+        && empty($ordinary['_publication_blocked']),
+        'ordinary_publish_ignores_optional_governance');
+    $ordinaryVersions=$ordinary['versions'];
+    $restoredOrdinary=$repo->restoreVersion(
+        (string)$ordinary['id'],(string)$ordinaryVersions[0]['id']
+    );
+    check($restoredOrdinary!==null
+        && $restoredOrdinary['status']==='draft',
+        'ordinary_history_restore_backward_compatible');
+
 } else {
     echo "SKIP=FORM_SAVE_TEST_REQUIRES_MBSTRING_AND_DOM\n";
 }
