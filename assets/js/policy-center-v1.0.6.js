@@ -265,13 +265,13 @@ document.querySelectorAll('[data-pc-delete]').forEach(form=>{
   });
 });
 
-const closeMenus=(except=null)=>{
+function closeMenus(except=null){
   document.querySelectorAll('[data-pc-menu].is-open').forEach(menu=>{
     if(menu===except) return;
     menu.classList.remove('is-open');
     menu.querySelector('[data-pc-menu-trigger]')?.setAttribute('aria-expanded','false');
   });
-};
+}
 
 document.querySelectorAll('[data-pc-menu-trigger]').forEach(trigger=>{
   trigger.addEventListener('click',event=>{

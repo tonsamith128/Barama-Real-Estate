@@ -1010,5 +1010,5 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
     </div>
 </dialog>
 
-<script defer src="<?= e(asset('js/policy-center-v1.0.10.js')) ?>"></script>
+<script defer src="<?= e(asset('js/policy-center-v1.0.10.js') . '?v=policy-fix-20261029') ?>"></script>
 <script defer src="<?= e(asset('js/policy-center-guidance-v100.js') . '?v=100') ?>"></script>
