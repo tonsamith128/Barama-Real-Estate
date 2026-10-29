@@ -77,15 +77,9 @@ $pageUrl = static function (int $target) use ($query): string {
     );
 };
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-subscriptions-pagination-v182.css') . '?v=182') ?>"
->
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-subscriptions-focus-v183.css') . '?v=183') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--subscriptions" data-subscriptions-workspace>
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->

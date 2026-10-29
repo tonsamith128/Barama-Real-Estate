@@ -230,7 +230,7 @@ $publicUrl = $slug !== ''
 
 $editUrl = url('/dashboard/policies/edit?id=' . rawurlencode($policyId));
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
+<?= barama_css_once('policy-center') ?>
 
 <main class="pc-admin-main pc-feedback-detail" data-pc-feedback-detail>
     <header class="pc-admin-head pc-feedback-detail__head">

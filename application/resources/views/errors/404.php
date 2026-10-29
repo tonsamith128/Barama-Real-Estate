@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 $errorRequestPath = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/');
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/error-page-v114.css')) ?>">
+<?= barama_css_once('frontend') ?>
 
 <section class="barama-error-page" aria-labelledby="barama-error-title">
     <div class="container app-container">

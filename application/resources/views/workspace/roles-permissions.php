@@ -5,7 +5,7 @@ $canManage = !empty($roleGovernance['can_manage']);
 $saved = (string) ($saved ?? '');
 $error = (string) ($error ?? '');
 ?>
-<link href="<?= e(asset('css/admin-roles-permissions-v135.css') . '?v=135') ?>" rel="stylesheet">
+<?= barama_css_once('admin') ?>
 <section class="rbac-admin" data-rbac-admin>
     <header class="rbac-admin__hero">
         <div>
@@ -129,4 +129,4 @@ $error = (string) ($error ?? '');
         </div>
     <?php endforeach; ?>
 </section>
-<script src="<?= e(asset('js/admin-roles-permissions-v135.js') . '?v=135') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-roles-permissions"></script>

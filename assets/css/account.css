@@ -1,0 +1,1389 @@
+/* BARAMA REAL ESTATE — ACCOUNT CSS — stable area bundle. */
+
+/* ===== account-company-access-v114.css ===== */
+/* Barama v1.0.14 — Customer company access only. No other page selectors. */
+.account-page--company-v114 {width:min(100%,1500px);min-width:0;box-sizing:border-box}
+.account-page--company-v114 .account-page__head {align-items:center}
+.account-page--company-v114 .barama-company-v114__header-action {
+ display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:45px;
+ padding:.65rem 1rem;border:1px solid var(--barama-primary);border-radius:13px;
+ color:#fff;background:#165dff;box-shadow:0 5px 15px rgba(22,93,255,.16);
+ font-size:.82rem;font-weight:750;text-decoration:none;white-space:nowrap;flex:0 0 auto;
+ transition:background .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+.account-page--company-v114 .barama-company-v114__header-action svg {width:17px;height:17px;flex:none}
+.account-page--company-v114 .barama-company-v114__header-action:hover {background:#0f4bd4;color:#fff;box-shadow:0 8px 18px rgba(22,93,255,.22);transform:translateY(-1px)}
+.account-page--company-v114 .barama-company-v114__header-action:focus-visible,
+.account-page--company-v114 .barama-company-v114__row-action:focus-visible {outline:3px solid var(--barama-primary);outline-offset:2px}
+.account-page--company-v114 .barama-company-v114 {display:grid;gap:1rem;min-width:0;width:100%}
+.account-page--company-v114 .barama-company-v114__panel {
+ border:1px solid var(--barama-border);border-radius:18px;background:var(--barama-surface);
+ box-shadow:0 10px 30px rgba(27,41,71,.025);min-width:0;overflow:hidden
+}
+.account-page--company-v114 .barama-company-v114__panel-head {
+ display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.15rem 1.2rem;
+ border-bottom:1px solid var(--barama-border);
+}
+.account-page--company-v114 .barama-company-v114__panel-head h2 {margin:0;color:var(--barama-text);font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.account-page--company-v114 .barama-company-v114__panel-head p {margin:.3rem 0 0;font-size:.75rem;line-height:1.5;color:var(--barama-muted)}
+.account-page--company-v114 .barama-company-v114__count {
+ flex:none;display:inline-flex;align-items:center;border:1px solid var(--barama-border);border-radius:999px;
+ background:var(--barama-surface-soft);color:var(--barama-muted);padding:.34rem .65rem;
+ font-weight:750;font-size:.71rem;white-space:nowrap
+}
+.account-page--company-v114 .barama-company-v114__scroll {width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+.account-page--company-v114 .barama-company-v114__table {width:100%;border-collapse:collapse;border-spacing:0;table-layout:auto;text-align:left;min-width:790px}
+.account-page--company-v114 .barama-company-v114__table thead {background:var(--barama-surface-soft)}
+.account-page--company-v114 .barama-company-v114__table th {
+ padding:.78rem 1rem;white-space:nowrap;color:var(--barama-muted);font-size:.66rem;
+ font-weight:800;letter-spacing:.085em;text-transform:uppercase;border-bottom:1px solid var(--barama-border);
+}
+.account-page--company-v114 .barama-company-v114__table td {
+ padding:.95rem 1rem;vertical-align:middle;color:var(--barama-text);font-size:.76rem;
+ line-height:1.5;border-bottom:1px solid var(--barama-border)
+}
+.account-page--company-v114 .barama-company-v114__table tbody tr:last-child td {border-bottom:0}
+.account-page--company-v114 .barama-company-v114__table tbody tr:not(.barama-company-v114__empty):hover {background:color-mix(in srgb,var(--barama-primary) 3%,var(--barama-surface))}
+.account-page--company-v114 .barama-company-v114__table td strong {display:block;font-weight:800;font-size:.8rem;line-height:1.4}
+.account-page--company-v114 .barama-company-v114__table td small {display:block;margin-top:.16rem;color:var(--barama-muted);font-size:.68rem;line-height:1.45;overflow-wrap:anywhere}
+.account-page--company-v114 .barama-company-v114__metrics {display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.account-page--company-v114 .barama-company-v114__metrics span {border:1px solid var(--barama-border);border-radius:8px;background:var(--barama-surface-soft);padding:.18rem .45rem;white-space:nowrap;color:var(--barama-muted);font-size:.67rem}
+.account-page--company-v114 .barama-company-v114__metrics b {color:var(--barama-text);font-weight:800}
+.account-page--company-v114 .barama-company-v114__state {display:inline-flex;align-items:center;gap:.35rem;border-radius:999px;padding:.3rem .55rem;font-weight:750;font-size:.7rem;white-space:nowrap;background:var(--barama-surface-soft);color:var(--barama-muted)}
+.account-page--company-v114 .barama-company-v114__state::before {content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.account-page--company-v114 .barama-company-v114__state--approved {background:color-mix(in srgb,var(--barama-success) 10%,var(--barama-surface));color:var(--barama-success)}
+.account-page--company-v114 .barama-company-v114__state--pending {background:color-mix(in srgb,#e3a325 13%,var(--barama-surface));color:#a26b02}
+.account-page--company-v114 .barama-company-v114__state--rejected,.account-page--company-v114 .barama-company-v114__state--suspended {background:color-mix(in srgb,#d14b4b 11%,var(--barama-surface));color:#c04c4c}
+.account-page--company-v114 .barama-company-v114__muted {color:var(--barama-muted);font-size:.71rem}
+.account-page--company-v114 .barama-company-v114__row-action {display:inline-flex;justify-content:center;align-items:center;gap:.45rem;border:1px solid color-mix(in srgb,var(--barama-primary) 33%,var(--barama-border));border-radius:10px;background:color-mix(in srgb,var(--barama-primary) 6%,var(--barama-surface));color:var(--barama-primary);font-size:.71rem;font-weight:800;text-decoration:none;padding:.46rem .7rem;cursor:pointer;white-space:nowrap;line-height:1.25}
+.account-page--company-v114 .barama-company-v114__row-action:hover {background:color-mix(in srgb,var(--barama-primary) 12%,var(--barama-surface));color:var(--barama-primary)}
+.account-page--company-v114 .barama-company-v114__empty td {padding:2rem 1rem;text-align:center}
+.account-page--company-v114 .barama-company-v114__empty td>span {display:grid;place-items:center;margin:0 auto .65rem;border:1px solid var(--barama-border);border-radius:12px;width:42px;height:42px;color:var(--barama-primary)}
+.account-page--company-v114 .barama-company-v114__empty svg {height:20px;width:20px}
+.account-page--company-v114 .barama-company-v114__empty small {margin-top:.4rem}
+.account-page--company-v114 .barama-company-v114__notice {display:flex;align-items:center;gap:.6rem;color:var(--barama-muted);border:1px solid var(--barama-border);border-radius:12px;background:var(--barama-surface);padding:.75rem 1rem;font-size:.75rem}
+.account-page--company-v114 .barama-company-v114__notice svg {width:18px;height:18px;color:var(--barama-primary)}
+.account-page--company-v114 .barama-company-v114__panel--request .account-company-form {margin:0;border:0;padding:1.1rem 1.2rem}
+.account-page--company-v114 .barama-company-v114__panel--request .account-form__grid {min-width:0}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__header-action {color:#fff;background:#165dff}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__state--pending {color:#f4bc58}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__state--rejected,
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v114__state--suspended {color:#ff9898}
+@media(max-width:850px){
+ .account-page--company-v114 .barama-company-v114__table {min-width:0}
+ .account-page--company-v114 .barama-company-v114__table thead {display:none}
+ .account-page--company-v114 .barama-company-v114__table,.account-page--company-v114 .barama-company-v114__table tbody {display:block}
+ .account-page--company-v114 .barama-company-v114__table tr {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;padding:1rem;border-bottom:1px solid var(--barama-border)}
+ .account-page--company-v114 .barama-company-v114__table tr:last-child {border-bottom:0}
+ .account-page--company-v114 .barama-company-v114__table td {min-width:0;display:flex;align-items:flex-start;flex-direction:column;gap:.25rem;padding:.4rem .5rem;border:0}
+ .account-page--company-v114 .barama-company-v114__table td::before {content:attr(data-label);color:var(--barama-muted);font-size:.63rem;letter-spacing:.055em;text-transform:uppercase;font-weight:800}
+ .account-page--company-v114 .barama-company-v114__table td:first-child {grid-column:1/-1}
+ .account-page--company-v114 .barama-company-v114__table td:last-child {grid-column:1/-1}
+ .account-page--company-v114 .barama-company-v114__table td[colspan] {grid-column:1/-1;align-items:center}
+ .account-page--company-v114 .barama-company-v114__table td[colspan]::before {display:none}
+}
+@media(max-width:540px){
+ .account-page--company-v114 .account-page__head {flex-direction:column;align-items:stretch}
+ .account-page--company-v114 .account-page__identity {min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+ .account-page--company-v114 .barama-company-v114__header-action {align-self:stretch}
+ .account-page--company-v114 .barama-company-v114__panel-head {align-items:flex-start;flex-direction:column}
+ .account-page--company-v114 .barama-company-v114__table tr {grid-template-columns:minmax(0,1fr)}
+ .account-page--company-v114 .barama-company-v114__table td {grid-column:1/-1}
+ .account-page--company-v114 .barama-company-v114__panel--request .account-company-form {padding:.9rem}
+}
+@media(prefers-reduced-motion:reduce){.account-page--company-v114 .barama-company-v114__header-action{transition:none}}
+
+
+/* v1.0.17-A3 — scoped, functional Company Access upgrade panel only. */
+.account-page--company-v114 .barama-company-v117a3__upgrade{
+ position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;
+ padding:clamp(1.25rem,3.5vw,2.4rem);border-radius:20px;
+ border:1px solid color-mix(in srgb,var(--barama-primary) 14%,var(--barama-border));
+ background:linear-gradient(126deg,var(--barama-surface) 8%,color-mix(in srgb,var(--barama-primary) 6%,var(--barama-surface)) 100%);
+ box-shadow:0 11px 32px rgba(28,54,104,.07);color:var(--barama-text);
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade::after{
+ content:"";position:absolute;z-index:-1;right:-140px;top:-180px;width:510px;height:510px;
+ border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,#a8cbff 35%,transparent),transparent 68%);pointer-events:none;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-main{
+ display:grid;grid-template-columns:minmax(0,1.2fr) minmax(240px,.8fr);align-items:center;gap:1.25rem;min-width:0;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-copy{min-width:0;max-width:570px}
+.account-page--company-v114 .barama-company-v117a3__eyebrow{
+ display:block;margin-bottom:.7rem;color:var(--barama-primary);font-size:.7rem;font-weight:850;letter-spacing:.13em;text-transform:uppercase;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-copy h2{
+ margin:0;color:var(--barama-text);font-size:clamp(1.5rem,2.55vw,2.15rem);line-height:1.16;letter-spacing:-.045em;font-weight:850;
+}
+.account-page--company-v114 .barama-company-v117a3__upgrade-copy p{
+ max-width:510px;margin:.9rem 0 1.4rem;color:var(--barama-muted);font-size:.9rem;line-height:1.7;
+}
+.account-page--company-v114 .barama-company-v117a3__apply{
+ display:inline-flex;justify-content:center;align-items:center;gap:.8rem;min-height:46px;max-width:100%;
+ box-sizing:border-box;padding:.78rem 1.3rem;border-radius:12px;border:1px solid #165dff;
+ background:#165dff;box-shadow:0 9px 19px rgba(22,93,255,.16);color:#fff;text-decoration:none;
+ font-weight:750;font-size:.81rem;line-height:1.3;transition:background .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.account-page--company-v114 .barama-company-v117a3__apply:hover{color:#fff;background:#0f4bd4;box-shadow:0 12px 24px rgba(22,93,255,.22);transform:translateY(-1px)}
+.account-page--company-v114 .barama-company-v117a3__apply:focus-visible{outline:3px solid var(--barama-primary);outline-offset:3px}
+.account-page--company-v114 .barama-company-v117a3__apply svg{flex-shrink:0}
+.account-page--company-v114 .barama-company-v117a3__upgrade-art{display:grid;place-items:center;max-height:270px;min-width:0;pointer-events:none}
+.account-page--company-v114 .barama-company-v117a3__upgrade-art svg{display:block;width:min(100%,430px);height:auto;filter:drop-shadow(0 12px 13px rgba(73,118,200,.07))}
+.account-page--company-v114 .barama-company-v117a3__benefits{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;list-style:none;padding:0;margin:1.4rem 0 0;min-width:0;
+}
+.account-page--company-v114 .barama-company-v117a3__benefits li{
+ display:flex;gap:.75rem;align-items:center;min-width:0;padding:.72rem .8rem;border-radius:13px;
+ border:1px solid var(--barama-border);background:color-mix(in srgb,var(--barama-surface) 90%,transparent);
+}
+.account-page--company-v114 .barama-company-v117a3__benefit-icon{
+ display:grid;place-items:center;width:37px;height:37px;flex:0 0 37px;border-radius:10px;
+ background:color-mix(in srgb,var(--barama-primary) 9%,var(--barama-surface));color:var(--barama-primary);
+}
+.account-page--company-v114 .barama-company-v117a3__benefit-icon svg{width:19px;height:19px}
+.account-page--company-v114 .barama-company-v117a3__benefits li span:last-child{min-width:0}
+.account-page--company-v114 .barama-company-v117a3__benefits strong{display:block;font-size:.74rem;font-weight:800;color:var(--barama-text);line-height:1.35}
+.account-page--company-v114 .barama-company-v117a3__benefits small{display:block;font-size:.67rem;color:var(--barama-muted);line-height:1.35;margin-top:.18rem}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v117a3__upgrade::after{opacity:.24}
+html[data-bs-theme="dark"] .account-page--company-v114 .barama-company-v117a3__upgrade-art{opacity:.87}
+@media(max-width:900px){
+ .account-page--company-v114 .barama-company-v117a3__upgrade-main{grid-template-columns:minmax(0,1fr) minmax(170px,.62fr);gap:.5rem}
+ .account-page--company-v114 .barama-company-v117a3__benefits{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .account-page--company-v114 .barama-company-v117a3__benefits li{padding:.65rem;gap:.48rem}
+}
+@media(max-width:700px){
+ .account-page--company-v114 .barama-company-v117a3__upgrade-main{grid-template-columns:1fr;gap:0}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-copy{max-width:none}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-art{max-height:170px;margin:.25rem auto 0;overflow:hidden}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-art svg{max-width:290px}
+ .account-page--company-v114 .barama-company-v117a3__benefits{grid-template-columns:1fr;margin-top:1rem}
+}
+@media(max-width:420px){
+ .account-page--company-v114 .barama-company-v117a3__upgrade{padding:1.15rem;border-radius:16px}
+ .account-page--company-v114 .barama-company-v117a3__upgrade-copy h2{font-size:1.45rem}
+ .account-page--company-v114 .barama-company-v117a3__apply{width:100%;padding:.76rem .65rem;font-size:.74rem}
+}
+@media(prefers-reduced-motion:reduce){.account-page--company-v114 .barama-company-v117a3__apply{transition:none}}
+
+
+/* ===== customer-profile-avatar-v110.css ===== */
+/* Barama customer profile avatar v1.0.10. Only /account/profile is affected. */
+.account-page__identity--avatar-v110{position:relative;overflow:visible;min-width:0;max-width:100%;box-sizing:border-box}
+.account-page__identity--avatar-v110>div:last-child{min-width:0;max-width:calc(100% - 56px);overflow-wrap:anywhere}
+.barama-customer-avatar-v110{position:relative;display:block;flex:0 0 44px;width:44px;height:44px;min-width:44px;z-index:15}
+.barama-customer-avatar-v110__trigger{position:relative;display:grid;place-items:center;width:44px;height:44px;overflow:hidden;cursor:pointer;padding:0;appearance:none;border:1px solid var(--barama-border,#d9e1ec);border-radius:13px;color:var(--barama-primary,#2563eb);background:var(--barama-surface-soft,#eef3ff)}
+.barama-customer-avatar-v110__trigger::-webkit-details-marker{display:none}
+.barama-customer-avatar-v110__trigger>img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:cover;border-radius:inherit}
+.barama-customer-avatar-v110__trigger>svg{width:22px;height:22px}
+.barama-customer-avatar-v110__edit{display:grid;place-items:center;position:absolute;bottom:0;right:0;width:20px;height:20px;background:rgba(16,29,53,.86);border-radius:7px 0 9px 0;color:white;opacity:0;transition:opacity .15s}
+.barama-customer-avatar-v110__edit svg{width:12px;height:12px}
+.barama-customer-avatar-v110:hover .barama-customer-avatar-v110__edit,.barama-customer-avatar-v110:focus-within .barama-customer-avatar-v110__edit,.barama-customer-avatar-v110.is-open .barama-customer-avatar-v110__edit{opacity:1}
+.barama-customer-avatar-v110__trigger:focus-visible{outline:2px solid var(--barama-primary,#2563eb);outline-offset:3px}
+.barama-customer-avatar-v110__menu{display:none;position:absolute;z-index:150;top:calc(100% + 10px);right:auto;left:0;width:220px;max-width:calc(100vw - 48px);padding:12px;border:1px solid var(--barama-border,#d9e1ec);border-radius:14px;background:var(--barama-surface,#fff);box-shadow:0 18px 42px rgba(15,23,42,.16);color:var(--barama-ink,var(--bs-body-color,#172033));font-size:13px;line-height:1.4}
+.barama-customer-avatar-v110__menu:before{content:"";position:absolute;top:-12px;left:0;right:0;height:12px}
+.barama-customer-avatar-v110.is-open .barama-customer-avatar-v110__menu,.barama-customer-avatar-v110:hover .barama-customer-avatar-v110__menu,.barama-customer-avatar-v110:focus-within .barama-customer-avatar-v110__menu{display:block}
+.barama-customer-avatar-v110__menu-title{display:block;margin-bottom:8px;font-size:13px;font-weight:750}
+.barama-customer-avatar-v110__menu form{display:block;margin:0 0 6px;padding:0}
+.barama-customer-avatar-v110__menu-action{box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-height:36px;padding:8px 10px;border:1px solid var(--barama-border,#d9e1ec);border-radius:9px;background:var(--barama-surface-soft,#f5f7fb);color:inherit;font:inherit;font-size:12px;font-weight:700;text-align:left;cursor:pointer}
+.barama-customer-avatar-v110__menu-action svg{width:16px;height:16px;flex:0 0 16px}
+.barama-customer-avatar-v110__menu-action:hover,.barama-customer-avatar-v110__menu-action:focus-visible{color:var(--barama-primary,#2563eb);border-color:var(--barama-primary,#2563eb);outline-offset:2px}
+.barama-customer-avatar-v110__menu-action--remove:hover{color:#be123c;border-color:#be123c}
+.barama-customer-avatar-v110__menu small{display:block;margin-top:8px;color:var(--barama-muted,#667085);font-size:11px}
+@media (min-width:561px){.barama-customer-avatar-v110__menu{left:auto;right:0}}
+@media (hover:none){.barama-customer-avatar-v110__edit{opacity:1}}
+@media (max-width:560px){.account-page__identity--avatar-v110{width:100%}.barama-customer-avatar-v110__menu{left:0;right:auto}}
+@media (prefers-reduced-motion:reduce){.barama-customer-avatar-v110__edit{transition:none}}
+
+
+/* ===== reset-password-a43r1.css ===== */
+/* BARAMA_RESET_PASSWORD_A43R1 — scoped to password-reset page only. */
+.auth-premium.auth-premium--a43r1 {
+  display: grid !important;
+  place-items: center !important;
+  min-height: 100svh;
+  width: 100%;
+  padding: max(1.25rem,env(safe-area-inset-top)) 1rem max(1.25rem,env(safe-area-inset-bottom));
+}
+.auth-premium--a43r1 > .auth-standalone__container {
+  display: grid !important;
+  width: 100% !important;
+  max-width: none !important;
+  justify-items: center !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+.auth-premium--a43r1 .auth-premium__grid--standalone {
+  display: block !important;
+  width: min(100%,520px) !important;
+  max-width: 520px !important;
+  margin: 0 auto !important;
+  grid-template-columns: none !important;
+}
+.auth-premium--a43r1 .auth-panel {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(1.5rem,3.5vw,2.25rem) !important;
+  border: 1px solid var(--barama-border) !important;
+  border-radius: 24px !important;
+  background: var(--barama-surface) !important;
+  box-shadow: 0 24px 65px rgba(24,46,84,.12), 0 4px 13px rgba(24,46,84,.045) !important;
+}
+.auth-premium--a43r1 .a43r1-brand {display:flex;align-items:center;justify-content:center; margin: 0 0 1.5rem;}
+.auth-premium--a43r1 .a43r1-brand img { display:block; max-width:min(208px,70vw); max-height:52px; width:auto; height:auto; object-fit:contain; }
+.auth-premium--a43r1 .auth-panel__head {display:block;text-align:center;margin-bottom:1.6rem;}
+.auth-premium--a43r1 .auth-panel__head h2 {font-weight:850;font-size:clamp(1.75rem,3vw,2.1rem);line-height:1.2;letter-spacing:-.04em;color:var(--barama-text);margin:0 0 .65rem;}
+.auth-premium--a43r1 .auth-panel__head p {color:var(--barama-muted);font-size:.91rem;line-height:1.55;max-width:340px;margin:0 auto;}
+.auth-premium--a43r1 .auth-panel::after {pointer-events:none;}
+.auth-premium--a43r1 .auth-form {gap: .92rem;}
+.auth-premium--a43r1 .auth-field {position:relative;gap:0;}
+.auth-premium--a43r1 .a43r1-sr-only {position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
+.auth-premium--a43r1 .auth-input .form-control {min-height:54px;padding:0 4.3rem 0 2.6rem;border-radius:12px;color:var(--barama-text);background:color-mix(in srgb,var(--barama-bg) 55%,var(--barama-surface));font-size:.9rem;}
+.auth-premium--a43r1 .auth-input input::placeholder {color:var(--barama-muted);opacity:1;}
+.auth-premium--a43r1 .auth-input .auth-input__icon {left:.9rem;}
+.auth-premium--a43r1 .auth-submit {min-height:54px;border-radius:12px;font-weight:750;}
+.auth-premium--a43r1 .auth-panel__footer {text-align:center;}
+html[data-bs-theme="dark"] .auth-premium--a43r1 .auth-panel {box-shadow:0 25px 80px rgba(0,0,0,.33) !important;}
+@media(max-width:560px){.auth-premium--a43r1 .auth-panel{padding:1.5rem 1.2rem!important;border-radius:20px!important;}.auth-premium--a43r1 .auth-panel__head h2{font-size:1.85rem;}}
+@media(prefers-reduced-motion:reduce){.auth-premium--a43r1 *{animation:none!important;transition:none!important;}}
+
+
+/* BARAMA_RESET_PASSWORD_A43R2_INFIELD_LABELS — reset-password only.
+ * The A43R1 template keeps accessible field labels, but some browser/themes
+ * do not visibly display input placeholders. These are VISUAL companions.
+ * The original input attributes, accessible labels and handlers remain intact.
+ */
+.auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input::before,
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input::before {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 2.6rem;
+    transform: translateY(-50%);
+    max-width: calc(100% - 8rem);
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 500;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--barama-muted);
+    opacity: 1;
+    pointer-events: none;
+    transition: none;
+}
+.auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input::before {
+    content: "New password";
+}
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input::before {
+    content: "Confirm new password";
+}
+/* Suppress the native placeholder text, but not its :placeholder-shown state.
+ * This prevents double labels on browsers that already render placeholders. */
+.auth-premium--a43r1 label.auth-field[for="reset-password"] input::placeholder,
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] input::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+}
+/* Move the visual label to the upper part of the same field on focus/value. */
+.auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input:focus-within::before,
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input:focus-within::before,
+.auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input:has(input:not(:placeholder-shown))::before,
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input:has(input:not(:placeholder-shown))::before {
+    top: .45rem;
+    transform: none;
+    font-size: .68rem;
+    font-weight: 650;
+}
+.auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input:focus-within input.form-control,
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input:focus-within input.form-control,
+.auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input:has(input:not(:placeholder-shown)) input.form-control,
+.auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input:has(input:not(:placeholder-shown)) input.form-control {
+    padding-top: .9rem;
+}
+@media (prefers-reduced-motion: reduce) {
+    .auth-premium--a43r1 label.auth-field[for="reset-password"] .auth-input::before,
+    .auth-premium--a43r1 label.auth-field[for="reset-confirmation"] .auth-input::before {
+        transition: none;
+    }
+}
+
+
+/* ===== verify-email-premium-v117.css ===== */
+/* Barama v1.0.17 A: email verification, intentionally isolated to this route. */
+.barama-verify-v117{min-height:calc(100dvh - 160px);display:flex;align-items:center;justify-content:center;padding:clamp(28px,7vh,74px) 16px;background:transparent}
+.barama-verify-v117__card{width:min(100%,480px);padding:clamp(23px,5vw,40px);background:var(--bs-body-bg,#fff);border:1px solid var(--bs-border-color,#e2e8f0);border-radius:22px;box-shadow:0 18px 55px rgba(15,23,42,.07);color:var(--bs-body-color,#1a2335)}
+.barama-verify-v117__icon{display:grid;place-items:center;width:52px;height:52px;border-radius:17px;background:rgba(22,93,255,.08);color:#165dff;margin-bottom:18px}
+.barama-verify-v117__icon svg{width:24px;height:24px}
+.barama-verify-v117 h1{font-size:clamp(24px,3vw,30px);letter-spacing:-.035em;line-height:1.17;margin:9px 0 11px;font-weight:750}
+.barama-verify-v117__intro{font-size:14px;line-height:1.65;opacity:.76;margin-bottom:21px}
+.barama-verify-v117__email{display:grid;gap:5px;padding:13px 16px;border-radius:13px;border:1px solid var(--bs-border-color,#e2e8f0);margin-bottom:18px}
+.barama-verify-v117__email span{font-size:12px;opacity:.7}
+.barama-verify-v117__email strong{font-size:14px;overflow-wrap:anywhere}
+.barama-verify-v117__message{font-size:13.5px;line-height:1.6;margin:17px 0}
+.barama-verify-v117__action{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:45px;border-radius:12px}
+.barama-verify-v117__action svg{width:17px;height:17px}
+.barama-verify-v117__footer{display:flex;justify-content:center;margin-top:25px;border-top:1px solid var(--bs-border-color,#e2e8f0);padding-top:18px}
+@media(max-width:480px){.barama-verify-v117{align-items:flex-start}.barama-verify-v117__card{box-shadow:none;border-radius:16px}}
+
+/* v1.0.17-A1: opt-in email correction, scoped to verification card only. */
+.barama-verify-v117__change{border:1px solid var(--bs-border-color,#dbe3ee);border-radius:13px;margin-top:18px;padding:0 15px;color:var(--bs-body-color,#1a2335)}
+.barama-verify-v117__change summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;min-height:49px;font-size:13px;font-weight:700;color:#165dff;list-style:none}
+.barama-verify-v117__change summary::-webkit-details-marker{display:none}
+.barama-verify-v117__change summary svg{width:16px;height:16px;transition:transform .16s ease}
+.barama-verify-v117__change[open] summary svg{transform:rotate(180deg)}
+.barama-verify-v117__change summary:focus-visible{outline:3px solid #165dff;outline-offset:3px;border-radius:5px}
+.barama-verify-v117__change-copy{font-size:12.5px;line-height:1.65;opacity:.8;margin:0 0 12px}
+.barama-verify-v117__change-form{display:grid;gap:8px;padding-bottom:17px}
+.barama-verify-v117__change-form label{font-weight:650;font-size:12.5px;margin-top:3px}
+.barama-verify-v117__change-form input{min-height:43px;border-radius:10px;font-size:14px}
+.barama-verify-v117__change-submit{margin-top:8px;min-height:43px;border-radius:10px;font-weight:650;font-size:13px}
+@media(prefers-reduced-motion:reduce){.barama-verify-v117__change summary svg{transition:none}}
+
+
+/* ===== profile-avatar-unified-v107.css ===== */
+/* Barama Unified Profile Avatar v1.0.7 — scoped to existing avatar containers. */
+.barama-avatar-v107{position:relative;isolation:isolate;display:block;width:112px;height:112px;max-width:100%;margin:2px auto 14px;border-radius:26px;flex:0 0 112px;overflow:hidden;border:1px solid var(--bs-border-color,#d9e1ec);background:color-mix(in srgb,var(--bs-primary,#2563eb) 9%,var(--bs-body-bg,#fff));color:var(--bs-primary,#2563eb)}
+.barama-avatar-v107__portrait{display:grid;place-items:center;width:100%;height:100%;overflow:hidden}
+.barama-avatar-v107__portrait>svg{width:42px;height:42px}
+.barama-avatar-v107__photo{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:cover!important;border-radius:inherit}
+.barama-avatar-v107__actions{position:absolute;inset:auto 0 0;display:flex;justify-content:center;align-items:stretch;gap:4px;padding:6px 4px;background:linear-gradient(transparent,rgba(15,23,42,.88));opacity:0;transform:translateY(3px);transition:opacity .18s,transform .18s}
+.barama-avatar-v107:hover .barama-avatar-v107__actions,.barama-avatar-v107:focus-within .barama-avatar-v107__actions{opacity:1;transform:none}
+.barama-avatar-v107__actions form{margin:0;display:flex;min-width:0;align-items:center}
+.barama-avatar-v107__action{display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:27px;padding:4px 4px;border:0;border-radius:7px;background:rgba(255,255,255,.18);color:#fff;font-size:9px;font-weight:650;line-height:1.1;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.barama-avatar-v107__action svg{width:12px;height:12px;flex:0 0 12px}
+.barama-avatar-v107__action:hover,.barama-avatar-v107__action:focus-visible{background:rgba(255,255,255,.35);color:#fff;outline:2px solid #93c5fd;outline-offset:0}
+.barama-avatar-v107__action--remove:hover{background:rgba(225,29,72,.9)}
+.barama-avatar-v107__input{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+.barama-avatar-v107.is-uploading .barama-avatar-v107__actions{opacity:1;transform:none;pointer-events:none}
+.barama-profile-v1131__avatar-head>.barama-avatar-v107{margin:0;flex:0 0 112px}
+.barama-avatar-v107__header-img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:cover!important;border-radius:inherit!important}
+.workspace-user-menu__avatar:has(.barama-avatar-v107__header-img),.barama-user-menu__profile-avatar:has(.barama-avatar-v107__header-img){overflow:hidden;padding:0}
+.barama-user-trigger:has(.barama-avatar-v107__header-img){overflow:hidden;padding:3px}
+@media(hover:none){.barama-avatar-v107__actions{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.barama-avatar-v107__actions{transition:none}}
+
+
+/* ===== auth-premium-v117a33.css ===== */
+/* BARAMA_AUTH_PREMIUM_V117A33 | presentation-only, scoped exclusively to three auth routes. */
+body.barama-auth-a33 {
+  --a33-blue: #1a60ff;
+  --a33-blue-hover: #1250e2;
+  --a33-ink: #18243b;
+  --a33-muted: #66768f;
+  --a33-surface: rgba(255,255,255,.975);
+  --a33-border: #dce5f3;
+  --a33-field: #f8faff;
+  --a33-shadow: 0 24px 65px rgba(24,46,84,.12), 0 4px 13px rgba(24,46,84,.045);
+  color-scheme: light;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 8% 4%, rgba(69,111,255,.12), transparent 33%),
+              radial-gradient(ellipse at 96% 94%, rgba(60,106,255,.11), transparent 36%),
+              #f7f9fd;
+}
+body.barama-auth-a33 .barama-auth-a33__card {
+  width: min(100% - 28px, 520px) !important;
+  max-width: 520px !important;
+  box-sizing: border-box;
+  border: 1px solid var(--a33-border) !important;
+  border-radius: 24px !important;
+  background: var(--a33-surface) !important;
+  box-shadow: var(--a33-shadow) !important;
+  padding: clamp(20px,3vw,34px) !important;
+  margin-inline: auto !important;
+  color: var(--a33-ink);
+  overflow: visible;
+}
+body.barama-auth-a33.barama-auth-a33--register .barama-auth-a33__card {
+  width: min(100% - 28px, 590px) !important;
+  max-width: 590px !important;
+}
+body.barama-auth-a33 .barama-auth-a33__brand {display:flex;justify-content:center;align-items:center;margin:0 0 18px;min-height:34px;}
+body.barama-auth-a33 .barama-auth-a33__brand img {display:block;max-width:min(210px, 65vw);width:auto;max-height:51px;height:auto;object-fit:contain;}
+body.barama-auth-a33 .barama-auth-a33__heading {
+  font-size:clamp(28px,3.3vw,34px)!important;
+  line-height:1.16!important;
+  font-weight:800!important;
+  letter-spacing:-.035em!important;
+  color:var(--a33-ink)!important;
+  margin-top:0!important;
+  margin-bottom:8px!important;
+  text-wrap:balance;
+}
+body.barama-auth-a33 .barama-auth-a33__subtitle {color:var(--a33-muted)!important;font-size:13px!important;line-height:1.6!important;}
+body.barama-auth-a33 .barama-auth-a33__card input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+body.barama-auth-a33 .barama-auth-a33__card select,
+body.barama-auth-a33 .barama-auth-a33__card textarea {
+  color:var(--a33-ink);background:var(--a33-field);border:1px solid var(--a33-border);border-radius:12px;min-height:48px;
+  max-width:100%;
+}
+body.barama-auth-a33 .barama-auth-a33__card input:focus-visible,
+body.barama-auth-a33 .barama-auth-a33__card select:focus-visible,
+body.barama-auth-a33 .barama-auth-a33__card textarea:focus-visible {
+  outline:2px solid rgba(26,96,255,.72);outline-offset:1px;border-color:rgba(26,96,255,.62);
+}
+body.barama-auth-a33 .barama-auth-a33__card input[type="checkbox"] {accent-color:var(--a33-blue);flex:0 0 auto;width:16px;height:16px;}
+body.barama-auth-a33 .barama-auth-a33__card input::placeholder {color:var(--a33-muted);opacity:.93;}
+body.barama-auth-a33 .barama-auth-a33__submit {
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;
+  border-radius:12px!important;background:var(--a33-blue)!important;border-color:var(--a33-blue)!important;
+  color:#fff!important;font-size:15px!important;font-weight:700!important;box-shadow:0 8px 17px rgba(26,96,255,.16);
+}
+body.barama-auth-a33 .barama-auth-a33__submit:hover {background:var(--a33-blue-hover)!important;border-color:var(--a33-blue-hover)!important;}
+body.barama-auth-a33 .barama-auth-a33__original-name-field {display:none!important;}
+body.barama-auth-a33 .barama-auth-a33__name-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 14px;}
+body.barama-auth-a33 .barama-auth-a33__name-grid > label {display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:700;color:var(--a33-muted);}
+body.barama-auth-a33 .barama-auth-a33__name-grid input {width:100%;box-sizing:border-box;padding:0 12px;}
+body.barama-auth-a33 .barama-auth-a33__terms {display:flex;gap:10px;align-items:flex-start;margin:15px 0 16px;color:var(--a33-muted);line-height:1.55;font-size:12px;cursor:pointer;}
+body.barama-auth-a33 .barama-auth-a33__terms a {font-weight:700;color:var(--a33-blue);text-decoration:none;}
+body.barama-auth-a33 .barama-auth-a33__terms a:hover {text-decoration:underline;}
+body.barama-auth-a33 .barama-auth-a33__social-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 8px;}
+body.barama-auth-a33 .barama-auth-a33__social-grid > * {width:100%!important;min-width:0;max-width:none!important;box-sizing:border-box;min-height:44px;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:11px!important;}
+body.barama-auth-a33 .barama-auth-a33__social-grid > :only-child {grid-column:1/-1;}
+body.barama-auth-a33 .barama-auth-a33__card a {overflow-wrap:anywhere;}
+body.barama-auth-a33 .barama-auth-a33__card [data-a33-visual-only="true"] {pointer-events:none;}
+/* Honor explicit site theme, no copied colors from the reference product. */
+html[data-bs-theme="dark"] body.barama-auth-a33,
+html[data-theme="dark"] body.barama-auth-a33,
+body[data-bs-theme="dark"].barama-auth-a33 {
+  --a33-ink:#f1f5fc;--a33-muted:#acbad0;--a33-surface:rgba(24,30,43,.985);
+  --a33-border:#394354;--a33-field:#202938;
+  --a33-shadow:0 25px 80px rgba(0,0,0,.35),0 3px 14px rgba(0,0,0,.18);
+  background:radial-gradient(ellipse at 10% 8%,rgba(28,83,178,.15),transparent 37%),#0c121c;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:dark) {
+ html:not([data-bs-theme]):not([data-theme]) body.barama-auth-a33 {
+   --a33-ink:#f1f5fc;--a33-muted:#acbad0;--a33-surface:#191f2c;--a33-border:#394354;--a33-field:#202938;
+   --a33-shadow:0 25px 80px rgba(0,0,0,.3);background:#0d1420;color-scheme:dark;
+ }
+}
+@media (max-width:540px){
+ body.barama-auth-a33 .barama-auth-a33__card {padding:22px 17px!important;border-radius:19px!important;}
+ body.barama-auth-a33 .barama-auth-a33__name-grid {grid-template-columns:1fr;gap:11px;}
+ body.barama-auth-a33 .barama-auth-a33__social-grid {gap:8px;}
+}
+@media (prefers-reduced-motion:reduce){body.barama-auth-a33 *,body.barama-auth-a33 *::before,body.barama-auth-a33 *::after{animation:none!important;transition:none!important;}}
+
+
+/* ===== auth-copy-v117a34.css ===== */
+/* BARAMA_AUTH_COPY_V117A34 | scoped refinements; inherits A33 site color and light/dark variables. */
+body.barama-auth-a33.barama-auth-a34 .barama-auth-a34__heading {
+  font-size: clamp(30px, 3.3vw, 36px) !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -.035em !important;
+  margin-bottom: 14px !important;
+  color: var(--a33-ink) !important;
+}
+body.barama-auth-a33.barama-auth-a34--forgot-password .barama-auth-a34__reset-description {
+  display: block;
+  color: var(--a33-muted) !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  margin-bottom: 17px !important;
+  text-wrap: pretty;
+}
+body.barama-auth-a33.barama-auth-a34--login .barama-auth-a34__heading,
+body.barama-auth-a33.barama-auth-a34--register .barama-auth-a34__heading {
+  margin-bottom: 18px !important;
+}
+@media (max-width: 540px) {
+ body.barama-auth-a33.barama-auth-a34 .barama-auth-a34__heading {
+   font-size: clamp(28px, 8vw, 34px) !important;
+ }
+}
+
+
+/* ===== auth-centered-v117a35.css ===== */
+/* BARAMA_AUTH_CENTERED_V117A35
+   Auth-only presentation: centered identity/title/help, accessible name fields.
+   Inherits A33 theme palette and responsive card; no impact on other pages. */
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a33__brand,
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a35__brand {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100%;
+  max-width: 100%;
+  min-height: 36px;
+  margin: 0 auto 20px !important;
+  text-align: center !important;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__brand > a,
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a35__brand > a {
+  display: inline-flex !important; align-items: center; justify-content: center;
+  margin-inline:auto !important;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__brand img,
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a35__brand img {
+  display:block; width:auto; height:auto; max-width:min(210px,68vw);
+  max-height:54px; object-fit:contain; margin-inline:auto;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a33__heading,
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a34__heading {
+  display:block !important; width:100%; max-width:100%;
+  margin-inline:auto !important; text-align:center !important;
+  text-wrap:balance;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a33__subtitle,
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a34__reset-description,
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__card .barama-auth-a35__helper {
+  display:block; width:100%; max-width:420px;
+  margin-inline:auto !important; text-align:center !important;
+  color:var(--a33-muted) !important;
+  line-height:1.65;
+  text-wrap:pretty;
+}
+body.barama-auth-a33.barama-auth-a35.barama-auth-a33--forgot-password .barama-auth-a34__reset-description {
+  margin-bottom:18px !important;
+}
+/* Name inputs: no duplicate external labels, icons are attached to the same focusable input. */
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__name-grid > label.barama-auth-a35__name-field {
+  position:relative !important; display:flex !important; flex-direction:row !important;
+  align-items:center; padding:0; margin:0;
+  min-width:0; width:100%; gap:0;
+  font-size:inherit; line-height:normal;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__name-grid > label.barama-auth-a35__name-field > input {
+  width:100%; min-width:0; min-height:50px;
+  padding:0 13px 0 42px !important;
+  box-sizing:border-box;
+  font-size:14px;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a35__name-icon {
+  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  width:17px; height:17px;
+  color:var(--a33-muted); opacity:.95;
+  pointer-events:none; z-index:1;
+  fill:none; stroke:currentColor; stroke-width:1.8;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+body.barama-auth-a33.barama-auth-a35 .barama-auth-a35__name-field:focus-within .barama-auth-a35__name-icon {
+  color:var(--a33-blue);
+}
+@media (max-width:540px) {
+ body.barama-auth-a33.barama-auth-a35 .barama-auth-a33__brand,
+ body.barama-auth-a33.barama-auth-a35 .barama-auth-a35__brand {margin-bottom:15px !important;}
+ body.barama-auth-a33.barama-auth-a35 .barama-auth-a34__reset-description {max-width:100%;}
+}
+
+
+/* ===== auth-title-centering-v117a36.css ===== */
+/* BARAMA_AUTH_TITLE_CENTERING_V117A36
+   Final header alignment normalization for standalone auth routes.
+   Presentation-only. Keeps A33/A34/A35 behaviors intact. */
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 auto 18px !important;
+  text-align:center !important;
+}
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero > * {
+  align-self:center !important;
+}
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero .barama-auth-a34__heading,
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero .barama-auth-a33__heading,
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__heading {
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 auto 10px !important;
+  text-align:center !important;
+  align-self:center !important;
+}
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero .barama-auth-a34__reset-description,
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero .barama-auth-a33__subtitle,
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__helper {
+  display:block !important;
+  width:100% !important;
+  max-width:440px !important;
+  margin:0 auto 18px !important;
+  text-align:center !important;
+  align-self:center !important;
+  color:var(--a33-muted) !important;
+  line-height:1.65 !important;
+}
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36.barama-auth-a33--login .barama-auth-a36__hero,
+body.barama-auth-a33.barama-auth-a35.barama-auth-a36.barama-auth-a33--register .barama-auth-a36__hero {
+  margin-bottom:20px !important;
+}
+@media (max-width:540px) {
+  body.barama-auth-a33.barama-auth-a35.barama-auth-a36 .barama-auth-a36__hero {
+    margin-bottom:16px !important;
+  }
+}
+
+
+/* ===== verify-email-auth-v117a38.css ===== */
+/* BARAMA_VERIFY_EMAIL_V117A38
+ * Presentation-only, activated exclusively on /verify-email after content detection.
+ * Uses brand blue and respects the configured site theme.
+ */
+body.barama-verify-a38 {
+  --verify-a38-ink:#18243b;
+  --verify-a38-muted:#66768f;
+  --verify-a38-blue:#1a60ff;
+}
+body.barama-verify-a38 .barama-verify-a38__intro {
+  text-align:center !important;
+}
+body.barama-verify-a38 .barama-verify-a38__brand {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  margin:0 auto 23px !important;
+  min-height:36px;
+  text-align:center !important;
+}
+body.barama-verify-a38 .barama-verify-a38__brand a {
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  max-width:100%;
+}
+body.barama-verify-a38 .barama-verify-a38__brand img {
+  display:block;
+  width:auto;
+  max-width:min(210px,72vw);
+  max-height:51px;
+  object-fit:contain;
+}
+body.barama-verify-a38 .barama-verify-a38__eyebrow {
+  display:block !important;
+  text-align:center !important;
+  margin:0 auto 13px !important;
+  color:var(--verify-a38-blue) !important;
+  letter-spacing:.16em;
+}
+body.barama-verify-a38 .barama-verify-a38__title {
+  display:block !important;
+  width:100% !important;
+  text-align:center !important;
+  margin:0 auto 12px !important;
+  font-size:clamp(28px,3.2vw,36px) !important;
+  line-height:1.17 !important;
+  font-weight:800 !important;
+  letter-spacing:-.035em;
+  color:var(--verify-a38-ink) !important;
+  text-wrap:balance;
+}
+body.barama-verify-a38 .barama-verify-a38__helper {
+  display:block !important;
+  max-width:46ch !important;
+  width:100% !important;
+  text-align:center !important;
+  margin:0 auto 23px !important;
+  color:var(--verify-a38-muted) !important;
+  line-height:1.65 !important;
+}
+body.barama-verify-a38 .barama-verify-a38__removed-icon {
+  display:none !important;
+}
+html[data-bs-theme="dark"] body.barama-verify-a38,
+html[data-theme="dark"] body.barama-verify-a38,
+body[data-bs-theme="dark"].barama-verify-a38,
+body[data-theme="dark"].barama-verify-a38 {
+  --verify-a38-ink:#f1f5fc;
+  --verify-a38-muted:#acbad0;
+}
+@media (prefers-color-scheme:dark) {
+  html:not([data-bs-theme]):not([data-theme]) body.barama-verify-a38 {
+    --verify-a38-ink:#f1f5fc;
+    --verify-a38-muted:#acbad0;
+  }
+}
+@media (max-width:540px) {
+  body.barama-verify-a38 .barama-verify-a38__brand {margin-bottom:18px !important;}
+  body.barama-verify-a38 .barama-verify-a38__helper {margin-bottom:18px !important;}
+}
+
+
+/* ===== account-settings-full-v1130.css ===== */
+/* BARAMA_ACCOUNT_SETTINGS_FULL_FUNCTIONS_V1130R3 */
+:root {
+    --account-v1130-border: color-mix(in srgb, var(--bs-border-color, #d9e1ec) 92%, transparent);
+    --account-v1130-surface: var(--bs-body-bg, #ffffff);
+    --account-v1130-soft: color-mix(in srgb, var(--barama-primary, #2563eb) 5%, var(--bs-body-bg, #ffffff));
+    --account-v1130-text: var(--bs-body-color, #172033);
+    --account-v1130-muted: var(--bs-secondary-color, #667085);
+    --account-v1130-primary: var(--barama-primary, #2563eb);
+}
+
+html[data-bs-theme="dark"],
+html[data-theme="dark"] {
+    --account-v1130-border: rgba(148, 163, 184, .18);
+    --account-v1130-surface: #101a2a;
+    --account-v1130-soft: #132238;
+    --account-v1130-text: #edf4ff;
+    --account-v1130-muted: #a8b6c9;
+}
+
+.barama-account-v1130-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.barama-account-v1130-actions .btn,
+.barama-account-v1130-button {
+    min-height: 42px;
+}
+
+.barama-account-v1130-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 14px;
+    border: 1px solid var(--account-v1130-border);
+    border-radius: 11px;
+    background: var(--account-v1130-surface);
+    color: var(--account-v1130-text);
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 760;
+    cursor: pointer;
+}
+
+.barama-account-v1130-button:hover {
+    border-color: color-mix(in srgb, var(--account-v1130-primary) 38%, var(--account-v1130-border));
+    color: var(--account-v1130-primary);
+}
+
+.barama-account-v1130-button--danger:hover {
+    border-color: color-mix(in srgb, #dc2626 42%, var(--account-v1130-border));
+    color: #dc2626;
+}
+
+.barama-account-v1130-preview {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid var(--account-v1130-border);
+    border-radius: 16px;
+    background: var(--account-v1130-soft);
+}
+
+.barama-account-v1130-preview__eyebrow {
+    color: var(--account-v1130-muted);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.barama-account-v1130-preview__date {
+    color: var(--account-v1130-text);
+    font-size: clamp(1.08rem, 2vw, 1.42rem);
+    font-weight: 820;
+    line-height: 1.3;
+}
+
+.barama-account-v1130-preview__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: var(--account-v1130-muted);
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+.barama-account-v1130-preview__meta strong {
+    color: var(--account-v1130-text);
+}
+
+.barama-account-v1130-data-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.barama-account-v1130-data-card {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--account-v1130-border);
+    border-radius: 16px;
+    background: var(--account-v1130-surface);
+}
+
+.barama-account-v1130-data-card__icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--account-v1130-primary) 9%, transparent);
+    color: var(--account-v1130-primary);
+    font-size: 1rem;
+    font-weight: 850;
+}
+
+.barama-account-v1130-data-card strong {
+    color: var(--account-v1130-text);
+    font-size: .9rem;
+    font-weight: 820;
+}
+
+.barama-account-v1130-data-card p {
+    min-height: 42px;
+    margin: 0;
+    color: var(--account-v1130-muted);
+    font-size: .76rem;
+    line-height: 1.5;
+}
+
+.barama-account-v1130-data-card form,
+.barama-account-v1130-data-card a {
+    margin-top: auto;
+}
+
+.barama-account-v1130-card-action,
+.barama-account-v1130-data-card .barama-account-v1130-button {
+    width: 100%;
+}
+
+.barama-account-v1130-card-action {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--account-v1130-primary) 23%, var(--account-v1130-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--account-v1130-primary) 6%, var(--account-v1130-surface));
+    color: var(--account-v1130-primary);
+    font-size: .8rem;
+    font-weight: 780;
+    text-decoration: none;
+}
+
+.barama-account-v1130-card-action:hover {
+    background: color-mix(in srgb, var(--account-v1130-primary) 11%, var(--account-v1130-surface));
+}
+
+.barama-account-v1130-note {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, #10b981 20%, var(--account-v1130-border));
+    border-radius: 13px;
+    background: color-mix(in srgb, #10b981 6%, transparent);
+    color: var(--account-v1130-muted);
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .barama-account-v1130-data-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .barama-account-v1130-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .barama-account-v1130-actions > * {
+        width: 100%;
+    }
+}
+
+
+/* ===== account-profile-v1131.css ===== */
+/* BARAMA_ACCOUNT_PROFILE_EXPANSION_V1131 */
+.barama-profile-v1131__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.barama-profile-v1131__address { grid-column: 1 / -1; }
+.barama-profile-v1131__textarea-control { align-items: flex-start; }
+.barama-profile-v1131__textarea-control i { margin-top: 13px; }
+.barama-profile-v1131__textarea-control textarea {
+    width: 100%; min-height: 112px; resize: vertical; border: 0; outline: 0;
+    background: transparent; color: inherit; font: inherit; line-height: 1.55;
+}
+.barama-profile-v1131__avatar-card { align-items: stretch; text-align: left; }
+.barama-profile-v1131__avatar-head { display:flex; align-items:center; gap:14px; width:100%; }
+.barama-profile-v1131__avatar-head h2,.barama-profile-v1131__avatar-head p{margin:0}
+.barama-profile-v1131__avatar-head p{margin-top:4px;color:var(--bs-secondary-color,#667085);font-size:.8rem;overflow-wrap:anywhere}
+.barama-profile-v1131__avatar{
+    display:grid;width:88px;height:88px;flex:0 0 88px;place-items:center;overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--barama-primary,#2563eb) 18%,var(--bs-border-color,#d9e1ec));
+    border-radius:24px;background:color-mix(in srgb,var(--barama-primary,#2563eb) 9%,transparent);
+    color:var(--barama-primary,#2563eb)
+}
+.barama-profile-v1131__avatar img{width:100%;height:100%;object-fit:cover}
+.barama-profile-v1131__avatar svg{width:34px;height:34px}
+.barama-profile-v1131__avatar-form{display:grid;gap:10px;width:100%;margin-top:20px}
+.barama-profile-v1131__dropzone{
+    display:grid;min-height:176px;place-items:center;align-content:center;gap:7px;padding:20px;
+    border:1.5px dashed color-mix(in srgb,var(--barama-primary,#2563eb) 30%,var(--bs-border-color,#d9e1ec));
+    border-radius:18px;background:color-mix(in srgb,var(--barama-primary,#2563eb) 4%,var(--bs-body-bg,#fff));
+    text-align:center;cursor:pointer;transition:border-color .16s ease,background-color .16s ease,transform .16s ease
+}
+.barama-profile-v1131__dropzone:hover,.barama-profile-v1131__dropzone:focus-visible,.barama-profile-v1131__dropzone.is-dragging{
+    border-color:var(--barama-primary,#2563eb);
+    background:color-mix(in srgb,var(--barama-primary,#2563eb) 8%,var(--bs-body-bg,#fff));outline:0
+}
+.barama-profile-v1131__dropzone.is-dragging{transform:translateY(-1px)}
+.barama-profile-v1131__dropzone input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.barama-profile-v1131__dropzone-icon{
+    display:grid;width:44px;height:44px;place-items:center;border-radius:13px;
+    background:color-mix(in srgb,var(--barama-primary,#2563eb) 10%,transparent);color:var(--barama-primary,#2563eb)
+}
+.barama-profile-v1131__dropzone strong{font-size:.88rem;font-weight:820}
+.barama-profile-v1131__dropzone small,.barama-profile-v1131__file-name{color:var(--bs-secondary-color,#667085);font-size:.74rem;line-height:1.45}
+.barama-profile-v1131__file-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barama-profile-v1131__avatar-form .btn,.barama-profile-v1131__remove .btn{width:100%}
+.barama-profile-v1131__remove{width:100%;margin-top:10px}
+.barama-profile-v1131__status{width:100%;margin-top:18px}
+html[data-bs-theme="dark"] .barama-profile-v1131__dropzone,html[data-theme="dark"] .barama-profile-v1131__dropzone{
+    background:color-mix(in srgb,var(--barama-primary,#2563eb) 7%,#101a2a)
+}
+@media (max-width:760px){
+    .barama-profile-v1131__fields{grid-template-columns:1fr}
+    .barama-profile-v1131__address{grid-column:auto}
+    .barama-profile-v1131__avatar-head{align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){.barama-profile-v1131__dropzone{transition:none}}
+
+
+/* ===== account-security-table-v1129r5.css ===== */
+/* BARAMA_ACCOUNT_SECURITY_CANONICAL_TABLE_V1129_R5
+ * Canonical renderer: application/resources/views/workspace/settings.php
+ * Target: /account/settings/security
+ */
+.barama-security-features {
+    --barama-security-border: color-mix(in srgb, var(--bs-border-color, #d9e1ec) 92%, transparent);
+    --barama-security-surface: var(--bs-body-bg, #ffffff);
+    --barama-security-soft: color-mix(in srgb, var(--barama-primary, #2563eb) 5%, var(--bs-body-bg, #ffffff));
+    --barama-security-text: var(--bs-body-color, #172033);
+    --barama-security-muted: var(--bs-secondary-color, #667085);
+    --barama-security-primary: var(--barama-primary, #2563eb);
+    margin-top: 26px;
+}
+
+.barama-security-features__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.barama-security-features__head > div {
+    min-width: 0;
+}
+
+.barama-security-features__head h2 {
+    margin: 0 0 7px;
+    color: var(--barama-security-text);
+    font-size: clamp(1.55rem, 2vw, 2rem);
+    font-weight: 820;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+}
+
+.barama-security-features__head p {
+    max-width: 760px;
+    margin: 0;
+    color: var(--barama-security-muted);
+    font-size: .94rem;
+    line-height: 1.6;
+}
+
+.barama-security-features__head > span {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border: 1px solid color-mix(in srgb, var(--barama-security-primary) 18%, var(--barama-security-border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--barama-security-primary) 7%, var(--barama-security-surface));
+    color: var(--barama-security-primary);
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .025em;
+    white-space: nowrap;
+}
+
+.barama-security-features__head > span::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #10b981 12%, transparent);
+}
+
+.barama-security-table-wrap {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--barama-security-border);
+    border-radius: 18px;
+    background: var(--barama-security-surface);
+    box-shadow: 0 16px 42px rgba(15, 23, 42, .055);
+}
+
+.barama-security-table {
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    background: transparent;
+}
+
+.barama-security-table thead th {
+    padding: 14px 18px;
+    border: 0;
+    border-bottom: 1px solid var(--barama-security-border);
+    background: var(--barama-security-soft);
+    color: var(--barama-security-muted);
+    font-size: .72rem;
+    font-weight: 850;
+    line-height: 1.25;
+    letter-spacing: .075em;
+    text-align: left;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.barama-security-table thead th:nth-child(1) { width: 30%; }
+.barama-security-table thead th:nth-child(2) { width: 13%; }
+.barama-security-table thead th:nth-child(3) { width: 43%; }
+.barama-security-table thead th:nth-child(4) {
+    width: 14%;
+    text-align: right;
+}
+
+.barama-security-table tbody tr {
+    transition: background-color .16s ease;
+}
+
+.barama-security-table tbody tr:hover {
+    background: color-mix(in srgb, var(--barama-security-primary) 2.8%, transparent);
+}
+
+.barama-security-table tbody td {
+    padding: 17px 18px;
+    border: 0;
+    border-bottom: 1px solid var(--barama-security-border);
+    background: transparent;
+    color: var(--barama-security-text);
+    font-size: .91rem;
+    line-height: 1.55;
+    vertical-align: middle;
+}
+
+.barama-security-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.barama-security-table tbody td + td {
+    border-left: 1px solid color-mix(in srgb, var(--barama-security-border) 70%, transparent);
+}
+
+.barama-security-feature {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.barama-security-feature__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--barama-security-primary) 9%, transparent);
+    color: var(--barama-security-primary);
+}
+
+.barama-security-feature__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.barama-security-feature > span:last-child {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    padding-top: 1px;
+}
+
+.barama-security-feature strong {
+    color: var(--barama-security-text);
+    font-size: .97rem;
+    font-weight: 820;
+    line-height: 1.3;
+}
+
+.barama-security-feature small {
+    color: var(--barama-security-muted);
+    font-size: .79rem;
+    font-weight: 520;
+    line-height: 1.45;
+}
+
+.barama-security-feature-detail {
+    display: block;
+    color: var(--barama-security-muted);
+    font-size: .87rem;
+    line-height: 1.62;
+}
+
+.barama-security-status-pill {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .77rem;
+    font-weight: 820;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.barama-security-status-pill::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.barama-security-status-pill.is-good {
+    border-color: color-mix(in srgb, #10b981 26%, transparent);
+    background: color-mix(in srgb, #10b981 10%, transparent);
+    color: #059669;
+}
+
+.barama-security-status-pill.is-warn {
+    border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+    background: color-mix(in srgb, #f59e0b 11%, transparent);
+    color: #d97706;
+}
+
+.barama-security-actions {
+    text-align: right;
+}
+
+.barama-security-configure {
+    display: inline-flex;
+    min-width: 108px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 9px 14px;
+    border: 1px solid color-mix(in srgb, var(--barama-security-primary) 28%, var(--barama-security-border));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--barama-security-primary) 7%, var(--barama-security-surface));
+    color: var(--barama-security-primary);
+    box-shadow: none;
+    font: inherit;
+    font-size: .84rem;
+    font-weight: 820;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background-color .16s ease;
+}
+
+.barama-security-configure:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--barama-security-primary) 52%, var(--barama-security-border));
+    background: color-mix(in srgb, var(--barama-security-primary) 12%, var(--barama-security-surface));
+}
+
+.barama-security-configure:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--barama-security-primary) 22%, transparent);
+    outline-offset: 2px;
+}
+
+html[data-bs-theme="dark"] .barama-security-features,
+html[data-theme="dark"] .barama-security-features {
+    --barama-security-border: rgba(148, 163, 184, .18);
+    --barama-security-surface: #101a2a;
+    --barama-security-soft: #132238;
+    --barama-security-text: #edf4ff;
+    --barama-security-muted: #a8b6c9;
+}
+
+html[data-bs-theme="dark"] .barama-security-table-wrap,
+html[data-theme="dark"] .barama-security-table-wrap {
+    box-shadow: 0 18px 46px rgba(0, 0, 0, .22);
+}
+
+@media (max-width: 980px) {
+    .barama-security-features__head {
+        align-items: center;
+    }
+
+    .barama-security-table-wrap {
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .barama-security-table,
+    .barama-security-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .barama-security-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .barama-security-table tbody {
+        display: grid;
+        gap: 14px;
+    }
+
+    .barama-security-table tbody tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        overflow: hidden;
+        border: 1px solid var(--barama-security-border);
+        border-radius: 17px;
+        background: var(--barama-security-surface);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .05);
+    }
+
+    .barama-security-table tbody td {
+        display: block;
+        min-width: 0;
+        padding: 14px 16px;
+        border: 0;
+        border-bottom: 0;
+    }
+
+    .barama-security-table tbody td + td {
+        border-left: 0;
+    }
+
+    .barama-security-table tbody td[data-label="Feature"] {
+        grid-column: 1;
+    }
+
+    .barama-security-table tbody td[data-label="Status"] {
+        grid-column: 2;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .barama-security-table tbody td[data-label="Protection"],
+    .barama-security-table tbody td[data-label="Actions"] {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--barama-security-border);
+    }
+
+    .barama-security-table tbody td[data-label="Protection"]::before,
+    .barama-security-table tbody td[data-label="Actions"]::before {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--barama-security-muted);
+        font-size: .68rem;
+        font-weight: 850;
+        letter-spacing: .075em;
+        text-transform: uppercase;
+    }
+
+    .barama-security-table tbody td[data-label="Protection"]::before {
+        content: "Protection";
+    }
+
+    .barama-security-table tbody td[data-label="Actions"]::before {
+        content: "Actions";
+        text-align: left;
+    }
+
+    .barama-security-actions {
+        text-align: left;
+    }
+
+    .barama-security-configure {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 620px) {
+    .barama-security-features__head {
+        display: grid;
+        gap: 12px;
+    }
+
+    .barama-security-features__head > span {
+        justify-self: start;
+    }
+
+    .barama-security-table tbody tr {
+        grid-template-columns: 1fr;
+    }
+
+    .barama-security-table tbody td[data-label="Feature"],
+    .barama-security-table tbody td[data-label="Status"],
+    .barama-security-table tbody td[data-label="Protection"],
+    .barama-security-table tbody td[data-label="Actions"] {
+        grid-column: 1;
+    }
+
+    .barama-security-table tbody td[data-label="Status"] {
+        justify-content: flex-start;
+        border-top: 1px solid var(--barama-security-border);
+    }
+
+    .barama-security-table tbody td[data-label="Status"]::before {
+        content: "Status";
+        display: block;
+        margin-right: 10px;
+        color: var(--barama-security-muted);
+        font-size: .68rem;
+        font-weight: 850;
+        letter-spacing: .075em;
+        text-transform: uppercase;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .barama-security-table tbody tr,
+    .barama-security-configure {
+        transition: none;
+    }
+}
+

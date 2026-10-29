@@ -249,7 +249,7 @@ $criticalCount = (int) ($severityCounts['critical'] ?? 0);
 $highCount = (int) ($severityCounts['high'] ?? 0);
 $mediumCount = (int) ($severityCounts['medium'] ?? 0);
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
+<?= barama_css_once('policy-center') ?>
 
 <main class="pc-admin-main pc-feedback-review" data-pc-feedback-review>
     <header class="pc-admin-head pc-feedback-review__head">
@@ -568,4 +568,4 @@ $mediumCount = (int) ($severityCounts['medium'] ?? 0);
     </footer>
 </main>
 
-<script src="<?= e(asset('js/policy-center-feedback-review-v1.0.25.js')) ?>" defer></script>
+<?= barama_js_once('policy-center') ?><script type="application/x-barama-module" data-barama-module="policy-center-feedback-review"></script>

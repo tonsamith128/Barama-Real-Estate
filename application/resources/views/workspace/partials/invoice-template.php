@@ -10,9 +10,9 @@ $templateNotice = (string) ($_GET['invoice_template'] ?? '');
 $templateMessage = trim((string) ($_GET['message'] ?? ''));
 $checked = static fn (string $key): string => !empty($invoiceTemplate[$key]) ? ' checked' : '';
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/invoice-template-v150.css') . '?v=150') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/invoice-template-theme-v151.css') . '?v=151') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/invoice-template-logo-upload-v152.css') . '?v=152') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
 
 <?php if ($templateNotice !== ''): ?>
     <div class="invoice-template-toast <?= $templateNotice === 'error' ? 'is-error' : 'is-success' ?>" data-invoice-template-toast>
@@ -269,5 +269,5 @@ $checked = static fn (string $key): string => !empty($invoiceTemplate[$key]) ? '
     <?= csrf_field() ?>
 </form>
 
-<script src="<?= e(asset('js/invoice-template-v150.js') . '?v=150') ?>" defer></script>
-<script src="<?= e(asset('js/invoice-template-logo-upload-v152.js') . '?v=152') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="invoice-template"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="invoice-template-logo-upload"></script>

@@ -36,8 +36,8 @@ $systemServices = is_array($systemSnapshot['services'] ?? null) ? $systemSnapsho
 $licenseLabel = (string) ($systemLicense['status'] ?? 'Not recorded');
 $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/barama-system-center-v103.css') . '?v=110') ?>">
-<?php if ($systemSection === 'auto-updater'): ?><link rel="stylesheet" href="<?= e(asset('css/barama-publisher-license-ux-v112.css') . '?v=113') ?>"><link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-premium-v120.css') . '?v=121') ?>"><link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-actions-v122.css') . '?v=122') ?>"><?php endif; ?>
+<?= barama_css_once('admin') ?>
+<?php if ($systemSection === 'auto-updater'): ?><?= barama_css_once('admin') ?><?= barama_css_once('admin') ?><?= barama_css_once('admin') ?><?php endif; ?>
 <section class="barama-sys-v103 <?= $systemSection === 'auto-updater' ? 'bsys-auto-premium' : '' ?>" aria-labelledby="barama-system-title">
   <nav class="bsys-breadcrumb" aria-label="Breadcrumb">Administration / System / <?= e($systemTitle) ?></nav>
   <div class="bsys-header">
@@ -325,4 +325,4 @@ $supportUntil = (string) ($systemLicense['support_until'] ?? 'Not recorded');
   <?php if ($systemSection !== 'auto-updater'): ?><aside class="bsys-readonly" role="note">Read-only administrative overview. License and support fields are displayed from existing local records when available; no private credentials are shown. No update, migration, outbound email or payment action is triggered by these pages.</aside><?php endif; ?>
 </section>
 
-<?php if ($systemSection === 'auto-updater'): ?><script defer src="<?= e(asset('js/barama-publisher-license-ux-v112.js') . '?v=113') ?>"></script><script defer src="<?= e(asset('js/barama-auto-updater-premium-v120.js') . '?v=121') ?>"></script><?php endif; ?>
+<?php if ($systemSection === 'auto-updater'): ?><?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-publisher-license-ux"></script><?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-auto-updater-premium"></script><?php endif; ?>

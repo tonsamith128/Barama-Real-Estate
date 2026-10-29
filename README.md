@@ -40,8 +40,8 @@ The v1.0.0 CodeCanyon customer ZIP includes `documentation/index.html`, the offl
 This repository intentionally starts with a small canonical foundation.
 
 - One application front controller: `index.php`
-- One custom stylesheet: `assets/css/app.css`
-- One custom JavaScript entry point: `assets/js/app.js`
+- Five version-free, area-specific CSS bundles: `frontend.css`, `admin.css`, `developer.css`, `account.css`, and `policy-center.css`
+- Five matching JavaScript bundles with page-specific feature initialization
 - No duplicate versions of application files
 - No abandoned legacy implementations
 - No generated build artifacts committed to source
@@ -445,3 +445,8 @@ The 0.9.22 development line closes a customer-package documentation drift discov
 - authenticated SMTP remains a post-install option through the canonical mail transport
 - exact-package compliance QA rejects the retired Step 4 SMTP/test-email claims and requires the current PHP-mail-default wording
 - this is a customer-package correction, so the live acceptance candidate must be built from 0.9.22-dev rather than the superseded 0.9.21-dev source identity
+
+
+### v1.0.0 stable CSS/JS bundles (fresh-install test candidate)
+
+The installer and public, admin, developer, account and legal Policy Center pages now use stable application-area assets: `assets/css/{frontend,admin,developer,account,policy-center}.css` and corresponding `.js` bundles. CSS cascade order is preserved within source sections and JavaScript modules activate only where their source views explicitly request them. Legacy version-suffixed asset copies are excluded from the customer distribution. Fresh-install browser acceptance is required before marketplace publication.

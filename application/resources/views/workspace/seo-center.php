@@ -57,13 +57,8 @@ $exportUrl = url(
     . http_build_query($query)
 );
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/seo-center-v138.css') . '?v=138') ?>"
->
-<script
-    src="<?= e(asset('js/seo-center-v138.js') . '?v=138') ?>"
-    defer
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="seo-center"
 ></script>
 
 <section class="workspace-page seo-center" data-seo-center>

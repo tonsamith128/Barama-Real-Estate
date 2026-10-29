@@ -73,15 +73,9 @@ $pageUrl = static function (int $target) use ($query): string {
     );
 };
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-coupons-pagination-v184.css') . '?v=184') ?>"
->
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-coupons-focus-v185.css') . '?v=185') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--coupons" data-coupons-workspace>
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->

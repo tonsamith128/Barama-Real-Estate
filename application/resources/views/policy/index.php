@@ -59,7 +59,7 @@ if ($selectedPolicy !== null) {
     }
 }
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-public.css') . '?v=1.0.0-css-clean1') ?>">
+<?= barama_css_once('policy-center') ?>
 
 <main class="pc-public">
     <?php if ($selectedPolicy === null): ?>
@@ -415,4 +415,4 @@ if ($selectedPolicy !== null) {
     </div>
 </main>
 
-<script defer src="<?= e(asset('js/policy-center-public-v1.0.22.js')) ?>"></script>
+<?= barama_js_once('policy-center') ?><script type="application/x-barama-module" data-barama-module="policy-center-public"></script>

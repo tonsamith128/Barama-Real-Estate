@@ -152,10 +152,10 @@ $uRecoverySummary = $uPortableLifecycle
     : 'Not verified in this session';
 
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-unified-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-theme-v101.css') . '?v=103') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-auto-updater-experience-v103.css') . '?v=103') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-qa-busy-arrow-v105.css') . '?v=105') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('frontend') ?>
 <main class="bau<?= $uPortableCompleted ? ' bau-portable-complete' : '' ?>" id="barama-unified-auto-updater" aria-labelledby="bau-title">
  <nav class="bau-breadcrumb" aria-label="Breadcrumb">Administration / System / Auto Updater</nav>
  <header class="bau-heading"><div><h1 id="bau-title">Auto Updater</h1><p>Discover and verify publisher-signed Barama releases in one place.</p></div>
@@ -292,7 +292,7 @@ $uRecoverySummary = $uPortableLifecycle
   <?php foreach ($uSteps as $uStep): ?><tr><td><?= e($uStep[0]) ?></td><td><span class="bau-pill <?= $uStep[2] === 'done' ? 'bau-pill--good' : ($uStep[2] === 'warn' ? 'bau-pill--warn' : '') ?>"><?= e($uStep[1]) ?></span></td><td><?= $uStep[2] === 'done' ? 'Confirmed by the current website state' : 'Awaiting an authenticated result or safe update execution' ?></td></tr><?php endforeach; ?>
   </tbody></table></div></section>
 </main>
-<script defer src="<?= e(asset('js/barama-auto-updater-unified-v100.js') . '?v=103') ?>"></script>
-<script defer src="<?= e(asset('js/barama-auto-updater-experience-v103.js') . '?v=103') ?>"></script>
-<?php if ($uStagingQueueSupported): ?><script defer src="<?= e(asset('js/barama-oneclick-status-v100.js') . '?v=104') ?>"></script><?php endif; ?>
-<?php if (!$uStaging): ?><script defer src="<?= e(asset('js/barama-portable-auto-updater-v1.js') . '?v=100') ?>"></script><?php endif; ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-auto-updater-unified"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-auto-updater-experience"></script>
+<?php if ($uStagingQueueSupported): ?><?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-oneclick-status"></script><?php endif; ?>
+<?php if (!$uStaging): ?><?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-portable-auto-updater"></script><?php endif; ?>

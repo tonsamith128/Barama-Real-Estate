@@ -4,7 +4,7 @@
  * Never initiate installation, entitlement checks, or unguarded legacy upgrades here.
  */
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/barama-system-center-v103.css') . '?v=110') ?>">
+<?= barama_css_once('admin') ?>
 <section class="barama-sys-v103" aria-labelledby="barama-system-title">
   <nav class="bsys-breadcrumb" aria-label="Breadcrumb">Administration / System / Updates</nav>
   <div class="bsys-header"><div>

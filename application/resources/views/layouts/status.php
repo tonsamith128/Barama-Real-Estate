@@ -7,10 +7,10 @@ $seoDescription = trim((string) ($metaDescription ?? 'Current service status.'))
 $seoCanonical = trim((string) ($canonicalUrl ?? url('/health')));
 $seoRobots = trim((string) ($metaRobots ?? 'noindex,follow'));
 
-$appCssFile = BASE_PATH . '/assets/css/app.css';
-$appJsFile = BASE_PATH . '/assets/js/app.js';
-$statusCssFile = BASE_PATH . '/assets/css/system-health-v1126.css';
-$statusThemeFile = BASE_PATH . '/assets/js/system-health-theme-v1126.js';
+$appCssFile = BASE_PATH . '/assets/css/frontend.css';
+$appJsFile = BASE_PATH . '/assets/js/frontend.js';
+$statusCssFile = BASE_PATH . '/assets/css/admin.css';
+$statusThemeFile = BASE_PATH . '/assets/js/admin.js';
 
 $appCssVersion = is_file($appCssFile)
     ? (string) (filemtime($appCssFile) ?: APP_VERSION)
@@ -33,7 +33,7 @@ try { $websiteIdentity = (new \Barama\Repositories\WebsiteIdentityRepository())-
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <script src="<?= e(asset('js/system-health-theme-v1126.js') . '?v=' . rawurlencode($statusThemeVersion)) ?>"></script>
+    <?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="system-health-theme"></script>
     <link rel="icon" href="<?= e(asset((string)($websiteIdentity['favicon_32'] ?? 'images/branding/favicon-32x32.png'))) ?>" sizes="32x32" type="image/png">
     <link rel="shortcut icon" href="<?= e(asset((string)($websiteIdentity['favicon_32'] ?? 'images/branding/favicon-32x32.png'))) ?>" type="image/png">
     <link rel="apple-touch-icon" href="<?= e(asset((string)($websiteIdentity['apple_icon'] ?? 'images/branding/apple-touch-icon.png'))) ?>">
@@ -41,8 +41,8 @@ try { $websiteIdentity = (new \Barama\Repositories\WebsiteIdentityRepository())-
     <meta name="description" content="<?= e($seoDescription) ?>">
     <meta name="robots" content="<?= e($seoRobots) ?>">
     <link rel="canonical" href="<?= e($seoCanonical) ?>">
-    <link href="<?= e(asset('css/app.css') . '?v=' . rawurlencode($appCssVersion)) ?>" rel="stylesheet">
-    <link href="<?= e(asset('css/system-health-v1126.css') . '?v=' . rawurlencode($statusCssVersion)) ?>" rel="stylesheet">
+    <?= barama_css_once('frontend') ?>
+    <?= barama_css_once('admin') ?>
 </head>
 <body class="system-status-body">
     <header class="system-status-header">
@@ -76,6 +76,6 @@ try { $websiteIdentity = (new \Barama\Repositories\WebsiteIdentityRepository())-
         </div>
     </footer>
 
-    <script src="<?= e(asset('js/app.js') . '?v=' . rawurlencode($appJsVersion)) ?>"></script>
+    <?= barama_js_once('frontend') ?><script type="application/x-barama-module" data-barama-module="app"></script>
 </body>
 </html>

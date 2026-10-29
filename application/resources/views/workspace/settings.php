@@ -66,34 +66,34 @@ $settingsTabs = [
 ];
 
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-v120.css') . '?v=120') ?>">
+<?= barama_css_once('admin') ?>
 <?php if ($workspace === 'account' && in_array($section, ['basic', 'profile', 'privacy'], true)): ?>
-<link rel="stylesheet" href="<?= e(asset('css/account-settings-full-v1130.css') . '?v=1130r3') ?>">
-<script src="<?= e(asset('js/account-settings-full-v1130.js') . '?v=1130r3') ?>" defer></script>
+<?= barama_css_once('account') ?>
+<?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="account-settings-full"></script>
 <?php if ($workspace === 'account' && $section === 'profile'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/account-profile-v1131.css') . '?v=1131r1') ?>">
-<script src="<?= e(asset('js/account-profile.js') . '?v=1.0.0-clean1') ?>" defer></script>
+<?= barama_css_once('account') ?>
+<?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="account-profile"></script>
 <?php endif; ?>
 <?php endif; ?>
 <?php if ($section === 'mail' && $workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-mail-settings-v100.css') . '?v=102') ?>">
+<?= barama_css_once('admin') ?>
 <?php endif; ?>
 <?php if ($section === 'locations' && $workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-global-locations.css') . '?v=1.0.0-clean1') ?>">
+<?= barama_css_once('admin') ?>
 <?php endif; ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-default-theme-v101.css') . '?v=101') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-flat-v130.css') . '?v=130') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
 <?php if ($section === 'profile'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/profile-avatar-unified-v107.css') . '?v=107') ?>">
-<script src="<?= e(asset('js/profile-avatar-unified-v107.js') . '?v=107') ?>" defer></script>
+<?= barama_css_once('account') ?>
+<?= barama_js_once('account') ?><script type="application/x-barama-module" data-barama-module="profile-avatar-unified"></script>
 <?php endif; ?>
 <?php if ($section === 'basic' && $workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-branding-identity-v104.css') . '?v=104') ?>">
+<?= barama_css_once('admin') ?>
 <?php endif; ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-v131.css') . '?v=131') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-factors.css') . '?v=1.0.0-clean1') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
 <?php if ($section === 'security' && $workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/admin-settings-security-protection-v134.css') . '?v=134') ?>">
+<?= barama_css_once('admin') ?>
 <?php endif; ?>
 
 <section class="workspace-page barama-settings<?= $workspace === 'dashboard' ? ' barama-settings--flat' : '' ?>" data-admin-settings>
@@ -622,7 +622,7 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
     <?php elseif ($section === 'security'): ?>
 
         <!-- BARAMA_ADMIN_SETTINGS_SECURITY_TABLE_V131 -->
-        <link rel="stylesheet" href="<?= e(asset('css/account-security-table-v1129r5.css') . '?v=1129r5') ?>">
+        <?= barama_css_once('account') ?>
         <section class="barama-security-features" aria-label="Security features">
             <header class="barama-security-features__head">
                 <div>
@@ -763,9 +763,9 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
                     </tbody>
                 </table>
 <?php if ($workspace === 'dashboard'): ?>
-<link rel="stylesheet" href="<?= e(asset('css/turnstile-admin-modal.css') . '?v=113') ?>">
+<?= barama_css_once('admin') ?>
 <?php include __DIR__ . '/turnstile-modal.php'; ?>
-<script src="<?= e(asset('js/turnstile-admin-modal.js') . '?v=113') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="turnstile-admin-modal"></script>
 <?php endif; ?>
 
             </div>
@@ -1213,11 +1213,11 @@ $baramaGovernanceLinks = $baramaGovernance[$section] ?? [];
 </section>
 
 <?php if ($section === 'security'): ?>
-<script src="<?= e(asset('js/vendor/qrcode-v133.js') . '?v=133') ?>" defer></script>
-<script src="<?= e(asset('js/admin-settings-security-factors.js') . '?v=1.0.0-clean1') ?>" defer></script>
-<?php if ($workspace === 'dashboard'): ?><script src="<?= e(asset('js/admin-settings-security-protection-v134.js') . '?v=134') ?>" defer></script><?php endif; ?>
+<script src="<?= e(asset('js/vendor/qrcode.js') . '?v=133') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-settings-security-factors"></script>
+<?php if ($workspace === 'dashboard'): ?><?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-settings-security-protection"></script><?php endif; ?>
 <?php endif; ?>
-<script src="<?= e(asset('js/admin-settings-v120.js') . '?v=120') ?>" defer></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="admin-settings"></script>
 
 <?php if ($workspace === 'dashboard' && !empty($saved)): ?>
 <script data-barama-default-theme-save-sync>

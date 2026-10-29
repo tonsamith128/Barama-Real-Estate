@@ -103,15 +103,9 @@ $transactionPageUrl = static function (int $target) use ($transactionQuery): str
 };
 
 ?>
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-transactions-pagination-v1830.css') . '?v=1830') ?>"
->
+<?= barama_css_once('admin') ?>
 
-<link
-    rel="stylesheet"
-    href="<?= e(asset('css/finance-transactions-focus-v1832.css') . '?v=1832') ?>"
->
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page finance-vertical-cards-page finance-vertical-cards-page--transactions">
     <!-- BARAMA_FINANCE_VERTICAL_CARDS_V100 -->

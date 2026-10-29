@@ -518,8 +518,8 @@ $details = match ($recordResource) {
 };
 ?>
 <!-- BARAMA_GLOBAL_LOCATION_CASCADE_RECORD_V110 -->
-<link rel="stylesheet" href="<?= e(asset('css/global-location-cascade-v110.css') . '?v=110') ?>">
-<script src="<?= e(asset('js/global-location-cascade-v110.js') . '?v=110') ?>" defer></script>
+<?= barama_css_once('admin') ?>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="global-location-cascade"></script>
 <section class="workspace-page workspace-record-page">
     <nav class="workspace-record-breadcrumb" aria-label="Breadcrumb">
         <a href="<?= e(url($sectionPath)) ?>"><?= e($humanize($activeSection)) ?></a>

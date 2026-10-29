@@ -167,7 +167,7 @@ $securityPagerUrl = static function (
     return $anchorId !== '' ? $url . '#' . $anchorId : $url;
 };
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/security-center.css') . '?v=1.0.0-clean2') ?>">
+<?= barama_css_once('admin') ?>
 
 <section class="workspace-page security-center" data-security-center>
     <header class="security-center__hero">

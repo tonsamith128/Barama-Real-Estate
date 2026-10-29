@@ -12,7 +12,7 @@ $editingUsage = $editingId !== ''
     ? (int) ($categoryUsage[$editingId] ?? 0)
     : 0;
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
+<?= barama_css_once('policy-center') ?>
 
 <main class="pc-admin-main pc-category-manager">
     <header class="pc-admin-head">
@@ -349,4 +349,4 @@ $editingUsage = $editingId !== ''
     </div>
 </main>
 
-<script defer src="<?= e(asset('js/policy-center-v1.0.6.js')) ?>"></script>
+<?= barama_js_once('policy-center') ?><script type="application/x-barama-module" data-barama-module="policy-center/list-and-categories"></script>

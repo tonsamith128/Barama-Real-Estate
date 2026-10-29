@@ -38,7 +38,7 @@ if ($displayDate !== '') {
 $wordCount = str_word_count(strip_tags($contentText));
 $readingMinutes = max(1, (int) ceil($wordCount / 220));
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/cms-rich-content-v116.css') . '?v=116') ?>">
+<?= barama_css_once('frontend') ?>
 <main class="cms-page">
     <div class="container app-container">
         <nav class="detail-breadcrumb cms-page__breadcrumb" aria-label="Breadcrumb">

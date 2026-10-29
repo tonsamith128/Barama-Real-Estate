@@ -29,7 +29,7 @@ if ($featuredSlug === null && $plans !== []) {
     $featuredSlug = strtolower((string) ($plans[$middle]['slug'] ?? ''));
 }
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/plans-packages.css') . '?v=140') ?>">
+<?= barama_css_once('frontend') ?>
 
 <section class="barama-plans-public">
     <header class="barama-plans-public__hero">

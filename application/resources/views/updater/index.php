@@ -13,8 +13,8 @@ $siteUrl=rtrim((string)($state['site_url']??''),'/');
 $homepage=$siteUrl!==''?$siteUrl:($assetBase!==''?$assetBase:'/');
 $finished=$completed||$alreadyCurrent||$upToDate;
 $migrationsApplied=$completed?count((array)($result['migrations']??[])):0;
-$cssAssetVersion=(string)(@filemtime(BASE_PATH.'/assets/css/app.css')?:APP_VERSION);
-$jsAssetVersion=(string)(@filemtime(BASE_PATH.'/assets/js/app.js')?:APP_VERSION);
+$cssAssetVersion=(string)(@filemtime(BASE_PATH.'/assets/css/frontend.css')?:APP_VERSION);
+$jsAssetVersion=(string)(@filemtime(BASE_PATH.'/assets/js/frontend.js')?:APP_VERSION);
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -22,7 +22,7 @@ $jsAssetVersion=(string)(@filemtime(BASE_PATH.'/assets/js/app.js')?:APP_VERSION)
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="robots" content="noindex,nofollow,noarchive">
 <title><?=e($pageTitle)?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="<?=e($assetBase.'/assets/css/app.css?v='.rawurlencode($cssAssetVersion))?>" rel="stylesheet">
+<link href="<?=e($assetBase.'/assets/css/frontend.css?v='.rawurlencode($cssAssetVersion))?>" rel="stylesheet">
     <link rel="icon" href="<?= e($assetBase . '/assets/images/branding/favicon-32x32.png') ?>" sizes="32x32" type="image/png">
     <link rel="icon" href="<?= e($assetBase . '/assets/images/branding/favicon-16x16.png') ?>" sizes="16x16" type="image/png">
     <link rel="shortcut icon" href="<?= e($assetBase . '/favicon.ico') ?>">
@@ -75,5 +75,6 @@ $jsAssetVersion=(string)(@filemtime(BASE_PATH.'/assets/js/app.js')?:APP_VERSION)
 </section>
 <?php endif;?>
 </main></section></div>
-<script src="<?=e($assetBase.'/assets/js/app.js?v='.rawurlencode($jsAssetVersion))?>" defer></script>
+<script src="<?=e($assetBase.'/assets/js/frontend.js?v='.rawurlencode($jsAssetVersion))?>" defer></script>
+<script type="application/x-barama-module" data-barama-module="app"></script>
 </body></html>

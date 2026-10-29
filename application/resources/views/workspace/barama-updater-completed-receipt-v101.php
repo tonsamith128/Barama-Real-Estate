@@ -53,7 +53,7 @@ $bauVerifiedHistory = (static function () use ($uStaging, $uVersion, $uVersionAv
 })();
 if ($bauVerifiedHistory !== null):
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/barama-updater-completed-receipt-v101.css') . '?v=101') ?>">
+<?= barama_css_once('admin') ?>
 <section class="bau-completion-history" data-bau-verified-completion="<?= e($bauVerifiedHistory['installed']) ?>" aria-label="Completed update receipt" role="status">
   <div class="bau-completion-head">
     <div>
@@ -74,5 +74,5 @@ if ($bauVerifiedHistory !== null):
   </ol>
   <p class="bau-completion-foot">This is a previously completed <strong>file-only</strong> transaction, not a newly discovered update. Backup restoration has not been independently retested. Check for updates to find future releases.</p>
 </section>
-<script defer src="<?= e(asset('js/barama-updater-completed-receipt-v101.js') . '?v=101') ?>"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-updater-completed-receipt"></script>
 <?php endif; ?>

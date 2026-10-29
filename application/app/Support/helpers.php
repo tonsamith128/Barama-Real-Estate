@@ -508,3 +508,25 @@ if (!function_exists('barama_detail_price')) {
         return $formatted;
     }
 }
+
+
+/** Emit a canonical application-area stylesheet exactly once per response. */
+if (!function_exists('barama_css_once')) {
+    function barama_css_once(string $area): string {
+        static $done = [];
+        $allowed = ['frontend','admin','developer','account','policy-center'];
+        if (!in_array($area,$allowed,true) || isset($done[$area])) return '';
+        $done[$area] = true;
+        return '<link rel="stylesheet" href="' . e(asset('css/' . $area . '.css') . '?v=' . (string) (@filemtime(BASE_PATH . '/assets/css/' . $area . '.css') ?: APP_VERSION)) . '">';
+    }
+}
+/** Emit one canonical script per area; inert markers decide page-specific work. */
+if (!function_exists('barama_js_once')) {
+    function barama_js_once(string $area): string {
+        static $done = [];
+        $allowed = ['frontend','admin','developer','account','policy-center'];
+        if (!in_array($area,$allowed,true) || isset($done[$area])) return '';
+        $done[$area] = true;
+        return '<script src="' . e(asset('js/' . $area . '.js') . '?v=' . (string) (@filemtime(BASE_PATH . '/assets/js/' . $area . '.js') ?: APP_VERSION)) . '" defer></script>';
+    }
+}

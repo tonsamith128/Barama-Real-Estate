@@ -4,10 +4,10 @@ $demoMode = in_array((string)($demoMode ?? ''), ['manual','auto'], true) ? $demo
 $demoReview = is_array($demoReview ?? null) ? $demoReview : null;
 $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/barama-system-tool-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-demo-importer-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-demo-premium-v103.css') . '?v=106') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/barama-demo-manual-v104.css') . '?v=104') ?>">
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
+<?= barama_css_once('admin') ?>
 <section id="barama-system-tool" class="btool bdemo" data-demo-install-ready="<?= !empty($demoReleaseAccepted) ? '1' : '0' ?>" data-passcode-enabled="<?= !empty($demoPasscodeEnabled) ? '1' : '0' ?>" aria-labelledby="bdemo-title">
  <div class="btool-breadcrumb">Administration <span>/</span> System <span>/</span> Demo Importer</div>
  <header class="btool-header">
@@ -191,6 +191,6 @@ $demoFlash = is_array($demoFlash ?? null) ? $demoFlash : null;
   <button class="btool-btn btool-btn-primary" type="button" id="btool-passcode-submit">Confirm action</button></div>
  </div>
 </dialog>
-<script defer src="<?= e(asset('js/barama-system-tool-v100.js') . '?v=100') ?>"></script>
-<script defer src="<?= e(asset('js/barama-demo-premium-v103.js') . '?v=108') ?>"></script>
-<script defer src="<?= e(asset('js/barama-demo-manual-v104.js') . '?v=104') ?>"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-system-tool"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-demo-premium"></script>
+<?= barama_js_once('admin') ?><script type="application/x-barama-module" data-barama-module="barama-demo-manual"></script>

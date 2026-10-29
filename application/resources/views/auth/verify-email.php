@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?= e(asset('css/verify-email-premium-v117.css') . '?v=117a1') ?>">
+<?= barama_css_once('account') ?>
 <section class="barama-verify-v117">
   <div class="barama-verify-v117__card">
     <span class="barama-verify-v117__icon" aria-hidden="true"><?= app_icon($verified ? 'check' : 'mail') ?></span>

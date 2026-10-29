@@ -39,7 +39,7 @@ $queueUrl = static function (array $overrides = []) use ($filters, $perPage): st
 };
 ?>
 <!-- BARAMA_MAIL_QUEUE_VERTICAL_CARDS_V100 -->
-<link rel="stylesheet" href="<?= e(asset('css/admin-mail-queue-compact-v100.css') . '?v=100') ?>">
+<?= barama_css_once('admin') ?>
 <section class="workspace-page mail-queue-page" data-mail-queue-page>
     <div class="workspace-page__header">
         <div>

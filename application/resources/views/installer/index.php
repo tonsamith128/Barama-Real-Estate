@@ -40,11 +40,11 @@ $databaseModeValue = in_array(
     true
 ) ? (string) ($oldDatabase['db_mode'] ?? 'existing') : 'existing';
 $cssAssetVersion = (string) (
-    @filemtime(BASE_PATH . '/assets/css/app.css')
+    @filemtime(BASE_PATH . '/assets/css/frontend.css')
     ?: APP_VERSION
 );
 $jsAssetVersion = (string) (
-    @filemtime(BASE_PATH . '/assets/js/app.js')
+    @filemtime(BASE_PATH . '/assets/js/frontend.js')
     ?: APP_VERSION
 );
 ?>
@@ -65,7 +65,7 @@ $jsAssetVersion = (string) (
         rel="stylesheet"
     >
     <link
-        href="<?= e($assetBase . '/assets/css/app.css?v=' . rawurlencode($cssAssetVersion)) ?>"
+        href="<?= e($assetBase . '/assets/css/frontend.css?v=' . rawurlencode($cssAssetVersion)) ?>"
         rel="stylesheet"
     >
 </head>
@@ -1056,8 +1056,9 @@ $jsAssetVersion = (string) (
 </div>
 
 <script
-    src="<?= e($assetBase . '/assets/js/app.js?v=' . rawurlencode($jsAssetVersion)) ?>"
+    src="<?= e($assetBase . '/assets/js/frontend.js?v=' . rawurlencode($jsAssetVersion)) ?>"
     defer
 ></script>
+<script type="application/x-barama-module" data-barama-module="app"></script>
 </body>
 </html>
