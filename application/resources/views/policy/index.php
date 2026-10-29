@@ -414,5 +414,4 @@ if ($selectedPolicy !== null) {
         <?php endif; ?>
     </div>
 </main>
-
-<script defer src="<?= e(asset('js/policy-center-public-v1.0.22.js')) ?>"></script>
+<script defer src="<?= e(asset('js/policy-center.js') . '?v=stable-20261029') ?>"></script>
