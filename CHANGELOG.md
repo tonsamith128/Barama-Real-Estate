@@ -14,6 +14,8 @@ Development-only 0.9.x milestones are intentionally not presented as separate Co
 
 ## 1.0.0 — 2026-10-28 (CodeCanyon package candidate; not yet published)
 
+- Fix Policy Center action menus being clipped by the horizontally scrolling table; simplify policy publication to one explicit administrator click with title/text validation and optional legal compliance tracking.
+- Prepare Policy Center CSS area-bundle consolidation: group editor, feedback, review and publishing into stable CSS sections, use a separate public policy stylesheet and remove 29 versioned CSS copies; acceptance is pending full UI verification.
 - Fix first-install Invoices Admin page: add missing invoice-template migration, gracefully handle old un-migrated installations with clear editor guidance, and protect template writes until schema upgrade.
 - Correct Cloudflare Turnstile feature row's title, description, status and Configure button contrast in light mode; preserve dark-mode behavior. See `docs/CODECANYON_V1_0_0_INVOICES_TURNSTILE_FIX.md`.
 

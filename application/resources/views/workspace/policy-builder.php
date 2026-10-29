@@ -46,9 +46,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
     }
 }
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-v1.0.10.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-publish-feedback-v100.css') . '?v=100') ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-guidance-v100.css') . '?v=100') ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
 
 <main class="pc-builder">
     <form method="post" action="<?= e(url($action)) ?>" data-pc-builder>
@@ -130,14 +128,13 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                         <?php endforeach; ?>
                     </ol>
                 <?php else: ?>
-                    <p>Review the legal compliance requirements and unresolved
-                       template instructions before publishing.</p>
+                    <p>Add a policy title and text, then select Publish.</p>
                 <?php endif; ?>
             </section>
         <?php elseif (isset($_GET['compliance_blocked'])): ?>
             <div class="pc-warning" role="alert">
                 The previous publication attempt was not approved.
-                Check the Legal Compliance panel and replace imported template
+                Add a policy title and text, then Publish. Imported template
                 instructions before trying again.
             </div>
         <?php endif; ?>
@@ -556,7 +553,7 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                             <?= !array_key_exists('compliance_gate_enabled', $record) || !empty($record['compliance_gate_enabled']) ? 'checked' : '' ?>
                         >
                         <span>
-                            Require completed legal compliance before first publication
+                            Track legal compliance (optional; does not block publishing)
                         </span>
                     </label>
                 </section>
@@ -984,8 +981,8 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                             <h3>Review your imported legal template</h3>
                             <p>Demo content is a private draft, not finalized legal advice.
                                 Replace administrator placeholders with your own reviewed
-                                legal text. Complete all eight compliance checks, record
-                                the reviewer and review date, then select Publish.</p>
+                                legal text. Review the wording and select Publish. The optional
+                                compliance checklist and reviewer fields can be completed later.</p>
                         </div>
                     </section>
                 <?php else: ?>
@@ -993,9 +990,8 @@ if ($selectedCategoryId === '' && trim((string) ($record['category'] ?? '')) !==
                         <span class="pc-guide-number" aria-hidden="true">02</span>
                         <div>
                             <h3>Complete legal governance</h3>
-                            <p>Check the policy wording, compliance checklist,
-                                reviewer details and dates before publishing.
-                                Incomplete reviews must remain drafts.</p>
+                            <p>Review your policy wording, then select Publish.
+                                Legal compliance tracking is available but optional.</p>
                         </div>
                     </section>
                 <?php endif; ?>

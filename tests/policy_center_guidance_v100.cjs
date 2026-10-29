@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const root=require('node:path').resolve(__dirname,'..');
 const script=fs.readFileSync(root+'/assets/js/policy-center-guidance-v100.js','utf8');
 const view=fs.readFileSync(root+'/application/resources/views/workspace/policy-builder.php','utf8');
-const css=fs.readFileSync(root+'/assets/css/policy-center-guidance-v100.css','utf8');
+const css=fs.readFileSync(root+'/assets/css/policy-center.css','utf8');
 
 assert.equal(view.includes('class="pc-legal-review"'),false,'permanent notice bars must be removed');
 assert.match(view,/<dialog id="pc-policy-publishing-guide"/);
@@ -14,7 +14,7 @@ assert.ok(view.indexOf('</form>')<view.indexOf('<dialog id="pc-policy-publishing
 assert.match(view,/data-pc-guide-open/);
 assert.match(view,/data-pc-guide-kind=/);
 assert.match(view,/asset\('js\/policy-center-guidance-v100\.js'\)/);
-assert.match(view,/asset\('css\/policy-center-guidance-v100\.css'\)/);
+assert.match(view,/asset\('css\/policy-center\.css'\)/);
 assert.match(view,/Review your imported legal template/); // Optional content exists only in the dialog guidance text.
 assert.match(view,/data-pc-publish-feedback/); // Actual errors remain visible on page.
 assert.match(css,/\.pc-guide-dialog::backdrop/);

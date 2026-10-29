@@ -59,7 +59,7 @@ if ($selectedPolicy !== null) {
     }
 }
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-public-v1.0.22.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center-public.css') . '?v=1.0.0-css-clean1') ?>">
 
 <main class="pc-public">
     <?php if ($selectedPolicy === null): ?>

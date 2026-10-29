@@ -50,74 +50,53 @@ file_put_contents($path,json_encode($store,JSON_THROW_ON_ERROR));
 check(count($repo->published())===0,'forged_published_status_denied');
 if (extension_loaded('dom') && extension_loaded('mbstring')) {
     $input = [
-        'title'=>'Sample Terms','slug'=>'sample-terms','content_html'=>$policy['content_html'],
-        'category_id'=>'sample-category','status'=>'published','visibility'=>'public',
-        'save_mode'=>'publish','compliance_gate_enabled'=>'0','compliance_status'=>'compliant',
-        'reviewed_by'=>'Reviewer','last_reviewed_at'=>gmdate('Y-m-d'),
-        'compliance_check'=>Repository::complianceCheckKeys()
+        'title'=>'Sample Terms','slug'=>'sample-terms','content_html'=>'',
+        'category_id'=>'sample-category','status'=>'draft','visibility'=>'private',
+        'save_mode'=>'publish','compliance_gate_enabled'=>'0','compliance_status'=>'not_reviewed',
+        'reviewed_by'=>'','last_reviewed_at'=>'','compliance_check'=>[],
+        'next_review_date'=>gmdate('Y-m-d',strtotime('-4 days'))
     ];
-
-    // Rejected publish must be a read-only validation event:
-    // it cannot create immutable versions or alter the published store.
-    $before = $repo->findById('sample-terms');
-    $beforeBytes = (string) file_get_contents($path);
-    $input['version_note'] = 'My unsaved publish note';
-    $saved = $repo->save($input,'sample-terms');
-    check($saved['status']==='draft' && $saved['visibility']==='private','editorial_instruction_blocks_publish');
+    // Blank policy content is the only ordinary publication blocker:
+    // rejection must not mutate the store or create a version snapshot.
+    $before=$repo->findById('sample-terms');
+    $beforeBytes=(string)file_get_contents($path);
+    $input['version_note']='Unsaved attempted publication';
+    $saved=$repo->save($input,'sample-terms');
     check(!empty($saved['_publication_blocked']) &&
         (int)$saved['version_number']===(int)$before['version_number'] &&
-        count($saved['versions'])===count($before['versions']),
-        'blocked_publish_no_extra_version');
-    check((string)file_get_contents($path)===$beforeBytes,
-        'blocked_publish_store_byte_identical');
-    check(($saved['version_note']??'')==='My unsaved publish note',
-        'blocked_publish_keeps_form_version_note');
+        (string)file_get_contents($path)===$beforeBytes,
+        'blank_content_blocks_without_new_version');
     $messages=array_column((array)($saved['_publication_issues']??[]),'message');
-    check(count(array_filter($messages,static fn(string $s):bool=>
-        str_contains($s,'Replace the imported demo editorial instructions')))>0,
-        'blocked_publish_explains_editorial_placeholder');
-    check(count($repo->published())===0,'unreviewed_content_not_public');
-
+    check(str_contains(implode(' ',$messages),'policy text') &&
+        ($saved['version_note']??'')==='Unsaved attempted publication',
+        'missing_content_has_clear_feedback');
+    // One explicit administrator click is enough once text is present.
+    // No 8-item checklist, reviewer, date, compliance status or evidence gate.
     $input['content_html']='<p>Reviewed operator-specific sample policy.</p>';
-    $input['compliance_check']=['operator_identity'];
-    $saved = $repo->save($input,'sample-terms');
-    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
-    check(!empty($saved['_publication_blocked']) &&
-        str_contains(implode(' ',$messages),'Review checklist') &&
-        (string)file_get_contents($path)===$beforeBytes,
-        'blocked_publish_lists_missing_checks_without_snapshot');
-
-    $input['compliance_check']=Repository::complianceCheckKeys();
-    $input['reviewed_by']='';
-    $saved = $repo->save($input,'sample-terms');
-    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
-    check(str_contains(implode(' ',$messages),'person who completed the legal review') &&
-        (string)file_get_contents($path)===$beforeBytes,
-        'blocked_publish_explains_missing_reviewer');
-    $input['reviewed_by']='Reviewer';
-
-    $input['next_review_date']=gmdate('Y-m-d',strtotime('-4 days'));
-    $saved=$repo->save($input,'sample-terms');
-    $messages=array_column((array)($saved['_publication_issues']??[]),'message');
-    check(str_contains(implode(' ',$messages),'Next Review date') &&
-        (string)file_get_contents($path)===$beforeBytes,
-        'blocked_publish_explains_stale_review_date');
-    $input['next_review_date']=gmdate('Y-m-d',strtotime('+30 days'));
     $input['visibility']='private';
-    $saved = $repo->save($input,'sample-terms');
-    check((int)$saved['version_number']===(int)$before['version_number']+1,
-        'successful_publication_single_version_increment');
-    check($saved['status']==='published' && $saved['visibility']==='public','explicit_compliance_allows_publication');
-    check($saved['demo_template_approved']===true && count($repo->published())===1,'approved_only_public');
+    $saved=$repo->save($input,'sample-terms');
+    check(empty($saved['_publication_blocked']) &&
+        (int)$saved['version_number']===(int)$before['version_number']+1,
+        'easy_publish_one_version');
+    check($saved['status']==='published' && $saved['visibility']==='public'
+        && $saved['demo_template_approved']===true
+        && count($repo->published())===1,
+        'explicit_publish_no_compliance_gate');
+
+    // A status field alone must not approve an imported demo policy.
     $input['save_mode']='draft';
     $input['status']='published';
-    $saved = $repo->save($input,'sample-terms');
-    check($saved['status']==='draft' && $saved['visibility']==='private','status_field_no_bypass');
+    $saved=$repo->save($input,'sample-terms');
+    check($saved['status']==='draft' && $saved['visibility']==='private'
+        && $saved['demo_template_approved']===false,
+        'status_field_no_bypass');
     $versions=$repo->findById('sample-terms')['versions'];
     $restored=$repo->restoreVersion('sample-terms',(string)$versions[0]['id']);
-    check($restored['status']==='draft' && $restored['visibility']==='private' && !$restored['demo_template_approved'],'restore_requires_review');
+    check($restored['status']==='draft' && $restored['visibility']==='private'
+        && !$restored['demo_template_approved'],'restore_requires_explicit_publish');
     $copy=$repo->duplicate('sample-terms');
-    check($copy['status']==='draft' && $copy['visibility']==='private' && !$copy['demo_template_approved'],'duplicate_requires_review');
+    check($copy['status']==='draft' && $copy['visibility']==='private'
+        && !$copy['demo_template_approved'],'duplicate_requires_explicit_publish');
     check(count($repo->published())===0,'restored_and_duplicate_remain_private');
 } else {
     echo "SKIP=FORM_SAVE_TEST_REQUIRES_MBSTRING_AND_DOM\n";

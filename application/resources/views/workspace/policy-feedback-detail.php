@@ -230,12 +230,7 @@ $publicUrl = $slug !== ''
 
 $editUrl = url('/dashboard/policies/edit?id=' . rawurlencode($policyId));
 ?>
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-v1.0.6.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-feedback-v1.0.22.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-feedback-analytics-v1.0.23.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-feedback-detail-v1.0.24.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-review-decision-v1.0.26.css')) ?>">
-<link rel="stylesheet" href="<?= e(asset('css/policy-center-review-impact-v1.0.27.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/policy-center.css') . '?v=1.0.0-css-clean1') ?>">
 
 <main class="pc-admin-main pc-feedback-detail" data-pc-feedback-detail>
     <header class="pc-admin-head pc-feedback-detail__head">

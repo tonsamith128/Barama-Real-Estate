@@ -1,7 +1,0 @@
-/* BARAMA_POLICY_FEEDBACK_ADMIN_V1022 */
-.pc-policy-feedback-admin{display:grid;gap:3px;min-width:118px}
-.pc-policy-feedback-admin strong{color:var(--text-primary,var(--app-text,#182235));font-size:.78rem;font-weight:850;line-height:1.25}
-.pc-policy-feedback-admin span,.pc-policy-feedback-admin small{color:var(--text-muted,var(--app-muted,#718096));font-size:.69rem;line-height:1.35}
-.pc-policy-feedback-admin small{max-width:190px;white-space:normal}
-html[data-bs-theme="dark"] .pc-policy-feedback-admin strong{color:var(--text-primary,var(--app-text,#eef4ff))}
-@media(max-width:1180px){.pc-policy-feedback-admin small{display:none}}
