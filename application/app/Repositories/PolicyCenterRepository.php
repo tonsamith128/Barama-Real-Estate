@@ -1088,6 +1088,36 @@ final class PolicyCenterRepository
         return $issues;
     }
 
+    /**
+     * Historical restore compatibility. Imported demos are always restored
+     * privately; existing non-demo restore snapshots still use this check.
+     * Normal Publish intentionally does not depend on these optional fields.
+     *
+     * @param array<string,mixed> $policy
+     */
+    private function isComplianceReady(array $policy): bool
+    {
+        if ((string) ($policy['compliance_status'] ?? '') !== 'compliant') {
+            return false;
+        }
+        if ((int) ($policy['compliance_progress'] ?? 0) < 100) {
+            return false;
+        }
+        if (trim((string) ($policy['reviewed_by'] ?? '')) === '') {
+            return false;
+        }
+        if (trim((string) ($policy['last_reviewed_at'] ?? '')) === '') {
+            return false;
+        }
+        $nextReview = trim((string) ($policy['next_review_date'] ?? ''));
+        if ($nextReview !== ''
+            && strtotime($nextReview . ' 23:59:59 UTC') !== false
+            && strtotime($nextReview . ' 23:59:59 UTC') < time()) {
+            return false;
+        }
+        return true;
+    }
+
     /** @return array<string, bool> */
     private function blankComplianceChecks(): array
     {
