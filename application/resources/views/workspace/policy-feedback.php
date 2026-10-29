@@ -469,5 +469,4 @@ $coverageRate = $totalPolicies > 0
         <span>Aggregate-only analytics · no personal identifiers</span>
     </footer>
 </main>
-
-<script src="<?= e(asset('js/policy-center-feedback-analytics-v1.0.23.js')) ?>" defer></script>
+<script defer src="<?= e(asset('js/policy-center.js') . '?v=stable-20261029') ?>"></script>
