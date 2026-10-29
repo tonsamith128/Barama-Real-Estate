@@ -567,5 +567,4 @@ $mediumCount = (int) ($severityCounts['medium'] ?? 0);
         <span>Derived from aggregate feedback only · no review state is stored</span>
     </footer>
 </main>
-
-<script src="<?= e(asset('js/policy-center-feedback-review-v1.0.25.js')) ?>" defer></script>
+<script defer src="<?= e(asset('js/policy-center.js') . '?v=stable-20261029') ?>"></script>
