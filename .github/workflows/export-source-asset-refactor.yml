@@ -1,0 +1,31 @@
+name: Export Barama source for asset consolidation
+on:
+  push:
+    branches:
+      - refactor/codecanyon-v100-complete-stable-asset-bundles-20261029
+    paths:
+      - .github/workflows/export-source-asset-refactor.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create exact source archive
+        run: |
+          python3 - <<'PY'
+          import pathlib,zipfile
+          p=pathlib.Path('dist');p.mkdir(exist_ok=True)
+          with zipfile.ZipFile(p/'barama-source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for f in sorted(pathlib.Path('.').rglob('*')):
+                  if not f.is_file() or '.git' in f.parts or 'dist' in f.parts:continue
+                  z.write(f,f.as_posix())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: barama-source-asset-refactor
+          path: dist/barama-source.zip
+          retention-days: 1
