@@ -25,3 +25,11 @@ Planned bundles: `admin.css`, `frontend.css`, `developer.css`, `account.css`, an
 ### Remaining scope
 
 Admin, frontend, developer and account assets are intentionally **not yet merged into large bundles** because they include conditional styles and overlapping selectors. Evaluate per-page isolation, source order, and third-party dependencies separately; then remove obsolete assets and update source references only after the exact customer build passes regression tests.
+
+### Policy Center usability fixes included in this review
+
+- Policy actions dropdown now uses viewport-fixed positioning and flips above a trigger when there is insufficient space below. The table can continue scrolling horizontally without clipping actions.
+- An explicit Publish button now publishes a policy with a title and meaningful body text, including imported demo templates. Legal compliance checklist progress, reviewer details and review dates are preserved as optional tracking, not as publication prerequisites.
+- Imported demo documents still begin private and may only be made public through an explicit authorized Publish request. Editing a status field, duplicating or restoring an old revision does not automatically approve a demo template.
+- Failed publishing due to missing title/body creates no version and does not modify stored data. Successful actions continue to create an immutable version snapshot.
+- The operator remains responsible for reviewing their legal text before publication; no legal advice is implied.

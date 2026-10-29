@@ -66,6 +66,9 @@ jobs:
         run: |
           php -l tools/policy-center-css-bundles-smoke.php
           php tools/policy-center-css-bundles-smoke.php
+          node --check assets/js/policy-center-v1.0.6.js
+          node --check tests/policy_center_action_menu_v100.cjs
+          node tests/policy_center_action_menu_v100.cjs
 
       - name: Enforce canonical customer CSS/JS assets
         run: |

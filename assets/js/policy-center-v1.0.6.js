@@ -285,6 +285,22 @@ document.querySelectorAll('[data-pc-menu-trigger]').forEach(trigger=>{
     trigger.setAttribute('aria-expanded',open?'true':'false');
 
     if(open){
+      // The policy table scrolls horizontally. A normal absolute menu is
+      // clipped by its overflow container, making the action seem broken.
+      // Position the panel against the viewport and flip above when needed.
+      const panel=menu.querySelector('[data-pc-menu-panel]');
+      if(panel){
+        const bounds=trigger.getBoundingClientRect();
+        const width=panel.offsetWidth||178;
+        const height=panel.offsetHeight||185;
+        const left=Math.max(8,Math.min(bounds.right-width,window.innerWidth-width-8));
+        const below=bounds.bottom+6;
+        const top=below+height<=window.innerHeight-8
+          ? below : Math.max(8,bounds.top-height-6);
+        panel.style.left=`${Math.round(left)}px`;
+        panel.style.top=`${Math.round(top)}px`;
+        panel.style.right='auto';
+      }
       menu.querySelector('[role="menuitem"]')?.focus({preventScroll:true});
     }
   });
@@ -293,6 +309,9 @@ document.querySelectorAll('[data-pc-menu-trigger]').forEach(trigger=>{
 document.addEventListener('click',event=>{
   if(!event.target.closest('[data-pc-menu]')) closeMenus();
 });
+
+window.addEventListener('resize',()=>closeMenus());
+window.addEventListener('scroll',()=>closeMenus(),true);
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'){
