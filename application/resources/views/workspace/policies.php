@@ -403,4 +403,4 @@ foreach ($policies as $policy) {
     </section>
 </main>
 
-<script defer src="<?= e(asset('js/policy-center-v1.0.6.js')) ?>"></script>
+<script defer src="<?= e(asset('js/policy-center-v1.0.6.js') . '?v=policy-fix-20261029') ?>"></script>
