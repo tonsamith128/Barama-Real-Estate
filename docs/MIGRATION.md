@@ -1,32 +1,45 @@
-# Migration status (foundation)
+# Barama Real Estate — Laravel v2 migration record
 
-Source: main branch Barama v1.0.0, custom Pure PHP framework.
-Target: this separate Laravel 13 branch. NO existing production changes.
+**Branch:** feature/laravel-v2-foundation-20261030  
+**Legacy baseline:** Pure PHP Barama v1.0.0, preserved on main.  
+**Current milestone:** Native Laravel structure and authentication foundation.  
+**Release:** Not approved. No live deployment or legacy database migration.
 
-| Module | Target folder | Status |
-|---|---|---|
-| Framework/router | bootstrap, routes | Foundation |
-| Frontend/Home | app/Modules/Frontend/Home | Static foundation only |
-| Auth/Login/Register/Password/Email | app/Modules/Auth | Not migrated |
-| Account | app/Modules/Account | Not migrated |
-| Developer Workspace | app/Modules/DeveloperWorkspace | Not migrated |
-| Admin/Dashboard/Developer | app/Modules/Admin | Not migrated |
-| Admin/Appearance/Header/Footer | app/Modules/Admin/Appearance | Not migrated |
-| Admin/Finance/MediaLibrary/PolicyCenter | app/Modules/Admin | Not migrated |
-| MySQL schema/data | database/migrations | Not migrated |
-| Installer/License/Updater/DemoImporter | app/Modules/System | Not migrated |
+## Implemented
 
-## Migration sequence
+- Laravel 13-compatible bootstrapping and standard configuration files for authentication, database, sessions, cache, mail, filesystem, hashing and logging.
+- Native Laravel controller structure: `app/Http/Controllers/Area/Feature/`.
+- Isolated v2 `User` Eloquent model and migration for `users` and `password_reset_tokens`.
+- Login, registration, logout, password reset, signed email verification and protected Account route.
+- Form Request validation and login/register/reset throttling.
+- Blade views for the new authentication workflows.
+- **Exactly two first-party CSS source files:** `resources/css/frontend/app.css` and `resources/css/admin/app.css`, with named area/feature sections.
+- User and authentication-focused feature tests authored, not yet executed against the Laravel runtime.
+- Legacy Pure PHP remains absent from this new branch; retirement guard remains active.
 
-1. Inventory legacy routes, tables, keys, license behavior, and data model; preserve a recoverable v1 baseline.
-2. Implement native Laravel authentication with throttling, verified email, CSRF and tests.
-3. Migrate company ownership/permissions and real-estate domain rules.
-4. Migrate marketplace, customer account, developer, and administrator workspaces with regression tests.
-5. Migrate installer, licensing, signed updater, backups, payment workflows, and demo importer.
-6. Consolidate frontend CSS into one source `app.css` and admin CSS into one source `app.css`, each with clearly labeled feature sections. Keep two JavaScript entry points with organized feature modules.
-7. Build exact customer ZIP and test MySQL, aaPanel/cPanel, browsers, data migration and rollback.
-8. **Only after all acceptance gates are green**, remove every legacy Pure PHP framework file, legacy asset bundle, deprecated patch file, duplicate view, old installer/updater and temporary migration shim from the **active application, final source and customer package**.
-9. Run `php scripts/verify-no-legacy.php` on the final source and extracted customer ZIP; verify the target Laravel-only release.
-10. After separately approved cutover, move the default branch to verified Laravel-only code and retire or archive legacy development branches. Do not destroy recovery backups as part of code cleanup.
+## Pending
 
-See [Legacy Retirement](LEGACY_RETIREMENT.md) for the mandatory sign-off checklist. The initial Laravel v2 branch already excludes the old application tree; the active v1 Main/live sites remain untouched until the new product is ready.
+| Module | Status |
+|---|---|
+| Frontend/Home | Foundation only; legacy marketplace not migrated |
+| Auth/Login, Register, Reset, Email | Implemented in source; CI/runtime verification pending |
+| Auth/MFA and legacy sessions | Not migrated |
+| Account dashboard | Protected placeholder; user features not migrated |
+| Developer Workspace, company membership | Not migrated |
+| Admin Dashboard / Developer / Appearance | Not migrated |
+| Finance, Media Library, Policy Center | Not migrated |
+| Legacy MySQL data/schema migration | Not started |
+| Installer, License Manager, updater, backup, demo importer | Not migrated |
+| Browser QA, staging deployment, customer ZIP and rollback | Not started |
+
+## Mandatory next gates
+
+1. Install Composer dependencies, build Vite assets, execute PHP and feature tests.
+2. Build a full legacy routes/database/features parity inventory.
+3. Extend the auth model to legacy user states, roles, password hash compatibility and MFA where required; do not import old users before this mapping.
+4. Migrate real estate domain services and company-scoped permissions.
+5. Migrate account/developer/admin workflows, admin Blade layouts, and corresponding JS modules.
+6. Prove fresh shared-hosting installation, signed update/recovery, data conversion and release packaging.
+7. Enforce `scripts/verify-no-legacy.php` on the **exact extracted customer ZIP** before any public release.
+
+**Do not deploy the current development branch as a replacement for the existing live application.**
