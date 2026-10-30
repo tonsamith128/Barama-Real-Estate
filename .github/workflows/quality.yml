@@ -30,7 +30,7 @@ jobs:
       - name: Routes and feature tests
         run: |
           php artisan route:list
-          php artisan test
+          composer test
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
