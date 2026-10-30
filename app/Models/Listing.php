@@ -8,6 +8,7 @@ use App\Domain\RealEstate\MarketplaceStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Listing extends Model
@@ -27,6 +28,12 @@ final class Listing extends Model
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
         ];
+    }
+
+    public function mediaAttachments(): HasMany
+    {
+        return $this->hasMany(MediaAttachment::class, 'entity_id')
+            ->where('entity_type', 'listing')->orderBy('position');
     }
 
     public function property(): BelongsTo
