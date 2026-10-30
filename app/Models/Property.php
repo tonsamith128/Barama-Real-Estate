@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\RealEstate\MarketplaceStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +28,11 @@ final class Property extends Model
             'bathrooms' => 'integer',
             'area_value' => 'decimal:2',
         ];
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', MarketplaceStatus::PROPERTY_APPROVED);
     }
 
     public function company(): BelongsTo
