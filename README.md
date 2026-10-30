@@ -1,6 +1,6 @@
 # Barama Real Estate v2 — Laravel Modernization
 
-**Current status:** New Laravel 13 foundation with native authentication code. NOT a finished migration, deployable CodeCanyon/Codester script, or a replacement for the functioning v1 application.
+**Current status:** Laravel 13 authentication, public marketplace (new-schema), and scoped Developer read-only foundation. NOT a finished migration, deployable CodeCanyon/Codester script, or a replacement for the functioning v1 application.
 
 **Branch:** `feature/laravel-v2-foundation-20261030`. The existing Pure PHP product remains on Main and on live sites.
 
@@ -15,9 +15,11 @@
 
 ## Implemented v2 code
 
-The foundation route, login, registration, logout, forgot/reset password, signed email verification, and protected /account foundation page are authored. There is a new isolated `users` / `password_reset_tokens` schema and Laravel Form Requests.
+The foundation route, login, registration, logout, forgot/reset password, signed email verification, and protected `/account` foundation page are authored.
 
-**Existing Barama users, admin permissions, MFA, real estate modules, licensing, billing, importer, installer, updater and data are NOT migrated.** Never execute this branch against a legacy database.
+The new Laravel slice includes Company/Project/Property/Listing Eloquent models, isolated migrations, public `/properties`, `/projects`, `/company` pages, and a membership-scoped read-only `/developer` dashboard. Private and unapproved records are excluded by query scopes.
+
+**Existing Barama users, production listings/data, admin permissions, MFA, full marketplace features, licensing, billing, importer, installer and updater are NOT migrated.** Never execute this branch against a legacy database.
 
 ## Development checks
 
@@ -38,7 +40,7 @@ php artisan serve
 
 Production/customer packaging must bundle Composer dependencies and compiled frontend assets, without requiring customers to use Composer or Node. Set the web document root to `public/`.
 
-Read `docs/ARCHITECTURE.md`, `docs/MIGRATION.md`, `docs/AUTHENTICATION.md`, `docs/QUALITY_GATES.md` and `docs/LEGACY_RETIREMENT.md`.
+Read `docs/ARCHITECTURE.md`, `docs/MIGRATION.md`, `docs/AUTHENTICATION.md`, `docs/REAL_ESTATE_DOMAIN.md`, `docs/QUALITY_GATES.md` and `docs/LEGACY_RETIREMENT.md`.
 
 ## Deployment and cleanup policy
 
