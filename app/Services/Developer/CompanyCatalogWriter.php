@@ -28,7 +28,7 @@ final class CompanyCatalogWriter
     {
         $this->assertCanManage($user, $company);
         $slug = Str::slug((string) $attributes['title']).'-'.Str::lower(Str::random(8));
-        return DB::transaction(function () use ($company, $attributes, $slug): Listing {
+        return DB::transaction(function () use ($company, $attributes, $slug, $user): Listing {
             $property = Property::query()->create([
                 'company_id' => $company->getKey(),
                 'project_id' => $attributes['project_id'] ?? null,
@@ -44,7 +44,7 @@ final class CompanyCatalogWriter
                 'status' => 'draft',
             ]);
 
-            return Listing::query()->create([
+            $listing = Listing::query()->create([
                 'property_id' => $property->getKey(),
                 'slug' => $slug,
                 'transaction_type' => $attributes['transaction_type'],
@@ -55,6 +55,16 @@ final class CompanyCatalogWriter
                 'negotiable' => !empty($attributes['negotiable']),
                 'published_at' => null,
             ]);
+            DB::table('audit_events')->insert([
+                'actor_id' => $user->getKey(),
+                'action' => 'developer.listing.created',
+                'subject_type' => 'listing',
+                'subject_id' => $listing->getKey(),
+                'context' => json_encode(['company_id' => $company->getKey()], JSON_THROW_ON_ERROR),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            return $listing;
         });
     }
 
@@ -62,12 +72,21 @@ final class CompanyCatalogWriter
     {
         $this->assertCanManage($user, $company);
         abort_unless($property->company_id === $company->getKey(), 404);
-        DB::transaction(function () use ($property): void {
+        DB::transaction(function () use ($property, $user): void {
             if ($property->status !== 'draft') {
                 throw new RuntimeException('Only draft properties can be submitted for review.');
             }
             $property->update(['status' => 'pending']);
             $property->listings()->where('status', 'draft')->update(['status' => 'pending']);
+            DB::table('audit_events')->insert([
+                'actor_id' => $user->getKey(),
+                'action' => 'developer.property.submitted',
+                'subject_type' => 'property',
+                'subject_id' => $property->getKey(),
+                'context' => json_encode(['company_id' => $property->company_id], JSON_THROW_ON_ERROR),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         });
     }
 }
