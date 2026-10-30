@@ -31,8 +31,10 @@ jobs:
         run: |
           php artisan route:list
           composer test
-      - name: Standalone installer validation tests
-        run: php tests/Installer/InstallerUnitTest.php
+      - name: Standalone installer and root-domain routing validation
+        run: |
+          php tests/Installer/InstallerUnitTest.php
+          php tests/Installer/RootRoutingTest.php
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -76,8 +78,12 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
-      - name: Build exact integrated QA package
-        run: bash scripts/build-qa-package.sh
+      - name: Build integrated QA and installer hotfix packages
+        run: |
+          bash scripts/build-qa-package.sh
+          bash scripts/build-installer-routing-hotfix.sh
+      - name: Apache root-domain installer and private-source security smoke
+        run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
         env:
           INSTALLER_TEST_DB: barama_installer_qa
@@ -94,6 +100,7 @@ jobs:
           test "$(stat -c '%a' public/index.php)" = 644
           test "$(stat -c '%a' public/installer/index.php)" = 644
           echo "EXTRACTED_QA_CPANEL_PERMISSIONS_PASS"
+          php tests/Installer/RootRoutingTest.php
           test ! -e .env
           test ! -e .git
           test ! -d node_modules
@@ -121,5 +128,7 @@ jobs:
           path: |
             dist/Barama-Laravel-Integrated-QA.zip
             dist/Barama-Laravel-Integrated-QA.zip.sha256
+            dist/Barama-Installer-Routing-Hotfix.zip
+            dist/Barama-Installer-Routing-Hotfix.zip.sha256
           if-no-files-found: error
           retention-days: 7

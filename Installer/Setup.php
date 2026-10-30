@@ -24,6 +24,50 @@ final class Setup
         return is_file(self::root().'/storage/app/installed.lock');
     }
 
+    /**
+     * Accept either the preferred public/ document root, or an explicitly
+     * protected cPanel root bridge. The second mode requires a rewrite-set
+     * server variable; merely creating .htaccess is not sufficient.
+     */
+    public static function documentRootAllowed(array $server): bool
+    {
+        $root = realpath(self::root());
+        $public = realpath(self::root().'/public');
+        $documentRoot = realpath((string) ($server['DOCUMENT_ROOT'] ?? ''));
+        if ($public === false || $documentRoot === false) {
+            return false;
+        }
+
+        if ($documentRoot === $public) {
+            return true;
+        }
+
+        if ($root === false || $documentRoot !== $root) {
+            return false;
+        }
+
+        $uri = (string) ($server['REQUEST_URI'] ?? '');
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || !in_array($path, ['/installer', '/installer/'], true)) {
+            return false;
+        }
+
+        $config = $root.'/.htaccess';
+        if (!is_file($config) ||
+            !str_contains((string) file_get_contents($config), '# BARAMA_PROTECTED_ROOT_BRIDGE')) {
+            return false;
+        }
+
+        foreach ($server as $name => $value) {
+            if (preg_match('/^(?:REDIRECT_)*BARAMA_PROTECTED_ROOT_BRIDGE$/D', (string) $name) === 1 &&
+                $value === '1') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function requirements(): array
     {
         $root = self::root();

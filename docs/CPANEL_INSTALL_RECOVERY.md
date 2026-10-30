@@ -63,3 +63,28 @@ Use cPanel File Manager > Permissions (755 directory, 644 web files) where Termi
 | Non-empty DB | Create a separate empty database; never truncate production data. |
 
 **Release status:** A successful fresh installation does not prove complete Pure PHP Barama feature parity, nor authorize replacing a live website.
+
+
+## Domain-first installer routing (corrected QA build)
+
+The updated QA package supports **two** webroot layouts:
+
+**Preferred:** set the domain Document Root to `<application>/public`. Then the browser visits `https://your-domain/` and the pre-Laravel entry point redirects to `/installer/` (HTTP 302) automatically.
+
+**Protected cPanel fallback:** if hosting does not permit changing the document root, use `<application>` as the document root and install the supplied **root** `.htaccess` file from the updated ZIP. It disables directory listing, hides all Laravel private application folders, routes public requests internally to `public/`, and preserves a clean browser URL without `/public`. In this configuration the standalone installer checks a rewrite-generated server marker and rejects direct `/public/installer/` requests.
+
+Do not manually copy the private application folders into `public/`, create a top-level duplicate Laravel `index.php`, edit the vendor autoloader, remove the installer document-root check, or add a broad catch-all redirect to `public/`.
+
+For existing cPanel sites previously showing **Index of /**, replace the outdated root `.htaccess` with the new tested version. **Back up** existing cPanel rewrite/TLS rules before replacement and confirm the vhost allows `.htaccess` rewrites. Until the directory listing is secured, remove any ZIP files containing application source or secrets from the web-serving directory.
+
+Expected results after installing the new QA archive:
+
+| URL | Before installation | After installation |
+| --- | --- | --- |
+| `https://your-domain/` | HTTP 302 to `/installer/` | Laravel homepage |
+| `https://your-domain/installer/` | Five-step setup form | 410 / removed installer |
+| `https://your-domain/public/installer/` with protected root bridge | 403 | 403 |
+| `https://your-domain/vendor/autoload.php` with protected root bridge | 403 | 403 |
+| `https://your-domain/storage/app/installer.token` with protected root bridge | 403 | 403 |
+
+The release QA now tests this fallback using an actual Apache PHP request, not only Laravel feature tests. If the web host ignores the root `.htaccess`, the protected fallback **cannot be used safely**: change the domain document root to `public/` or contact the hosting provider instead.
