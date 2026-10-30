@@ -34,7 +34,7 @@ npm run build
 php scripts/verify-structure.php
 php scripts/verify-no-legacy.php
 php artisan route:list
-php artisan test
+composer test
 php artisan serve
 ```
 
