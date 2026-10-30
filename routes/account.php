@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
-// Pending: customer account, saved properties, inquiries and notifications.
-// All routes will require authenticated, scoped authorization.
+use App\Http\Controllers\Account\Dashboard\DashboardController;
+use Illuminate\Support\Facades\Route;
 
+Route::middleware(['auth', 'verified'])->prefix('account')->name('account.')->group(function (): void {
+    Route::get('/', DashboardController::class)->name('dashboard');
+});
+
+// The rest of the Account workspace is not exposed until migrated and tested.
