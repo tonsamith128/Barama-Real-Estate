@@ -17,7 +17,7 @@ final class PublishedListingSearch
     {
         $query = Listing::query()
             ->visibleToPublic()
-            ->with(['property.company', 'property.project']);
+            ->with(['property.company', 'property.project', 'mediaAttachments.asset']);
 
         $keyword = trim((string) ($filters['q'] ?? ''));
         if ($keyword !== '') {
@@ -62,7 +62,7 @@ final class PublishedListingSearch
     {
         return Listing::query()
             ->visibleToPublic()
-            ->with(['property.company', 'property.project'])
+            ->with(['property.company', 'property.project', 'mediaAttachments.asset'])
             ->where('slug', $slug)
             ->firstOrFail();
     }
