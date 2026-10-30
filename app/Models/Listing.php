@@ -49,12 +49,8 @@ final class Listing extends Model
                     ->orWhere('expires_at', '>', now());
             })
             ->whereHas('property', function (Builder $property): void {
-                $property->where('status', MarketplaceStatus::PROPERTY_APPROVED)
-                    ->whereHas('company', function (Builder $company): void {
-                        $company->where('status', MarketplaceStatus::COMPANY_APPROVED)
-                            ->whereNotNull('published_at')
-                            ->where('published_at', '<=', now());
-                    });
+                $property->approved()
+                    ->whereHas('company', fn (Builder $company) => $company->publiclyVisible());
             });
     }
 }
