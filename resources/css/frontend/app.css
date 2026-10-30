@@ -187,3 +187,10 @@ button, input { font: inherit; }
 }
 .property-card__image { transition: transform 180ms ease; }
 .property-card a:hover .property-card__image { transform: translateY(-2px); }
+
+
+/* ===== FRONTEND / 12 / MARKETPLACE / INQUIRIES ===== */
+.inquiry-form { padding: 1rem 0; margin: 2rem 0 0; border-top: 1px solid var(--barama-border); }
+.inquiry-form .field { max-width: 36rem; }
+.inquiry-form textarea { resize: vertical; font: inherit; }
+.inquiry-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
