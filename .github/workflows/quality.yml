@@ -83,6 +83,7 @@ jobs:
         run: |
           bash scripts/build-qa-package.sh
           bash scripts/build-installer-routing-hotfix.sh
+          bash scripts/build-cpanel-postinstall-upgrade.sh
       - name: Apache root-domain installer and private-source security smoke
         run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
@@ -131,5 +132,7 @@ jobs:
             dist/Barama-Laravel-Integrated-QA.zip.sha256
             dist/Barama-Installer-Routing-Hotfix.zip
             dist/Barama-Installer-Routing-Hotfix.zip.sha256
+            dist/Barama-Laravel-cPanel-PostInstall-Upgrade.zip
+            dist/Barama-Laravel-cPanel-PostInstall-Upgrade.zip.sha256
           if-no-files-found: error
           retention-days: 7
