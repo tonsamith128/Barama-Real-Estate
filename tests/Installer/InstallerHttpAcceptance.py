@@ -68,8 +68,9 @@ assert code == 200 and "Installation completed" in page, (code, page[-1000:])
 assert (ROOT / ".env").exists(), ".env was not created"
 assert (ROOT / "storage/app/installed.lock").exists(), "Installation lock missing"
 assert not (ROOT / "storage/app/installer.token").exists(), "Installer token was not removed"
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 code, page = request("/installer/?step=1")
-assert code == 410 and "already installed" in page, "Installed site allows a new setup"
+assert code == 410 and "already installed" in page, "New browser session can reopen an installed application"
 code, page = request("/login")
 assert code == 200, (code, page[-500:])
 print("INSTALLER_HTTP_MYSQL_FRESH_INSTALL_PASS")
