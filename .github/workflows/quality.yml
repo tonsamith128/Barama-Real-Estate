@@ -1,7 +1,12 @@
-name: Laravel v2 Foundation Quality
-on: [push, pull_request]
+name: Laravel v2 Quality
+
+on:
+  push:
+  pull_request:
+
 permissions:
   contents: read
+
 jobs:
   foundation:
     runs-on: ubuntu-latest
@@ -10,18 +15,26 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, dom, fileinfo, pdo_sqlite, curl
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, curl, openssl
           coverage: none
-      - name: Validate structure
+      - name: PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
-      - name: Reject legacy Pure PHP application
+      - name: Reject old Pure PHP code
+        run: php scripts/verify-no-legacy.php
+      - name: Composer manifest validation
+        run: composer validate --no-check-publish
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Routes and feature tests
         run: |
-          php -l scripts/verify-no-legacy.php
-          php scripts/verify-no-legacy.php
-      - run: composer validate --no-check-publish
-      - run: composer install --no-interaction --prefer-dist --no-progress
-      - run: php artisan test
+          php artisan route:list
+          php artisan test
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-audit --no-fund && npm run build
+      - name: Build area bundles
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
