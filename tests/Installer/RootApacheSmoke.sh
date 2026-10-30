@@ -77,9 +77,22 @@ test -f "$APP/storage/app/installer.token"
 # /installer also works without a trailing slash.
 test "$(curl --silent -o /dev/null -w '%{http_code}' "$BASE/installer")" = 200
 
-# Root-directory and application files are never web accessible.
+# /public/ can be denied at rewrite time, or redirected to the
+# installer by the early Laravel entrypoint on some Apache versions.
+# Both are safe; never permit a 200 response exposing directory content.
+public_status="$(curl --silent -o /dev/null -w '%{http_code}' "$BASE/public/")"
+if [ "$public_status" = 302 ]; then
+    curl --silent --show-error --include "$BASE/public/" |
+        grep -qi '^Location: /installer/'
+else
+    test "$public_status" = 403 || {
+        echo "SECURITY_ERROR: /public/ returned $public_status" >&2
+        exit 1
+    }
+fi
+
+# Root private directories and application source files may not be served.
 for blocked in \
-    /public/ \
     /public/installer/ \
     /Installer/ \
     /Installer/Setup.php \
