@@ -207,7 +207,7 @@ final class DemoContentImporter
                         ]);
                     }
 
-                    return DemoImport::query()->create([
+                    $record = DemoImport::query()->create([
                         'archive_sha256' => $review['sha256'],
                         'archive_version' => $review['manifest']['version'],
                         'imported_by' => $administrator->getKey(),
@@ -215,6 +215,18 @@ final class DemoContentImporter
                         'image_count' => $review['images'],
                         'completed_at' => now(),
                     ]);
+                    DB::table('audit_events')->insert([
+                        'actor_id' => $administrator->getKey(),
+                        'action' => 'admin.demo.imported',
+                        'subject_type' => 'demo_import',
+                        'subject_id' => $record->getKey(),
+                        'context' => json_encode([
+                            'archive_sha256' => $review['sha256'],
+                            'images' => $review['images'],
+                        ], JSON_THROW_ON_ERROR),
+                        'created_at' => now(), 'updated_at' => now(),
+                    ]);
+                    return $record;
                 }, 1);
             } finally {
                 $zip->close();
