@@ -13,11 +13,9 @@ header('Cache-Control: no-store, private');
 header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 
 $root = Setup::root();
-$public = realpath($root.'/public');
-$docroot = realpath((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''));
-if ($public === false || $docroot === false || $docroot !== $public) {
+if (!Setup::documentRootAllowed($_SERVER)) {
     http_response_code(403);
-    exit('Installation requires the website document root to point to the public directory.');
+    exit('Unsafe website document root. Point the domain to public/ or activate the protected cPanel root bridge.');
 }
 
 $https = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
