@@ -15,10 +15,10 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, dom, fileinfo, pdo_sqlite, curl, openssl
+          extensions: mbstring, dom, xml, fileinfo, pdo_sqlite, pdo_mysql, curl, openssl
           coverage: none
       - name: PHP syntax
-        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find app bootstrap config database routes scripts tests Installer public/installer -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject old Pure PHP code
@@ -31,6 +31,8 @@ jobs:
         run: |
           php artisan route:list
           composer test
+      - name: Standalone installer validation tests
+        run: php tests/Installer/InstallerUnitTest.php
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -38,3 +40,56 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
+
+  installer-mysql:
+    needs: foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: barama_installer_qa
+          MYSQL_USER: barama
+          MYSQL_PASSWORD: ci_installer_password
+          MYSQL_ROOT_PASSWORD: ci_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, fileinfo, pdo_mysql, curl, openssl
+          coverage: none
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile production assets
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: HTTP five-step MySQL fresh-install acceptance
+        env:
+          INSTALLER_TEST_DB: barama_installer_qa
+          INSTALLER_TEST_USER: barama
+          INSTALLER_TEST_PASSWORD: ci_installer_password
+        run: |
+          set -Eeuo pipefail
+          php -S 127.0.0.1:8765 -t public > /tmp/barama-installer-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; cat /tmp/barama-installer-http.log' EXIT
+          python3 tests/Installer/InstallerHttpAcceptance.py
+          php -r '
+            $dbh=new PDO("mysql:host=127.0.0.1;dbname=barama_installer_qa;charset=utf8mb4","barama","ci_installer_password");
+            $user=$dbh->query("SELECT email,system_role FROM users LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            if (!$user || $user["email"]!=="installer-test@example.invalid" || $user["system_role"]!=="super_admin") { exit(1); }
+            echo "INSTALLER_DATABASE_ADMIN_PASS\n";
+          '
