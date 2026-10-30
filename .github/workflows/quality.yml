@@ -78,8 +78,10 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
-      - name: Build exact integrated QA package
-        run: bash scripts/build-qa-package.sh
+      - name: Build integrated QA and installer hotfix packages
+        run: |
+          bash scripts/build-qa-package.sh
+          bash scripts/build-installer-routing-hotfix.sh
       - name: Apache root-domain installer and private-source security smoke
         run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
