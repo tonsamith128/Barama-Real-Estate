@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
 
 // Every action independently authorizes the verified system administrator.
@@ -13,6 +14,7 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
         Route::post('/catalog/companies', [CatalogModerationController::class, 'createCompany'])
             ->middleware('throttle:10,1')->name('catalog.companies.create');
