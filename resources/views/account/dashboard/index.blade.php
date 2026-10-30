@@ -9,6 +9,7 @@
                     @if(auth()->user()->isSystemAdministrator())
                         <a class="button" href="{{ route('admin.dashboard') }}">Open Admin Dashboard</a>
                         <a class="button button--secondary" href="{{ route('admin.demo.index') }}">Demo importer</a>
+                        <a class="button button--secondary" href="{{ route('admin.license.index') }}">License activation</a>
                     @endif
                     <a class="button button--secondary" href="{{ route('developer.dashboard') }}">Developer workspace</a>
                     <a class="button button--secondary" href="{{ route('properties.index') }}">Explore properties</a>
