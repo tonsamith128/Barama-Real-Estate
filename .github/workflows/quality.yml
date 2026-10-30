@@ -65,7 +65,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, dom, xml, fileinfo, pdo_mysql, curl, openssl, zip, sodium
+          extensions: mbstring, dom, xml, fileinfo, pdo_mysql, pdo_sqlite, curl, openssl, zip, sodium
           coverage: none
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -102,6 +102,12 @@ jobs:
             echo "INSTALLER_DATABASE_ADMIN_PASS\n";
           '
 
+      - name: Integrated application feature tests FROM installed package
+        run: |
+          set -Eeuo pipefail
+          cd /tmp/barama-qa-extracted/Barama-Laravel-Integrated-QA
+          APP_ENV=testing APP_DEBUG=false DB_CONNECTION=sqlite DB_DATABASE=:memory: \
+            SESSION_DRIVER=array CACHE_STORE=array composer test
       - name: Publish tested QA archive (not production-ready)
         uses: actions/upload-artifact@v4
         with:
