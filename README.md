@@ -1,38 +1,45 @@
-# Barama Real Estate v2 — Laravel Foundation
+# Barama Real Estate v2 — Laravel Modernization
 
-Foundation branch for a clean Laravel 13 rebuild of Barama Real Estate.
+**Current status:** New Laravel 13 foundation with native authentication code. NOT a finished migration, deployable CodeCanyon/Codester script, or a replacement for the functioning v1 application.
 
-**NOT a complete migration or customer ZIP.** The existing Pure PHP application is preserved on main. Do not deploy this branch over existing installations.
+**Branch:** `feature/laravel-v2-foundation-20261030`. The existing Pure PHP product remains on Main and on live sites.
 
-## Development setup
-Requirements: PHP 8.3+, Composer 2, Node.js 22+.
+## Source conventions
 
-    composer install
-    cp .env.example .env
-    php artisan key:generate
-    npm install
-    npm run build
-    php artisan serve
+- Laravel 13 / PHP 8.3+, native `app/Http/Controllers/Area/Feature/` and `app/Http/Requests/Area/` hierarchy.
+- `app/Models/` for Eloquent models, `database/migrations/` for schema changes, `resources/views/area/feature/` for Blade presentation.
+- `routes/web.php` loads focused `frontend.php`, `auth.php`, `account.php`, `developer.php`, `admin.php`, `webhooks.php`.
+- **Only two first-party CSS source files**: `resources/css/frontend/app.css` and `resources/css/admin/app.css`. Both have single-line area/feature section comments. Vite builds cache-busted assets.
+- Two JavaScript entry points: `resources/js/frontend/app.js` and `resources/js/admin/app.js`, with feature modules added as necessary.
+- No legacy v1 app, duplicate CSS implementations or versioned patch copies in the final product.
 
-Run architecture preflight: `php scripts/verify-structure.php`
-Run Laravel-only guard: `php scripts/verify-no-legacy.php`
-Run Laravel tests after installing dependencies: `php artisan test`
+## Implemented v2 code
 
-## Conventions
-- Follow the normal Laravel root structure.
-- Feature classes: `app/Modules/Area/Feature/` (subject to the native-structure architecture review).
-- Route files: `routes/web.php` includes frontend, auth, account, developer, admin and webhook files.
-- Blade templates: `resources/views/area/feature/`.
-- Final CSS standard: **one first-party frontend `app.css` and one first-party admin `app.css`**, each with named, grouped feature sections. The current foundation imports small CSS files and still requires consolidation.
-- Two area JavaScript entries with feature-specific modules.
-- Vite generates cache-busted bundles; never hand-edit compiled assets.
-- No production routes for unimplemented modules; no dummy admin access.
-- For original functionality consult the preserved Main branch. Never migrate live customer data without schema mapping, backups, and rehearsal.
+The foundation route, login, registration, logout, forgot/reset password, signed email verification, and protected /account foundation page are authored. There is a new isolated `users` / `password_reset_tokens` schema and Laravel Form Requests.
 
-## Legacy source retirement (mandatory)
+**Existing Barama users, admin permissions, MFA, real estate modules, licensing, billing, importer, installer, updater and data are NOT migrated.** Never execute this branch against a legacy database.
 
-**The final migrated Barama application must be Laravel-only.** After full feature/data parity and successful release/rollback acceptance, remove all old custom PHP framework code, standalone legacy installer/updater, legacy CSS/JS bundles and temporary shims from the active source, default branch, deployed application and customer ZIP. The source and final extracted customer package must both pass `php scripts/verify-no-legacy.php`.
+## Development checks
 
-Retain secure **offline** recovery backups; never keep legacy application code inside the active Laravel product merely for convenience. Main and live deployments are preserved until cutover is separately approved.
+Requirements: PHP 8.3+, Composer, Node.js 22+, local PHP extensions including mbstring and sqlite (for tests).
 
-See `docs/ARCHITECTURE.md`, `docs/MIGRATION.md`, `docs/QUALITY_GATES.md`, and `docs/LEGACY_RETIREMENT.md`.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+npm install
+npm run build
+php scripts/verify-structure.php
+php scripts/verify-no-legacy.php
+php artisan route:list
+php artisan test
+php artisan serve
+```
+
+Production/customer packaging must bundle Composer dependencies and compiled frontend assets, without requiring customers to use Composer or Node. Set the web document root to `public/`.
+
+Read `docs/ARCHITECTURE.md`, `docs/MIGRATION.md`, `docs/AUTHENTICATION.md`, `docs/QUALITY_GATES.md` and `docs/LEGACY_RETIREMENT.md`.
+
+## Deployment and cleanup policy
+
+No merge to Main or deployment to existing sites before feature parity, secure database migration, complete QA, customer ZIP installation and verified rollback. Final Laravel-only releases must pass the source and exact-package legacy checks. Keep legacy recovery backups outside active product files.
