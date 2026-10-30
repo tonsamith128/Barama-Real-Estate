@@ -35,6 +35,11 @@ final class Company extends Model
         return $this->hasMany(Project::class);
     }
 
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(CompanyMembership::class);
+    }
+
     public function properties(): HasMany
     {
         return $this->hasMany(Property::class);
