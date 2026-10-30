@@ -1,20 +1,41 @@
-# Laravel v2 architectural standard
+# Barama Laravel v2 architecture standard
 
-Target: Laravel 13, PHP 8.3+, native framework defaults, typed PSR-4 code.
+**Target:** Laravel 13, PHP 8.3+, native Laravel project conventions, typed PSR-4 code.
 
-- Use Laravel's standard root `app/`, `bootstrap/`, `database/`, `public/`, `resources/`, `routes/`, `storage/`, `tests/`.
-- Use clearly nested Laravel feature folders. The initial foundation uses `app/Modules/Area/Feature`; migration planning may adopt native `app/Http/Controllers/Area/Feature`, matching requests/services/views. Do not create parallel implementations of the same feature.
-- Admin feature examples: Admin/Dashboard, Admin/Developer/Companies, Admin/Appearance/Header, Admin/Appearance/Footer, Admin/Finance, Admin/PolicyCenter.
-- Shared domain rules must not be duplicated across Public, Account, Developer and Admin.
-- Route modules belong under `routes/` and use Laravel web sessions, authorization, and CSRF.
-- Use Form Requests, Policies/Gates, Eloquent, and transactions instead of custom framework replacements.
-- Preserve v1 behavior, URLs, company scope, license state and customer data through tested migration adapters only. Delete temporary adapters after migration.
-- **Final CSS:** only `resources/css/frontend/app.css` and `resources/css/admin/app.css`, grouped internally with one-line `/* ===== AREA / FEATURE / COMPONENT ===== */` headers. This consolidation is pending; the foundation currently imports smaller files.
-- Two JS area entry points; use smaller feature modules for maintainability.
-- Vite emits cache-busted assets. Customers receive built assets and vendor; no Node/Composer runtime command required.
-- Web server document root must point to Laravel's `public/`.
-- Payment and updater operations require security and rollback acceptance; never copy unreviewed v1 code into the new tree.
-- **Laravel-only final product:** remove legacy Pure PHP root folders, old patch files, duplicate CSS/JS, unused compatibility code, and old installer/updater after tested parity. Enforce through `scripts/verify-no-legacy.php` on source and extracted release.
-- Main and live sites stay unchanged until approved production cutover; secure backups are kept separately from the active codebase.
+## PHP conventions
 
-See `docs/LEGACY_RETIREMENT.md` for the complete cleanup gate.
+- `app/Http/Controllers/<Area>/<Feature>/<Feature>Controller.php` for HTTP orchestration.
+- `app/Http/Requests/<Area>/<Feature>Request.php` for validated transport input.
+- `app/Models/`, `app/Policies/`, `app/Services/`, `app/Actions/` for domain and application boundaries when needed.
+- `resources/views/<area>/<feature>/index.blade.php` for presentation.
+- `routes/web.php` loads the area route files; Laravel supplies cookies, session and CSRF.
+- Use Laravel's password broker, authentication guard, signed email verification, native middleware and password hashing rather than copying v1 security primitives.
+- Shared business rules belong to shared services, not duplicated Admin and Developer implementations.
+
+## Planned functional folders
+
+- Auth: Login, Register, ForgotPassword, ResetPassword, ConfirmEmail, TwoFactor, Logout.
+- Frontend: Home, Properties, Projects, Companies, Contact and Search.
+- Account: Dashboard, Profile, SavedProperties, Inquiries and Notifications.
+- Developer: Dashboard, Companies, Properties, Listings, Projects, Leads and Team.
+- Admin: Dashboard, Developer, Appearance (Header, Homepage, Footer, Menu), Finance, MediaLibrary, PolicyCenter, Users and System.
+
+## Exactly two CSS source files
+
+- Frontend: `resources/css/frontend/app.css`.
+- Admin and Developer workspace: `resources/css/admin/app.css`.
+- Both are **self-contained** and use single-line `/* ===== AREA / NUMBER / FUNCTION ===== */` comments. Do not create additional first-party feature CSS source files.
+- Maintain consistent component namespacing; avoid version suffixes and old patch markers.
+- Keep JavaScript in two area entry points with separate feature modules as complexity grows.
+- Vite bundles/version-hashes distribution assets. Hash-named compiled artifacts are not versioned source patches.
+
+## Security and release boundaries
+
+- Web root must be `public/`; keep framework code and secrets outside it.
+- Customer setup cannot require running Composer/Node once the distribution is built.
+- Preserve v1 passwords, users, roles, data, media, license state and public URLs only through verified migration adapters and rehearsed recovery.
+- Production cutover and Main merge require explicit approval and regression proof.
+- The final product must contain no legacy Pure PHP framework, routes, standalone installer/updater or old CSS/JS.
+- Enforce `scripts/verify-no-legacy.php` and `scripts/verify-structure.php` on source, and no-legacy on the exact release ZIP.
+
+See `docs/MIGRATION.md`, `docs/QUALITY_GATES.md`, and `docs/LEGACY_RETIREMENT.md`.
