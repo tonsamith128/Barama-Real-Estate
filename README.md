@@ -26,3 +26,12 @@ See docs/INSTALLER_ACCEPTANCE.md for details and the deletable Installer/ and pu
 Original Barama data, legacy role/MFA compatibility, complete admin/developer editing, media, payments, policies, licensing, updater, importer, backup, customer ZIP and staging cPanel/aaPanel acceptance.
 
 **Do not install on or migrate a live v1 database. No live site has been changed.**
+
+
+## Integrated migration (development)
+
+The integrated branch adds signed legacy demo archive preview, staging-only verified demo import, 53-image-compatible media and location schema, admin/company moderation, developer private property drafts and review, property inquiries, and private developer/admin inboxes.
+
+All of this is **under development**. Production demo imports are disabled until publisher entitlement and licensing are rebuilt. The exact Laravel QA ZIP is assembled and tested via GitHub Actions and is not a sellable customer release.
+
+See [feature parity matrix](docs/FEATURE_PARITY_MATRIX.md) and [combined QA instructions](docs/INTEGRATED_ACCEPTANCE.md). No live application or existing Pure PHP database has been modified.
