@@ -1,0 +1,40 @@
+# BARAMA_PROTECTED_ROOT_BRIDGE
+#
+# For cPanel/LiteSpeed hosts that cannot point a domain to Laravel public/.
+# This root bridge internally serves public/ and blocks the Laravel source.
+# Preferred configuration is still document root: <application>/public.
+#
+# Never redirect users visibly to /public or expose this project directory.
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Set a server-generated marker before internal rewrites. The standalone
+    # installer accepts a project-root document root ONLY with this marker.
+    RewriteRule ^ - [E=BARAMA_PROTECTED_ROOT_BRIDGE:1]
+
+    # If a visitor explicitly requests /public, deny it. Internal rewrites
+    # from /installer and /login are allowed.
+    RewriteCond %{THE_REQUEST} \s/+public(?:[/\s?]|$) [NC]
+    RewriteRule ^public(?:/|$) - [F,END]
+
+    # Block private directories, dotfiles and all nonpublic application paths.
+    RewriteRule (^|/)\. - [F,END]
+    RewriteRule ^(?:app|bootstrap|config|database|docs|Installer|resources|routes|scripts|storage|tests|vendor)(?:/|$) - [F,END,NC]
+    RewriteRule ^(?:artisan|composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|vite\.config\.(?:js|ts)|README\.md|QA_BUILD_INFO\.txt|LICENSE(?:\.txt)?|Barama-[^/]*\.zip(?:\.sha256)?|barama-[^/]*\.zip)(?:/|$) - [F,END,NC]
+
+    # Let the internally rewritten public/ path be handled by its own
+    # .htaccess and Laravel front controller.
+    RewriteRule ^public/ - [L]
+
+    # Front page and installer both work without /public in the browser.
+    RewriteRule ^$ public/index.php [L]
+    RewriteRule ^installer/?$ public/installer/index.php [L]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Without mod_rewrite the safe fallback cannot serve Laravel.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
