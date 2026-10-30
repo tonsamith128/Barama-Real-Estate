@@ -1,3 +1,37 @@
-/* ===== ADMIN / ENTRY / IMPORTS ===== */
-@import './base/tokens.css';
-@import './modules/dashboard.css';
+/* ===== ADMIN / 01 / DESIGN TOKENS ===== */
+:root {
+    --barama-admin-bg: #f6f8fc;
+    --barama-admin-surface: #ffffff;
+    --barama-admin-text: #172033;
+    --barama-admin-primary: #165dff;
+    --barama-admin-border: #d9e3ef;
+    --barama-admin-spacing: 1rem;
+}
+
+/* ===== ADMIN / 02 / GLOBAL LAYOUT ===== */
+.admin-shell {
+    display: grid;
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+    gap: var(--barama-admin-spacing);
+    color: var(--barama-admin-text);
+}
+
+/* ===== ADMIN / 03 / DASHBOARD / OVERVIEW ===== */
+.admin-dashboard { display: grid; gap: var(--barama-admin-spacing); }
+
+/* ===== ADMIN / 04 / DEVELOPER / COMPANIES ===== */
+/* Reserved for the verified Developer Management migration. */
+
+/* ===== ADMIN / 05 / APPEARANCE / HEADER ===== */
+/* Reserved for the Appearance migration. */
+
+/* ===== ADMIN / 06 / FINANCE / INVOICES ===== */
+/* Reserved for the Finance migration. */
+
+/* ===== ADMIN / 07 / POLICY CENTER ===== */
+/* Reserved for the Policy Center migration. */
+
+/* ===== ADMIN / 08 / RESPONSIVE ===== */
+@media (max-width: 767px) {
+    .admin-shell { grid-template-columns: 1fr; }
+}
