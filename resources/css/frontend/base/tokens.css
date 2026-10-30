@@ -1,0 +1,12 @@
+/* ===== FRONTEND / GLOBAL / DESIGN TOKENS ===== */
+:root {
+    --barama-bg: #f7f9fc;
+    --barama-text: #172033;
+    --barama-primary: #165dff;
+}
+body {
+    margin: 0;
+    background: var(--barama-bg);
+    color: var(--barama-text);
+    font-family: system-ui, sans-serif;
+}

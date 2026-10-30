@@ -1,33 +1,19 @@
-# Runtime configuration
-.env
-.env.*
-!.env.example
-
-# Runtime data
-/application/storage/cache/*
-!/application/storage/cache/.gitignore
-/application/storage/logs/*
-!/application/storage/logs/.gitignore
-/application/storage/uploads/*
-!/application/storage/uploads/.gitignore
-
-# Local tooling
-/.idea/
-/.vscode/
-.DS_Store
-Thumbs.db
-
-# Dependencies/build artifacts
+/.env
+/.env.*
+!/.env.example
 /vendor/
 /node_modules/
-/dist/
-/build/
-
-# Test output
+/public/build/
+/public/hot
 /.phpunit.cache/
-/coverage/
-
-# Installer/runtime state
-/application/storage/app/*
-/application/storage/framework/*
-/dist/
+/phpunit.xml.bak
+/storage/logs/*
+!/storage/logs/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore

@@ -1,74 +1,17 @@
-# Barama Real Estate Architecture
+# Laravel v2 architectural standard
 
-## Goal
+Target: Laravel 13, PHP 8.3+, native framework defaults, typed PSR-4 code.
 
-Keep the product understandable to a buyer, maintainable by the author, and reviewable for CodeCanyon without accumulating duplicate implementations or asset fragmentation.
+- Use Laravel's standard root app/, bootstrap/, database/, public/, resources/, routes/, storage/, tests/.
+- Implement real features under app/Modules/Area/Feature, e.g. app/Modules/Auth/Login/LoginController.php.
+- Admin feature examples: app/Modules/Admin/Dashboard, Admin/Developer/Companies, Admin/Appearance/Header, Admin/Appearance/Footer, Admin/Finance, Admin/PolicyCenter.
+- Shared domain rules must not be duplicated across Public, Account, Developer and Admin.
+- Each route module is included through routes/web.php, hence Laravel web sessions and CSRF.
+- Use Form Requests for validation, Policies/Gates for authorization, Eloquent for durable data, transactions for state changes.
+- Preserve v1 behavior, URLs, company scoping, license state and business data only through tested migration adapters.
+- Vite inputs are resources/css/frontend/app.css and resources/css/admin/app.css. Each imports smaller files with one-line feature comments.
+- Default Vite emits cache-busted filenames. Customers receive built assets and vendor; no Node/Composer requirement at install time.
+- The web server document root must point to Laravel's public/ folder.
+- Payment and updater operations require security and rollback acceptance, never copied unreviewed from v1.
+- No production rollout or main branch merge without all documented gates passing.
 
-## Canonical layers
-
-- index.php: the only web front controller.
-- application/bootstrap/runtime.php: shared runtime bootstrap, autoloading, persisted runtime configuration and sessions.
-- application/bootstrap/app.php: installed-application exception handling and router boot sequence.
-- application/app/Core: framework primitives only.
-- application/app/Http/Controllers: request orchestration by product area.
-- application/app/Domain: canonical business rules, status catalogs, and lifecycle rules.
-- application/app/Repositories: persistence boundaries; controllers must not query directly.
-- application/app/Services: application workflows that coordinate repositories and domain rules.
-- application/config: runtime configuration definitions.
-- application/routes: route declarations.
-- application/resources/views: server-rendered views.
-- application/storage: non-source runtime state.
-- assets/css/app.css: the single first-party stylesheet.
-- assets/js/app.js: the single first-party browser entry point.
-
-## Account boundaries
-
-/account is the customer/buyer/renter/investor workspace.
-
-/company is the public real-estate developer/company directory and public profiles.
-
-/developer is the private authenticated workspace for developers and authorized company representatives.
-
-/dashboard is the private administration platform.
-
-These areas may share Core services and domain services, but they must not share controllers or authorization assumptions.
-
-## Dependency policy
-
-The application foundation has no required PHP package-manager dependency. Composer may be introduced later only where it creates clear product value, but customers must not need SSH or Composer to complete the final installation.
-
-Node.js is not a runtime requirement and must not become a customer installation requirement.
-
-## Asset policy
-
-Do not create page-specific first-party CSS or JavaScript files by default.
-
-New styles belong in assets/css/app.css, organized by section. New browser behavior belongs in assets/js/app.js, organized by feature/module. A split requires a concrete performance or maintainability reason and should remain canonical rather than versioned copies.
-
-## Version policy
-
-Do not keep old source copies such as app-v1.css, app-old.js, ControllerBackup.php, or module-v0.9/.
-
-Git history is the source-history mechanism. The repository tree should contain the current implementation only.
-
-## Security baseline
-
-- PDO prepared statements
-- HTTP-only session cookies
-- strict session mode
-- CSRF token primitive
-- contextual output escaping
-- security response headers
-- production-safe exception output
-- no credentials committed to source
-
-Authentication, authorization, login throttling, and CSRF enforcement are implemented in the current foundation. Domain validation is centralized as modules are added. Upload security, installer hardening, broader rate limiting, and audit logging remain required before the final v1.0.0 release.
-
-
-## Installer boundary
-
-`/installer/` is a physical installer entry point so both GET and POST use the same canonical trailing-slash URL without depending on front-controller rewrite redirects. The root `index.php` redirects uninstalled requests to that path with no-cache headers.
-
-The customer sees exactly five installation steps. Installer state is server-side session data; purchase codes and form passwords are not written into persistent installer state. Successful installation stores protected runtime configuration, normalized license activation state, and an installation lock under `application/storage/app`.
-
-The installed application and the installer share the canonical `assets/css/app.css` and `assets/js/app.js`; installer-specific first-party CSS/JavaScript files are prohibited.
