@@ -14,6 +14,6 @@ final class FoundationHomeTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Laravel modernization foundation');
+            ->assertSee('Laravel 13 Development Preview');
     }
 }
