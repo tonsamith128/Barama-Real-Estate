@@ -16,6 +16,7 @@ final class InstalledNavigationTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
     }
 
     public function test_homepage_is_marketplace_not_development_placeholder(): void
