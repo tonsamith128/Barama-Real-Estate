@@ -76,13 +76,21 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
-      - name: HTTP five-step MySQL fresh-install acceptance
+      - name: Build exact integrated QA package
+        run: bash scripts/build-qa-package.sh
+      - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
         env:
           INSTALLER_TEST_DB: barama_installer_qa
           INSTALLER_TEST_USER: barama
           INSTALLER_TEST_PASSWORD: ci_installer_password
         run: |
           set -Eeuo pipefail
+          mkdir -p /tmp/barama-qa-extracted
+          unzip -q "$GITHUB_WORKSPACE/dist/Barama-Laravel-Integrated-QA.zip" -d /tmp/barama-qa-extracted
+          cd /tmp/barama-qa-extracted/Barama-Laravel-Integrated-QA
+          test ! -e .env
+          test ! -e .git
+          test ! -d node_modules
           php -S 127.0.0.1:8765 -t public > /tmp/barama-installer-http.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true; cat /tmp/barama-installer-http.log' EXIT
@@ -93,3 +101,13 @@ jobs:
             if (!$user || $user["email"]!=="installer-test@example.invalid" || $user["system_role"]!=="super_admin") { exit(1); }
             echo "INSTALLER_DATABASE_ADMIN_PASS\n";
           '
+
+      - name: Publish tested QA archive (not production-ready)
+        uses: actions/upload-artifact@v4
+        with:
+          name: barama-laravel-integrated-qa
+          path: |
+            dist/Barama-Laravel-Integrated-QA.zip
+            dist/Barama-Laravel-Integrated-QA.zip.sha256
+          if-no-files-found: error
+          retention-days: 7
