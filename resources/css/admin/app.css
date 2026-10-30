@@ -110,3 +110,17 @@
     .admin-stat { background: #1e293b; border-color: #334155; }
     .admin-shell input { background: #111827; color: #fff; border-color: #475569; }
 }
+
+
+/* ===== ADMIN / 12 / DEVELOPER PROPERTY FORMS AND MODERATION ===== */
+.admin-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+.admin-form label { display: grid; gap: .4rem; }
+.admin-form input, .admin-form select, .admin-form textarea {
+    width: 100%;
+    padding: .65rem;
+    border: 1px solid var(--barama-admin-border);
+    border-radius: .5rem;
+    font: inherit;
+}
+.admin-form button { justify-self: start; align-self: end; padding: .7rem 1rem; }
+@media(max-width:640px){.admin-form{grid-template-columns:1fr}}
