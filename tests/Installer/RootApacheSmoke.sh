@@ -8,7 +8,8 @@ test -r "$ZIP"
 
 TEMP="$(mktemp -d)"
 cleanup() {
-    sudo service apache2 stop >/dev/null 2>&1 || true
+    sudo apachectl -k stop >/dev/null 2>&1 || true
+    sudo chown -R "$(id -u):$(id -g)" "$TEMP" 2>/dev/null || true
     rm -rf "$TEMP"
 }
 trap cleanup EXIT
@@ -31,9 +32,11 @@ sudo a2dismod mpm_worker >/dev/null 2>&1 || true
 sudo a2enmod mpm_prefork rewrite php8.3 >/dev/null
 sudo chown -R www-data:www-data "$APP/storage" "$APP/bootstrap/cache"
 
+# Runner port 80 can be occupied by unrelated preinstalled services.
+# Limit this isolated smoke server to one nonprivileged localhost port.
 printf 'Listen 127.0.0.1:18888\n' |
-    sudo tee /etc/apache2/conf-available/barama-root-smoke-port.conf >/dev/null
-sudo a2enconf barama-root-smoke-port >/dev/null
+    sudo tee /etc/apache2/ports.conf >/dev/null
+sudo a2dissite 000-default >/dev/null 2>&1 || true
 
 sudo tee /etc/apache2/sites-available/barama-root-smoke.conf >/dev/null <<CONF
 <VirtualHost 127.0.0.1:18888>
@@ -50,7 +53,13 @@ CONF
 
 sudo a2ensite barama-root-smoke >/dev/null
 sudo apachectl configtest
-sudo service apache2 restart >/dev/null
+sudo apachectl -k stop >/dev/null 2>&1 || true
+if ! sudo apachectl -k start; then
+    echo "Apache isolated startup failed:" >&2
+    sudo tail -n 100 /var/log/apache2/error.log >&2 || true
+    sudo tail -n 100 "$TEMP/apache-error.log" >&2 || true
+    exit 1
+fi
 
 BASE="http://127.0.0.1:18888"
 headers="$(curl --retry 5 --retry-delay 1 --silent --show-error --include \
