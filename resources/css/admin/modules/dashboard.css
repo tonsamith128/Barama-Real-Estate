@@ -1,5 +1,0 @@
-/* ===== ADMIN / DASHBOARD / OVERVIEW ===== */
-.admin-dashboard {
-    display: grid;
-    gap: var(--barama-admin-spacing);
-}
