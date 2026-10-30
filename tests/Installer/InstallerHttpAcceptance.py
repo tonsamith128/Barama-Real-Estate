@@ -58,7 +58,7 @@ assert len(token) == 64, "Private setup token was not generated"
 code, page = request("/installer/?step=4")
 assert code == 200 and "1. Requirements" in page, "Unauthenticated step skipping accepted"
 code, page = post(1, page, {"token": "0" * 64})
-assert code == 200 and "Invalid setup token" in page, "Invalid installer access token accepted"
+assert code == 200 and "Invalid local development setup token" in page, "Invalid installer access token accepted"
 code, page = post(1, page, {"token": token})
 assert code == 200 and "2. Database" in page, (code, page[-800:])
 code, page = post(2, page, {

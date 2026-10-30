@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use Barama\Installer\Setup;
+use App\Services\Licensing\PublisherLicenseClient;
 
 require_once __DIR__.'/Setup.php';
+require_once dirname(__DIR__).'/app/Services/Licensing/PublisherLicenseClient.php';
 
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
@@ -84,11 +86,30 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } else {
         try {
             if ($step === 1) {
-                if (!Setup::verifyToken((string) ($_POST['token'] ?? ''))) {
-                    throw new RuntimeException('Invalid setup token. Open storage/app/installer.token using your hosting File Manager.');
-                }
                 if (!Setup::requirementsPassed()) {
                     throw new RuntimeException('Please resolve the failed requirements below.');
+                }
+                if ($localhost) {
+                    // Localhost-only CI authorization, never shown to real customers.
+                    if (!Setup::verifyToken((string) ($_POST['token'] ?? ''))) {
+                        throw new RuntimeException('Invalid local development setup token.');
+                    }
+                } else {
+                    $url = Setup::detectedApplicationUrl($_SERVER);
+                    $domain = (string) parse_url($url, PHP_URL_HOST);
+                    $id = PublisherLicenseClient::installationId($root);
+                    $existing = PublisherLicenseClient::receipt($root);
+                    if (!is_array($existing) ||
+                        ($existing['domain'] ?? '') !== $domain ||
+                        ($existing['installation_id'] ?? '') !== $id) {
+                        $code = (string) ($_POST['purchase_code'] ?? '');
+                        try {
+                            $receipt = PublisherLicenseClient::activate($code, $domain, $id);
+                            PublisherLicenseClient::saveReceipt($root, $receipt);
+                        } finally {
+                            unset($code, $_POST['purchase_code']);
+                        }
+                    }
                 }
                 session_regenerate_id(true);
                 $_SESSION['authorized'] = true;
@@ -115,7 +136,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $_SESSION['database'] = $db;
                 $_SESSION['stage'] = 3;
             } elseif ($step === 3) {
-                $_SESSION['app_url'] = Setup::validateApplication((string) ($_POST['app_url'] ?? ''));
+                $_SESSION['app_url'] = Setup::detectedApplicationUrl($_SERVER);
                 $_SESSION['stage'] = 4;
             } elseif ($step === 4) {
                 if (!is_array($_SESSION['database'] ?? null) || !is_string($_SESSION['app_url'] ?? null)) {
@@ -204,12 +225,18 @@ a{color:#086cba}.footer{margin-top:26px;padding-top:16px;border-top:1px solid #e
 <input type="hidden" name="csrf" value="<?= h((string) $_SESSION['csrf']) ?>">
 <?php if ($step === 1): ?>
 <h2>1. Requirements</h2>
-<p>Retrieve the private setup token from <code>storage/app/installer.token</code> using your hosting File Manager or SSH. The value is never displayed publicly.</p>
+<p>Confirm your hosting requirements, then validate your Barama purchase code or issued license key. No file-manager token is needed for customer installations.</p>
 <?php foreach (Setup::requirements() as $label => $passed): ?>
 <div class="<?= $passed ? 'good' : 'bad' ?>"><?= $passed ? '✓' : '✗' ?> <?= h($label) ?></div>
 <?php endforeach; ?>
-<?php field('token', 'Private setup token', 'password', '', 'minlength="64" maxlength="64" autocomplete="off"'); ?>
-<button type="submit">Verify requirements</button>
+<?php if ($localhost): ?>
+<p>Local development test: retrieve the private setup token from storage/app/installer.token.</p>
+<?php field('token', 'Local QA setup token', 'password', '', 'minlength="64" maxlength="64" autocomplete="off"'); ?>
+<?php else: ?>
+<?php field('purchase_code', 'Purchase Code / License Key', 'text', '', 'minlength="8" maxlength="120" autocomplete="off" placeholder="Enter your purchase code"'); ?>
+<p><small>Use the purchase code supplied by CodeCanyon or the key issued by the Barama licensor. Activation verifies the code with the official license server and binds it to this domain.</small></p>
+<?php endif; ?>
+<button type="submit">Verify and continue</button>
 <?php elseif ($step === 2): ?>
 <h2>2. Database</h2>
 <p>Use a newly created, empty MySQL database. Existing Barama data cannot be upgraded with this installer.</p>
@@ -221,8 +248,13 @@ a{color:#086cba}.footer{margin-top:26px;padding-top:16px;border-top:1px solid #e
 <button type="submit">Test empty database</button>
 <?php elseif ($step === 3): ?>
 <h2>3. Application</h2>
-<p>Enter the final HTTPS URL. The installer will generate a unique application encryption key and safe production settings.</p>
-<?php field('app_url', 'Application URL', 'url', 'https://'); ?>
+<p>The installer detects this domain from the configured web server and will generate a unique encryption key.</p>
+<?php try { $siteUrl = Setup::detectedApplicationUrl($_SERVER); ?>
+<label for="app_url">Detected Application URL</label>
+<input id="app_url" type="url" value="<?= h($siteUrl) ?>" readonly aria-readonly="true">
+<?php } catch (Throwable $urlError) { ?>
+<p class="error"><?= h($urlError->getMessage()) ?></p>
+<?php } ?>
 <button type="submit">Continue to administrator</button>
 <?php elseif ($step === 4): ?>
 <h2>4. Administrator</h2>
@@ -235,5 +267,5 @@ a{color:#086cba}.footer{margin-top:26px;padding-top:16px;border-top:1px solid #e
 <?php endif; ?>
 </form>
 <?php endif; ?>
-<div class="footer">For security, setup requires HTTPS, an empty database, a private setup token, and a correctly configured <code>public/</code> document root.</div>
+<div class="footer">For security, setup requires HTTPS, an empty database, verified customer licensing, and a safely configured web document root.</div>
 </main></body></html>

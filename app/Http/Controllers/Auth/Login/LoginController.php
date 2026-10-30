@@ -20,6 +20,10 @@ final class LoginController
         $request->authenticate();
         $request->session()->regenerate();
 
-        return redirect()->intended(route('account.dashboard'));
+        return redirect()->intended(
+            $request->user()->isSystemAdministrator()
+                ? route('admin.dashboard')
+                : route('account.dashboard')
+        );
     }
 }

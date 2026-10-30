@@ -71,7 +71,7 @@ grep -qi '^Location: /installer/' <<<"$headers"
 screen="$(curl --silent --show-error --max-time 15 "$BASE/installer/")"
 grep -q 'Barama Real Estate' <<<"$screen"
 grep -q '1. Requirements' <<<"$screen"
-grep -q 'Private setup token' <<<"$screen"
+grep -q 'Local QA setup token' <<<"$screen"
 test -f "$APP/storage/app/installer.token"
 
 # /installer also works without a trailing slash.
