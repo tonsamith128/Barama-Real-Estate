@@ -75,6 +75,7 @@ final class Setup
             'PHP 8.3 or newer' => PHP_VERSION_ID >= 80300,
             '64-bit PHP' => PHP_INT_SIZE >= 8,
             'OpenSSL' => extension_loaded('openssl'),
+            'cURL (license activation)' => extension_loaded('curl'),
             'PDO / MySQL' => extension_loaded('pdo') && extension_loaded('pdo_mysql'),
             'Mbstring' => extension_loaded('mbstring'),
             'Tokenizer' => extension_loaded('tokenizer'),
