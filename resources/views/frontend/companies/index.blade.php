@@ -14,7 +14,7 @@
                     <h2 class="property-card__title"><a href="{{ route('companies.show', $company->slug) }}">{{ $company->name }}</a></h2>
                     <p class="property-card__meta">{{ ucfirst(str_replace('_', ' ', $company->company_type)) }}</p>
                     @if ($company->description)
-                        <p>{{ Str::limit($company->description, 150) }}</p>
+                        <p>{{ \Illuminate\Support\Str::limit($company->description, 150) }}</p>
                     @endif
                 </article>
             @empty
