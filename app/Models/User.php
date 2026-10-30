@@ -19,6 +19,14 @@ final class User extends Authenticatable implements MustVerifyEmail
 
     protected $hidden = ['password', 'remember_token'];
 
+    /**
+     * Root administrator authorization flag; not mass assignable.
+     */
+    public function isSystemAdministrator(): bool
+    {
+        return $this->system_role === 'super_admin';
+    }
+
     public function companyMemberships(): HasMany
     {
         return $this->hasMany(CompanyMembership::class);
