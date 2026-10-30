@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class User extends Authenticatable implements MustVerifyEmail
 {
@@ -17,6 +18,11 @@ final class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = ['name', 'email', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
+
+    public function companyMemberships(): HasMany
+    {
+        return $this->hasMany(CompanyMembership::class);
+    }
 
     protected function casts(): array
     {
