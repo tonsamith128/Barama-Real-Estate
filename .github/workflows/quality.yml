@@ -84,6 +84,7 @@ jobs:
           bash scripts/build-qa-package.sh
           bash scripts/build-installer-routing-hotfix.sh
           bash scripts/build-cpanel-postinstall-upgrade.sh
+          python3 scripts/verify-cpanel-upgrade-assets.py
       - name: Apache root-domain installer and private-source security smoke
         run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
