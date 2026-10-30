@@ -12,7 +12,12 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, dom, fileinfo, pdo_sqlite, curl
           coverage: none
-      - run: php scripts/verify-structure.php
+      - name: Validate structure
+        run: php scripts/verify-structure.php
+      - name: Reject legacy Pure PHP application
+        run: |
+          php -l scripts/verify-no-legacy.php
+          php scripts/verify-no-legacy.php
       - run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: php artisan test
@@ -20,4 +25,3 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund && npm run build
-
