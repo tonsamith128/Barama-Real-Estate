@@ -39,6 +39,19 @@ test ! -e "$TARGET/.git"
 test ! -d "$TARGET/node_modules"
 test ! -d "$TARGET/.github"
 
+# This QA build uses umask 077, but static files require readable
+# permissions under Apache/LiteSpeed on cPanel.
+# Do not include runtime secrets; retain vendor executable modes.
+find "$TARGET" -type d -exec chmod 0755 {} +
+find "$TARGET" -path "$TARGET/vendor" -prune -o -type f -exec chmod 0644 {} +
+test "$(stat -c '%a' "$TARGET")" = 755
+test "$(stat -c '%a' "$TARGET/public")" = 755
+test "$(stat -c '%a' "$TARGET/public/installer")" = 755
+test "$(stat -c '%a' "$TARGET/public/index.php")" = 644
+test "$(stat -c '%a' "$TARGET/public/installer/index.php")" = 644
+test ! -e "$TARGET/storage/app/installer.token"
+echo "QA_PACKAGE_CPANEL_PERMISSIONS_PASS"
+
 (
     cd "$TMP"
     zip -q -r -9 "$ROOT/dist/$NAME.zip" "$NAME"
