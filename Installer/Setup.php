@@ -201,6 +201,38 @@ final class Setup
         return $url;
     }
 
+    /**
+     * Derive the canonical application URL from the host's configured vhost.
+     * Do not trust arbitrary HTTP_HOST values as an application origin.
+     */
+    public static function detectedApplicationUrl(array $server): string
+    {
+        $serverName = strtolower(trim((string) ($server['SERVER_NAME'] ?? '')));
+        $requestHost = strtolower(trim((string) ($server['HTTP_HOST'] ?? '')));
+        if ($serverName === '' || $requestHost === '' ||
+            !preg_match('/^[a-z0-9.:-]{1,253}$/D', $requestHost) ||
+            !preg_match('/^[a-z0-9.:-]{1,253}$/D', $serverName)) {
+            throw new RuntimeException('Cannot identify this website. Check the domain settings in cPanel.');
+        }
+        $name = preg_replace('/:\d+$/', '', $serverName);
+        $host = preg_replace('/:\d+$/', '', $requestHost);
+        if ($name !== $host) {
+            throw new RuntimeException('The browser domain does not match this hosting account’s configured website.');
+        }
+        $local = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+        $https = (!empty($server['HTTPS']) && strtolower((string) $server['HTTPS']) !== 'off')
+            || (int) ($server['SERVER_PORT'] ?? 0) === 443;
+        if (!$https && !$local) {
+            throw new RuntimeException('HTTPS must be enabled to install this application.');
+        }
+        $port = str_contains($requestHost, ':') && !str_starts_with($requestHost, '[')
+            ? ':' . substr(strrchr($requestHost, ':'), 1) : '';
+        if (!$local && !in_array($port, ['', ':443'], true)) {
+            throw new RuntimeException('The production URL must use standard HTTPS.');
+        }
+        return self::validateApplication(($https ? 'https' : 'http').'://'.$host.($local ? $port : ''));
+    }
+
     public static function validateAdministrator(array $admin): void
     {
         if (!is_string($admin['name'] ?? null) || strlen(trim($admin['name'])) < 2
