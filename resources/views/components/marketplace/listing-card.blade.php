@@ -1,6 +1,13 @@
 @props(['listing'])
 
 <article class="property-card">
+    @php($cover = $listing->mediaAttachments->first()?->asset)
+    @if($cover)
+        <a href="{{ route('properties.show', $listing->slug) }}">
+            <img class="property-card__image" src="{{ route('media.demo.show', $cover->checksum_sha256) }}"
+                alt="{{ $cover->alt_text ?: $listing->property->title }}" loading="lazy">
+        </a>
+    @endif
     <div class="property-card__eyebrow">
         {{ ucfirst($listing->transaction_type) }} · {{ ucfirst($listing->property->property_type) }}
     </div>
