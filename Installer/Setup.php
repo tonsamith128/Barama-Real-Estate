@@ -148,7 +148,7 @@ final class Setup
         $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
         if (($scheme !== 'https' && !($isLocal && $scheme === 'http'))
             || $host === '' || !filter_var($url, FILTER_VALIDATE_URL)
-            || isset($parts['user'], $parts['pass'])
+            || (isset($parts['user']) || isset($parts['pass']))
             || isset($parts['query']) || isset($parts['fragment'])
             || strlen($url) > 255
         ) {
