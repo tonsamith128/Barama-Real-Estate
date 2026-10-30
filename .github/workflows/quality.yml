@@ -80,6 +80,8 @@ jobs:
           npm run build
       - name: Build exact integrated QA package
         run: bash scripts/build-qa-package.sh
+      - name: Apache root-domain installer and private-source security smoke
+        run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
         env:
           INSTALLER_TEST_DB: barama_installer_qa
