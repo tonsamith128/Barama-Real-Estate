@@ -33,3 +33,10 @@
 **Never run Laravel schema migrations against the current v1 production database.**
 
 See docs/INSTALLER_ACCEPTANCE.md and docs/REAL_ESTATE_DOMAIN.md.
+
+
+## Integrated marketplace development milestone
+
+Implemented on `feature/laravel-integrated-marketplace-20261030`: new locations and media schema, read-only demo ZIP validation, staging-only signed demo import with strict empty-marketplace checks, private media delivery, admin dashboard/company onboarding/moderation, developer property drafts, inquiry capture and inboxes, audit events, and QA ZIP packaging with MySQL and feature tests.
+
+**Still pending:** full old PHP feature parity and existing database conversion; Media Library uploads, legal policies publishing, Appearance editor, billing, license system, updater, customer demo entitlement, and hosting-specific acceptance. See `docs/FEATURE_PARITY_MATRIX.md` for the authoritative module list. This milestone is not production-ready.
