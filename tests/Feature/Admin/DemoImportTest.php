@@ -103,6 +103,15 @@ final class DemoImportTest extends TestCase
         $this->assertDatabaseHas('site_settings', ['key' => 'cms.site_content', 'is_active' => 0]);
         $this->assertFileExists($imagePath);
 
+        // A media image attached to a published listing is visible.
+        $digest = substr(basename($imagePath), 0, 64);
+        $this->get('/media/demo/'.$digest)->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
+
+        // The same private bytes must be inaccessible once publication stops.
+        Listing::query()->firstOrFail()->update(['status' => 'draft']);
+        $this->get('/media/demo/'.$digest)->assertNotFound();
+
         $this->expectException(RuntimeException::class);
         $service->import($path, $signature, $admin);
     }
