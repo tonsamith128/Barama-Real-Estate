@@ -13,7 +13,7 @@
         <ul class="admin-company-list">
             @forelse ($companies as $company)
                 <li>
-                    <strong>{{ $company->name }}</strong>
+                    <strong><a href="{{ route('developer.properties.index', $company) }}">{{ $company->name }} · Manage properties</a></strong>
                     <span>{{ ucfirst($company->status) }}</span>
                 </li>
             @empty
@@ -24,6 +24,6 @@
     </section>
 
     <p class="admin-notice">
-        Developer editing tools are not yet migrated into this Laravel branch.
+        Property drafts and review submission are enabled for active company owners and managers. Other Developer tools remain under migration.
     </p>
 </x-layouts.admin>
