@@ -27,7 +27,12 @@ for file in "${FILES[@]}"; do
     mkdir -p "$TARGET/$(dirname "$file")"
     cp "$file" "$TARGET/$file"
 done
-cp -a public/build "$TARGET/public/"
+mkdir -p "$TARGET/public"
+cp -a public/build "$TARGET/public/build"
+test -f "$TARGET/public/build/manifest.json"
+test ! -f "$TARGET/public/manifest.json"
+test ! -d "$TARGET/public/assets"
+cmp -s public/build/manifest.json "$TARGET/public/build/manifest.json"
 cat > "$TARGET/README.txt" <<'INFO'
 STAGING ONLY — BARAMA POSTINSTALL UPGRADE
 
