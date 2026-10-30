@@ -7,6 +7,11 @@
         </nav>
 
         <article class="property-detail">
+            @php($cover = $listing->mediaAttachments->first()?->asset)
+            @if($cover)
+                <img class="property-detail__image" src="{{ route('media.demo.show', $cover->checksum_sha256) }}"
+                    alt="{{ $cover->alt_text ?: $listing->property->title }}">
+            @endif
             <p class="marketplace__eyebrow">
                 {{ ucfirst($listing->transaction_type) }} ·
                 {{ ucfirst($listing->property->property_type) }}
