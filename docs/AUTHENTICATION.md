@@ -46,4 +46,4 @@ Isolated development migration adds only `users` and `password_reset_tokens`; it
 - tests/Feature/Auth/EmailVerificationTest.php
 - tests/Feature/Auth/PasswordResetTest.php
 
-Run: `composer install`, `php artisan test`, `npm run build`. CI must pass before a branch merge or deployment.
+Run: `composer install`, `composer test`, `npm run build`. CI must pass before a branch merge or deployment.
