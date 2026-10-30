@@ -1,52 +1,35 @@
-# Barama Real Estate — Laravel v2 migration record
+# Barama Real Estate — Laravel 13 migration record
 
-**Branch:** feature/laravel-v2-foundation-20261030  
-**Legacy baseline:** Pure PHP Barama v1.0.0, preserved on main.  
-**Current milestone:** Native Laravel authentication, public marketplace read slices, and tenant-isolated Developer foundation.  
-**Release:** Not approved. No live deployment or legacy database migration.
+**GitHub Main:** Laravel foundation (not production-ready).
+
+**Legacy source branch:** archive/barama-v1-main-before-laravel-20261030.
+
+**Installer development:** feature/laravel-installer-readiness-20261030, PR #159.
+
+**Production deployment:** not performed; old databases remain untouched.
 
 ## Implemented
+- Laravel 13 native authentication, new User schema and tests.
+- Company, Project, Property and Listing models and migrations.
+- Public read-only marketplace with approved/publication filters.
+- Read-only company-scoped Developer workspace.
+- Two consolidated grouped CSS sources, separate frontend/admin JS.
+- Independent fresh-install five-step wizard authored on installer branch: requirements, database, application, administrator and finish; mandatory private token and one-time lock.
 
-- Laravel 13-compatible bootstrapping and standard configuration files for authentication, database, sessions, cache, mail, filesystem, hashing and logging.
-- Native Laravel controller structure: `app/Http/Controllers/Area/Feature/`.
-- Isolated v2 `User` Eloquent model and migration for `users` and `password_reset_tokens`.
-- Login, registration, logout, password reset, signed email verification and protected Account route.
-- Form Request validation and login/register/reset throttling.
-- Blade views for the new authentication workflows.
-- **Exactly two first-party CSS source files:** `resources/css/frontend/app.css` and `resources/css/admin/app.css`, with named area/feature sections.
-- User and authentication-focused feature tests authored, not yet executed against the Laravel runtime.
-- New Laravel Eloquent models and isolated v2 schema for Company, Project, Property, Listing and active company memberships.
-- Public Companies, Projects and Properties index/detail controllers, query services, Blade pages and visibility rules.
-- Company-scoped, authenticated, verified Developer read-only dashboard (editing and role policies not yet enabled).
-- Visibility and company-scope feature tests authored, but not yet confirmed green in CI.
-- Legacy Pure PHP remains absent from this new branch; retirement guard remains active.
+## Work not finished
+- Original production database, user password, role and MFA migration.
+- Complete profile, saved properties, inquiries, leads, management and admin permissions.
+- Media Library, Finance, Appearance, Policy Center, SEO and public UX parity.
+- Licensing, signed updater, demo importer, rollback and customer ZIP.
+- Actual aaPanel/cPanel fresh-install verification and full deployment acceptance.
 
-## Pending
+## Release gates
+1. Installer automated MySQL HTTP acceptance green on the exact development commit.
+2. Fresh independent aaPanel and cPanel install tests.
+3. Legacy schema mapping and user migration dry runs on backups only.
+4. Administrator permissions and remaining feature parity.
+5. Commercial packaging, license audit and release rollback proof.
 
-| Module | Status |
-|---|---|
-| Frontend/Home | Development navigation only; original premium homepage not migrated |
-| Auth/Login, Register, Reset, Email | Implemented in source; CI/runtime verification pending |
-| Auth/MFA and legacy sessions | Not migrated |
-| Account dashboard | Protected placeholder; user features not migrated |
-| Developer Workspace, company membership | Read-only scoped dashboard and new membership table; legacy roles and writes pending |
-| Admin Dashboard / Developer / Appearance | Not migrated |
-| Finance, Media Library, Policy Center | Not migrated |
-| Public real-estate marketplace | New-schema Companies, Projects and Properties public read-only slice; v1 feature parity pending |
-| Legacy MySQL data/schema migration | Not started |
-| Installer, License Manager, updater, backup, demo importer | Not migrated |
-| Browser QA, staging deployment, customer ZIP and rollback | Not started |
+**Never run Laravel schema migrations against the current v1 production database.**
 
-## Mandatory next gates
-
-1. Install Composer dependencies, build Vite assets, execute PHP and feature tests.
-2. Build a full legacy routes/database/features parity inventory.
-3. Extend the auth model to legacy user states, roles, password hash compatibility and MFA where required; do not import old users before this mapping.
-4. Map the full legacy real estate schema and complete company-scoped write authorization, history and other domain modules.
-5. Migrate account/developer/admin workflows, admin Blade layouts, and corresponding JS modules.
-6. Prove fresh shared-hosting installation, signed update/recovery, data conversion and release packaging.
-7. Enforce `scripts/verify-no-legacy.php` on the **exact extracted customer ZIP** before any public release.
-
-See `docs/REAL_ESTATE_DOMAIN.md` for the implemented entity relationships and security boundaries.
-
-**Do not deploy the current development branch as a replacement for the existing live application.**
+See docs/INSTALLER_ACCEPTANCE.md and docs/REAL_ESTATE_DOMAIN.md.
