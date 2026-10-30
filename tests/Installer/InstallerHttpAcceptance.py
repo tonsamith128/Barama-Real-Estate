@@ -38,6 +38,19 @@ def post(step, document, fields):
 
 assert not (ROOT / ".env").exists(), "Existing .env detected; refusing installer acceptance"
 assert not (ROOT / "storage/app/installed.lock").exists(), "Existing installation lock detected"
+# The customer enters the domain, not /public or /installer.
+# Inspect HTTP 302 without auto-following it.
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        return None
+
+no_redirects = urllib.request.build_opener(NoRedirect())
+try:
+    no_redirects.open(BASE + "/", timeout=15)
+    raise AssertionError("Unconfigured home did not redirect to installer")
+except urllib.error.HTTPError as redirect:
+    assert redirect.code == 302, ("Expected 302 from bare domain", redirect.code)
+    assert redirect.headers.get("Location") == "/installer/", "Invalid installer redirect"
 code, page = request("/installer/?step=1")
 assert code == 200 and "1. Requirements" in page, (code, page[:150])
 token = (ROOT / "storage/app/installer.token").read_text().strip()
@@ -73,4 +86,6 @@ code, page = request("/installer/?step=1")
 assert code == 410 and "already installed" in page, "New browser session can reopen an installed application"
 code, page = request("/login")
 assert code == 200, (code, page[-500:])
+code, home = request("/")
+assert code == 200 and "Barama Real Estate" in home, "Installed homepage still redirects to installer"
 print("INSTALLER_HTTP_MYSQL_FRESH_INSTALL_PASS")
