@@ -1,27 +1,42 @@
-# Laravel 13 clean-install acceptance gate
+# Barama Real Estate — independent five-step Laravel 13 installer
 
-**Status: BLOCKED — do not install on a customer domain or existing v1 database yet.**
+**Status:** implementation staged on a feature branch; production/customer deployment requires passing automated fresh-MySQL acceptance and aaPanel/cPanel testing. Existing Pure PHP Barama v1 data migration is **not** provided by this installer.
 
-The repository now includes an independent `Installer/check.php` preflight script. This is **not** a working installation wizard and must not be advertised as one. It never modifies the database or writes environment files.
+## Before opening the installer
 
-Run from the application root:
+1. Deploy on a **new** test domain/subdomain with a **new, completely empty MySQL database**. Never run this on a live v1 database.
+2. Set the domain document root to the Laravel **public/** directory, not the project root. Enable HTTPS.
+3. Include Composer vendor/autoload.php and built public/build/manifest.json in the package. PHP 8.3+ is required.
+4. Ensure storage/app, storage/framework, bootstrap/cache and the app root are writable for setup. No .env may exist beforehand.
+5. Optional read-only server preflight: `php Installer/check.php`.
+6. Visit `https://your-domain.example/installer/`. The first request generates **storage/app/installer.token** in private storage. Read it using cPanel/aaPanel File Manager or SSH; the browser never displays the token.
 
-```bash
-php Installer/check.php
-```
+## Five steps
 
-Passing preflight is necessary but insufficient. A shared-hosting installer is pending, including: web-accessible step routing where the site's document root is `public/`; CSRF/session protection; database connection testing with no secret disclosure; generated APP_KEY; safe initial administrator creation; migration sequencing; atomic install lock; installer removal after setup; retry and rollback; Apache and nginx/cPanel tests.
+1. **Requirements** — enter the private setup token; verify PHP extensions, Composer, assets, permissions, empty .env and missing install lock.
+2. **Database** — enter MySQL host, port, name, username and password. The database must contain **zero tables/views**, verified again just before schema migrations.
+3. **Application** — specify the final HTTPS app URL (HTTP only for localhost development); a random application encryption key and production .env are generated automatically.
+4. **Administrator** — set name, email and a password of at least 12 characters. This step runs native Laravel migrations, hashes the password, creates the first `super_admin`, and writes an install lock.
+5. **Finish** — follow completion instructions, log in using /login, and **delete both Installer/ and public/installer/**. Keep storage/app/installed.lock and the .env private.
 
-**Do not use the current `database/migrations` against an existing Pure PHP Barama schema.** Production data conversion and feature parity have not passed acceptance.
+## Security and failure handling
 
-Release checklist:
-- [ ] Composer vendor included and licenses reviewed
-- [ ] Vite build output included
-- [ ] Installer executes with `public/` document root
-- [ ] Fresh MySQL 8 installation succeeds on aaPanel and cPanel
-- [ ] New admin login works and is restricted
-- [ ] Install lock prevents reruns and file cleanup is safe
-- [ ] Installation failure recovers without leaving a half-installed application
-- [ ] Existing v1 databases are rejected or handled through a separately tested upgrade path
-- [ ] Public marketplace, account, admin, developer, media and licensing acceptance
-- [ ] Production release/rollback approved
+- Works outside Laravel until migrations are necessary; standalone root Installer/ is not publicly served.
+- Requires an HTTPS public/ document root, private setup token, CSRF token, HttpOnly SameSite=Strict session, and server-side sequential step gating.
+- The admin password is **never stored in a PHP session**. DB connection credentials are stored temporarily in the installer's short-lived server session and removed after installation.
+- The installer rejects populated databases and refuses to run when .env or an install lock exists. The install mutex serializes concurrent submission.
+- MySQL DDL is not fully transactionally reversible. If a failure occurs after .env or tables were created, do not retry on the same database or automatically truncate tables. Preserve logs, investigate, and restart on a separate clean database after recovery.
+- The role field exists, but a complete new Admin dashboard and its permission policies **are not migrated yet**. Installer success is not full commercial feature parity.
+
+## Acceptance
+
+- [x] Independent root installer + removable public bridge
+- [x] Requirements, DB validation, application configuration, admin and finish workflow authored
+- [x] Lock, fail-closed legacy database handling, no password persistence in sessions
+- [ ] Current commit passed automated MySQL-backed end-to-end HTTP acceptance
+- [ ] Independently tested on aaPanel PHP 8.3+/MySQL 8
+- [ ] Independently tested on cPanel PHP 8.3+/MySQL 8
+- [ ] Full original Barama marketplace/admin/developer/media/licensing feature parity
+- [ ] CodeCanyon signed/packaged release and security audit
+
+**Do not install onto any currently running production Barama domain.**
