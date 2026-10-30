@@ -42,7 +42,8 @@ final class CatalogModerationController
         $owner = User::query()->where('email', $data['owner_email'])
             ->whereNotNull('email_verified_at')->firstOrFail();
 
-        DB::transaction(function () use ($owner, $data): void {
+        $actorId = $request->user()->getKey();
+        DB::transaction(function () use ($owner, $data, $actorId): void {
             $company = Company::query()->create([
                 'name' => $data['name'],
                 'slug' => $data['slug'],
@@ -56,6 +57,14 @@ final class CatalogModerationController
                 'role' => 'owner',
                 'status' => 'active',
             ]);
+            DB::table('audit_events')->insert([
+                'actor_id' => $actorId,
+                'action' => 'admin.company.onboarded',
+                'subject_type' => 'company',
+                'subject_id' => $company->getKey(),
+                'context' => json_encode(['owner_id' => $owner->getKey()], JSON_THROW_ON_ERROR),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
         });
 
         return redirect()->route('admin.catalog.index')
@@ -65,7 +74,8 @@ final class CatalogModerationController
     public function approve(Request $request, Listing $listing): RedirectResponse
     {
         $this->authorizeAdmin($request);
-        DB::transaction(function () use ($listing): void {
+        $actorId = $request->user()->getKey();
+        DB::transaction(function () use ($listing, $actorId): void {
             $offer = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
             $property = $offer->property()->lockForUpdate()->firstOrFail();
             $company = $property->company()->firstOrFail();
@@ -79,6 +89,14 @@ final class CatalogModerationController
             $offer->update([
                 'status' => 'published',
                 'published_at' => now(),
+            ]);
+            DB::table('audit_events')->insert([
+                'actor_id' => $actorId,
+                'action' => 'admin.listing.approved',
+                'subject_type' => 'listing',
+                'subject_id' => $offer->getKey(),
+                'context' => json_encode(['company_id' => $company->getKey()], JSON_THROW_ON_ERROR),
+                'created_at' => now(), 'updated_at' => now(),
             ]);
         });
 
