@@ -88,6 +88,12 @@ jobs:
           mkdir -p /tmp/barama-qa-extracted
           unzip -q "$GITHUB_WORKSPACE/dist/Barama-Laravel-Integrated-QA.zip" -d /tmp/barama-qa-extracted
           cd /tmp/barama-qa-extracted/Barama-Laravel-Integrated-QA
+          test "$(stat -c '%a' .)" = 755
+          test "$(stat -c '%a' public)" = 755
+          test "$(stat -c '%a' public/installer)" = 755
+          test "$(stat -c '%a' public/index.php)" = 644
+          test "$(stat -c '%a' public/installer/index.php)" = 644
+          echo "EXTRACTED_QA_CPANEL_PERMISSIONS_PASS"
           test ! -e .env
           test ! -e .git
           test ! -d node_modules
