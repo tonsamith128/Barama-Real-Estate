@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\RealEstate\MarketplaceStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,6 +21,13 @@ final class Company extends Model
     protected function casts(): array
     {
         return ['published_at' => 'datetime'];
+    }
+
+    public function scopePubliclyVisible(Builder $query): Builder
+    {
+        return $query->where('status', MarketplaceStatus::COMPANY_APPROVED)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     public function projects(): HasMany
