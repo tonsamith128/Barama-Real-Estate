@@ -128,5 +128,7 @@ jobs:
           path: |
             dist/Barama-Laravel-Integrated-QA.zip
             dist/Barama-Laravel-Integrated-QA.zip.sha256
+            dist/Barama-Installer-Routing-Hotfix.zip
+            dist/Barama-Installer-Routing-Hotfix.zip.sha256
           if-no-files-found: error
           retention-days: 7
