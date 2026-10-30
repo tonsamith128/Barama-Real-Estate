@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
 
@@ -14,6 +15,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
+        Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
         Route::post('/catalog/companies', [CatalogModerationController::class, 'createCompany'])
