@@ -85,6 +85,7 @@ final class CatalogWriteTest extends TestCase
         $this->assertSame('approved', $property->fresh()->status);
         $this->assertSame('published', $listing->fresh()->status);
         $this->get('/properties')->assertSee('Private Test Villa');
+        $this->assertDatabaseCount('audit_events', 3);
     }
 
     public function test_other_company_and_read_only_member_cannot_write(): void
