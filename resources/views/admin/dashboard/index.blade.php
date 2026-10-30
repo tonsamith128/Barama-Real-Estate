@@ -14,6 +14,7 @@
             <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
             <a href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
             <a href="{{ route('admin.demo.index') }}">Demo content importer</a>
+            <a href="{{ route('admin.license.index') }}">License &amp; Activation</a>
             <a href="{{ route('home') }}">View website</a>
             <a href="{{ route('account.dashboard') }}">My account</a>
         </nav>
