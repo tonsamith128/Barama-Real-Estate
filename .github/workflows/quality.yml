@@ -31,8 +31,10 @@ jobs:
         run: |
           php artisan route:list
           composer test
-      - name: Standalone installer validation tests
-        run: php tests/Installer/InstallerUnitTest.php
+      - name: Standalone installer and root-domain routing validation
+        run: |
+          php tests/Installer/InstallerUnitTest.php
+          php tests/Installer/RootRoutingTest.php
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -94,6 +96,7 @@ jobs:
           test "$(stat -c '%a' public/index.php)" = 644
           test "$(stat -c '%a' public/installer/index.php)" = 644
           echo "EXTRACTED_QA_CPANEL_PERMISSIONS_PASS"
+          php tests/Installer/RootRoutingTest.php
           test ! -e .env
           test ! -e .git
           test ! -d node_modules
