@@ -10,7 +10,10 @@ final class FoundationHomeTest extends TestCase
 {
     public function test_homepage_renders(): void
     {
-        $this->get('/')->assertOk()->assertSee('Laravel modernization foundation');
+        $this->withoutVite();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Laravel modernization foundation');
     }
 }
-
