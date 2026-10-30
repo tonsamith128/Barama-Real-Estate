@@ -100,6 +100,7 @@ final class DemoImportTest extends TestCase
         $this->assertSame(1, Company::query()->count());
         $this->assertSame(1, Listing::query()->visibleToPublic()->count());
         $this->assertDatabaseHas('legal_policies', ['slug' => 'terms-of-service', 'status' => 'draft']);
+        $this->assertDatabaseHas('audit_events', ['action' => 'admin.demo.imported', 'subject_type' => 'demo_import']);
         $this->assertDatabaseHas('site_settings', ['key' => 'cms.site_content', 'is_active' => 0]);
         $this->assertFileExists($imagePath);
 
