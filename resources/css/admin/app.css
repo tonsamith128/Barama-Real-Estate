@@ -201,3 +201,21 @@
 .viewing-actions button {padding:.65rem .85rem;border:1px solid var(--barama-admin-border);border-radius:9px;background:var(--barama-admin-primary);color:#fff;cursor:pointer;white-space:nowrap}
 .viewing-actions form:last-child button {background:transparent;color:var(--barama-admin-text)}
 @media(max-width:700px){.viewing-card{flex-direction:column}}
+
+
+/* ===== ADMIN / 18 / DEVELOPMENT PROJECTS & PROPERTY MODERATION ===== */
+.catalog-review-list {display:grid;gap:1rem;margin:1.1rem 0}
+.catalog-review-card {display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:1.2rem;border:1px solid var(--barama-admin-border);border-radius:14px;padding:1.2rem;background:var(--barama-admin-surface)}
+.catalog-review-card strong {font-size:1.08rem}
+.catalog-review-card p {color:#60728c;overflow-wrap:anywhere}
+.catalog-review-actions {display:grid;gap:.7rem}
+.catalog-review-actions form {display:grid;gap:.5rem}
+.catalog-review-actions label {display:grid;gap:.35rem;font-size:.88rem;font-weight:650}
+.catalog-review-actions textarea {width:100%;box-sizing:border-box;padding:.7rem;border-radius:9px;border:1px solid var(--barama-admin-border);font:inherit}
+.catalog-review-actions button {justify-self:start;padding:.65rem .95rem;border-radius:9px;border:0;background:var(--barama-admin-primary);color:white;cursor:pointer}
+.catalog-review-actions form:last-child button {background:#fff;color:#ab2735;border:1px solid #e7b1b7}
+.portfolio-record {padding:1.15rem 0;border-bottom:1px solid var(--barama-admin-border);display:grid;gap:.7rem}
+.portfolio-record details {border:1px solid var(--barama-admin-border);border-radius:10px;padding:1rem}
+.portfolio-record summary {cursor:pointer;font-weight:700}
+.portfolio-record p {color:#61728b}
+@media(max-width:740px){.catalog-review-card{grid-template-columns:1fr}}
