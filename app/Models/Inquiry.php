@@ -10,8 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class Inquiry extends Model
 {
     protected $fillable = [
-        'listing_id', 'requester_id', 'full_name', 'email', 'phone', 'message', 'status',
+        'listing_id', 'requester_id', 'full_name', 'email', 'phone', 'message', 'status', 'responded_at',
     ];
+
+    protected function casts(): array
+    {
+        return ['responded_at' => 'datetime'];
+    }
 
     public function listing(): BelongsTo
     {
