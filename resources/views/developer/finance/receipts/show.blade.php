@@ -11,6 +11,8 @@
         <h2>Confirmation {{ $invoice->invoice_number }}</h2>
         <dl class="commerce-receipt-details">
             <div><dt>Company</dt><dd>{{ $company->name }}</dd></div>
+            <div><dt>Billing entity at purchase</dt><dd>{{ $invoice->customer_billing_name ?? 'Not supplied' }}</dd></div>
+            <div><dt>Billing country at purchase</dt><dd>{{ $invoice->customer_country_code ?? 'Not supplied' }}</dd></div>
             <div><dt>Plan</dt><dd>{{ $order->plan_name }}</dd></div>
             <div><dt>Billing period</dt><dd>{{ $order->billing_period }}</dd></div>
             <div><dt>Amount collected</dt><dd>{{ $invoice->currency }} {{ number_format($invoice->total_cents / 100, 2) }}</dd></div>

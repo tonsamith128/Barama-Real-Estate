@@ -45,6 +45,9 @@ final class StripeTestGateway implements PaymentGateway
                 'client_reference_id' => $order->reference,
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
+                // Collect a country/address for later compliant document review.
+                // No tax rate or automatic tax calculation is assumed here.
+                'billing_address_collection' => 'required',
                 'expires_at' => now()->addMinutes(31)->timestamp,
                 'metadata' => ['order_reference' => $order->reference],
                 ...($recurring ? ['subscription_data' => ['metadata' => ['order_reference' => $order->reference]]]

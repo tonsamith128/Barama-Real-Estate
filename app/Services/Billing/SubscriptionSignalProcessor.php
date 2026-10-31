@@ -56,6 +56,10 @@ final class SubscriptionSignalProcessor
             }
             return;
         }
+        if (($object['cancel_at_period_end'] ?? false) === true
+            && !$sub->cancel_at_period_end) {
+            $sub->update(['cancel_at_period_end' => true, 'cancellation_requested_at' => now()]);
+        }
         if (in_array($object['status'] ?? '', ['past_due', 'paused'], true)
             && $sub->status === 'active') {
             $sub->update(['status' => 'past_due']);

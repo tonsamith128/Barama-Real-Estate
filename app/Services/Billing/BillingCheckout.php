@@ -7,6 +7,8 @@ namespace App\Services\Billing;
 use App\Contracts\Billing\PaymentGateway;
 use App\Models\BillingInvoice;
 use App\Models\BillingOrder;
+use App\Models\CompanyBillingProfile;
+use App\Models\CompanySubscription;
 use App\Models\CommercialPlan;
 use App\Models\Company;
 use App\Models\User;
@@ -28,6 +30,18 @@ final class BillingCheckout
 
         $order = DB::transaction(function () use ($actor, $company, $plan): BillingOrder {
             Company::query()->whereKey($company->getKey())->lockForUpdate()->firstOrFail();
+            // A second subscription could bill the same company twice. Existing
+            // verified recurring customers must manage their current subscription.
+            if (config('billing.recurring_test_enabled')
+                && in_array($plan->billing_period, ['month', 'year'], true)
+                && CompanySubscription::query()->where('company_id', $company->getKey())
+                    ->whereNotNull('gateway_subscription_id')
+                    ->whereIn('status', ['active', 'past_due', 'suspended'])
+                    ->where('ends_at', '>', now())->exists()) {
+                throw ValidationException::withMessages([
+                    'subscription' => 'Manage your existing recurring plan before purchasing another.',
+                ]);
+            }
             $pending = BillingOrder::query()->where('company_id', $company->getKey())
                 ->where('status', 'pending')
                 ->where('created_at', '>', now()->subMinutes(35))->exists();
@@ -52,11 +66,14 @@ final class BillingCheckout
                 'billing_period' => $plan->billing_period,
                 'listing_limit' => $plan->listing_limit,
             ]);
+            $profile = CompanyBillingProfile::query()->where('company_id', $company->getKey())->first();
             BillingInvoice::query()->create([
                 'billing_order_id' => $order->getKey(),
                 'invoice_number' => 'BRM-'.str_pad((string) $order->getKey(), 8, '0', STR_PAD_LEFT),
                 'total_cents' => $order->amount_cents, 'currency' => $order->currency,
                 'status' => 'open',
+                'customer_billing_name' => $profile?->billing_name,
+                'customer_country_code' => $profile?->country_code,
             ]);
             return $order;
         });

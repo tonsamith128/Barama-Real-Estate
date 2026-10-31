@@ -13,11 +13,16 @@ final class CompanySubscription extends Model
         'company_id', 'commercial_plan_id', 'billing_order_id',
         'status', 'billing_period', 'listing_limit', 'starts_at', 'ends_at',
         'gateway_subscription_id', 'gateway_customer_id',
+        'cancel_at_period_end', 'cancellation_requested_at',
     ];
 
     protected function casts(): array
     {
-        return ['listing_limit' => 'integer', 'starts_at' => 'datetime', 'ends_at' => 'datetime'];
+        return [
+            'listing_limit' => 'integer', 'starts_at' => 'datetime',
+            'ends_at' => 'datetime', 'cancel_at_period_end' => 'boolean',
+            'cancellation_requested_at' => 'datetime',
+        ];
     }
 
     public function company(): BelongsTo { return $this->belongsTo(Company::class); }

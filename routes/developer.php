@@ -11,6 +11,8 @@ use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
 use App\Http\Controllers\Developer\Finance\CompanyPlanController;
 use App\Http\Controllers\Developer\Finance\BillingReceiptController;
+use App\Http\Controllers\Developer\Finance\CompanyBillingProfileController;
+use App\Http\Controllers\Developer\Finance\CompanySubscriptionManagementController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
@@ -33,6 +35,14 @@ Route::middleware(['auth', 'verified'])
             ->middleware('throttle:2,1')->name('finance.plans.checkout');
         Route::get('/company/{company}/billing/invoices/{invoice}', BillingReceiptController::class)
             ->name('finance.receipts.show');
+        Route::get('/company/{company}/billing/profile', [CompanyBillingProfileController::class, 'edit'])
+            ->name('finance.profile.edit');
+        Route::put('/company/{company}/billing/profile', [CompanyBillingProfileController::class, 'update'])
+            ->middleware('throttle:10,1')->name('finance.profile.update');
+        Route::post('/company/{company}/billing/subscription/cancel', [CompanySubscriptionManagementController::class, 'cancel'])
+            ->middleware('throttle:2,1')->name('finance.subscription.cancel');
+        Route::post('/company/{company}/billing/portal', [CompanySubscriptionManagementController::class, 'portal'])
+            ->middleware('throttle:4,1')->name('finance.subscription.portal');
         Route::get('/company/{company}/plans', [CompanyPlanController::class, 'index'])->name('finance.plans.index');
         Route::post('/company/{company}/plans/{plan}/inquire', [CompanyPlanController::class, 'inquire'])
             ->middleware('throttle:5,1')->name('finance.plans.inquire');

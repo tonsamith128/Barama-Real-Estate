@@ -4,7 +4,8 @@
             <h1>{{ $company->name }} — Business Plans</h1>
             <p>Review published pricing options and send a plan inquiry for administrator follow-up.</p>
         </div>
-        <a href="{{ route('developer.dashboard') }}">Back to workspace</a>
+        <div><a href="{{ route('developer.finance.profile.edit', $company) }}">Billing profile</a> ·
+            <a href="{{ route('developer.dashboard') }}">Back to workspace</a></div>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($subscription)
@@ -14,8 +15,33 @@
                 {{ number_format($subscription->listing_limit) }} listing allowance ·
                 {{ $subscription->ends_at?->format('Y-m-d') ?? 'No scheduled expiration' }}</p>
             <p>Entitlements are created only by a verified paid provider webhook.</p>
+            @if($subscription->cancel_at_period_end)
+                <p>Cancellation scheduled. Service remains subject to its verified billing period.</p>
+            @elseif($managementEnabled && $subscription->gateway_subscription_id && $subscription->ends_at?->isFuture())
+                <form method="post" action="{{ route('developer.finance.subscription.cancel', $company) }}">
+                    @csrf
+                    <button type="submit">Cancel renewal at period end (test mode)</button>
+                </form>
+            @endif
+            @if($managementEnabled && $portalEnabled && $subscription->gateway_customer_id && $subscription->ends_at?->isFuture())
+                <form method="post" action="{{ route('developer.finance.subscription.portal', $company) }}">
+                    @csrf
+                    <button type="submit">Manage test payment method</button>
+                </form>
+            @endif
         </section>
     @endif
+    <section class="admin-card"><h2>International billing information</h2>
+        @if($billingProfile)
+            <p>{{ $billingProfile->billing_name }} · {{ $billingProfile->country_code }} ·
+                Language preference: {{ strtoupper($billingProfile->preferred_locale) }} ·
+                Display currency preference: {{ $billingProfile->preferred_currency }}</p>
+        @else
+            <p>Set up your business billing address and country for future document readiness.</p>
+        @endif
+        <a href="{{ route('developer.finance.profile.edit', $company) }}">Edit billing profile</a>
+        <p>All published plan prices are USD. Currency conversion and tax calculation are not provided.</p>
+    </section>
     @if($orders->isNotEmpty())
         <section class="admin-card">
             <h2>Company invoices and orders</h2>

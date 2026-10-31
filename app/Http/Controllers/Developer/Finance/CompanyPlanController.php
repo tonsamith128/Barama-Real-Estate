@@ -12,6 +12,8 @@ use App\Services\Billing\BillingCheckout;
 use App\Services\Billing\SubscriptionEntitlements;
 use App\Models\BillingInvoice;
 use App\Models\BillingOrder;
+use App\Models\CompanySubscription;
+use App\Models\CompanyBillingProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +38,15 @@ final class CompanyPlanController
             'plans' => CommercialPlan::query()->published()
                 ->orderBy('sort_order')->orderBy('name')->get(),
             'billingEnabled' => (bool) config('billing.enabled'),
-            'subscription' => app(SubscriptionEntitlements::class)->current($company),
+            'subscription' => Schema::hasTable('company_subscriptions')
+                ? CompanySubscription::query()->where('company_id', $company->getKey())->first()
+                : null,
+            'billingProfile' => Schema::hasTable('company_billing_profiles')
+                ? CompanyBillingProfile::query()->where('company_id', $company->getKey())->first()
+                : null,
+            'managementEnabled' => config('billing.enabled') && config('billing.recurring_test_enabled')
+                && config('billing.subscription_management_test_enabled'),
+            'portalEnabled' => config('billing.stripe.portal_test_enabled'),
             'orders' => Schema::hasTable('billing_orders')
                 ? BillingOrder::query()->with('invoice')->where('company_id', $company->getKey())->latest()->limit(10)->get()
                 : collect(),

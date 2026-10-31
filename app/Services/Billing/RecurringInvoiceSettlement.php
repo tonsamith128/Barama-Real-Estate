@@ -10,6 +10,7 @@ use App\Models\BillingPayment;
 use App\Models\BillingRenewal;
 use App\Models\BillingTaxReview;
 use App\Models\Company;
+use App\Models\CompanyBillingProfile;
 use App\Models\CompanySubscription;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -108,6 +109,7 @@ final class RecurringInvoiceSettlement
                 || $current->gateway_subscription_id !== $subscriptionId
                 || $current->gateway_customer_id !== $customerId
                 || !in_array($current->status, ['active', 'past_due'], true)
+                || $current->cancel_at_period_end
                 || $current->billing_order_id < $initial->getKey()
                 || $current->ends_at === null
                 || $endsAt->lte($current->ends_at)) {
@@ -129,11 +131,14 @@ final class RecurringInvoiceSettlement
                 'currency' => 'USD', 'billing_period' => $initial->billing_period,
                 'listing_limit' => $initial->listing_limit, 'paid_at' => now(),
             ]);
+            $profile = CompanyBillingProfile::query()->where('company_id', $initial->company_id)->first();
             $invoiceRow = BillingInvoice::query()->create([
                 'billing_order_id' => $order->getKey(),
                 'invoice_number' => 'BRM-'.str_pad((string) $order->getKey(), 8, '0', STR_PAD_LEFT),
                 'status' => 'paid', 'total_cents' => $invoice['amount_paid'],
                 'currency' => 'USD', 'paid_at' => now(),
+                'customer_billing_name' => $profile?->billing_name,
+                'customer_country_code' => $profile?->country_code,
             ]);
         }
         if ($initial->status === 'pending') {
