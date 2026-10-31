@@ -328,3 +328,16 @@ button, input { font: inherit; }
 .contact-panel .customer-form{margin-top:1.4rem}
 .contact-consent{display:flex!important;gap:.6rem;align-items:flex-start}
 @media(max-width:720px){.info-grid{grid-template-columns:1fr}}
+
+
+/* ===== FRONTEND / 19 / PUBLISHED HOMEPAGE SECTIONS ===== */
+.home-builder-live {padding:clamp(2.2rem,6vw,5rem) 1.25rem;background:var(--barama-surface);border-top:1px solid var(--barama-border)}
+.home-builder-live:nth-of-type(even) {background:var(--barama-bg)}
+.home-builder-live__inner {width:min(100%,76rem);margin-inline:auto}
+.home-builder-live h2 {font-size:clamp(1.75rem,3.7vw,2.7rem);line-height:1.2;margin:0 0 1rem;max-width:51rem}
+.home-builder-live p {color:var(--barama-muted);font-size:1.05rem;line-height:1.8;max-width:48rem;white-space:pre-line}
+.home-builder-live .button {display:inline-flex;margin-top:1.3rem;text-decoration:none}
+.home-builder-live--feature {width:min(calc(100% - 2rem),76rem);margin:1rem auto;padding:2.1rem;border-radius:16px;border:1px solid var(--barama-border)}
+.home-builder-live--cta {background:linear-gradient(120deg,#132b4e,#214c67);color:#fff}
+.home-builder-live--cta p {color:#e4edf8}
+.home-builder-live--cta .button {background:var(--barama-primary);color:#fff}
