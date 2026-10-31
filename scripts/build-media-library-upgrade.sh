@@ -40,9 +40,7 @@ find "$TARGET" -type d -exec chmod 0755 {} +
 find "$TARGET" -type f -exec chmod 0644 {} +
 ( cd "$TMP" && zip -q -r -9 "$OLDPWD/dist/$NAME.zip" "$NAME" )
 unzip -tq "dist/$NAME.zip"
-python3 scripts/verify-cpanel-upgrade-assets.py "dist/$NAME.zip" || {
-  echo "Existing cPanel verifier is tailored to the postinstall package; verifying media manifest separately."
-  python3 - "dist/$NAME.zip" <<'PY'
+python3 - "dist/$NAME.zip" <<'PY'
 from zipfile import ZipFile
 import json,sys
 with ZipFile(sys.argv[1]) as z:
@@ -55,6 +53,5 @@ with ZipFile(sys.argv[1]) as z:
   assert p+"public/build/"+e["file"] in z.namelist()
 print("MEDIA_UPGRADE_VITE_PASS")
 PY
-}
 sha256sum "dist/$NAME.zip" > "dist/$NAME.zip.sha256"
 echo "MEDIA_LIBRARY_QA_OVERLAY_PACKAGE_PASS"
