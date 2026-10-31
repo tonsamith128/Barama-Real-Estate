@@ -7,6 +7,7 @@
             <nav class="customer-nav">
                 <a @class(['is-current' => request()->routeIs('account.dashboard')]) href="{{ route('account.dashboard') }}">Overview</a>
                 <a @class(['is-current' => request()->routeIs('account.saved.*')]) href="{{ route('account.saved.index') }}">Saved properties</a>
+                <a @class(['is-current' => request()->routeIs('account.searches.*')]) href="{{ route('account.searches.index') }}">Saved searches</a>
                 <a @class(['is-current' => request()->routeIs('account.inquiries.*')]) href="{{ route('account.inquiries.index') }}">My inquiries</a>
                 <a @class(['is-current' => request()->routeIs('account.viewings.*')]) href="{{ route('account.viewings.index') }}">Viewing requests</a>
                 <a @class(['is-current' => request()->routeIs('account.notifications.*')]) href="{{ route('account.notifications.index') }}">Notifications</a>
