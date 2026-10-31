@@ -25,7 +25,7 @@
 | Account saved properties, viewing requests and notifications | Implemented customer foundations; verified admin and company viewing decisions and notifications | 68 Laravel tests / 365 assertions on development branch |
 | Legacy user/password/role/MFA migration | Not migrated | Pending |
 | Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
-| Appearance builder/homepage and footer | **Partially implemented:** published brand identity, hero/footer copy, primary color and SEO description with draft editing | Appearance publication and security tests; drag-and-drop builder still pending |
+| Appearance builder/homepage and footer | **Partially implemented:** publishable brand, hero/footer, primary color, SEO, ordered safe navigation and homepage content/CTA sections | Admin editor/permission/publication tests; visual drag/drop and media layout still pending |
 | Localization/Khmer and SEO | Not migrated | Pending |
 | Developer team invitations and billing | Not migrated | Pending |
 | Invoice, payment and subscriptions | Not migrated | Pending |
