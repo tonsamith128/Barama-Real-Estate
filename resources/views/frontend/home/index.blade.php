@@ -61,6 +61,7 @@
         </section>
         <footer class="home-footer">
             <span>© {{ date('Y') }} Barama Real Estate</span>
+            <a href="{{ route('legal.index') }}">Legal policies</a>
             <a href="{{ route('home') }}">Back to top</a>
         </footer>
     </main>
