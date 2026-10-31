@@ -24,7 +24,7 @@
 | Full company/project/property management/editing | Partial — developer drafts, listing gallery and administrator approval are available | Tenant-isolation tests; full editing pending |
 | Notifications/viewing requests/saved searches | Not migrated | Pending |
 | Legacy user/password/role/MFA migration | Not migrated | Pending |
-| Policy Center publishing and legal editor | Not migrated | Pending |
+| Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
 | Appearance builder/homepage and footer | Not migrated | Pending |
 | Localization/Khmer and SEO | Not migrated | Pending |
 | Developer team invitations and billing | Not migrated | Pending |
@@ -52,3 +52,7 @@ See [docs/INTEGRATED_ACCEPTANCE.md](INTEGRATED_ACCEPTANCE.md). CI builds a **dev
 ## Current media milestone
 
 See [Media Library acceptance](MEDIA_LIBRARY_ACCEPTANCE.md) for content validation, private storage, company permissions, publication and rejection tests. Bulk media editing, responsive variants and rights approval remain pending. No production deployment has occurred.
+
+## Policy Center milestone
+
+See [Policy Center acceptance](POLICY_CENTER_ACCEPTANCE.md) for draft/edit/publish test cases, XSS sanitization, audit events and legal publication access controls. Historical demo legal drafts must be reviewed before publication; no legal-compliance score blocks the action.
