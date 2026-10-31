@@ -106,6 +106,7 @@ final class ListingGalleryTest extends TestCase
 
         // Draft images must not be exposed through public URLs.
         $this->get(route('media.demo.show', $asset->checksum_sha256))->assertNotFound();
+        $this->get(route('admin.media.preview', $asset))->assertForbidden();
         $this->get(route('developer.gallery.preview', [$company, $listing, $asset]))
             ->assertOk()->assertHeader('Content-Type', 'image/png');
 
