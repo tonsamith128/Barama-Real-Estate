@@ -32,9 +32,7 @@ final class BillingCheckout
             Company::query()->whereKey($company->getKey())->lockForUpdate()->firstOrFail();
             // A second subscription could bill the same company twice. Existing
             // verified recurring customers must manage their current subscription.
-            if (config('billing.recurring_test_enabled')
-                && in_array($plan->billing_period, ['month', 'year'], true)
-                && CompanySubscription::query()->where('company_id', $company->getKey())
+            if (CompanySubscription::query()->where('company_id', $company->getKey())
                     ->whereNotNull('gateway_subscription_id')
                     ->whereIn('status', ['active', 'past_due', 'suspended'])
                     ->where('ends_at', '>', now())->exists()) {
