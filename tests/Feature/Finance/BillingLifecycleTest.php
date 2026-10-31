@@ -14,6 +14,7 @@ use App\Models\CompanySubscription;
 use App\Models\Property;
 use App\Models\User;
 use App\Services\Developer\CompanyCatalogWriter;
+use App\Services\Billing\SubscriptionEntitlements;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
@@ -260,6 +261,23 @@ final class BillingLifecycleTest extends TestCase
         $this->assertSame('refunded', $order->fresh()->invoice->status);
         $this->assertFalse(CompanySubscription::query()->firstOrFail()->isCurrent());
         $this->assertDatabaseHas('audit_events', ['action' => 'billing.refund.verified']);
+    }
+
+    public function test_expired_subscription_cannot_bypass_listing_limits(): void
+    {
+        $company = $this->company();
+        $owner = $this->user($company);
+        // Companies without any subscription preserve existing legacy access.
+        app(SubscriptionEntitlements::class)->assertCanCreateListing($company);
+
+        $order = $this->checkout($company, $owner, $this->plan());
+        $this->settle($order);
+        $subscription = CompanySubscription::query()->firstOrFail();
+        $subscription->update(['ends_at' => now()->subDay()]);
+        $this->assertFalse($subscription->fresh()->isCurrent());
+
+        $this->expectException(ValidationException::class);
+        app(SubscriptionEntitlements::class)->assertCanCreateListing($company);
     }
 
     public function test_refund_limit_reserves_pending_requests_and_blocks_non_admin(): void
