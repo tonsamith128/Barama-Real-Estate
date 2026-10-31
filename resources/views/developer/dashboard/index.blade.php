@@ -15,6 +15,9 @@
                 <li>
                     <strong><a href="{{ route('developer.properties.index', $company) }}">{{ $company->name }} · Manage properties</a></strong>
                     <span>{{ ucfirst($company->status) }}</span>
+                    @if($company->status === 'approved')
+                        <a href="{{ route('developer.projects.index', $company) }}">Manage projects</a>
+                    @endif
                 </li>
             @empty
                 <li>No active company memberships. Contact an administrator to obtain access.</li>
