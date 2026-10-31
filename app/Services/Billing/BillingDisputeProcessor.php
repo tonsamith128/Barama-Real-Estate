@@ -85,7 +85,20 @@ final class BillingDisputeProcessor
                 if ($newStatus === 'lost') {
                     $subscription->update(['status' => 'revoked', 'ends_at' => now()]);
                 } elseif ($newStatus === 'won') {
+                    $otherOpenDispute = BillingDispute::query()
+                        ->where('status', 'open')
+                        ->whereHas('payment.order', function ($query) use ($subscription): void {
+                            $query->where('company_id', $subscription->company_id)
+                                ->where(function ($matching) use ($subscription): void {
+                                    if ($subscription->gateway_subscription_id !== null) {
+                                        $matching->where('gateway_subscription_id', $subscription->gateway_subscription_id);
+                                    } else {
+                                        $matching->where('id', $subscription->billing_order_id);
+                                    }
+                                });
+                        })->exists();
                     if ($subscription->status === 'suspended'
+                        && !$otherOpenDispute
                         && $subscription->ends_at?->isFuture()
                         && $payment->refunded_cents < $payment->amount_cents) {
                         $subscription->update(['status' => 'active']);
