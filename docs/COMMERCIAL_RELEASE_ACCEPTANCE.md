@@ -20,6 +20,18 @@ No live Stripe API keys, webhook keys or payouts are supported. For another proc
 8. Run `php artisan billing:audit --json`; reconcile all nonzero queues against the **actual provider dashboard**.
 9. Confirm company owner-only access to payment confirmations. These are **not tax invoices**.
 
+## International customer billing acceptance
+
+- Company owners can enter billing name/email, country/territory, address, timezone, and language/currency display preferences. The country picker uses ISO 3166-1 alpha-2 labels, not payment gateway country eligibility.
+- Verify tenant isolation and exact billing identity snapshot at each invoice: updating the billing profile must not rewrite earlier invoices.
+- Test negative validation for unsupported country codes, invalid timezones, non-owner members and unsolicited profile changes.
+- Test recurring subscription cancellation via Stripe **test mode** with a company-specific subscription/customer ID, cancellation at period end, and a confirmed provider response; a browser redirect is not proof of cancellation.
+- Test Stripe customer portal configuration in test mode with payment-method management allowed and plan changes/proration disabled until the local ledger supports them.
+- Verify duplicate subscriptions/overlapping checkouts are refused.
+- **Display currency is a preference only**. Prices/settlement remain USD; no exchange-rate conversion or local tax is implied.
+- Confirm translated interface and legal documents, tax IDs, consumer disclosures, accessibility and cancellation requirements independently before international selling is approved.
+- Reference: `docs/GLOBAL_BILLING_CUSTOMERS.md`.
+
 ## Tax and receipt legal gate
 
 Before issuing legal VAT/tax invoices, obtain an appropriately qualified professional's documented assessment of merchant/operator jurisdiction, tax registration/TIN, taxable location, invoice schema, sequence, supply date, customer identity, VAT/withholding, currency conversion, exemptions/zero-rating, refunds/credit notes, record retention and data privacy. Cambodia's [Law on Taxation](https://cambodiantr.gov.kh/en/document/?title=law-on-taxation) is a starting point, not sufficient proof that any particular rate or treatment applies to this service.

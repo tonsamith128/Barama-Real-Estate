@@ -46,6 +46,15 @@ This work builds on the commercial-plan catalog. It intentionally does not turn 
 
 See [Commercial Release Acceptance](COMMERCIAL_RELEASE_ACCEPTANCE.md) for independent Stripe test clocks, dispute correlation, tax review and aaPanel/cPanel checklists. Stripe's published onboarding region list does not include Cambodia for standard merchant accounts as checked 2026-10-31. Never bypass merchant jurisdiction controls. No production payment credentials should be entered or used.
 
+## Global billing customer extension
+
+- Company owners can record country/territory, address, billing name/email, preferred language, display currency and timezone. None of this implies local payment method availability or tax eligibility.
+- USD remains the **only charged and settled currency**. Currency preferences never perform foreign exchange.
+- Invoices include a customer billing-name/country snapshot. A changed profile cannot change historical invoice identity.
+- Existing recurring subscribers cannot start overlapping plan checkouts.
+- A separately gated test-only cancellation endpoint requests `cancel_at_period_end=true`, checks provider subscription/customer identities, and keeps already-paid entitlements through the verified expiry. An optional test portal for payment-method updates uses an approved configuration and strict provider redirect host validation.
+- See `docs/GLOBAL_BILLING_CUSTOMERS.md` for validation, setup and remaining global-market release gates.
+
 ## Acceptance before release
 
 1. Run forward migrations (never `migrate:fresh` on customer data).
