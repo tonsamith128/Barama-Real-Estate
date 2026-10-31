@@ -42,6 +42,12 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
         Route::post('/catalog/companies', [CatalogModerationController::class, 'createCompany'])
             ->middleware('throttle:10,1')->name('catalog.companies.create');
+        Route::post('/catalog/projects/{project}/decision', [CatalogModerationController::class, 'projectDecision'])
+            ->middleware('throttle:20,1')->name('catalog.projects.decision');
+        Route::post('/catalog/listings/{listing}/reject', [CatalogModerationController::class, 'reject'])
+            ->middleware('throttle:20,1')->name('catalog.reject');
+        Route::post('/catalog/listings/{listing}/unpublish', [CatalogModerationController::class, 'unpublish'])
+            ->middleware('throttle:20,1')->name('catalog.unpublish');
         Route::post('/catalog/listings/{listing}/approve', [CatalogModerationController::class, 'approve'])
             ->middleware('throttle:20,1')->name('catalog.approve');
         Route::get('/system/demo-importer', [DemoImportController::class, 'index'])->name('demo.index');
