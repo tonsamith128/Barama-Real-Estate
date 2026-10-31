@@ -30,8 +30,40 @@ final class DeveloperPropertyController
     public function store(Request $request, Company $company, CompanyCatalogWriter $writer): RedirectResponse
     {
         $writer->assertCanManage($request->user(), $company);
-        $validated = $request->validate([
-            'reference_code' => ['required','string','max:80',Rule::unique('properties','reference_code')],
+        $validated = $this->validated($request, $company);
+        $writer->create($request->user(), $company, $validated);
+        return redirect()->route('developer.properties.index', $company)
+            ->with('notice', 'Property saved as a private draft.');
+    }
+
+    public function edit(Request $request, Company $company, Property $property, CompanyCatalogWriter $writer): View
+    {
+        $writer->assertCanManage($request->user(), $company);
+        abort_unless($property->company_id === $company->getKey(), 404);
+        abort_unless(in_array($property->status, ['draft', 'rejected'], true), 409);
+        return view('developer.properties.edit', [
+            'company' => $company,
+            'property' => $property->load('listings'),
+            'projects' => Project::query()->where('company_id', $company->getKey())->orderBy('name')->get(),
+            'types' => MarketplaceStatus::PROPERTY_TYPES,
+        ]);
+    }
+
+    public function update(Request $request, Company $company, Property $property, CompanyCatalogWriter $writer): RedirectResponse
+    {
+        $writer->assertCanManage($request->user(), $company);
+        abort_unless($property->company_id === $company->getKey(), 404);
+        abort_unless(in_array($property->status, ['draft', 'rejected'], true), 409);
+        $validated = $this->validated($request, $company, $property);
+        $writer->reviseDraft($request->user(), $company, $property, $validated);
+        return redirect()->route('developer.properties.index', $company)
+            ->with('notice', 'Property updated as a private draft.');
+    }
+
+    private function validated(Request $request, Company $company, ?Property $property = null): array
+    {
+        return $request->validate([
+            'reference_code' => ['required','string','max:80',Rule::unique('properties','reference_code')->ignore($property?->getKey())],
             'title' => ['required','string','min:4','max:190'],
             'property_type' => ['required',Rule::in(MarketplaceStatus::PROPERTY_TYPES)],
             'project_id' => ['nullable','integer',Rule::exists('projects','id')->where('company_id', $company->getKey())],
@@ -47,9 +79,6 @@ final class DeveloperPropertyController
             'pricing_period' => ['nullable','string','max:24'],
             'negotiable' => ['nullable','boolean'],
         ]);
-        $writer->create($request->user(), $company, $validated);
-        return redirect()->route('developer.properties.index', $company)
-            ->with('notice', 'Property saved as a private draft.');
     }
 
     public function submit(Request $request, Company $company, Property $property, CompanyCatalogWriter $writer): RedirectResponse

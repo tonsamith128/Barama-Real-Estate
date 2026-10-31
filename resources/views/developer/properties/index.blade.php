@@ -7,7 +7,7 @@
     </header>
     @if(session('notice'))<p class="admin-notice">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <section class="admin-card"><h2>Create a property</h2>
+    <section class="admin-card"><h2>Create a property</h2><p><a href="{{ route('developer.projects.index', $company) }}">Manage development projects</a></p>
     <form method="post" action="{{ route('developer.properties.store', $company) }}" class="admin-form">
         @csrf
         <label>Reference code <input name="reference_code" maxlength="80" value="{{ old('reference_code') }}" required></label>
@@ -68,6 +68,9 @@
                             @endif
                         </section>
                     @endforeach
+                    @if(in_array($property->status, ['draft', 'rejected'], true))
+                        <p><a href="{{ route('developer.properties.edit', [$company, $property]) }}">Edit property draft</a></p>
+                    @endif
                     @if($property->status === 'draft')
                         <form method="post" action="{{ route('developer.properties.submit', [$company, $property]) }}">
                             @csrf<button type="submit">Submit for administrator review</button>

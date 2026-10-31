@@ -89,6 +89,7 @@ jobs:
           bash scripts/build-policy-center-upgrade.sh
           bash scripts/build-customer-dashboard-upgrade.sh
           bash scripts/build-dashboard-viewing-upgrade.sh
+          bash scripts/build-catalog-moderation-upgrade.sh
       - name: Apache root-domain installer and private-source security smoke
         run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
@@ -147,5 +148,7 @@ jobs:
             dist/Barama-Laravel-Customer-Admin-Frontend-QA-Upgrade.zip.sha256
             dist/Barama-Laravel-Dashboard-Viewing-QA-Upgrade.zip
             dist/Barama-Laravel-Dashboard-Viewing-QA-Upgrade.zip.sha256
+            dist/Barama-Laravel-Catalog-Moderation-QA-Upgrade.zip
+            dist/Barama-Laravel-Catalog-Moderation-QA-Upgrade.zip.sha256
           if-no-files-found: error
           retention-days: 7

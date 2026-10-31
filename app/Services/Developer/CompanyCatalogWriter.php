@@ -68,6 +68,50 @@ final class CompanyCatalogWriter
         });
     }
 
+    public function reviseDraft(User $user, Company $company, Property $property, array $data): void
+    {
+        $this->assertCanManage($user, $company);
+        abort_unless($property->company_id === $company->getKey(), 404);
+
+        DB::transaction(function () use ($user, $company, $property, $data): void {
+            $locked = Property::query()->lockForUpdate()->findOrFail($property->getKey());
+            abort_unless(in_array($locked->status, ['draft', 'rejected'], true), 409);
+
+            $listing = $locked->listings()->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($listing->status, ['draft', 'rejected'], true), 409);
+            $locked->update([
+                'reference_code' => $data['reference_code'],
+                'title' => $data['title'],
+                'property_type' => $data['property_type'],
+                'project_id' => $data['project_id'] ?? null,
+                'description' => $data['description'] ?? null,
+                'address_line' => $data['address_line'] ?? null,
+                'bedrooms' => $data['bedrooms'] ?? null,
+                'bathrooms' => $data['bathrooms'] ?? null,
+                'area_value' => $data['area_value'] ?? null,
+                'area_unit' => $data['area_unit'] ?? null,
+                'status' => 'draft',
+            ]);
+            $listing->update([
+                'transaction_type' => $data['transaction_type'],
+                'price' => $data['price'],
+                'currency' => $data['currency'],
+                'negotiable' => !empty($data['negotiable']),
+                'pricing_period' => $data['pricing_period'] ?? null,
+                'status' => 'draft',
+                'published_at' => null,
+            ]);
+            DB::table('audit_events')->insert([
+                'actor_id' => $user->getKey(),
+                'action' => 'developer.property.revised',
+                'subject_type' => 'property',
+                'subject_id' => $locked->getKey(),
+                'context' => json_encode(['company_id' => $company->getKey()], JSON_THROW_ON_ERROR),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        });
+    }
+
     public function submitForReview(User $user, Company $company, Property $property): void
     {
         $this->assertCanManage($user, $company);
