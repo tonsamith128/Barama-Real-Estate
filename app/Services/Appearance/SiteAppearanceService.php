@@ -71,7 +71,13 @@ final class SiteAppearanceService
     public function publish(User $actor): void
     {
         DB::transaction(function () use ($actor): void {
-            $row = SiteAppearance::query()->lockForUpdate()->firstOrFail();
+            $row = SiteAppearance::query()->lockForUpdate()->first();
+            if ($row === null) {
+                $row = SiteAppearance::query()->create([
+                    'draft_data' => self::defaults(),
+                    'published_data' => self::defaults(),
+                ]);
+            }
             $row->update([
                 'published_data' => array_replace(self::defaults(), $row->draft_data ?: []),
                 'published_at' => now(),
