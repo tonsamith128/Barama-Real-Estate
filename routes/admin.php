@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
 use App\Http\Controllers\Admin\Finance\CommercialPlanController;
 use App\Http\Controllers\Admin\Finance\BillingLedgerController;
+use App\Http\Controllers\Admin\Finance\BillingReconciliationController;
 
 // Every action independently authorizes the verified system administrator.
 Route::middleware(['auth', 'verified', 'throttle:30,1'])
@@ -60,6 +61,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::put('/policies/{policy}', [LegalPolicyController::class, 'update'])->name('policies.update');
         Route::post('/policies/{policy}/publish', [LegalPolicyController::class, 'publish'])->name('policies.publish');
         Route::post('/policies/{policy}/unpublish', [LegalPolicyController::class, 'unpublish'])->name('policies.unpublish');
+        Route::get('/finance/reconciliation', BillingReconciliationController::class)
+            ->name('finance.reconciliation.index');
         Route::get('/finance/billing', [BillingLedgerController::class, 'index'])->name('finance.billing.index');
         Route::post('/finance/billing/payments/{payment}/refund', [BillingLedgerController::class, 'refund'])
             ->middleware('throttle:3,1')->name('finance.billing.refund');

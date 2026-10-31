@@ -49,6 +49,7 @@
                     <span class="workspace-nav__label">FINANCE</span>
                     <a @class(['is-current' => request()->routeIs('admin.finance.plans.*')]) href="{{ route('admin.finance.plans.index') }}">Pricing plans &amp; inquiries</a>
                     <a @class(['is-current' => request()->routeIs('admin.finance.billing.*')]) href="{{ route('admin.finance.billing.index') }}">Billing ledger</a>
+                    <a @class(['is-current' => request()->routeIs('admin.finance.reconciliation.*')]) href="{{ route('admin.finance.reconciliation.index') }}">Reconciliation</a>
                     <span class="workspace-nav__label">SYSTEM</span>
                     <a @class(['is-current' => request()->routeIs('admin.demo.*')]) href="{{ route('admin.demo.index') }}">Demo content importer</a>
                     <a @class(['is-current' => request()->routeIs('admin.license.*')]) href="{{ route('admin.license.index') }}">License &amp; Activation</a>

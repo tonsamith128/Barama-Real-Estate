@@ -43,6 +43,8 @@ final class BillingCheckout
                 'requested_by_user_id' => $actor->getKey(),
                 'reference' => (string) Str::uuid(),
                 'gateway' => 'stripe_test',
+                'checkout_mode' => config('billing.recurring_test_enabled') && in_array($plan->billing_period, ['month', 'year'], true)
+                    ? 'subscription' : 'payment',
                 'status' => 'pending',
                 'plan_name' => $plan->name,
                 'amount_cents' => $plan->price_cents,

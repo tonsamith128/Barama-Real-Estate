@@ -30,7 +30,7 @@ This register separates a tested development implementation from live cPanel acc
 | Advanced filters, maps, geocoding, saved-search alerts | **PARTIAL** | Price/type/transaction filter and private saved-search management added with premium customer UI; maps/geocoding, advanced facets and automated alert delivery remain pending |
 | SEO metadata, social sharing, sitemap/schema | **NOT MIGRATED** | Canonicals, per-listing metadata, sitemap generation |
 | Commercial pricing plan catalog and company plan inquiries | **DEVELOPMENT FOUNDATION** | Admin plan editor, public plans, owner-only inquiries; no paid entitlements or checkout |
-| Billing and subscription test-mode foundation | **DEVELOPMENT / SANDBOX** | Invoice/payment/refund ledger, entitlement quota, Stripe test checkout and signature-verified webhooks; no live gateway, automatic recurring billing, tax or live acceptance |
+| Billing and subscription test-mode foundation | **DEVELOPMENT / SANDBOX** | Test-only recurring checkout and invoice-paid renewals, dispute/failed-renewal suspensions, reconciliation and non-tax payment confirmations; live merchant, fiscal invoices and real-host acceptance remain blocked |
 | License integration / purchase-code entitlement | **PARTIAL** | Admin activation bridge, premium license UI, and explicit publisher revalidation implemented; customer-domain acceptance and complete entitlement lifecycle still pending |
 | License customer dashboard and license policies | **NOT MIGRATED** | Entitlement lifecycle, revocation, renewals, offline grace |
 | Signed updater and rollback system | **NOT MIGRATED** | Signed manifest, backups, file/schema staging and rollback |

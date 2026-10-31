@@ -39,6 +39,14 @@ final class BillingWebhookProcessor
             $object = $event['data']['object'];
             if (in_array($type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true)) {
                 $this->settleCheckout($object);
+            } elseif ($type === 'invoice.paid') {
+                app(RecurringInvoiceSettlement::class)->settle($object);
+            } elseif ($type === 'invoice.payment_failed') {
+                app(SubscriptionSignalProcessor::class)->paymentFailed($object);
+            } elseif (in_array($type, ['customer.subscription.deleted', 'customer.subscription.updated'], true)) {
+                app(SubscriptionSignalProcessor::class)->subscriptionChanged($object, $type);
+            } elseif (in_array($type, ['charge.dispute.created', 'charge.dispute.updated', 'charge.dispute.closed'], true)) {
+                app(BillingDisputeProcessor::class)->process($object, $type);
             } elseif (in_array($type, ['refund.created', 'refund.updated'], true)) {
                 $this->settleRefund($object);
             } else {
@@ -73,14 +81,31 @@ final class BillingWebhookProcessor
         if (!$order || $order->gateway_session_id !== $session['id']
             || $order->gateway !== 'stripe_test'
             || ($session['metadata']['order_reference'] ?? null) !== $order->reference
-            || ($session['mode'] ?? null) !== 'payment'
+            || ($session['mode'] ?? null) !== $order->checkout_mode
             || ($session['currency'] ?? null) !== strtolower($order->currency)
             || ($session['livemode'] ?? true) !== false
             || !is_int($session['amount_total'] ?? null)
             || $session['amount_total'] !== $order->amount_cents
-            || !is_string($session['payment_intent'] ?? null)
-            || !str_starts_with($session['payment_intent'], 'pi_')) {
+            || ($order->checkout_mode === 'payment'
+                && (!is_string($session['payment_intent'] ?? null)
+                    || !str_starts_with($session['payment_intent'], 'pi_')))
+            || ($order->checkout_mode === 'subscription'
+                && (!is_string($session['subscription'] ?? null)
+                    || !str_starts_with($session['subscription'], 'sub_')))) {
             $this->reject('Checkout does not match a verified local order.');
+        }
+
+        if ($order->checkout_mode === 'subscription') {
+            // A paid Checkout session is not evidence of captured invoice funds.
+            // Bind its provider subscription, then wait for invoice.paid with
+            // an actual gateway payment reference and an approved service period.
+            if ($order->status !== 'pending'
+                || ($order->gateway_subscription_id !== null
+                    && $order->gateway_subscription_id !== $session['subscription'])) {
+                $this->reject('Subscription checkout reference conflict.');
+            }
+            $order->update(['gateway_subscription_id' => $session['subscription']]);
+            return;
         }
 
         if ($order->status === 'paid') {

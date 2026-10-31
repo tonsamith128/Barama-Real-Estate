@@ -5,7 +5,8 @@
             <h1>Billing Ledger</h1>
             <p>Test-mode payment, invoice and refund records. Provider webhooks, not manual status edits, verify settlements.</p>
         </div>
-        <a href="{{ route('admin.finance.plans.index') }}">Pricing plans</a>
+        <div><a href="{{ route('admin.finance.plans.index') }}">Pricing plans</a> ·
+            <a href="{{ route('admin.finance.reconciliation.index') }}">Reconciliation</a></div>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $message)<p>{{ $message }}</p>@endforeach</div>@endif

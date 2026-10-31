@@ -424,3 +424,12 @@
 .commerce-ledger-table th, .commerce-ledger-table td { padding: .75rem; border-bottom: 1px solid var(--barama-admin-border); text-align: left; }
 .commerce-ledger-payment { padding: 1rem 0; border-bottom: 1px solid var(--barama-admin-border); }
 .commerce-refund-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); align-items: end; gap: .75rem; }
+
+/* ===== ADMIN / FINANCE / RECONCILIATION AND RECEIPTS ===== */
+.commerce-ops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 1rem; }
+.commerce-ops-item { padding: 1rem; border: 1px solid var(--barama-admin-border); border-radius: .75rem; display: flex; flex-direction: column; gap: .4rem; }
+.commerce-ops-item strong { font-size: 1.5rem; }
+.commerce-receipt-details { display: grid; gap: .75rem; }
+.commerce-receipt-details div { display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: .7rem; border-bottom: 1px solid var(--barama-admin-border); padding-bottom: .55rem; }
+.commerce-receipt-details dt { font-weight: 700; }
+@media (max-width: 640px) { .commerce-receipt-details div { grid-template-columns: 1fr; } }

@@ -31,21 +31,29 @@ final class StripeTestGateway implements PaymentGateway
     {
         abort_unless(config('billing.enabled'), 503, 'Billing checkout is disabled.');
 
+        $recurring = $order->checkout_mode === 'subscription';
+        if ($recurring && (!config('billing.recurring_test_enabled')
+            || !in_array($order->billing_period, ['month', 'year'], true))) {
+            throw new RuntimeException('Recurring billing test mode is not enabled.');
+        }
+
         $response = Http::asForm()->withToken($this->key())
             ->withHeaders(['Idempotency-Key' => 'barama-checkout-'.$order->reference])
             ->timeout(15)->post($this->endpoint('/v1/checkout/sessions'), [
-                'mode' => 'payment',
+                'mode' => $recurring ? 'subscription' : 'payment',
                 'payment_method_types' => ['card'],
                 'client_reference_id' => $order->reference,
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
                 'expires_at' => now()->addMinutes(31)->timestamp,
                 'metadata' => ['order_reference' => $order->reference],
-                'payment_intent_data' => ['metadata' => ['order_reference' => $order->reference]],
+                ...($recurring ? ['subscription_data' => ['metadata' => ['order_reference' => $order->reference]]]
+                    : ['payment_intent_data' => ['metadata' => ['order_reference' => $order->reference]]]),
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'usd',
                         'unit_amount' => $order->amount_cents,
+                        ...($recurring ? ['recurring' => ['interval' => $order->billing_period]] : []),
                         'product_data' => ['name' => $order->plan_name],
                     ],
                     'quantity' => 1,
@@ -64,7 +72,7 @@ final class StripeTestGateway implements PaymentGateway
             || !is_string($url) || parse_url($url, PHP_URL_SCHEME) !== 'https'
             || $host !== 'checkout.stripe.com'
             || ($data['livemode'] ?? true) !== false
-            || ($data['mode'] ?? null) !== 'payment'
+            || ($data['mode'] ?? null) !== ($recurring ? 'subscription' : 'payment')
             || ($data['currency'] ?? null) !== 'usd'
             || (int) ($data['amount_total'] ?? -1) !== $order->amount_cents) {
             throw new RuntimeException('Gateway checkout response failed validation.');

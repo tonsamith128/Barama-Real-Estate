@@ -12,6 +12,7 @@ final class CompanySubscription extends Model
     protected $fillable = [
         'company_id', 'commercial_plan_id', 'billing_order_id',
         'status', 'billing_period', 'listing_limit', 'starts_at', 'ends_at',
+        'gateway_subscription_id', 'gateway_customer_id',
     ];
 
     protected function casts(): array

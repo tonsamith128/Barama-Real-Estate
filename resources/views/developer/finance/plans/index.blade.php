@@ -23,7 +23,11 @@
                 @foreach($orders as $order)
                     <li>{{ $order->invoice?->invoice_number }} · {{ $order->plan_name }} ·
                         {{ $order->currency }} {{ number_format($order->amount_cents / 100, 2) }} ·
-                        {{ $order->invoice?->status ?? 'Pending' }}</li>
+                        {{ $order->invoice?->status ?? 'Pending' }}
+                        @if($order->invoice?->paid_at)
+                            · <a href="{{ route('developer.finance.receipts.show', [$company, $order->invoice]) }}">View confirmation</a>
+                        @endif
+                    </li>
                 @endforeach
             </ul>
         </section>
@@ -60,5 +64,7 @@
             <section class="admin-card"><p>No company plans have been published.</p></section>
         @endforelse
     </div>
-    <p class="admin-notice">Checkout is disabled by default and supports Stripe test-mode only. No live payments or automatic renewals. A browser redirect does not activate an entitlement.</p>
+    <p class="admin-notice">Sandbox only. Checkout and recurring test mode are separately disabled by default.
+        Enabling both test flags allows Stripe subscription simulations and signed renewal processing; no live money can be collected.
+        A browser redirect never activates an entitlement. Payment confirmations are not tax invoices.</p>
 </x-layouts.admin>

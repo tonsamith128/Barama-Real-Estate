@@ -14,7 +14,7 @@ final class BillingOrder extends Model
         'company_id', 'commercial_plan_id', 'requested_by_user_id',
         'reference', 'gateway', 'status', 'plan_name', 'amount_cents',
         'currency', 'billing_period', 'listing_limit', 'gateway_session_id',
-        'gateway_payment_id', 'paid_at',
+        'gateway_payment_id', 'paid_at', 'checkout_mode', 'gateway_subscription_id',
     ];
 
     protected function casts(): array

@@ -10,6 +10,7 @@ use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
 use App\Http\Controllers\Developer\Finance\CompanyPlanController;
+use App\Http\Controllers\Developer\Finance\BillingReceiptController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
@@ -30,6 +31,8 @@ Route::middleware(['auth', 'verified'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
         Route::post('/company/{company}/plans/{plan}/checkout', [CompanyPlanController::class, 'checkout'])
             ->middleware('throttle:2,1')->name('finance.plans.checkout');
+        Route::get('/company/{company}/billing/invoices/{invoice}', BillingReceiptController::class)
+            ->name('finance.receipts.show');
         Route::get('/company/{company}/plans', [CompanyPlanController::class, 'index'])->name('finance.plans.index');
         Route::post('/company/{company}/plans/{plan}/inquire', [CompanyPlanController::class, 'inquire'])
             ->middleware('throttle:5,1')->name('finance.plans.inquire');
