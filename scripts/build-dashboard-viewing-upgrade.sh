@@ -68,5 +68,5 @@ with ZipFile(sys.argv[1]) as z:
  assert not any(n.startswith(p+"storage/") or n.startswith(p+"vendor/") or n==p+".env" for n in names)
 print("BARAMA_DASHBOARD_VIEWING_QA_PACKAGE_PASS")
 PY
-sha256sum "$ROOT/dist/$NAME.zip" > "$ROOT/dist/$NAME.zip.sha256"
+( cd "$ROOT/dist" && sha256sum "$NAME.zip" > "$NAME.zip.sha256" )
 echo "BARAMA_DASHBOARD_VIEWING_QA_UPGRADE_READY"
