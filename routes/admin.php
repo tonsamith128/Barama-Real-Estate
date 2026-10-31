@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\Appearance\AppearanceController;
+use App\Http\Controllers\Admin\Appearance\HomePageBuilderController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Users\UserDirectoryController;
@@ -27,6 +28,21 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
             ->middleware('throttle:5,1')->name('appearance.publish');
         Route::post('/appearance/reset', [AppearanceController::class,'resetDraft'])
             ->middleware('throttle:5,1')->name('appearance.reset');
+        Route::get('/appearance/homepage', [HomePageBuilderController::class, 'index'])->name('homepage.index');
+        Route::post('/appearance/homepage/sections', [HomePageBuilderController::class, 'createSection'])
+            ->middleware('throttle:15,1')->name('homepage.sections.store');
+        Route::patch('/appearance/homepage/sections/{section}', [HomePageBuilderController::class, 'updateSection'])
+            ->middleware('throttle:15,1')->name('homepage.sections.update');
+        Route::post('/appearance/homepage/sections/{section}/move', [HomePageBuilderController::class, 'moveSection'])
+            ->middleware('throttle:20,1')->name('homepage.sections.move');
+        Route::delete('/appearance/homepage/sections/{section}', [HomePageBuilderController::class, 'removeSection'])
+            ->middleware('throttle:15,1')->name('homepage.sections.remove');
+        Route::post('/appearance/homepage/navigation', [HomePageBuilderController::class, 'addLink'])
+            ->middleware('throttle:15,1')->name('homepage.links.store');
+        Route::post('/appearance/homepage/navigation/{link}/move', [HomePageBuilderController::class, 'moveLink'])
+            ->middleware('throttle:20,1')->name('homepage.links.move');
+        Route::delete('/appearance/homepage/navigation/{link}', [HomePageBuilderController::class, 'removeLink'])
+            ->middleware('throttle:15,1')->name('homepage.links.remove');
         Route::get('/users', UserDirectoryController::class)->name('users.index');
         Route::get('/viewings', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'decide'])
