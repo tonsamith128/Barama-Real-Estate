@@ -46,5 +46,18 @@
                 </div>
             @endif
         </section>
+        @foreach($appearanceSettings['home_sections'] ?? [] as $section)
+            @if(!empty($section['enabled']) && in_array($section['type'] ?? '', ['text', 'feature', 'cta'], true))
+                <section class="home-builder-live home-builder-live--{{ $section['type'] }}" aria-label="{{ $section['title'] }}">
+                    <div class="home-builder-live__inner">
+                        <h2>{{ $section['title'] }}</h2>
+                        @if(!empty($section['body']))<p>{{ $section['body'] }}</p>@endif
+                        @if(!empty($section['button_label']) && isset(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route'] ?? '']))
+                            <a class="button" href="{{ route(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route']]['route']) }}">{{ $section['button_label'] }}</a>
+                        @endif
+                    </div>
+                </section>
+            @endif
+        @endforeach
     </main>
 </x-layouts.frontend>
