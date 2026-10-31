@@ -225,3 +225,14 @@ button, input { font: inherit; }
 /* ===== FRONTEND / 14 / PROPERTY GALLERY ===== */
 .property-photo-gallery {display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin:.75rem 0 1.5rem}
 .property-photo-gallery img {display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--barama-surface)}
+
+
+/* ===== FRONTEND / 15 / LEGAL POLICY PAGES ===== */
+.legal-content {max-width:860px;padding-bottom:4rem}
+.legal-content h1 {font-size:clamp(2rem,4vw,2.7rem);line-height:1.2}
+.legal-content__body {line-height:1.8;overflow-wrap:anywhere}
+.legal-content__body h2,.legal-content__body h3 {margin-top:1.6em}
+.legal-content__body table {display:block;max-width:100%;overflow:auto;border-collapse:collapse}
+.legal-content__body th,.legal-content__body td {padding:.6rem;border:1px solid #d7e0ed}
+.legal-content__body a {text-decoration:underline}
+.legal-summary,.legal-updated {color:var(--barama-muted)}

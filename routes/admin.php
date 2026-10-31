@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Policy\LegalPolicyController;
 use App\Http\Controllers\Admin\Media\MediaLibraryController;
 use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
@@ -16,6 +17,13 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/policies', [LegalPolicyController::class, 'index'])->name('policies.index');
+        Route::get('/policies/create', [LegalPolicyController::class, 'create'])->name('policies.create');
+        Route::post('/policies', [LegalPolicyController::class, 'store'])->name('policies.store');
+        Route::get('/policies/{policy}/edit', [LegalPolicyController::class, 'edit'])->name('policies.edit');
+        Route::put('/policies/{policy}', [LegalPolicyController::class, 'update'])->name('policies.update');
+        Route::post('/policies/{policy}/publish', [LegalPolicyController::class, 'publish'])->name('policies.publish');
+        Route::post('/policies/{policy}/unpublish', [LegalPolicyController::class, 'unpublish'])->name('policies.unpublish');
         Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
         Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');

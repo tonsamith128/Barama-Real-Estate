@@ -7,10 +7,13 @@ use App\Http\Controllers\Frontend\Home\HomeController;
 use App\Http\Controllers\Frontend\Projects\ProjectController;
 use App\Http\Controllers\Frontend\Properties\PropertyController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Frontend\Legal\LegalPageController;
 use App\Http\Controllers\Frontend\Inquiries\InquiryController;
 use App\Http\Controllers\Frontend\Media\PublicDemoMediaController;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/legal', [LegalPageController::class, 'index'])->name('legal.index');
+Route::get('/legal/{slug}', [LegalPageController::class, 'show'])->name('legal.show');
 
 Route::get('/properties', [PropertyController::class, 'index'])->name('properties.index');
 Route::get('/properties/{slug}', [PropertyController::class, 'show'])->name('properties.show');

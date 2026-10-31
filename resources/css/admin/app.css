@@ -166,3 +166,12 @@
 .listing-gallery__upload label {display:grid;gap:.35rem}
 .listing-gallery__upload input {width:100%;min-width:0}
 @media(max-width:600px){.listing-gallery__upload{grid-template-columns:1fr}}
+
+
+/* ===== ADMIN / 15 / POLICY CENTER ===== */
+.policy-actions {display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.policy-actions form {display:inline-block}
+.policy-actions button {margin:0!important;padding:.45rem .7rem!important}
+.policy-form {display:grid;gap:.5rem}
+.policy-form textarea {font:inherit;border:1px solid var(--barama-admin-border);border-radius:9px;padding:.9rem;resize:vertical;width:100%;box-sizing:border-box}
+.policy-note {font-size:.9rem;max-width:56rem;line-height:1.6}
