@@ -162,7 +162,12 @@ final class RecurringInvoiceSettlement
                 'billing_order_id' => $order->getKey(),
                 'status' => 'active', 'billing_period' => $initial->billing_period,
                 'listing_limit' => $initial->listing_limit,
-                'starts_at' => $startsAt, 'ends_at' => $endsAt,
+                // A paid renewal extends expiry without moving the original
+                // service start into the future and accidentally denying access.
+                'starts_at' => $current !== null
+                    && $current->gateway_subscription_id === $subscriptionId
+                    ? $current->starts_at : $startsAt,
+                'ends_at' => $endsAt,
                 'gateway_subscription_id' => $subscriptionId,
                 'gateway_customer_id' => $customerId,
             ],
