@@ -20,6 +20,9 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('/users', UserDirectoryController::class)->name('users.index');
+        Route::get('/viewings', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'index'])->name('viewings.index');
+        Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'decide'])
+            ->middleware('throttle:10,1')->name('viewings.decide');
         Route::get('/contacts', [ContactInboxController::class, 'index'])->name('contacts.index');
         Route::patch('/contacts/{message}/read', [ContactInboxController::class, 'read'])->name('contacts.read');
         Route::get('/policies', [LegalPolicyController::class, 'index'])->name('policies.index');
