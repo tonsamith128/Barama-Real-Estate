@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Developer\Media\ListingGalleryController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
+use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
@@ -25,6 +26,18 @@ Route::middleware(['auth', 'verified'])
             ->name('gallery.preview');
         Route::delete('/company/{company}/listings/{listing}/gallery/{attachment}', [ListingGalleryController::class, 'destroy'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
+        Route::get('/company/{company}/projects', [DeveloperProjectController::class, 'index'])
+            ->name('projects.index');
+        Route::post('/company/{company}/projects', [DeveloperProjectController::class, 'store'])
+            ->middleware('throttle:15,1')->name('projects.store');
+        Route::put('/company/{company}/projects/{project}', [DeveloperProjectController::class, 'update'])
+            ->middleware('throttle:15,1')->name('projects.update');
+        Route::post('/company/{company}/projects/{project}/submit', [DeveloperProjectController::class, 'submit'])
+            ->middleware('throttle:10,1')->name('projects.submit');
+        Route::get('/company/{company}/properties/{property}/edit', [DeveloperPropertyController::class, 'edit'])
+            ->name('properties.edit');
+        Route::put('/company/{company}/properties/{property}', [DeveloperPropertyController::class, 'update'])
+            ->middleware('throttle:15,1')->name('properties.update');
         Route::get('/company/{company}/properties', [DeveloperPropertyController::class, 'index'])
             ->name('properties.index');
         Route::post('/company/{company}/properties', [DeveloperPropertyController::class, 'store'])
