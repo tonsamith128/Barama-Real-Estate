@@ -21,7 +21,7 @@ final class DeveloperPropertyController
         $writer->assertCanManage($request->user(), $company);
         return view('developer.properties.index', [
             'company' => $company,
-            'properties' => $company->properties()->with('listings')->latest()->paginate(15),
+            'properties' => $company->properties()->with(['listings.mediaAttachments.asset'])->latest()->paginate(15),
             'projects' => Project::query()->where('company_id', $company->getKey())->orderBy('name')->get(),
             'types' => MarketplaceStatus::PROPERTY_TYPES,
         ]);
