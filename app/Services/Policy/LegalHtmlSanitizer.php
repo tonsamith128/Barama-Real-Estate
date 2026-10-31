@@ -56,8 +56,12 @@ final class LegalHtmlSanitizer
                     continue;
                 }
                 $href = $tag === 'a' ? trim($node->getAttribute('href')) : '';
-                foreach (iterator_to_array($node->attributes) as $attribute) {
-                    $node->removeAttributeNode($attribute->name);
+                while ($node->attributes->length > 0) {
+                    $attribute = $node->attributes->item(0);
+                    if ($attribute === null) {
+                        break;
+                    }
+                    $node->removeAttributeNode($attribute);
                 }
                 if ($tag === 'a' &&
                     preg_match('~^https?://[a-z0-9]~i', $href) === 1 &&
