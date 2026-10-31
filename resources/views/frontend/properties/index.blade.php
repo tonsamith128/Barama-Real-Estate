@@ -1,10 +1,10 @@
 <x-layouts.frontend title="Properties for Sale & Rent — Barama Real Estate">
     <main class="marketplace" id="main-content">
-        <header class="marketplace__header">
+        <header class="marketplace__header marketplace__header--premium">
             <div>
                 <p class="marketplace__eyebrow">Barama Real Estate</p>
-                <h1>Properties for Sale & Rent</h1>
-                <p>Browse approved, published property listings.</p>
+                <h1>Find a place that feels like yours.</h1>
+                <p>Explore verified listings, refine your budget, and save the searches that matter.</p>
             </div>
             <a href="{{ route('home') }}">Home</a>
         </header>
@@ -43,14 +43,52 @@
                     <option value="price_desc" @selected(($filters['sort'] ?? '') === 'price_desc')>Price: high to low</option>
                 </select>
             </label>
-            <button class="button" type="submit">Apply filters</button>
+            <label class="field" for="price-minimum">
+                <span>Min. price (USD)</span>
+                <input class="field__control" id="price-minimum" name="min_price" type="number"
+                    min="0" step="0.01" inputmode="decimal" value="{{ $filters['min_price'] ?? '' }}" placeholder="Any minimum">
+            </label>
+            <label class="field" for="price-maximum">
+                <span>Max. price (USD)</span>
+                <input class="field__control" id="price-maximum" name="max_price" type="number"
+                    min="0" step="0.01" inputmode="decimal" value="{{ $filters['max_price'] ?? '' }}" placeholder="Any maximum">
+            </label>
+            <button class="button" type="submit">Show matching properties</button>
         </form>
 
         @if ($errors->any())
             <p class="notice" role="alert">Please review the search filters.</p>
         @endif
 
-        <p class="marketplace__count">{{ $listings->total() }} available listings</p>
+        <div class="marketplace-search-tools">
+            <div><span class="marketplace-search-tools__label">CURATED FOR YOUR SEARCH</span>
+                <p class="marketplace__count"><strong>{{ number_format($listings->total()) }}</strong> matching listings</p></div>
+            @auth
+                <details class="marketplace-save-search">
+                    <summary>Save this search</summary>
+                    <form method="post" action="{{ route('account.searches.store') }}">
+                        @csrf
+                        <label for="saved-search-name">Name this search</label>
+                        <input id="saved-search-name" name="name" required minlength="3" maxlength="70"
+                            value="{{ old('name') }}" placeholder="e.g. Family homes under 200k">
+                        @foreach(['q','offer','type','sort','min_price','max_price'] as $key)
+                            @if(isset($filters[$key]) && $filters[$key] !== '')
+                                <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
+                            @endif
+                        @endforeach
+                        <button class="button" type="submit">Save to my account</button>
+                        <p>Up to 20 private saved searches. You can remove them anytime.</p>
+                    </form>
+                </details>
+            @else
+                <a class="button button--secondary" href="{{ route('login') }}">Sign in to save this search</a>
+            @endauth
+        </div>
+        @if($errors->any())
+            <div class="notice notice--error" role="alert">
+                @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
+            </div>
+        @endif
 
         @forelse ($listings as $listing)
             @if ($loop->first)

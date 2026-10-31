@@ -5,6 +5,18 @@
         <p>Track the homes you love and the requests you've sent.</p>
     </header>
 
+    <section class="customer-welcome">
+        <div>
+            <span class="customer-welcome__eyebrow">YOUR PERSONAL PROPERTY SPACE</span>
+            <h2>Make room for what's next.</h2>
+            <p>Your saved homes, property searches, and conversations are all here in one place.</p>
+            <div class="customer-welcome__actions">
+                <a class="button" href="{{ route('properties.index') }}">Discover properties</a>
+                <a class="button button--secondary" href="{{ route('account.searches.index') }}">Your saved searches</a>
+            </div>
+        </div>
+        <span class="customer-welcome__decoration" aria-hidden="true">⌂</span>
+    </section>
     <div class="customer-stat-grid">
         @foreach($metrics as $label => $amount)
             <article class="customer-stat"><strong>{{ number_format($amount) }}</strong><span>{{ $label }}</span></article>
@@ -38,6 +50,19 @@
             @endforelse
         </section>
     </div>
+    <section class="customer-card customer-searches-panel">
+        <div class="customer-card__heading">
+            <div><p class="customer-eyebrow">Quick access</p><h2>Your saved searches</h2></div>
+            <a href="{{ route('account.searches.index') }}">Manage searches</a>
+        </div>
+        @forelse($recentSearches as $search)
+            <a class="customer-record" href="{{ route('properties.index', $search->filters) }}">
+                <span>{{ $search->name }}</span><small>Open search →</small>
+            </a>
+        @empty
+            <p class="customer-empty">No searches saved yet. Filter properties by price, type or transaction to create your first shortcut.</p>
+        @endforelse
+    </section>
     <section class="customer-card customer-next">
         <h2>Next steps</h2>
         <p>Manage your profile, request a viewing, or check updates from your property inquiries.</p>

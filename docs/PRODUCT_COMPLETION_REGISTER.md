@@ -27,7 +27,7 @@ This register separates a tested development implementation from live cPanel acc
 | Legal Policy Center and publication | Foundation implemented | Rich content editing, consent/version audit, professional legal review |
 | Appearance Manager / homepage page builder | **PARTIAL** | Admin brand, hero/footer, theme, safe homepage sections and ordered desktop/mobile menu draft and publishing implemented; visual drag-and-drop builder, media placement and per-page templates still pending |
 | Localization, Khmer/English, language manager | **NOT MIGRATED** | Translation persistence, locale switching, RTL, QA |
-| Advanced filters, maps, geocoding, saved-search alerts | **NOT MIGRATED** | User-owned search preferences, index optimizations |
+| Advanced filters, maps, geocoding, saved-search alerts | **PARTIAL** | Price/type/transaction filter and private saved-search management added with premium customer UI; maps/geocoding, advanced facets and automated alert delivery remain pending |
 | SEO metadata, social sharing, sitemap/schema | **NOT MIGRATED** | Canonicals, per-listing metadata, sitemap generation |
 | Invoice/finance/subscriptions, gateways and tax | **NOT MIGRATED** | Payments, reconciliation, customer receipts, refund policy |
 | License integration / purchase-code entitlement | **PARTIAL** | Admin activation bridge exists; installer/customer-domain production validation incomplete |
