@@ -12,7 +12,7 @@
 - Stripe test checkout asks Stripe to collect billing address. Payment method details are not handled on Barama servers.
 - A verified, provider-managed subscription can be scheduled for cancellation at period end by its company owner. The end-of-period request uses test-only credentials, a deterministic idempotency key and validates the returned subscription/customer. Already-paid access remains until its normal expiration, subject to other risk flags.
 - An optional Stripe **test** billing portal session for payment-method management can be enabled with a pre-reviewed customer portal configuration. Configure its customer-facing actions appropriately; this application does not trust portal redirects as payment evidence.
-- Existing recurring subscribers cannot open a second active recurring checkout for the same company. Plan upgrades are deliberately not supported pending proration and tax work.
+- Existing active recurring subscribers cannot open another checkout (including one-time purchases) for the same company, preventing overlapping charges and unintended entitlement replacement. Plan changes are deliberately not supported pending proration and tax work.
 - Signed Stripe subscription-update callbacks can record a scheduled cancellation, but cannot turn a revoked entitlement back into an active entitlement. Verification of actual funds remains mandatory.
 
 ## Configuration
