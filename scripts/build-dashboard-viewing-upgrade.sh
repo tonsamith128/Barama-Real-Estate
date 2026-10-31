@@ -20,6 +20,10 @@ for file in \
   resources/views/admin/inquiries/index.blade.php \
   resources/views/developer/inquiries/index.blade.php \
   app/Models/ViewingRequest.php \
+  app/Models/AccountNotification.php \
+  app/Models/ContactMessage.php \
+  database/migrations/2026_10_31_000001_create_customer_workspace_tables.php \
+  database/migrations/2026_10_31_000002_create_contact_messages.php \
   resources/views/admin/dashboard/index.blade.php \
   resources/views/admin/viewings/index.blade.php \
   resources/views/developer/viewings/index.blade.php \
@@ -42,6 +46,7 @@ For the existing Laravel 13 QA app; not for the legacy PHP product.
    into the existing Laravel root preserving paths.
 4. Keep .env, storage, vendor, and installation lock untouched.
 5. Run /opt/alt/php85/usr/bin/php artisan migrate --force
+   This package includes the two additive account/contact migration files.
 6. Run /opt/alt/php85/usr/bin/php artisan optimize:clear
 7. Test /dashboard, /dashboard/viewings, /developer/viewings,
    /dashboard/inquiries and /developer/inquiries.
@@ -65,6 +70,8 @@ with ZipFile(sys.argv[1]) as z:
  for e in m.values():
   assert p+"public/build/"+e["file"] in names
  assert p+"app/Services/Viewings/ViewingDecisionService.php" in names
+ for mig in ("2026_10_31_000001_create_customer_workspace_tables.php", "2026_10_31_000002_create_contact_messages.php"):
+  assert p+"database/migrations/"+mig in names
  assert not any(n.startswith(p+"storage/") or n.startswith(p+"vendor/") or n==p+".env" for n in names)
 print("BARAMA_DASHBOARD_VIEWING_QA_PACKAGE_PASS")
 PY
