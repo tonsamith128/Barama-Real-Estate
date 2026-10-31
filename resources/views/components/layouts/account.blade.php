@@ -2,9 +2,14 @@
 <x-layouts.frontend :title="$title">
     <main class="customer-shell" id="main-content">
         <aside class="customer-sidebar" aria-label="Account sections">
-            <p class="customer-sidebar__eyebrow">My workspace</p>
-            <h2>{{ auth()->user()->name }}</h2>
-            <nav class="customer-nav">
+            <a href="{{ route('home') }}" class="customer-sidebar__brand">B <span>Barama<span class="customer-sidebar__brand-sub">PROPERTY MARKETPLACE</span></span></a>
+            <div class="customer-profile-identity">
+                <span class="customer-profile-identity__avatar">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+                <div><p class="customer-sidebar__eyebrow">My workspace</p>
+                    <h2>{{ auth()->user()->name }}</h2>
+                    <small>{{ auth()->user()->email }}</small></div>
+            </div>
+            <nav class="customer-nav" aria-label="My account navigation">
                 <a @class(['is-current' => request()->routeIs('account.dashboard')]) href="{{ route('account.dashboard') }}">Overview</a>
                 <a @class(['is-current' => request()->routeIs('account.saved.*')]) href="{{ route('account.saved.index') }}">Saved properties</a>
                 <a @class(['is-current' => request()->routeIs('account.searches.*')]) href="{{ route('account.searches.index') }}">Saved searches</a>
