@@ -9,6 +9,7 @@ use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
+use App\Http\Controllers\Developer\Finance\CompanyPlanController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
@@ -27,6 +28,9 @@ Route::middleware(['auth', 'verified'])
             ->name('gallery.preview');
         Route::delete('/company/{company}/listings/{listing}/gallery/{attachment}', [ListingGalleryController::class, 'destroy'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
+        Route::get('/company/{company}/plans', [CompanyPlanController::class, 'index'])->name('finance.plans.index');
+        Route::post('/company/{company}/plans/{plan}/inquire', [CompanyPlanController::class, 'inquire'])
+            ->middleware('throttle:5,1')->name('finance.plans.inquire');
         Route::get('/company/{company}/team', [DeveloperTeamController::class,'index'])->name('team.index');
         Route::post('/company/{company}/team', [DeveloperTeamController::class,'assign'])
             ->middleware('throttle:10,1')->name('team.assign');

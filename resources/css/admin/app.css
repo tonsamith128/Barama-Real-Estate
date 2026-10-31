@@ -408,3 +408,12 @@
 .license-guidance__note{border-radius:12px;background:#f4f7fc;padding:.9rem;color:#62758e;font-size:.8rem;line-height:1.6}
 @media(max-width:960px){.license-grid{grid-template-columns:1fr}}
 @media(max-width:530px){.license-hero__symbol{display:none}.license-details>div{display:grid;gap:.3rem}.license-details dd{text-align:left}}
+
+/* ===== ADMIN / FINANCE / COMMERCIAL PLANS ===== */
+.commerce-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; margin-block: 1.25rem; }
+.commerce-plan-card { min-width: 0; }
+.commerce-plan-card__price { font-size: 1.65rem; font-weight: 750; margin-block: .6rem; }
+.commerce-plan-card__price small { font-size: .8rem; font-weight: 500; }
+.commerce-plan-form { border-bottom: 1px solid var(--barama-admin-border); margin-block: 1rem; padding-bottom: 1rem; }
+.commerce-plan-form input, .commerce-plan-form select, .commerce-plan-form textarea { max-width: 100%; }
+.commerce-inquiry-list { display: grid; gap: .65rem; padding-left: 1.2rem; }

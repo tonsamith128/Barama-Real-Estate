@@ -60,6 +60,7 @@
                 <a href="{{ route('about') }}">About</a>
                 <a href="{{ route('faq') }}">Help &amp; FAQ</a>
                 <a href="{{ route('contact') }}">Contact</a>
+                <a href="{{ route('pricing.index') }}">Business plans</a>
                 <a href="{{ route('legal.index') }}">Legal policies</a>
             </nav>
             <small>© {{ date('Y') }} Barama Real Estate</small>

@@ -46,6 +46,8 @@
                     <a @class(['is-current' => request()->routeIs('admin.inquiries.*')]) href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
                     <a @class(['is-current' => request()->routeIs('admin.viewings.*')]) href="{{ route('admin.viewings.index') }}">Viewing requests</a>
                     <a @class(['is-current' => request()->routeIs('admin.contacts.*')]) href="{{ route('admin.contacts.index') }}">Contact inbox</a>
+                    <span class="workspace-nav__label">FINANCE</span>
+                    <a @class(['is-current' => request()->routeIs('admin.finance.*')]) href="{{ route('admin.finance.plans.index') }}">Pricing plans &amp; inquiries</a>
                     <span class="workspace-nav__label">SYSTEM</span>
                     <a @class(['is-current' => request()->routeIs('admin.demo.*')]) href="{{ route('admin.demo.index') }}">Demo content importer</a>
                     <a @class(['is-current' => request()->routeIs('admin.license.*')]) href="{{ route('admin.license.index') }}">License &amp; Activation</a>
@@ -72,6 +74,7 @@
                             <a href="{{ route('admin.appearance.index') }}">Appearance</a>
                             <a href="{{ route('admin.media.index') }}">Media Library</a>
                             <a href="{{ route('admin.policies.index') }}">Policies</a>
+                            <a href="{{ route('admin.finance.plans.index') }}">Pricing plans</a>
                         @else
                             <a href="{{ route('developer.inquiries.index') }}">Inquiries</a>
                             <a href="{{ route('developer.viewings.index') }}">Viewings</a>

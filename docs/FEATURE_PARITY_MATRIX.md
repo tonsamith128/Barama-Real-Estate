@@ -28,6 +28,7 @@
 | Appearance builder/homepage and footer | **Partially implemented:** publishable brand, hero/footer, primary color, SEO, ordered safe navigation and homepage content/CTA sections | Admin editor/permission/publication tests; visual drag/drop and media layout still pending |
 | Localization/Khmer and SEO | Not migrated | Pending |
 | Developer team invitations and billing | Not migrated | Pending |
+| Commercial plan catalog / company plan inquiries | Development foundation; no charging or entitlement activation | Finance feature tests and CI pending |
 | Invoice, payment and subscriptions | Not migrated | Pending |
 | License activation and entitlement | Not migrated | Pending |
 | Signed updater and rollback | Not migrated | Pending |

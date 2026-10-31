@@ -22,6 +22,7 @@ final class HomePageEditorService
         'about' => ['route' => 'about', 'label' => 'About'],
         'contact' => ['route' => 'contact', 'label' => 'Contact'],
         'faq' => ['route' => 'faq', 'label' => 'FAQ'],
+        'pricing' => ['route' => 'pricing.index', 'label' => 'Pricing'],
     ];
 
     public const TYPES = [

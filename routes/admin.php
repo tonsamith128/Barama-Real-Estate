@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\Media\MediaLibraryController;
 use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
+use App\Http\Controllers\Admin\Finance\CommercialPlanController;
 
 // Every action independently authorizes the verified system administrator.
 Route::middleware(['auth', 'verified', 'throttle:30,1'])
@@ -58,6 +59,11 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::put('/policies/{policy}', [LegalPolicyController::class, 'update'])->name('policies.update');
         Route::post('/policies/{policy}/publish', [LegalPolicyController::class, 'publish'])->name('policies.publish');
         Route::post('/policies/{policy}/unpublish', [LegalPolicyController::class, 'unpublish'])->name('policies.unpublish');
+        Route::get('/finance/plans', [CommercialPlanController::class, 'index'])->name('finance.plans.index');
+        Route::post('/finance/plans', [CommercialPlanController::class, 'store'])
+            ->middleware('throttle:10,1')->name('finance.plans.store');
+        Route::patch('/finance/plans/{plan}', [CommercialPlanController::class, 'update'])
+            ->middleware('throttle:10,1')->name('finance.plans.update');
         Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
         Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
         Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])

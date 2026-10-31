@@ -6,7 +6,7 @@ The **Homepage Builder** is available at `/dashboard/appearance/homepage` for ve
 
 - Add up to 12 custom homepage sections of type **Text**, **Feature Card**, or **Call to Action**.
 - Edit, show/hide, delete and move sections up or down. All changes are **unpublished drafts**.
-- Manage the desktop/mobile header navigation with safe, preconfigured internal route destinations. Add, remove and reorder menu links.
+- Manage the desktop/mobile header navigation with safe, preconfigured internal route destinations, including the public Pricing page. Add, remove and reorder menu links.
 - Use the existing Appearance Manager **Publish website appearance** action to atomically publish navigation, sections, branding, hero text, footer copy, SEO description and primary color.
 - Reset to the currently published settings through Appearance Manager without losing public content.
 - All changes are recorded as audit events. Forms enforce authentication, super-admin checks, CSRF validation, throttling, allowed section types, and strictly selected internal routes. Public text is Blade-escaped.

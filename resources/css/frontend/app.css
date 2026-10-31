@@ -436,3 +436,9 @@ button, input { font: inherit; }
 .home-builder-live__copy{min-width:0}
 @media(max-width:920px){.home-hero__inner--with-image,.home-builder-live__inner--with-image{grid-template-columns:1fr}.home-hero__visual{max-height:340px;aspect-ratio:16/8}.home-builder-live__inner--image-left .home-builder-live__visual,.home-builder-live__inner--image-left .home-builder-live__copy{grid-column:auto;grid-row:auto}}
 @media(max-width:520px){.home-hero__visual{max-height:260px}.home-builder-live__visual{aspect-ratio:16/10}}
+
+/* ===== FRONTEND / PRICING / COMMERCIAL PLANS ===== */
+.commerce-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 1rem; margin-block: 2rem; }
+.commerce-plan-card { border: 1px solid #dae3ed; border-radius: 1rem; padding: 1.4rem; background: #fff; min-width: 0; }
+.commerce-plan-card__price { font-size: 1.7rem; font-weight: 750; }
+.commerce-plan-card__price small { font-size: .85rem; font-weight: 500; }
