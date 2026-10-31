@@ -44,6 +44,30 @@
                 <div class="property-detail__description">{{ $listing->property->description }}</div>
             @endif
 
+            @auth
+                <section class="property-detail__actions" aria-label="Account property actions">
+                    <form method="post" action="{{ route('account.saved.store', $listing) }}">
+                        @csrf<button class="button button--secondary" type="submit">Save property</button>
+                    </form>
+                    <a class="button button--secondary" href="{{ route('account.saved.index') }}">Your saved homes</a>
+                </section>
+                <section class="viewing-form" aria-labelledby="viewing-heading">
+                    <h2 id="viewing-heading">Request a property viewing</h2>
+                    <p>A viewing request is not a confirmed booking.</p>
+                    <form action="{{ route('account.viewings.store', $listing) }}" method="post">
+                        @csrf
+                        <label class="field">Preferred date &amp; time
+                            <input class="field__control" type="datetime-local" name="requested_at" required>
+                        </label>
+                        <label class="field">Note (optional)
+                            <textarea class="field__control" name="message" maxlength="1500" rows="3"></textarea>
+                        </label>
+                        <button class="button" type="submit">Send viewing request</button>
+                    </form>
+                </section>
+            @else
+                <p><a href="{{ route('login') }}">Sign in</a> to save this property or request a viewing.</p>
+            @endauth
             @if(session('notice'))<p class="notice" role="status">{{ session('notice') }}</p>@endif
             <section class="inquiry-form" aria-labelledby="inquire-heading">
                 <h2 id="inquire-heading">Ask about this property</h2>
