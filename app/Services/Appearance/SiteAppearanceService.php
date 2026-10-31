@@ -16,6 +16,8 @@ final class SiteAppearanceService
     public static function defaults(): array
     {
         return [
+            'home_sections' => [],
+            'navigation_links' => ['properties', 'projects', 'companies', 'about', 'contact'],
             'brand_name' => 'Barama Real Estate',
             'brand_short' => 'Barama',
             'brand_subtitle' => 'Real Estate',
@@ -63,7 +65,7 @@ final class SiteAppearanceService
                     'published_data' => self::defaults(),
                 ]);
             }
-            $row->update(['draft_data' => array_replace(self::defaults(), $data)]);
+            $row->update(['draft_data' => array_replace(self::defaults(), $row->draft_data ?: [], $data)]);
             $this->audit($actor, 'appearance.draft.saved', $row);
         });
     }
