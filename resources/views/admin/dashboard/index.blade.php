@@ -14,6 +14,7 @@
             <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
             <a href="{{ route('admin.appearance.index') }}">Appearance Manager</a>
             <a href="{{ route('admin.homepage.index') }}">Homepage Builder</a>
+            <a href="{{ route('admin.media.index') }}">Media Library</a>
             <a href="{{ route('admin.users.index') }}">User Directory</a>
             <a href="{{ route('admin.contacts.index') }}">Contact Inbox</a>
             <a href="{{ route('admin.viewings.index') }}">Viewing Requests</a>
