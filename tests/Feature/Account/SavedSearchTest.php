@@ -57,7 +57,7 @@ final class SavedSearchTest extends TestCase
         $search = SavedSearch::query()->firstOrFail();
         $page = $this->get(route('account.searches.index'))->assertOk()
             ->assertSee('Rent a townhouse')->assertSee('For rent');
-        $page->assertSee('href="'.route('properties.index', $search->filters).'"', false);
+        $page->assertSee(route('properties.index', $search->filters));
         $this->get(route('properties.index', $search->filters))->assertOk();
 
         $this->patch(route('account.searches.rename', $search), [
@@ -78,7 +78,7 @@ final class SavedSearchTest extends TestCase
             'offer' => 'sale',
         ])->assertRedirect();
         $this->get(route('account.dashboard'))->assertOk()
-            ->assertSee('Make room for what&#039;s next.', false)
+            ->assertSee("Make room for what's next.")
             ->assertSee('Saved searches')
             ->assertSee('Villas in city');
         $this->get(route('account.searches.index'))->assertSee('YOUR PERSONAL COLLECTION');
