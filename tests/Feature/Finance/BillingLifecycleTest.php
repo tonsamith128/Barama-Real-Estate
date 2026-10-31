@@ -66,10 +66,20 @@ final class BillingLifecycleTest extends TestCase
     private function checkout(Company $company, User $owner, CommercialPlan $plan): BillingOrder
     {
         Http::fake([
-            'api.stripe.com/*' => Http::response([
-                'id' => 'cs_test_fixed123', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_fixed123',
-                'amount_total' => 1999, 'currency' => 'usd', 'mode' => 'payment', 'livemode' => false,
-            ]),
+            'api.stripe.com/*' => function ($request) {
+                if (str_ends_with($request->url(), '/v1/refunds')) {
+                    $amount = (int) ($request['amount'] ?? 0);
+                    return Http::response([
+                        'id' => 're_test_'.$amount,
+                        'payment_intent' => 'pi_test_payment_001',
+                        'amount' => $amount, 'currency' => 'usd', 'livemode' => false,
+                    ]);
+                }
+                return Http::response([
+                    'id' => 'cs_test_fixed123', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_fixed123',
+                    'amount_total' => 1999, 'currency' => 'usd', 'mode' => 'payment', 'livemode' => false,
+                ]);
+            },
         ]);
         $this->actingAs($owner)->post(route('developer.finance.plans.checkout', [$company, $plan]))
             ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_fixed123');
@@ -227,20 +237,6 @@ final class BillingLifecycleTest extends TestCase
         $this->settle($order);
         $admin = User::factory()->create(['system_role' => 'super_admin']);
 
-        Http::fake([
-            'api.stripe.com/*' => Http::sequence()
-                ->push([
-                    'id' => 're_test_partial',
-                    'payment_intent' => 'pi_test_payment_001',
-                    'amount' => 499, 'currency' => 'usd', 'livemode' => false,
-                ])
-                ->push([
-                    'id' => 're_test_full',
-                    'payment_intent' => 'pi_test_payment_001',
-                    'amount' => 1500, 'currency' => 'usd', 'livemode' => false,
-                ]),
-        ]);
-
         $payment = BillingPayment::query()->firstOrFail();
         $this->actingAs($admin)->post(route('admin.finance.billing.refund', $payment), [
             'amount' => '4.99', 'reason' => 'Customer requested adjustment',
@@ -279,10 +275,6 @@ final class BillingLifecycleTest extends TestCase
             ])->assertForbidden();
         $this->assertDatabaseCount('billing_refunds', 0);
         $admin = User::factory()->create(['system_role' => 'super_admin']);
-        Http::fake(['api.stripe.com/*' => Http::response([
-            'id' => 're_test_hold', 'payment_intent' => 'pi_test_payment_001',
-            'amount' => 1500, 'currency' => 'usd', 'livemode' => false,
-        ])]);
         $this->actingAs($admin)->post(route('admin.finance.billing.refund', $payment), [
             'amount' => '15.00', 'reason' => 'Pending amount reserved',
         ])->assertRedirect();
