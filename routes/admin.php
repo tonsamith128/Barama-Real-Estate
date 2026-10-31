@@ -20,6 +20,9 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('/users', UserDirectoryController::class)->name('users.index');
+        Route::get('/viewings', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'index'])->name('viewings.index');
+        Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'decide'])
+            ->middleware('throttle:10,1')->name('viewings.decide');
         Route::get('/contacts', [ContactInboxController::class, 'index'])->name('contacts.index');
         Route::patch('/contacts/{message}/read', [ContactInboxController::class, 'read'])->name('contacts.read');
         Route::get('/policies', [LegalPolicyController::class, 'index'])->name('policies.index');
@@ -32,6 +35,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
         Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
+        Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
+            ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
         Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');

@@ -5,7 +5,7 @@
             <h1>Developer Workspace</h1>
             <p>Your active company memberships are listed below.</p>
         </div>
-        <a href="{{ route('developer.inquiries.index') }}">Company inquiries</a> · <a href="{{ route('home') }}">Public website</a>
+        <a href="{{ route('developer.inquiries.index') }}">Company inquiries</a> · <a href="{{ route('developer.viewings.index') }}">Viewing requests</a> · <a href="{{ route('home') }}">Public website</a>
     </header>
 
     <section aria-labelledby="companies-heading" class="admin-card">

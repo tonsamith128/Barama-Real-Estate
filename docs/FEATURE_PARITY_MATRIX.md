@@ -14,7 +14,7 @@
 | Company-scoped developer workspace | Implemented foundation | Membership isolation tests |
 | Developer property draft/submission | Implemented | Company-scoped write and review tests |
 | Admin company onboarding and listing moderation | Implemented foundation | Auth/approval tests |
-| Inquiry capture and inboxes | Implemented foundation | Tenant isolation tests |
+| Inquiry capture and inboxes | Admin + company manager response status and customer notifications implemented; actual replies still manual | Tenant isolation + response audit tests |
 | Original v0.9.26 demo archive preview | Implemented | ZIP structure and synthetic signed fixture |
 | Signed demo import | **Staging-only** | Crypto + mapping tests; real detached signature/entitlement still needed |
 | Demo media gallery and public delivery | Implemented for imported demo | Hidden/published image visibility tests |
@@ -22,7 +22,7 @@
 | Appearance/site settings | Inactive import only | Settings status asserted |
 | Media Library upload/editor | **Partially implemented:** tenant-scoped validated image upload, private listing galleries, administrative inventory, and protected previews | 46 Laravel QA tests / 223 assertions (foundation workflow) |
 | Full company/project/property management/editing | Partial — developer drafts, listing gallery and administrator approval are available | Tenant-isolation tests; full editing pending |
-| Account saved properties, viewing requests and notifications | Implemented customer foundation with permission-scoped history and status | 60 account and integration tests (at initial run); staged upgrade with additive migrations |
+| Account saved properties, viewing requests and notifications | Implemented customer foundations; verified admin and company viewing decisions and notifications | 68 Laravel tests / 365 assertions on development branch |
 | Legacy user/password/role/MFA migration | Not migrated | Pending |
 | Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
 | Appearance builder/homepage and footer | Not migrated | Pending |
@@ -60,3 +60,7 @@ See [Policy Center acceptance](POLICY_CENTER_ACCEPTANCE.md) for draft/edit/publi
 ## Frontend, Customer and Admin milestone
 
 [Frontend/Account/Admin acceptance](FRONTEND_ACCOUNT_ADMIN_ACCEPTANCE.md) covers public navigation, About/FAQ/Contact, account metrics and profile/security, saved properties, viewings, inquiry history, notifications, user directory and contact inbox. **Student/Instructor roles are Learmingo LMS scope**, not Barama.
+
+## Dashboard recovery and customer relationships
+
+See [Dashboard/Viewing acceptance](DASHBOARD_VIEWING_ACCEPTANCE.md). When cPanel receives application code before corresponding database migrations, the administrator overview now shows missing-module schema status instead of triggering an unhandled missing-table query. Viewing decisions and inquiry handled status are audited, customer notices are in-app only, and company manager access is tenant-scoped. The real cPanel error log has not yet been reviewed, so the exact 500 root cause remains a hypothesis pending host verification.

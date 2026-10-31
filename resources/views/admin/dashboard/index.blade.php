@@ -14,6 +14,7 @@
             <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
             <a href="{{ route('admin.users.index') }}">User Directory</a>
             <a href="{{ route('admin.contacts.index') }}">Contact Inbox</a>
+            <a href="{{ route('admin.viewings.index') }}">Viewing Requests</a>
             <a href="{{ route('admin.media.index') }}">Media Library</a>
             <a href="{{ route('admin.policies.index') }}">Policy Center</a>
             <a href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
@@ -32,6 +33,16 @@
                 <h1>Dashboard</h1><p>Manage your companies, listings, inquiries and demo content.</p></div>
             <a class="dashboard-link" href="{{ route('home') }}">Open website</a>
         </header>
+        @if(count($missingTables) > 0)
+            <section class="dashboard-section" role="alert">
+                <h2>Database update required</h2>
+                <p>Some recent application modules have not yet been migrated. Missing tables:</p>
+                <p><code>{{ implode(', ', $missingTables) }}</code></p>
+                <p>Back up your database, then run <code>php artisan migrate --force</code> from the Laravel
+                application root. Do not reinstall, reset the database, or delete the installation lock.</p>
+                <p>After migrations, run <code>php artisan optimize:clear</code> and refresh this page.</p>
+            </section>
+        @endif
         <section class="dashboard-stat-grid" aria-label="Marketplace statistics">
             @foreach($counts as $label => $count)
                 <article class="dashboard-stat"><span>{{ $label }}</span><strong>{{ number_format($count) }}</strong></article>
@@ -42,6 +53,7 @@
                 <h2>Quick actions</h2>
                 <div class="dashboard-actions">
                     <a href="{{ route('admin.users.index') }}"><strong>User Directory</strong><span>Review accounts and active company memberships.</span></a>
+                    <a href="{{ route('admin.viewings.index') }}"><strong>Viewing Requests</strong><span>Review customer visit requests and send updates.</span></a>
                     <a href="{{ route('admin.contacts.index') }}"><strong>Contact Inbox</strong><span>Read and review customer support messages.</span></a>
                     <a href="{{ route('admin.catalog.index') }}"><strong>Review listings</strong><span>Onboard companies and approve new properties.</span></a>
                     <a href="{{ route('admin.policies.index') }}"><strong>Policy Center</strong><span>Edit and publish legal pages without compliance-percentage barriers.</span></a>
