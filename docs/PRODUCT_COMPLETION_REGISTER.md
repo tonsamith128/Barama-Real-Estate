@@ -25,7 +25,7 @@ This register separates a tested development implementation from live cPanel acc
 | Admin and developer inquiry/viewing review | Implemented foundation | Actual messaging replies, calendar/mail delivery, appointments integration |
 | Media Library upload, protected preview and gallery | Partial | Responsive variants, batch actions, metadata, independent rights approvals |
 | Legal Policy Center and publication | Foundation implemented | Rich content editing, consent/version audit, professional legal review |
-| Appearance Manager / homepage page builder | **PARTIAL** | Admin brand/hero/footer/theme draft and publishing implemented; header/footer/menu builder, typography presets, drag-and-drop visual blocks and media layout still pending |
+| Appearance Manager / homepage page builder | **PARTIAL** | Admin brand, hero/footer, theme, safe homepage sections and ordered desktop/mobile menu draft and publishing implemented; visual drag-and-drop builder, media placement and per-page templates still pending |
 | Localization, Khmer/English, language manager | **NOT MIGRATED** | Translation persistence, locale switching, RTL, QA |
 | Advanced filters, maps, geocoding, saved-search alerts | **NOT MIGRATED** | User-owned search preferences, index optimizations |
 | SEO metadata, social sharing, sitemap/schema | **NOT MIGRATED** | Canonicals, per-listing metadata, sitemap generation |
