@@ -257,3 +257,19 @@
 .home-builder-navigation__item strong {font-size:.9rem}
 @media(max-width:960px){.home-builder-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.home-builder-section__heading,.home-builder-heading{flex-direction:column}}
+
+
+/* ===== ADMIN / 21 / MEDIA INVENTORY, RIGHTS AND ALT TEXT ===== */
+.media-search-form{display:flex;flex-wrap:wrap;align-items:end;gap:.8rem;margin-bottom:1rem}
+.media-search-form label{display:grid;gap:.35rem;font-weight:650;min-width:12rem;flex:1}
+.media-search-form input,.media-search-form select{width:100%;padding:.7rem;border:1px solid var(--barama-admin-border);border-radius:9px;font:inherit}
+.media-manager-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:1.1rem;margin:1.2rem 0}
+.media-manager-card{overflow:hidden;border:1px solid var(--barama-admin-border);background:var(--barama-admin-surface);border-radius:15px;min-width:0}
+.media-manager-card>img{display:block;width:100%;height:210px;object-fit:cover;background:#e6edf7}
+.media-manager-card__body{padding:1.15rem}
+.media-manager-card__body h2{font-size:1rem;overflow-wrap:anywhere;margin:0 0 .6rem}
+.media-manager-card__body p{font-size:.87rem;color:#536981;overflow-wrap:anywhere}
+.media-manager-card details{margin-top:.8rem;border-top:1px solid var(--barama-admin-border);padding-top:.85rem}
+.media-manager-card summary{font-weight:700;cursor:pointer}
+.media-manager-card details .admin-form{margin-top:1rem}
+@media(max-width:700px){.media-search-form{flex-direction:column;align-items:stretch}}
