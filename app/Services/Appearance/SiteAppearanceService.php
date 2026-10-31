@@ -17,6 +17,7 @@ final class SiteAppearanceService
     {
         return [
             'home_sections' => [],
+            'hero_image_asset_id' => null,
             'navigation_links' => ['properties', 'projects', 'companies', 'about', 'contact'],
             'brand_name' => 'Barama Real Estate',
             'brand_short' => 'Barama',
