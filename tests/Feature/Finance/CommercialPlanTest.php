@@ -64,6 +64,19 @@ final class CommercialPlanTest extends TestCase
         ]);
     }
 
+    public function test_public_pricing_supports_eight_allowlisted_locales_without_changing_usd_price(): void
+    {
+        $this->plan();
+        $this->get(route('pricing.index', ['lang' => 'km']))
+            ->assertOk()->assertSee('គម្រោងសម្រាប់អាជីវកម្ម')
+            ->assertSee('$19.99')->assertSee('USD');
+        $this->get(route('pricing.index', ['lang' => 'fr']))
+            ->assertOk()->assertSee('Forfaits professionnels')
+            ->assertSee('$19.99');
+        $this->get(route('pricing.index', ['lang' => 'not-supported']))
+            ->assertOk()->assertSee('Business plans')->assertSee('not an active checkout');
+    }
+
     public function test_public_pricing_only_shows_published_plans_and_no_checkout(): void
     {
         $this->plan(true);
