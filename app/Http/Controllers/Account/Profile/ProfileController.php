@@ -23,7 +23,7 @@ final class ProfileController
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:190'],
             'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user->getKey())],
-            'current_password' => ['nullable', 'required_if_email_changed', 'string'],
+            'current_password' => ['nullable', 'string'],
         ]);
         $newEmail = strcasecmp($user->email, $data['email']) !== 0;
         if ($newEmail) {
