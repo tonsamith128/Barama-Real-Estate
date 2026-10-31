@@ -408,3 +408,28 @@
 .license-guidance__note{border-radius:12px;background:#f4f7fc;padding:.9rem;color:#62758e;font-size:.8rem;line-height:1.6}
 @media(max-width:960px){.license-grid{grid-template-columns:1fr}}
 @media(max-width:530px){.license-hero__symbol{display:none}.license-details>div{display:grid;gap:.3rem}.license-details dd{text-align:left}}
+
+/* ===== ADMIN / FINANCE / COMMERCIAL PLANS ===== */
+.commerce-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; margin-block: 1.25rem; }
+.commerce-plan-card { min-width: 0; }
+.commerce-plan-card__price { font-size: 1.65rem; font-weight: 750; margin-block: .6rem; }
+.commerce-plan-card__price small { font-size: .8rem; font-weight: 500; }
+.commerce-plan-form { border-bottom: 1px solid var(--barama-admin-border); margin-block: 1rem; padding-bottom: 1rem; }
+.commerce-plan-form input, .commerce-plan-form select, .commerce-plan-form textarea { max-width: 100%; }
+.commerce-inquiry-list { display: grid; gap: .65rem; padding-left: 1.2rem; }
+
+/* ===== ADMIN / FINANCE / BILLING LEDGER ===== */
+.commerce-ledger-scroll { overflow-x: auto; }
+.commerce-ledger-table { width: 100%; border-collapse: collapse; min-width: 45rem; }
+.commerce-ledger-table th, .commerce-ledger-table td { padding: .75rem; border-bottom: 1px solid var(--barama-admin-border); text-align: left; }
+.commerce-ledger-payment { padding: 1rem 0; border-bottom: 1px solid var(--barama-admin-border); }
+.commerce-refund-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); align-items: end; gap: .75rem; }
+
+/* ===== ADMIN / FINANCE / RECONCILIATION AND RECEIPTS ===== */
+.commerce-ops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 1rem; }
+.commerce-ops-item { padding: 1rem; border: 1px solid var(--barama-admin-border); border-radius: .75rem; display: flex; flex-direction: column; gap: .4rem; }
+.commerce-ops-item strong { font-size: 1.5rem; }
+.commerce-receipt-details { display: grid; gap: .75rem; }
+.commerce-receipt-details div { display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: .7rem; border-bottom: 1px solid var(--barama-admin-border); padding-bottom: .55rem; }
+.commerce-receipt-details dt { font-weight: 700; }
+@media (max-width: 640px) { .commerce-receipt-details div { grid-template-columns: 1fr; } }

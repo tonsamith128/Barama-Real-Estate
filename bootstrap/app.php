@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Use default Laravel web middleware and explicitly tested domain policies.
+        // Only the signed Stripe callback is exempt from the session CSRF token.
+        $middleware->validateCsrfTokens(except: ['webhooks/stripe']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Never leak production exception details.

@@ -25,15 +25,34 @@ final class HomePageBuilderController
         $media = app(HomepageMediaAccess::class);
         $term = trim((string) $request->query('media_q', ''));
         abort_if(mb_strlen($term) > 80, 422);
+        $draft = $appearance->editing();
+        $selectedIds = collect(array_merge(
+            [$draft['hero_image_asset_id'] ?? null],
+            array_column($draft['home_sections'] ?? [], 'image_asset_id'),
+        ))->filter(fn ($id) => is_int($id) || (is_string($id) && ctype_digit($id)))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)->unique()->values()->all();
+
+        $assets = collect();
+        if ($media->isReady()) {
+            $assets = $media->selectable()
+                ->when($term !== '', fn ($query) => $query->where('original_name', 'like', '%'.$term.'%'))
+                ->latest()->limit(36)->get();
+
+            // Do not silently clear a current draft image just because it is
+            // older than the latest 36 or absent from a search result.
+            if ($selectedIds !== []) {
+                $assets = $assets->concat(
+                    $media->selectable()->whereKey($selectedIds)->get(),
+                )->unique('id')->values();
+            }
+        }
+
         return view('admin.appearance.homepage', [
-            'mediaAssets' => $media->isReady()
-                ? $media->selectable()
-                    ->when($term !== '', fn ($q) => $q->where('original_name', 'like', '%'.$term.'%'))
-                    ->latest()->limit(36)->get()
-                : collect(),
+            'mediaAssets' => $assets,
             'mediaReady' => $media->isReady(),
             'mediaTerm' => $term,
-            'draft' => $appearance->editing(),
+            'draft' => $draft,
             'published' => $appearance->published(),
             'types' => HomePageEditorService::TYPES,
             'menu' => HomePageEditorService::MENU,

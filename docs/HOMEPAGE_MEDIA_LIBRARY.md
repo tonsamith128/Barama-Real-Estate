@@ -6,7 +6,8 @@ The administrator can upload a JPEG/PNG/WebP from **Dashboard → Media Library*
 
 - Admin uploads are validated by image bytes and dimensions, restricted to 12 MB and 24 megapixels, stored on the private local disk by SHA-256, and deduplicated.
 - New uploads are **unreviewed** by default. Only Media Library assets declared **owned** or **licensed** with a nonempty rights holder are selectable. These declarations are *not* independent evidence of image rights; marketplace legal review remains necessary.
-- Homepage Builder includes optional hero image and independent images for Text, Feature and CTA sections, with responsive left/right image placement. Existing text-only sections and drafts stay compatible.
+- Homepage Builder includes optional hero image and independent images for Text, Feature and CTA sections, with responsive left/right image placement.
+- The picker searches the available library and displays up to 36 recent matches, while **always preserving selectable images already attached to the draft**, including older images and those absent from the current search. If an attached image loses rights eligibility, the warning remains and the image is not silently reauthorized. Existing text-only sections and drafts stay compatible.
 - All image choices use existing `MediaAsset` IDs inside the existing `site_appearances` JSON draft/published snapshot. **No new database table or filesystem copy is required.**
 - Public image URL `/media/homepage/{asset}` serves a private original *only* if it is referenced by the currently published hero or an enabled published section **and** currently has permitted rights metadata.
 - A draft image is never publicly accessible. Removing its published reference or changing rights to restricted/unreviewed immediately revokes the public route; private admin preview continues to be authenticated.

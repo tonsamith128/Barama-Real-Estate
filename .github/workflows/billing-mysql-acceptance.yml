@@ -1,0 +1,110 @@
+name: Billing MySQL 8 Acceptance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'app/Services/Billing/**'
+      - 'app/Models/Billing*.php'
+      - 'app/Http/Controllers/**/Finance/**'
+      - 'database/migrations/**'
+      - 'lang/**/billing.php'
+      - 'tests/Feature/Finance/**'
+      - '.github/workflows/billing-mysql-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-mysql-finance:
+    name: Isolated MySQL 8 finance tests (not a provider acceptance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: barama_billing_qa
+          MYSQL_USER: barama
+          MYSQL_PASSWORD: isolated_ci_password
+          MYSQL_ROOT_PASSWORD: isolated_ci_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pisolated_ci_root_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, fileinfo, pdo_sqlite, pdo_mysql, curl, openssl, zip, sodium
+          coverage: none
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Fresh migrations on isolated MySQL 8 database
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          APP_DEBUG: 'false'
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: barama_billing_qa
+          DB_USERNAME: barama
+          DB_PASSWORD: isolated_ci_password
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+        run: |
+          php artisan migrate --force --no-interaction
+          php artisan migrate:status
+          php artisan billing:release-check --json
+      - name: Forward-upgrade preservation check on a second disposable MySQL 8 database
+        env:
+          CI: 'true'
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: barama_billing_upgrade
+          DB_USERNAME: barama
+          DB_PASSWORD: isolated_ci_password
+          MYSQL_ROOT_PASSWORD: isolated_ci_root_password
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+        run: bash scripts/acceptance/billing-mysql-forward-upgrade.sh
+      - name: Billing feature suite on isolated MySQL 8
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          APP_DEBUG: 'false'
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: barama_billing_qa
+          DB_USERNAME: barama
+          DB_PASSWORD: isolated_ci_password
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+        run: |
+          ./vendor/bin/phpunit tests/Feature/Finance --colors=never
+      - name: Never allow a green database suite to approve live processing
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: barama_billing_qa
+          DB_USERNAME: barama
+          DB_PASSWORD: isolated_ci_password
+        run: |
+          php artisan billing:release-check --json > /tmp/barama-billing-readiness.json
+          php -r '
+            $x=json_decode(file_get_contents("/tmp/barama-billing-readiness.json"), true, 512, JSON_THROW_ON_ERROR);
+            if (($x["live_ready"] ?? true)!==false ||
+              ($x["external_gates"]["provider_sandbox"]["status"] ?? "")!=="not_verified") { exit(1); }
+            echo "BILLING_LIVE_RELEASE_GUARD_PASS\n";
+          '

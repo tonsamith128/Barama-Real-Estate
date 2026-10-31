@@ -19,6 +19,7 @@
                         <a href="{{ route('developer.projects.index', $company) }}">Manage projects</a>
                         @if($company->memberships()->where('user_id', auth()->id())->where('role','owner')->where('status','active')->exists())
                             <a href="{{ route('developer.team.index', $company) }}">Manage team</a>
+                            <a href="{{ route('developer.finance.plans.index', $company) }}">Business plans</a>
                         @endif
                     @endif
                 </li>

@@ -9,6 +9,10 @@ use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
+use App\Http\Controllers\Developer\Finance\CompanyPlanController;
+use App\Http\Controllers\Developer\Finance\BillingReceiptController;
+use App\Http\Controllers\Developer\Finance\CompanyBillingProfileController;
+use App\Http\Controllers\Developer\Finance\CompanySubscriptionManagementController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
@@ -27,6 +31,21 @@ Route::middleware(['auth', 'verified'])
             ->name('gallery.preview');
         Route::delete('/company/{company}/listings/{listing}/gallery/{attachment}', [ListingGalleryController::class, 'destroy'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
+        Route::post('/company/{company}/plans/{plan}/checkout', [CompanyPlanController::class, 'checkout'])
+            ->middleware('throttle:2,1')->name('finance.plans.checkout');
+        Route::get('/company/{company}/billing/invoices/{invoice}', BillingReceiptController::class)
+            ->name('finance.receipts.show');
+        Route::get('/company/{company}/billing/profile', [CompanyBillingProfileController::class, 'edit'])
+            ->name('finance.profile.edit');
+        Route::put('/company/{company}/billing/profile', [CompanyBillingProfileController::class, 'update'])
+            ->middleware('throttle:10,1')->name('finance.profile.update');
+        Route::post('/company/{company}/billing/subscription/cancel', [CompanySubscriptionManagementController::class, 'cancel'])
+            ->middleware('throttle:2,1')->name('finance.subscription.cancel');
+        Route::post('/company/{company}/billing/portal', [CompanySubscriptionManagementController::class, 'portal'])
+            ->middleware('throttle:4,1')->name('finance.subscription.portal');
+        Route::get('/company/{company}/plans', [CompanyPlanController::class, 'index'])->name('finance.plans.index');
+        Route::post('/company/{company}/plans/{plan}/inquire', [CompanyPlanController::class, 'inquire'])
+            ->middleware('throttle:5,1')->name('finance.plans.inquire');
         Route::get('/company/{company}/team', [DeveloperTeamController::class,'index'])->name('team.index');
         Route::post('/company/{company}/team', [DeveloperTeamController::class,'assign'])
             ->middleware('throttle:10,1')->name('team.assign');

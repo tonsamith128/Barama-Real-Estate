@@ -8,6 +8,7 @@ use App\Domain\RealEstate\MarketplaceStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Company extends Model
@@ -33,6 +34,11 @@ final class Company extends Model
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function billingProfile(): HasOne
+    {
+        return $this->hasOne(CompanyBillingProfile::class);
     }
 
     public function memberships(): HasMany

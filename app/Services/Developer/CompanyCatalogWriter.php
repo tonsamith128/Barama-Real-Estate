@@ -29,6 +29,8 @@ final class CompanyCatalogWriter
         $this->assertCanManage($user, $company);
         $slug = Str::slug((string) $attributes['title']).'-'.Str::lower(Str::random(8));
         return DB::transaction(function () use ($company, $attributes, $slug, $user): Listing {
+            Company::query()->whereKey($company->getKey())->lockForUpdate()->firstOrFail();
+            app(\App\Services\Billing\SubscriptionEntitlements::class)->assertCanCreateListing($company);
             $property = Property::query()->create([
                 'company_id' => $company->getKey(),
                 'project_id' => $attributes['project_id'] ?? null,

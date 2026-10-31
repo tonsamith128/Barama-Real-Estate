@@ -7,6 +7,7 @@ use App\Http\Controllers\Frontend\Home\HomeController;
 use App\Http\Controllers\Frontend\Projects\ProjectController;
 use App\Http\Controllers\Frontend\Properties\PropertyController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Frontend\Pricing\PricingController;
 use App\Http\Controllers\Frontend\Pages\PublicPageController;
 use App\Http\Controllers\Frontend\Legal\LegalPageController;
 use App\Http\Controllers\Frontend\Inquiries\InquiryController;
@@ -19,6 +20,7 @@ Route::get('/contact', [PublicPageController::class, 'contact'])->name('contact'
 Route::post('/contact', [PublicPageController::class, 'submitContact'])
     ->middleware('throttle:4,1')->name('contact.submit');
 Route::get('/faq', [PublicPageController::class, 'faq'])->name('faq');
+Route::get('/pricing', PricingController::class)->name('pricing.index');
 Route::get('/legal', [LegalPageController::class, 'index'])->name('legal.index');
 Route::get('/legal/{slug}', [LegalPageController::class, 'show'])->name('legal.show');
 
