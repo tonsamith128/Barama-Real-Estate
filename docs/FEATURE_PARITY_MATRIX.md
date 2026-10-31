@@ -22,7 +22,7 @@
 | Appearance/site settings | Inactive import only | Settings status asserted |
 | Media Library upload/editor | **Partially implemented:** tenant-scoped validated image upload, private listing galleries, administrative inventory, and protected previews | 46 Laravel QA tests / 223 assertions (foundation workflow) |
 | Full company/project/property management/editing | Partial — developer drafts, listing gallery and administrator approval are available | Tenant-isolation tests; full editing pending |
-| Notifications/viewing requests/saved searches | Not migrated | Pending |
+| Account saved properties, viewing requests and notifications | Implemented customer foundation with permission-scoped history and status | 60 account and integration tests (at initial run); staged upgrade with additive migrations |
 | Legacy user/password/role/MFA migration | Not migrated | Pending |
 | Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
 | Appearance builder/homepage and footer | Not migrated | Pending |
@@ -33,7 +33,7 @@
 | Signed updater and rollback | Not migrated | Pending |
 | Demo publisher API, signed download/license binding | Not migrated | Pending |
 | Database v1-to-Laravel data upgrade | Not migrated | Pending |
-| CPanel/aaPanel live-hosting QA | Not verified | Pending |
+| CPanel/aaPanel live-hosting QA | MySQL/Apache CI simulated; live cPanel changes must be tested separately | Not yet verified on customer domain |
 | CodeCanyon exact customer ZIP and rights audit | Not approved | Pending |
 
 ## Safe integrated testing
@@ -56,3 +56,7 @@ See [Media Library acceptance](MEDIA_LIBRARY_ACCEPTANCE.md) for content validati
 ## Policy Center milestone
 
 See [Policy Center acceptance](POLICY_CENTER_ACCEPTANCE.md) for draft/edit/publish test cases, XSS sanitization, audit events and legal publication access controls. Historical demo legal drafts must be reviewed before publication; no legal-compliance score blocks the action.
+
+## Frontend, Customer and Admin milestone
+
+[Frontend/Account/Admin acceptance](FRONTEND_ACCOUNT_ADMIN_ACCEPTANCE.md) covers public navigation, About/FAQ/Contact, account metrics and profile/security, saved properties, viewings, inquiry history, notifications, user directory and contact inbox. **Student/Instructor roles are Learmingo LMS scope**, not Barama.
