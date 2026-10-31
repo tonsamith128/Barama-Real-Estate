@@ -31,7 +31,7 @@ final class DeveloperViewingController
     {
         return view('developer.viewings.index', [
             'viewings' => $this->accessible($request)
-                ->with(['listing.property.company'])->latest()->paginate(20),
+                ->with(['listing.property.company', 'user'])->latest()->paginate(20),
         ]);
     }
 
