@@ -17,6 +17,11 @@ final class ProjectManager
     {
     }
 
+    public function assertOwnerAccess(User $user, Company $company): void
+    {
+        $this->permissions->assertCanManage($user, $company);
+    }
+
     public function assertOwner(User $user, Company $company, Project $project): void
     {
         $this->permissions->assertCanManage($user, $company);
