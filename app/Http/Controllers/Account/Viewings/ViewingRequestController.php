@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Account\Viewings;
 
 use App\Models\Listing;
+use App\Models\AccountNotification;
 use App\Models\ViewingRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,12 @@ final class ViewingRequestController
             'requested_at' => $data['requested_at'],
             'message' => $data['message'] ?? null,
             'status' => 'pending',
+        ]);
+        AccountNotification::query()->create([
+            'user_id' => $request->user()->getKey(),
+            'title' => 'Viewing request submitted',
+            'message' => 'Your request to view '.$listing->property->title.' was sent. The appointment is not confirmed.',
+            'type' => 'viewing',
         ]);
         return redirect()->route('account.viewings.index')
             ->with('notice', 'Viewing request submitted. This is not a confirmed appointment.');
