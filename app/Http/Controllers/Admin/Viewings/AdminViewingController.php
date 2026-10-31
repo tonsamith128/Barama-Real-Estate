@@ -18,7 +18,7 @@ final class AdminViewingController
         abort_unless($request->user()?->isSystemAdministrator(), 403);
         $status = (string) $request->query('status', 'pending');
         abort_unless(in_array($status, ['pending','confirmed','declined','cancelled','all'], true), 422);
-        $query = ViewingRequest::query()->with(['listing.property.company'])->latest();
+        $query = ViewingRequest::query()->with(['listing.property.company', 'user'])->latest();
         if ($status !== 'all') {
             $query->where('status', $status);
         }
