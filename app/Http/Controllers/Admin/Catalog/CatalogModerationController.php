@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Admin\Catalog;
 use App\Models\Company;
 use App\Models\CompanyMembership;
 use App\Models\Listing;
+use App\Models\Project;
+use App\Services\Moderation\CatalogReviewService;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +27,9 @@ final class CatalogModerationController
     {
         $this->authorizeAdmin($request);
         return view('admin.catalog.index', [
+            'pendingProjects' => Project::query()->where('status', 'pending')->with('company')->oldest()->paginate(15, ['*'], 'projects_page'),
+            'publishedListings' => Listing::query()->where('status','published')->with('property.company')->latest()->paginate(10, ['*'], 'published_page'),
+            'recentDecisions' => DB::table('moderation_decisions')->latest()->limit(12)->get(),
             'pending' => Listing::query()->where('status', 'pending')
                 ->with('property.company')->orderBy('created_at')->paginate(20),
             'companies' => Company::query()->orderBy('name')->paginate(20, ['*'], 'companies_page'),
@@ -102,5 +107,47 @@ final class CatalogModerationController
 
         return redirect()->route('admin.catalog.index')
             ->with('notice', 'Property and listing approved for public display.');
+    }
+
+    public function projectDecision(
+        Request $request,
+        Project $project,
+        CatalogReviewService $moderation,
+    ): RedirectResponse {
+        $this->authorizeAdmin($request);
+        $data = $request->validate([
+            'decision' => ['required', Rule::in(['approved', 'rejected'])],
+            'reason' => ['nullable', 'required_if:decision,rejected', 'string', 'min:10', 'max:2000'],
+        ]);
+        $moderation->decideProject(
+            $request->user(), $project, $data['decision'], $data['reason'] ?? null
+        );
+        return back()->with('notice', 'Project review completed.');
+    }
+
+    public function reject(
+        Request $request,
+        Listing $listing,
+        CatalogReviewService $moderation,
+    ): RedirectResponse {
+        $this->authorizeAdmin($request);
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+        $moderation->rejectListing($request->user(), $listing, $data['reason']);
+        return back()->with('notice', 'Listing rejected for developer revision.');
+    }
+
+    public function unpublish(
+        Request $request,
+        Listing $listing,
+        CatalogReviewService $moderation,
+    ): RedirectResponse {
+        $this->authorizeAdmin($request);
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+        $moderation->unpublishListing($request->user(), $listing, $data['reason']);
+        return back()->with('notice', 'Listing unpublished. Developer may revise and resubmit.');
     }
 }
