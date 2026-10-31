@@ -23,7 +23,7 @@ This register separates a tested development implementation from live cPanel acc
 | Project create/edit/submit, admin review | New QA implementation | Advanced project galleries/floorplans and workflow approvals |
 | Admin approve/reject/unpublish, moderation reasons and audit | New QA implementation | Granular moderator permissions, customer impact notifications |
 | Admin and developer inquiry/viewing review | Implemented foundation | Actual messaging replies, calendar/mail delivery, appointments integration |
-| Media Library upload, protected preview and gallery | Partial | Responsive variants, batch actions, metadata, independent rights approvals |
+| Media Library upload, protected preview and gallery | **PARTIAL** | Search/filter, alt text and recorded rights-holder/license metadata implemented; image variants, batch actions, independent license verification and image editor remain pending |
 | Legal Policy Center and publication | Foundation implemented | Rich content editing, consent/version audit, professional legal review |
 | Appearance Manager / homepage page builder | **PARTIAL** | Admin brand, hero/footer, theme, safe homepage sections and ordered desktop/mobile menu draft and publishing implemented; visual drag-and-drop builder, media placement and per-page templates still pending |
 | Localization, Khmer/English, language manager | **NOT MIGRATED** | Translation persistence, locale switching, RTL, QA |
