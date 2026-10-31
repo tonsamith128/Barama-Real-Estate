@@ -23,3 +23,13 @@ Artisan::command('billing:release-check {--json : Print JSON only} {--strict : F
 
     return $this->option('strict') && !$report['live_ready'] ? 2 : 0;
 })->purpose('Check local billing prerequisites; never authorizes live payments');
+
+
+// Explicit read-only connectivity check for an operator-supplied sk_test_ key.
+// Never validates payments or changes any financial ledger.
+Artisan::command('billing:stripe-sandbox-probe', function (\App\Services\Billing\StripeSandboxProbe $probe): int {
+    $result = $probe->check();
+    $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+
+    return $result['test_api_connection'] ? 0 : 2;
+})->purpose('Check Stripe test API reachability without approving merchant or live payments');

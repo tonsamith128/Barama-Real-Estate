@@ -36,3 +36,13 @@ Public informational pricing has allowlisted lang=en/km/zh/fr/es/de/ja/th varian
 Tax review notes are not statutory invoices. Jurisdiction, VAT, registrations, applicable Cambodia e-invoicing rules and foreign consumer/tax obligations still require professional review. Never infer tax from a country selection.
 
 Checkout and recurring billing default disabled. Main and production must not be changed until full acceptance.
+
+## Genuine Stripe test-account connectivity (independent acceptance remains open)
+
+On a **private staging** copy, with an authorized Stripe test key and network access, opt in:
+
+    BILLING_STRIPE_SANDBOX_PROBE_ENABLED=true
+    BILLING_STRIPE_TEST_SECRET_KEY=sk_test_...
+    php artisan billing:stripe-sandbox-probe
+
+This performs exactly one read-only `GET https://api.stripe.com/v1/account` with the test key and returns a sanitized country + connection status. It never prints keys or full account IDs. The command fails with exit code 2 if disabled, unauthorized or unreachable. A valid test account response does not prove legal merchant eligibility, local-country processing, actual webhook delivery, invoice format, billing cycles, payouts or live capability. No connection was attempted or verified in GitHub CI; all API responses there are mocked.

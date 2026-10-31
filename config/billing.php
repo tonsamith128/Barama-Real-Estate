@@ -13,6 +13,7 @@ return [
     'fx_sandbox_preview_enabled' => (bool) env('BILLING_FX_SANDBOX_PREVIEW_ENABLED', false),
     'fx_preview_provider' => env('BILLING_FX_PREVIEW_PROVIDER', ''),
     'stripe' => [
+        'sandbox_probe_enabled' => (bool) env('BILLING_STRIPE_SANDBOX_PROBE_ENABLED', false),
         'portal_test_enabled' => (bool) env('BILLING_STRIPE_PORTAL_TEST_ENABLED', false),
         'portal_configuration' => env('BILLING_STRIPE_PORTAL_TEST_CONFIGURATION', ''),
         'secret_key' => env('BILLING_STRIPE_TEST_SECRET_KEY', ''),
