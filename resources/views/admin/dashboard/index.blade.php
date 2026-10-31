@@ -12,6 +12,7 @@
         <nav aria-label="Admin navigation" class="dashboard-nav">
             <a class="is-active" href="{{ route('admin.dashboard') }}">Overview</a>
             <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
+            <a href="{{ route('admin.appearance.index') }}">Appearance Manager</a>
             <a href="{{ route('admin.users.index') }}">User Directory</a>
             <a href="{{ route('admin.contacts.index') }}">Contact Inbox</a>
             <a href="{{ route('admin.viewings.index') }}">Viewing Requests</a>
@@ -52,6 +53,7 @@
             <section class="dashboard-section">
                 <h2>Quick actions</h2>
                 <div class="dashboard-actions">
+                    <a href="{{ route('admin.appearance.index') }}"><strong>Appearance Manager</strong><span>Brand, homepage and SEO settings with draft publication.</span></a>
                     <a href="{{ route('admin.users.index') }}"><strong>User Directory</strong><span>Review accounts and active company memberships.</span></a>
                     <a href="{{ route('admin.viewings.index') }}"><strong>Viewing Requests</strong><span>Review customer visit requests and send updates.</span></a>
                     <a href="{{ route('admin.contacts.index') }}"><strong>Contact Inbox</strong><span>Read and review customer support messages.</span></a>
