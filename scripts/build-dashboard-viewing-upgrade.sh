@@ -13,6 +13,12 @@ for file in \
   app/Http/Controllers/Admin/Viewings/AdminViewingController.php \
   app/Http/Controllers/Developer/Viewings/DeveloperViewingController.php \
   app/Services/Viewings/ViewingDecisionService.php \
+  app/Services/Inquiries/InquiryReviewService.php \
+  app/Models/Inquiry.php \
+  app/Http/Controllers/Admin/Inquiries/AdminInquiryController.php \
+  app/Http/Controllers/Developer/Inquiries/DeveloperInquiryController.php \
+  resources/views/admin/inquiries/index.blade.php \
+  resources/views/developer/inquiries/index.blade.php \
   app/Models/ViewingRequest.php \
   resources/views/admin/dashboard/index.blade.php \
   resources/views/admin/viewings/index.blade.php \
@@ -26,7 +32,7 @@ done
 cp -a public/build "$TARGET/public/build"
 test -r "$TARGET/public/build/manifest.json"
 cat > "$TARGET/README.txt" <<'EOF'
-BARAMA DASHBOARD RECOVERY + VIEWING MANAGEMENT - STAGING ONLY
+BARAMA DASHBOARD RECOVERY + VIEWINGS + INQUIRIES - STAGING ONLY
 
 For the existing Laravel 13 QA app; not for the legacy PHP product.
 
@@ -37,7 +43,8 @@ For the existing Laravel 13 QA app; not for the legacy PHP product.
 4. Keep .env, storage, vendor, and installation lock untouched.
 5. Run /opt/alt/php85/usr/bin/php artisan migrate --force
 6. Run /opt/alt/php85/usr/bin/php artisan optimize:clear
-7. Test /dashboard, /dashboard/viewings and /developer/viewings.
+7. Test /dashboard, /dashboard/viewings, /developer/viewings,
+   /dashboard/inquiries and /developer/inquiries.
    If still HTTP 500, inspect storage/logs/laravel.log privately.
 Do not use migrate:fresh, db:wipe, or reset the current database.
 Never share database credentials or unrestricted log files.
