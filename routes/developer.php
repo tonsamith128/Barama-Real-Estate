@@ -14,6 +14,8 @@ Route::middleware(['auth', 'verified'])
     ->group(function (): void {
         Route::get('/', DeveloperDashboardController::class)->name('dashboard');
         Route::get('/inquiries', DeveloperInquiryController::class)->name('inquiries.index');
+        Route::patch('/inquiries/{inquiry}/respond', [DeveloperInquiryController::class, 'respond'])
+            ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/viewings', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'decide'])
             ->middleware('throttle:10,1')->name('viewings.decide');
