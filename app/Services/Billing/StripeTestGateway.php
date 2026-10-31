@@ -39,7 +39,7 @@ final class StripeTestGateway implements PaymentGateway
                 'client_reference_id' => $order->reference,
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
-                'expires_at' => now()->addMinutes(30)->timestamp,
+                'expires_at' => now()->addMinutes(31)->timestamp,
                 'metadata' => ['order_reference' => $order->reference],
                 'payment_intent_data' => ['metadata' => ['order_reference' => $order->reference]],
                 'line_items' => [[
