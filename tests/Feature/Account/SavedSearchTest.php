@@ -32,6 +32,7 @@ final class SavedSearchTest extends TestCase
             'name' => 'Affordable homes', 'offer' => 'sale', 'max_price' => '180000', 'sort' => 'newest',
         ])->assertRedirect(route('account.searches.index'));
 
+        $this->assertDatabaseCount('saved_searches', 1);
         $saved = SavedSearch::query()->firstOrFail();
         $this->assertSame($first->id, $saved->user_id);
         $this->assertSame('180000', $saved->filters['max_price']);
@@ -95,6 +96,16 @@ final class SavedSearchTest extends TestCase
         ]))->assertOk()->assertSee('Save this search')
             ->assertSee('name="min_price"', false)
             ->assertSee('name="max_price"', false);
+    }
+
+    public function test_maximum_only_budget_is_accepted_by_public_search_and_saved_search(): void
+    {
+        $user = User::factory()->create();
+        $this->get(route('properties.index', ['max_price' => 180000]))->assertOk();
+        $this->actingAs($user)->post(route('account.searches.store'), [
+            'name' => 'Properties within budget', 'max_price' => '180000',
+        ])->assertRedirect(route('account.searches.index'))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('saved_searches', ['user_id' => $user->id, 'name' => 'Properties within budget']);
     }
 
     public function test_invalid_filters_price_ranges_or_unsafe_sort_values_are_rejected(): void
