@@ -16,6 +16,11 @@ final class ViewingRequest extends Model
         return ['requested_at' => 'datetime'];
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function listing(): BelongsTo
     {
         return $this->belongsTo(Listing::class);
