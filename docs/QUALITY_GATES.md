@@ -3,7 +3,7 @@
 ## Automated foundation gates
 
 - `php scripts/verify-structure.php` — native Laravel directories; exactly 2 CSS source files.
-- `php scripts/verify-no-legacy.php` — custom PHP framework and old assets absent.
+- `php scripts/verify-laravel-only.php` — only canonical Laravel application runtime and source assets.
 - `composer validate` and `composer install` — valid declared Laravel dependencies.
 - `composer test` — authentication and signed email verification; public property/company/project listing visibility, filters, hidden 404 cases and Developer company membership isolation.
 - `npm run build` — cache-busted Vite bundles for frontend and admin without additional first-party CSS source files.

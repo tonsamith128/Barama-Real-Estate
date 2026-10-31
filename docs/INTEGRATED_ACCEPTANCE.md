@@ -26,7 +26,7 @@
 
 1. Use GitHub Actions on PR #160. All jobs must pass.
 2. Download the **development-only** `barama-laravel-integrated-qa` artifact; verify its SHA256. It includes the complete Laravel source, bundled Composer dependencies, compiled frontend assets and independent Installer.
-3. Upload to a NEW isolated staging subdomain; set HTTPS and the document root to the archive's `public/` folder. Never overwrite a running Pure PHP Barama.
+3. Upload to a NEW isolated staging subdomain; set HTTPS and the document root to the archive's `public/` folder. Never overwrite a running customer installation.
 4. Install on a dedicated empty MySQL database at `/installer/`. Create the first administrator, verify lock and remove Installer directories.
 5. Verify login, Admin Dashboard, marketplace moderation and public browse routes.
 6. Register a verified developer account. Admin creates and approves a company with that email as owner. Developer creates a draft listing, submits for review, Admin approves, then listing appears publicly.

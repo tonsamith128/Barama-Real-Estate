@@ -1,10 +1,10 @@
 # Barama Real Estate — independent five-step Laravel 13 installer
 
-**Status:** implementation staged on a feature branch; production/customer deployment requires passing automated fresh-MySQL acceptance and aaPanel/cPanel testing. Existing Pure PHP Barama v1 data migration is **not** provided by this installer.
+**Status:** Laravel 13 installer source is present on Main. Automated fresh-MySQL checks exist; physical aaPanel/cPanel acceptance and existing-customer data upgrades remain outstanding.
 
 ## Before opening the installer
 
-1. Deploy on a **new** test domain/subdomain with a **new, completely empty MySQL database**. Never run this on a live v1 database.
+1. Deploy on a **new** test domain/subdomain with a **new, completely empty MySQL database**. Never run this on an existing customer database.
 2. Set the domain document root to the Laravel **public/** directory, not the project root. Enable HTTPS.
 3. Include Composer vendor/autoload.php and built public/build/manifest.json in the package. PHP 8.3+ is required.
 4. Ensure storage/app, storage/framework, bootstrap/cache and the app root are writable for setup. No .env may exist beforehand.
@@ -26,7 +26,7 @@
 - The admin password is **never stored in a PHP session**. DB connection credentials are stored temporarily in the installer's short-lived server session and removed after installation.
 - The installer rejects populated databases and refuses to run when .env or an install lock exists. The install mutex serializes concurrent submission.
 - MySQL DDL is not fully transactionally reversible. If a failure occurs after .env or tables were created, do not retry on the same database or automatically truncate tables. Preserve logs, investigate, and restart on a separate clean database after recovery.
-- The role field exists, but a complete new Admin dashboard and its permission policies **are not migrated yet**. Installer success is not full commercial feature parity.
+- The role field exists, but complete administrator capabilities and permission policies **are not release-accepted yet**. Installer success is not full commercial feature parity.
 
 ## Acceptance
 

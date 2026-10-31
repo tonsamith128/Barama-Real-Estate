@@ -38,7 +38,7 @@ The `AccessibleCompanies` service authorizes companies only through active `comp
 
 ## Critical legacy compatibility work still required
 
-The existing Pure PHP application has many more schema columns and relationships than this isolated Laravel slice: locations, media, payment/billing, permission matrices, inquiry/lead/viewing history, custom page-builder content, user profile fields, licensing and updater state.
+Existing customer databases may contain more schema columns and relationships than this Laravel 13 development schema: locations, media, payment/billing, permission matrices, inquiry/lead/viewing history, custom page-builder content, user profile fields, licensing and updater state.
 
 Before importing or pointing Laravel at any v1 database:
 

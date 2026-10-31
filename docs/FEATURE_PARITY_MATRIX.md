@@ -1,7 +1,7 @@
 # Barama Laravel 13 — feature parity and release gate
 
-**Branch:** feature/laravel-integrated-marketplace-20261030  
-**Baseline:** historical Pure PHP Barama v1 source on archive/barama-v1-main-before-laravel-20261030  
+**Branch:** GitHub Main (development baseline)  
+**Baseline:** Laravel 13 Main; compatibility with existing customer installations tracked separately  
 **Target:** complete Laravel-only marketplace for shared hosting and CodeCanyon.  
 **Status:** partial development build, not production approved.
 
@@ -23,16 +23,16 @@
 | Media Library upload/editor | **Partially implemented:** tenant-scoped validated image upload, private listing galleries, administrative inventory, and protected previews | 46 Laravel QA tests / 223 assertions (foundation workflow) |
 | Full company/project/property management/editing | Partial — developer drafts, listing gallery and administrator approval are available | Tenant-isolation tests; full editing pending |
 | Account saved properties, viewing requests and notifications | Implemented customer foundations; verified admin and company viewing decisions and notifications | 68 Laravel tests / 365 assertions on development branch |
-| Legacy user/password/role/MFA migration | Not migrated | Pending |
+| Existing customer account/password/role/MFA upgrade | Not migrated | Pending |
 | Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
 | Appearance builder/homepage and footer | **Partially implemented:** publishable brand, hero/footer, primary color, SEO, ordered safe navigation and homepage content/CTA sections | Admin editor/permission/publication tests; visual drag/drop and media layout still pending |
-| Localization/Khmer and SEO | Not migrated | Pending |
+| Localization/Khmer and SEO | Partial: publication-safe sitemap/robots in hardening branch; translation and advanced SEO pending | PHP feature tests for sitemap |
 | Developer team invitations and billing | Not migrated | Pending |
 | Invoice, payment and subscriptions | Not migrated | Pending |
-| License activation and entitlement | Not migrated | Pending |
+| License activation and entitlement | Partial: purchase-code activation and publisher revalidation on Main; full lifecycle pending | Unit tests; customer-domain publisher acceptance pending |
 | Signed updater and rollback | Not migrated | Pending |
 | Demo publisher API, signed download/license binding | Not migrated | Pending |
-| Database v1-to-Laravel data upgrade | Not migrated | Pending |
+| Existing customer data upgrade | Not migrated | Pending |
 | CPanel/aaPanel live-hosting QA | MySQL/Apache CI simulated; live cPanel changes must be tested separately | Not yet verified on customer domain |
 | CodeCanyon exact customer ZIP and rights audit | Not approved | Pending |
 

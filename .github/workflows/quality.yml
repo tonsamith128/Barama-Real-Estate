@@ -21,8 +21,8 @@ jobs:
         run: find app bootstrap config database routes scripts tests Installer public/installer -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
-      - name: Reject old Pure PHP code
-        run: php scripts/verify-no-legacy.php
+      - name: Reject retired application runtimes
+        run: php scripts/verify-laravel-only.php
       - name: Composer manifest validation
         run: composer validate --no-check-publish
       - name: Install PHP dependencies
