@@ -7,6 +7,7 @@ use App\Http\Controllers\Frontend\Home\HomeController;
 use App\Http\Controllers\Frontend\Projects\ProjectController;
 use App\Http\Controllers\Frontend\Properties\PropertyController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Frontend\Seo\SitemapController;
 use App\Http\Controllers\Frontend\Pages\PublicPageController;
 use App\Http\Controllers\Frontend\Legal\LegalPageController;
 use App\Http\Controllers\Frontend\Inquiries\InquiryController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Frontend\Media\PublicDemoMediaController;
 use App\Http\Controllers\Frontend\Media\PublicHomepageMediaController;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('seo.sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');
 Route::get('/about', [PublicPageController::class, 'about'])->name('about');
 Route::get('/contact', [PublicPageController::class, 'contact'])->name('contact');
 Route::post('/contact', [PublicPageController::class, 'submitContact'])
