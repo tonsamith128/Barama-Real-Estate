@@ -35,7 +35,7 @@
 - Customer setup cannot require running Composer/Node once the distribution is built.
 - Preserve v1 passwords, users, roles, data, media, license state and public URLs only through verified migration adapters and rehearsed recovery.
 - Production cutover and Main merge require explicit approval and regression proof.
-- The final product must contain no legacy Pure PHP framework, routes, standalone installer/updater or old CSS/JS.
-- Enforce `scripts/verify-no-legacy.php` and `scripts/verify-structure.php` on source, and no-legacy on the exact release ZIP.
+- The final product must use Laravel 13 for all application routing, authorization and services; the pre-installation wizard is the only narrowly scoped bootstrap exception.
+- Enforce `scripts/verify-laravel-only.php` and `scripts/verify-structure.php` on source, and the Laravel-only guard on the exact release ZIP.
 
-See `docs/MIGRATION.md`, `docs/QUALITY_GATES.md`, and `docs/LEGACY_RETIREMENT.md`.
+See `docs/MIGRATION.md`, `docs/QUALITY_GATES.md`, and `docs/LARAVEL_SOURCE_POLICY.md`.

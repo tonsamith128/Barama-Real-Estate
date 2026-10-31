@@ -62,7 +62,7 @@ Use cPanel File Manager > Permissions (755 directory, 644 web files) where Termi
 | Failing Step 1 | Resolve extensions, build assets, directory owner/write access or stale `.env`. |
 | Non-empty DB | Create a separate empty database; never truncate production data. |
 
-**Release status:** A successful fresh installation does not prove complete Pure PHP Barama feature parity, nor authorize replacing a live website.
+**Release status:** A successful fresh installation does not prove complete commercial feature parity, nor authorize replacing a live website.
 
 
 ## Domain-first installer routing (corrected QA build)

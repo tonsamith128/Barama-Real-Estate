@@ -34,7 +34,7 @@ This register separates a tested development implementation from live cPanel acc
 | License customer dashboard and license policies | **NOT MIGRATED** | Entitlement lifecycle, revocation, renewals, offline grace |
 | Signed updater and rollback system | **NOT MIGRATED** | Signed manifest, backups, file/schema staging and rollback |
 | Demo ZIP inspection / signing workflow | **STAGING ONLY** | Real signed customer archive, content mapping, rights check, production installer path |
-| Legacy PHP v1 data import and account migrations | **NOT MIGRATED** | Password/role transformation, conflict handling and dry-run |
+| Existing customer data and account upgrades | **NOT MIGRATED** | Password/role transformation, conflict handling and dry-run |
 | Customer-facing documentation and fresh deployment ZIP | **PARTIAL** | Install/upgrade/rollback docs, screenshots, rights and support evidence |
 | Security audit and acceptance | **PARTIAL** | Threat model, penetration review, file ACLs on shared hosting, secret management |
 | CodeCanyon commercial release | **NOT READY** | Feature parity, legal licensing, compatibility acceptance, release QA |
