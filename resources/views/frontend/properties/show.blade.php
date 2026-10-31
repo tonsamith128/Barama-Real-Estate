@@ -12,6 +12,15 @@
                 <img class="property-detail__image" src="{{ route('media.demo.show', $cover->checksum_sha256) }}"
                     alt="{{ $cover->alt_text ?: $listing->property->title }}">
             @endif
+            @if($listing->mediaAttachments->count() > 1)
+                <div class="property-photo-gallery" aria-label="Property photo gallery">
+                    @foreach($listing->mediaAttachments->skip(1) as $attachment)
+                        <img src="{{ route('media.demo.show', $attachment->asset->checksum_sha256) }}"
+                            alt="{{ $attachment->asset->alt_text ?: $listing->property->title }}"
+                            loading="lazy">
+                    @endforeach
+                </div>
+            @endif
             <p class="marketplace__eyebrow">
                 {{ ucfirst($listing->transaction_type) }} ·
                 {{ ucfirst($listing->property->property_type) }}

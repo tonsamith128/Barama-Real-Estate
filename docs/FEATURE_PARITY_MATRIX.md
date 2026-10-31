@@ -20,8 +20,8 @@
 | Demo media gallery and public delivery | Implemented for imported demo | Hidden/published image visibility tests |
 | Legal-policy content | Draft import only | Template status asserted |
 | Appearance/site settings | Inactive import only | Settings status asserted |
-| Media Library upload/editor | Not migrated | Pending |
-| Full company/project/property management/editing | Partial | Pending |
+| Media Library upload/editor | **Partially implemented:** tenant-scoped validated image upload, private listing galleries, administrative inventory, and protected previews | 46 Laravel QA tests / 223 assertions (foundation workflow) |
+| Full company/project/property management/editing | Partial — developer drafts, listing gallery and administrator approval are available | Tenant-isolation tests; full editing pending |
 | Notifications/viewing requests/saved searches | Not migrated | Pending |
 | Legacy user/password/role/MFA migration | Not migrated | Pending |
 | Policy Center publishing and legal editor | Not migrated | Pending |
@@ -48,3 +48,7 @@ See [docs/INTEGRATED_ACCEPTANCE.md](INTEGRATED_ACCEPTANCE.md). CI builds a **dev
 - Review of rights and legal-policy templates before publishing.
 - Production rollout requires an independent rollback plan and explicit owner authorization.
 
+
+## Current media milestone
+
+See [Media Library acceptance](MEDIA_LIBRARY_ACCEPTANCE.md) for content validation, private storage, company permissions, publication and rejection tests. Bulk media editing, responsive variants and rights approval remain pending. No production deployment has occurred.

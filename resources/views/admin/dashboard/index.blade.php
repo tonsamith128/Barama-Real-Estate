@@ -12,6 +12,7 @@
         <nav aria-label="Admin navigation" class="dashboard-nav">
             <a class="is-active" href="{{ route('admin.dashboard') }}">Overview</a>
             <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
+            <a href="{{ route('admin.media.index') }}">Media Library</a>
             <a href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
             <a href="{{ route('admin.demo.index') }}">Demo content importer</a>
             <a href="{{ route('admin.license.index') }}">License &amp; Activation</a>
@@ -38,6 +39,7 @@
                 <h2>Quick actions</h2>
                 <div class="dashboard-actions">
                     <a href="{{ route('admin.catalog.index') }}"><strong>Review listings</strong><span>Onboard companies and approve new properties.</span></a>
+                    <a href="{{ route('admin.media.index') }}"><strong>Media Library</strong><span>Review uploaded assets and listing references.</span></a>
                     <a href="{{ route('admin.inquiries.index') }}"><strong>Customer inquiries</strong><span>View contact requests from published listings.</span></a>
                     <a href="{{ route('admin.demo.index') }}"><strong>Import demo content</strong><span>Preview the original Barama demo archive; signed import is staging-only.</span></a>
                 </div>

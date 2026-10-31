@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Media\MediaLibraryController;
 use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
         Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
+        Route::get('/media', MediaLibraryController::class)->name('media.index');
+        Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
         Route::post('/catalog/companies', [CatalogModerationController::class, 'createCompany'])
             ->middleware('throttle:10,1')->name('catalog.companies.create');
