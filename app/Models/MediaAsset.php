@@ -12,6 +12,7 @@ final class MediaAsset extends Model
     protected $fillable = [
         'path', 'original_name', 'mime_type', 'size_bytes',
         'width_px', 'height_px', 'alt_text', 'checksum_sha256',
+        'usage_rights', 'rights_holder', 'rights_reference',
     ];
 
     public function attachments(): HasMany

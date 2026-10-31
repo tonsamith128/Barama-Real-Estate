@@ -63,6 +63,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
         Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
+        Route::patch('/media/{asset}/metadata', [MediaLibraryController::class, 'updateMetadata'])
+            ->middleware('throttle:20,1')->name('media.metadata.update');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
         Route::post('/catalog/companies', [CatalogModerationController::class, 'createCompany'])
             ->middleware('throttle:10,1')->name('catalog.companies.create');
