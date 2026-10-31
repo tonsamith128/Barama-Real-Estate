@@ -11,7 +11,7 @@
     @if(count($missingTables) > 0)
         <section class="dashboard-section workspace-alert" role="alert">
             <div>
-                <strong>Database migrations required</strong>
+                <strong>Database update required</strong>
                 <p>Some new modules are not yet migrated: <code>{{ implode(', ', $missingTables) }}</code>.</p>
                 <p>Back up your database, then run <code>php artisan migrate --force</code> and <code>php artisan optimize:clear</code> in the Laravel root. Never reset a customer database or reinstall the application.</p>
             </div>
