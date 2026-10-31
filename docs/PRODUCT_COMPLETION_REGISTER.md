@@ -28,7 +28,7 @@ This register separates a tested development implementation from live cPanel acc
 | Appearance Manager / homepage page builder | **PARTIAL** | Admin brand, hero/footer, theme, image-backed homepage sections, Media Library picker and ordered desktop/mobile menu draft and publishing implemented; visual drag-and-drop builder, cropping and per-page templates still pending |
 | Localization, Khmer/English, language manager | **NOT MIGRATED** | Translation persistence, locale switching, RTL, QA |
 | Advanced filters, maps, geocoding, saved-search alerts | **PARTIAL** | Price/type/transaction filter and private saved-search management added with premium customer UI; maps/geocoding, advanced facets and automated alert delivery remain pending |
-| SEO metadata, social sharing, sitemap/schema | **NOT MIGRATED** | Canonicals, per-listing metadata, sitemap generation |
+| SEO metadata, social sharing, sitemap/schema | **PARTIAL** | Dynamic publication-safe XML sitemap and robots directives implemented in hardening branch; canonicals, per-listing metadata and structured data pending |
 | Invoice/finance/subscriptions, gateways and tax | **NOT MIGRATED** | Payments, reconciliation, customer receipts, refund policy |
 | License integration / purchase-code entitlement | **PARTIAL** | Admin activation bridge, premium license UI, and explicit publisher revalidation implemented; customer-domain acceptance and complete entitlement lifecycle still pending |
 | License customer dashboard and license policies | **NOT MIGRATED** | Entitlement lifecycle, revocation, renewals, offline grace |

@@ -1,42 +1,41 @@
-# Barama Real Estate — Laravel 13 migration record
+# Barama Real Estate — Laravel 13 Transition and Customer Data Upgrade
 
-**GitHub Main:** Laravel foundation (not production-ready).
+**Canonical runtime:** Laravel 13 / PHP 8.3+.
+**Current release:** development QA only; the commercial customer release is blocked.
+**Production data:** existing installations have not been converted by this project.
 
-**Legacy source branch:** archive/barama-v1-main-before-laravel-20261030.
+## Current Laravel implementation
 
-**Installer development:** feature/laravel-installer-readiness-20261030, PR #159.
+The Main source tree has native Laravel authentication, a company/project/
+property marketplace, account and company workspaces, administrator approval
+workflows, protected media, Policy Center, appearance/homepage management,
+purchase-code activation and a clean-install wizard. The hardening work adds
+publication-aware sitemap coverage and an enforceable runtime source guard.
 
-**Production deployment:** not performed; old databases remain untouched.
+## Data migration boundary
 
-## Implemented
-- Laravel 13 native authentication, new User schema and tests.
-- Company, Project, Property and Listing models and migrations.
-- Public read-only marketplace with approved/publication filters.
-- Read-only company-scoped Developer workspace.
-- Two consolidated grouped CSS sources, separate frontend/admin JS.
-- Independent fresh-install five-step wizard authored on installer branch: requirements, database, application, administrator and finish; mandatory private token and one-time lock.
+Existing installations can contain unique users, password hashes, MFA data,
+developer/team roles, companies, projects, listings, inquiries, media,
+licenses, legal pages and settings. The fresh installer intentionally rejects
+populated databases; it is not an upgrade tool.
 
-## Work not finished
-- Original production database, user password, role and MFA migration.
-- Complete profile, saved properties, inquiries, leads, management and admin permissions.
-- Media Library, Finance, Appearance, Policy Center, SEO and public UX parity.
-- Licensing, signed updater, demo importer, rollback and customer ZIP.
-- Actual aaPanel/cPanel fresh-install verification and full deployment acceptance.
+Any conversion must:
+1. Use verified offline copies/backups, never the live database.
+2. Map old and new schemas and preserve account identities and password flows.
+3. Run a non-destructive dry run with consistency and count checks.
+4. Check URLs, media accessibility and company ownership associations.
+5. Exercise actual backup, restore and application rollback on each hosting type.
+6. Include dual-mode fresh-install/upgrade compatibility tests.
 
-## Release gates
-1. Installer automated MySQL HTTP acceptance green on the exact development commit.
-2. Fresh independent aaPanel and cPanel install tests.
-3. Legacy schema mapping and user migration dry runs on backups only.
-4. Administrator permissions and remaining feature parity.
-5. Commercial packaging, license audit and release rollback proof.
+No conversion is authorized until these acceptance gates are met.
 
-**Never run Laravel schema migrations against the current v1 production database.**
+## Development and release governance
 
-See docs/INSTALLER_ACCEPTANCE.md and docs/REAL_ESTATE_DOMAIN.md.
+- Use scripts/verify-laravel-only.php for source and extracted ZIP checks.
+- Keep only the Laravel application runtime and the narrow setup bootstrap.
+- Use feature-parity and product completion registers for outstanding modules.
+- CI is development evidence, not customer hosting or financial acceptance.
+- Do not overwrite an installed site with a fresh setup archive.
+- Main changes do not deploy automatically to any customer installation.
 
-
-## Integrated marketplace development milestone
-
-Implemented on `feature/laravel-integrated-marketplace-20261030`: new locations and media schema, read-only demo ZIP validation, staging-only signed demo import with strict empty-marketplace checks, private media delivery, admin dashboard/company onboarding/moderation, developer property drafts, inquiry capture and inboxes, audit events, and QA ZIP packaging with MySQL and feature tests.
-
-**Still pending:** full old PHP feature parity and existing database conversion; Media Library uploads, legal policies publishing, Appearance editor, billing, license system, updater, customer demo entitlement, and hosting-specific acceptance. See `docs/FEATURE_PARITY_MATRIX.md` for the authoritative module list. This milestone is not production-ready.
+See PRODUCT_COMPLETION_REGISTER.md and LARAVEL_SOURCE_POLICY.md.

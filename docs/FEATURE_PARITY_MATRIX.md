@@ -26,10 +26,10 @@
 | Existing customer account/password/role/MFA upgrade | Not migrated | Pending |
 | Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
 | Appearance builder/homepage and footer | **Partially implemented:** publishable brand, hero/footer, primary color, SEO, ordered safe navigation and homepage content/CTA sections | Admin editor/permission/publication tests; visual drag/drop and media layout still pending |
-| Localization/Khmer and SEO | Not migrated | Pending |
+| Localization/Khmer and SEO | Partial: publication-safe sitemap/robots in hardening branch; translation and advanced SEO pending | PHP feature tests for sitemap |
 | Developer team invitations and billing | Not migrated | Pending |
 | Invoice, payment and subscriptions | Not migrated | Pending |
-| License activation and entitlement | Not migrated | Pending |
+| License activation and entitlement | Partial: purchase-code activation and publisher revalidation on Main; full lifecycle pending | Unit tests; customer-domain publisher acceptance pending |
 | Signed updater and rollback | Not migrated | Pending |
 | Demo publisher API, signed download/license binding | Not migrated | Pending |
 | Existing customer data upgrade | Not migrated | Pending |
