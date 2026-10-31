@@ -76,7 +76,7 @@ final class PremiumWorkspaceShellTest extends TestCase
         \Illuminate\Support\Facades\Schema::drop('contact_messages');
         $admin = User::factory()->create(['system_role'=>'super_admin']);
         $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()
-            ->assertSee('Database migrations required')
+            ->assertSee('Database update required')
             ->assertSee('contact_messages')
             ->assertSee('php artisan migrate --force');
     }
