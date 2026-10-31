@@ -120,6 +120,26 @@ final class HomepageMediaPickerTest extends TestCase
             ->assertHeader('X-Content-Type-Options', 'nosniff');
     }
 
+    public function test_existing_selection_stays_visible_when_media_search_excludes_it(): void
+    {
+        $asset = $this->uploadAndApprove();
+        $this->actingAs($this->admin)->post(route('admin.homepage.hero-image.update'), [
+            'image_asset_id' => $asset->getKey(),
+        ])->assertRedirect();
+
+        $this->get(route('admin.homepage.index', ['media_q' => 'something-else']))
+            ->assertOk()
+            ->assertSee('value="'.$asset->id.'"', false)
+            ->assertSee('hero.png');
+
+        // Saving an unchanged selection after searching must not detach it.
+        $this->post(route('admin.homepage.hero-image.update'), [
+            'image_asset_id' => $asset->id,
+        ])->assertRedirect();
+        $this->assertSame($asset->id,
+            SiteAppearance::query()->firstOrFail()->draft_data['hero_image_asset_id']);
+    }
+
     public function test_unpublished_hero_image_remains_private_until_publish(): void
     {
         $asset = $this->uploadAndApprove();
