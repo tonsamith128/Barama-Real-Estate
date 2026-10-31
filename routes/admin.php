@@ -35,6 +35,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
         Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
+        Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
+            ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
         Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
