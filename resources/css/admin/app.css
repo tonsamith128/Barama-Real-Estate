@@ -377,3 +377,34 @@
 .media-library-upload-head{display:flex;gap:1rem;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:1rem}
 .media-library-upload-head p{font-size:.86rem;color:#61738a;max-width:48rem}
 @media(max-width:620px){.builder-media-picker__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.builder-media-choice__name{font-size:.74rem}}
+
+
+/* ===== ADMIN / 24 / PREMIUM LICENSE CENTER AND ENTITLEMENT STATUS ===== */
+.license-hero{display:flex;justify-content:space-between;align-items:center;gap:1.5rem;border-radius:19px;padding:clamp(1.5rem,3vw,2.5rem);background:linear-gradient(110deg,#132944,#23516e 70%,#16727a);color:#fff;margin:1.25rem 0}
+.license-hero__eyebrow{font-size:.7rem;font-weight:850;letter-spacing:.13em;color:#b9deff}
+.license-hero h2{font-size:clamp(1.5rem,3vw,2.5rem);margin:.7rem 0;letter-spacing:-.03em;color:#fff}
+.license-hero p{color:#d9e8f6;max-width:44rem;line-height:1.65}
+.license-hero__symbol{font-size:7rem;opacity:.2;line-height:1}
+.license-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(270px,.85fr);gap:1.1rem;align-items:start}
+.license-section-heading{display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}
+.license-section-heading h2{margin:0!important}
+.license-status{display:inline-flex;border-radius:30px;padding:.4rem .7rem;background:#edf2f8;color:#60728c;font-size:.76rem;font-weight:800}
+.license-status--recorded{background:#eaf5f0;color:#257453}
+.license-status--warning{background:#fff3e4;color:#a16a1d}
+.license-details{display:grid;gap:0;margin:1rem 0 1.7rem}
+.license-details>div{display:flex;justify-content:space-between;align-items:start;gap:1rem;border-bottom:1px solid #e5ecf5;padding:.95rem 0}
+.license-details dt{font-size:.84rem;color:#677991}
+.license-details dd{font-size:.86rem;margin:0;color:#1d3353;font-weight:750;overflow-wrap:anywhere;text-align:right}
+.license-detail-note{color:#62758d;font-size:.88rem;line-height:1.65}
+.license-action-form{display:grid;gap:.75rem;max-width:34rem;margin:1.1rem 0}
+.license-action-form label{font-weight:760;font-size:.86rem}
+.license-action-form input{width:100%;padding:.85rem 1rem;border:1px solid #d1deed;border-radius:10px;font:inherit}
+.license-action-form button{justify-self:start;padding:.78rem 1.2rem;border:0;border-radius:10px;background:#185cdd;color:#fff;font-weight:750;cursor:pointer}
+.license-domain-warning{border:1px solid #f1c77d;background:#fff9e9;color:#8b5617;border-radius:10px;padding:1rem;font-size:.88rem}
+.license-guidance__step{display:flex;gap:1rem;align-items:start;border-bottom:1px solid #e3ebf5;padding:1.1rem 0}
+.license-guidance__step>span{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#e9f1ff;color:#185bdd;font-weight:850;font-size:.8rem}
+.license-guidance__step strong{font-size:.87rem;color:#213b5b}
+.license-guidance__step p{margin:.3rem 0 0;font-size:.81rem;color:#63778f;line-height:1.55}
+.license-guidance__note{border-radius:12px;background:#f4f7fc;padding:.9rem;color:#62758e;font-size:.8rem;line-height:1.6}
+@media(max-width:960px){.license-grid{grid-template-columns:1fr}}
+@media(max-width:530px){.license-hero__symbol{display:none}.license-details>div{display:grid;gap:.3rem}.license-details dd{text-align:left}}

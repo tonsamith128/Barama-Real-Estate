@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Licensing;
 
 use App\Services\Licensing\PublisherLicenseClient;
+use App\Services\Licensing\LicenseStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,18 +20,39 @@ final class LicenseController
         abort_unless($request->user()?->isSystemAdministrator(), 403);
     }
 
-    public function index(Request $request): View
+    public function index(Request $request, LicenseStatusService $licenses): View
     {
         $this->requireAdmin($request);
-        $receipt = PublisherLicenseClient::receipt(base_path());
+        $domain = PublisherLicenseClient::normalizedDomain(
+            (string) parse_url(config('app.url'), PHP_URL_HOST)
+        );
+
         return view('admin.license.index', [
-            'receipt' => $receipt ? [
-                'domain' => $receipt['domain'],
-                'status' => $receipt['status'],
-                'validated_at' => $receipt['validated_at'] ?? null,
-            ] : null,
-            'domain' => PublisherLicenseClient::normalizedDomain((string) parse_url(config('app.url'), PHP_URL_HOST)),
+            'licenseStatus' => $licenses->summary(base_path(), $domain),
+            'domain' => $domain,
         ]);
+    }
+
+    public function revalidate(Request $request, LicenseStatusService $licenses): RedirectResponse
+    {
+        $this->requireAdmin($request);
+        $domain = PublisherLicenseClient::normalizedDomain(
+            (string) parse_url(config('app.url'), PHP_URL_HOST)
+        );
+
+        try {
+            $licenses->revalidate(base_path(), $domain);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report(new RuntimeException('License revalidation was unsuccessful.'));
+            return redirect()->route('admin.license.index')->withErrors([
+                'license' => 'The publisher could not confirm the current entitlement. The last recorded activation remains unchanged; check the licensing service and try again.',
+            ]);
+        }
+
+        return redirect()->route('admin.license.index')
+            ->with('notice', 'The publisher has confirmed the active license for this domain and installation.');
     }
 
     public function activate(Request $request): RedirectResponse

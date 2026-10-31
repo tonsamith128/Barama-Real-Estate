@@ -60,6 +60,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::post('/policies/{policy}/unpublish', [LegalPolicyController::class, 'unpublish'])->name('policies.unpublish');
         Route::get('/license', [LicenseController::class, 'index'])->name('license.index');
         Route::post('/license/activate', [LicenseController::class, 'activate'])->middleware('throttle:3,1')->name('license.activate');
+        Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])
+            ->middleware('throttle:2,1')->name('license.revalidate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
         Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
