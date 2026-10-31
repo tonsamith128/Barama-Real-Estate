@@ -1,6 +1,6 @@
 # Barama Real Estate — independent five-step Laravel 13 installer
 
-**Status:** implementation staged on a feature branch; production/customer deployment requires passing automated fresh-MySQL acceptance and aaPanel/cPanel testing. Existing Pure PHP Barama v1 data migration is **not** provided by this installer.
+**Status:** Laravel 13 installer source is present on Main. Automated fresh-MySQL checks exist; physical aaPanel/cPanel acceptance and existing-customer data upgrades remain outstanding.
 
 ## Before opening the installer
 
