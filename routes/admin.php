@@ -64,6 +64,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
+        Route::post('/media', [MediaLibraryController::class, 'upload'])
+            ->middleware('throttle:8,1')->name('media.upload');
         Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
         Route::patch('/media/{asset}/metadata', [MediaLibraryController::class, 'updateMetadata'])
             ->middleware('throttle:20,1')->name('media.metadata.update');
