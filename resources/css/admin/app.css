@@ -175,3 +175,15 @@
 .policy-form {display:grid;gap:.5rem}
 .policy-form textarea {font:inherit;border:1px solid var(--barama-admin-border);border-radius:9px;padding:.9rem;resize:vertical;width:100%;box-sizing:border-box}
 .policy-note {font-size:.9rem;max-width:56rem;line-height:1.6}
+
+
+/* ===== ADMIN / 16 / USERS / CUSTOMER SUPPORT ===== */
+.admin-table-wrap{max-width:100%;overflow-x:auto;margin:1.2rem 0}
+.admin-table-wrap table{min-width:550px}
+.admin-message{display:flex;align-items:flex-start;justify-content:space-between;gap:1.2rem;padding:1rem 0;border-bottom:1px solid var(--barama-admin-border)}
+.admin-message__body{white-space:pre-wrap;overflow-wrap:anywhere;max-width:55rem}
+.admin-message form{flex-shrink:0}
+.dashboard-feed{display:grid;gap:.2rem;padding:.85rem 0;border-bottom:1px solid var(--barama-admin-border)}
+.dashboard-feed:last-of-type{margin-bottom:1rem}
+.dashboard-feed span{color:#66778d;font-size:.9rem}
+@media(max-width:680px){.admin-message{flex-direction:column}}

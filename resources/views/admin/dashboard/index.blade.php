@@ -12,6 +12,8 @@
         <nav aria-label="Admin navigation" class="dashboard-nav">
             <a class="is-active" href="{{ route('admin.dashboard') }}">Overview</a>
             <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
+            <a href="{{ route('admin.users.index') }}">User Directory</a>
+            <a href="{{ route('admin.contacts.index') }}">Contact Inbox</a>
             <a href="{{ route('admin.media.index') }}">Media Library</a>
             <a href="{{ route('admin.policies.index') }}">Policy Center</a>
             <a href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
@@ -39,6 +41,8 @@
             <section class="dashboard-section">
                 <h2>Quick actions</h2>
                 <div class="dashboard-actions">
+                    <a href="{{ route('admin.users.index') }}"><strong>User Directory</strong><span>Review accounts and active company memberships.</span></a>
+                    <a href="{{ route('admin.contacts.index') }}"><strong>Contact Inbox</strong><span>Read and review customer support messages.</span></a>
                     <a href="{{ route('admin.catalog.index') }}"><strong>Review listings</strong><span>Onboard companies and approve new properties.</span></a>
                     <a href="{{ route('admin.policies.index') }}"><strong>Policy Center</strong><span>Edit and publish legal pages without compliance-percentage barriers.</span></a>
                     <a href="{{ route('admin.media.index') }}"><strong>Media Library</strong><span>Review uploaded assets and listing references.</span></a>
@@ -55,6 +59,22 @@
                     <p class="dashboard-note">There is no imported demo content yet. The public marketplace will only show approved published listings.</p>
                 @endif
                 <p class="dashboard-note">This is an integrated development build. Billing, full media management, licenses and update modules remain under migration.</p>
+            </section>
+        </div>
+        <div class="dashboard-content-grid">
+            <section class="dashboard-section"><h2>Recent property inquiries</h2>
+                @forelse($recentInquiries as $inquiry)
+                    <div class="dashboard-feed"><strong>{{ $inquiry->listing?->property?->title ?? 'Property' }}</strong>
+                        <span>{{ $inquiry->full_name }} · {{ $inquiry->created_at->diffForHumans() }}</span></div>
+                @empty<p class="dashboard-note">No inquiries received yet.</p>@endforelse
+                <a href="{{ route('admin.inquiries.index') }}">Open inquiry inbox</a>
+            </section>
+            <section class="dashboard-section"><h2>Recent contact messages</h2>
+                @forelse($recentContacts as $message)
+                    <div class="dashboard-feed"><strong>{{ $message->subject }}</strong>
+                        <span>{{ $message->full_name }} · {{ $message->created_at->diffForHumans() }}</span></div>
+                @empty<p class="dashboard-note">No contact messages yet.</p>@endforelse
+                <a href="{{ route('admin.contacts.index') }}">Open contact inbox</a>
             </section>
         </div>
     </main>
