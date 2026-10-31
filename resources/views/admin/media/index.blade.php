@@ -1,18 +1,58 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Media Library — Barama</title>@vite(['resources/css/admin/app.css','resources/js/admin/app.js'])</head>
-<body class="admin-body"><main class="admin-shell">
-<header><p class="admin-eyebrow">Barama Real Estate / Media</p>
-<h1>Media Library</h1>
-<p>Private original images remain outside the public document root. They can be displayed only on an approved listing or through a verified company workspace.</p>
-<nav><a href="{{ route('admin.dashboard') }}">Dashboard</a> · <a href="{{ route('admin.catalog.index') }}">Manage listings</a></nav></header>
-<section class="admin-stat"><h2>Stored media</h2>
-<table><thead><tr><th>Preview</th><th>Original name</th><th>File type</th><th>Size</th><th>Dimensions</th><th>References</th></tr></thead>
-<tbody>@forelse($assets as $asset)<tr>
-<td><img width="120" height="80" style="object-fit:cover;border-radius:8px" loading="lazy" src="{{ route('admin.media.preview', $asset) }}" alt="{{ $asset->alt_text ?: $asset->original_name }}"></td><td>{{ $asset->original_name }}</td><td>{{ $asset->mime_type }}</td>
-<td>{{ number_format($asset->size_bytes / 1048576, 2) }} MB</td>
-<td>{{ $asset->width_px }} × {{ $asset->height_px }}</td>
-<td>{{ $asset->attachments_count }}</td>
-</tr>@empty<tr><td colspan="6">No images uploaded yet. Verified company owners can add images to draft listings.</td></tr>@endforelse
-</tbody></table>
-{{ $assets->links() }}</section></main></body></html>
+<x-layouts.admin title="Media Library — Barama Real Estate">
+    <header class="admin-heading"><div><p class="admin-eyebrow">Administration / Media</p>
+        <h1>Media Library</h1>
+        <p>Search private image inventory and manage descriptive and usage-rights metadata.</p></div>
+        <a href="{{ route('admin.dashboard') }}">Dashboard</a></header>
+    @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
+    @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+    @unless($metadataReady)
+        <section class="admin-card" role="alert"><h2>Database update required</h2>
+            <p>After a verified database backup, run <code>php artisan migrate --force</code> before editing image metadata.</p></section>
+    @endunless
+    <section class="admin-card">
+        <form class="media-search-form" method="get" action="{{ route('admin.media.index') }}">
+            <label>Search images <input name="q" type="search" maxlength="120" value="{{ $term }}" placeholder="Filename or alt text"></label>
+            <label>Usage rights <select name="rights" @disabled(!$metadataReady)>
+                <option value="">All statuses</option>
+                @foreach($rightsOptions as $key=>$value)<option value="{{ $key }}" @selected($rightsStatus===$key)>{{ $value }}</option>@endforeach
+            </select></label>
+            <button type="submit">Filter images</button>
+            <a href="{{ route('admin.media.index') }}">Clear filters</a>
+        </form>
+        <p>{{ $assets->total() }} matching images. Original files and attachments remain unchanged.</p>
+    </section>
+    <div class="media-manager-grid">
+        @forelse($assets as $asset)
+            <article class="media-manager-card">
+                <img loading="lazy" src="{{ route('admin.media.preview', $asset) }}" alt="{{ $asset->alt_text ?: $asset->original_name }}" width="360" height="220">
+                <div class="media-manager-card__body">
+                    <h2>{{ $asset->original_name }}</h2>
+                    <p>{{ $asset->mime_type }} · {{ number_format($asset->size_bytes / 1048576,2) }} MB · {{ $asset->attachments_count }} references</p>
+                    <p>{{ $asset->width_px ?? '—' }} × {{ $asset->height_px ?? '—' }}</p>
+                    @if($metadataReady)
+                        <p>Rights: {{ $rightsOptions[$asset->usage_rights] ?? 'Not reviewed' }}</p>
+                        <details><summary>Edit metadata</summary>
+                            <form class="admin-form" method="post" action="{{ route('admin.media.metadata.update',$asset) }}">
+                                @csrf @method('PATCH')
+                                <label>Alt text <textarea name="alt_text" maxlength="255" rows="2">{{ $asset->alt_text }}</textarea></label>
+                                <label>Usage rights <select name="usage_rights" required>
+                                    @foreach($rightsOptions as $key=>$value)<option value="{{ $key }}" @selected($asset->usage_rights===$key)>{{ $value }}</option>@endforeach
+                                </select></label>
+                                <label>Rights holder <input name="rights_holder" maxlength="190" value="{{ $asset->rights_holder }}"></label>
+                                <label>License/evidence reference <input name="rights_reference" maxlength="500" value="{{ $asset->rights_reference }}"></label>
+                                <button type="submit">Save metadata</button>
+                            </form>
+                        </details>
+                    @endif
+                </div>
+            </article>
+        @empty
+            <section class="admin-card"><h2>No images found</h2><p>Adjust the filters, or upload images from an approved company's property draft.</p></section>
+        @endforelse
+    </div>
+    {{ $assets->links() }}
+    <section class="admin-card">
+        <h2>Rights review is not license verification</h2>
+        <p>These fields record declarations; they do not verify copyright ownership or change public visibility. Listings still control image publication.</p>
+    </section>
+</x-layouts.admin>
