@@ -24,7 +24,7 @@ final class SavedSearchRequest extends FormRequest
             'type' => ['nullable', Rule::in(MarketplaceStatus::PROPERTY_TYPES)],
             'sort' => ['nullable', Rule::in(['newest', 'oldest', 'price_asc', 'price_desc'])],
             'min_price' => ['nullable', 'numeric', 'min:0', 'max:99999999999999'],
-            'max_price' => ['nullable', 'numeric', 'min:0', 'max:99999999999999', 'gte:min_price'],
+            'max_price' => ['nullable', 'numeric', 'min:0', 'max:99999999999999', ...($this->filled('min_price') ? ['gte:min_price'] : [])],
         ];
     }
 
