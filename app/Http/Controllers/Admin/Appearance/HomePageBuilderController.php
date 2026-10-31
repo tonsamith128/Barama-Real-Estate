@@ -116,7 +116,7 @@ final class HomePageBuilderController
             'button_route' => ['required', Rule::in(array_keys(HomePageEditorService::MENU))],
             'enabled' => ['sometimes', 'boolean'],
             'image_asset_id' => ['nullable', 'integer', 'min:1'],
-            'image_position' => ['required', Rule::in(['left', 'right'])],
+            'image_position' => ['sometimes', Rule::in(['left', 'right'])],
         ]);
     }
 }
