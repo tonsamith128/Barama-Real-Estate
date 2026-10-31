@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Appearance;
 
 use App\Services\Appearance\HomePageEditorService;
+use App\Services\Appearance\HomepageMediaAccess;
 use App\Services\Appearance\SiteAppearanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,17 @@ final class HomePageBuilderController
     public function index(Request $request, SiteAppearanceService $appearance): View
     {
         $this->authorizeEditor($request);
+        $media = app(HomepageMediaAccess::class);
+        $term = trim((string) $request->query('media_q', ''));
+        abort_if(mb_strlen($term) > 80, 422);
         return view('admin.appearance.homepage', [
+            'mediaAssets' => $media->isReady()
+                ? $media->selectable()
+                    ->when($term !== '', fn ($q) => $q->where('original_name', 'like', '%'.$term.'%'))
+                    ->latest()->limit(36)->get()
+                : collect(),
+            'mediaReady' => $media->isReady(),
+            'mediaTerm' => $term,
             'draft' => $appearance->editing(),
             'published' => $appearance->published(),
             'types' => HomePageEditorService::TYPES,
@@ -58,6 +69,18 @@ final class HomePageBuilderController
         return back()->with('notice', 'Draft section order changed.');
     }
 
+    public function changeHeroImage(Request $request, HomePageEditorService $editor): RedirectResponse
+    {
+        $this->authorizeEditor($request);
+        $data = $request->validate([
+            'image_asset_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $editor->changeHeroImage($request->user(), isset($data['image_asset_id'])
+            ? (int) $data['image_asset_id'] : null);
+
+        return back()->with('notice', 'Hero image saved to your unpublished draft.');
+    }
+
     public function addLink(Request $request, HomePageEditorService $editor): RedirectResponse
     {
         $this->authorizeEditor($request);
@@ -92,6 +115,8 @@ final class HomePageBuilderController
             'button_label' => ['nullable', 'required_if:type,cta', 'string', 'max:60'],
             'button_route' => ['required', Rule::in(array_keys(HomePageEditorService::MENU))],
             'enabled' => ['sometimes', 'boolean'],
+            'image_asset_id' => ['nullable', 'integer', 'min:1'],
+            'image_position' => ['required', Rule::in(['left', 'right'])],
         ]);
     }
 }
