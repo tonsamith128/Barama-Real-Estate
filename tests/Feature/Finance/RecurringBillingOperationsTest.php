@@ -234,6 +234,27 @@ final class RecurringBillingOperationsTest extends TestCase
         $this->assertDatabaseCount('billing_disputes', 2);
     }
 
+    public function test_one_won_dispute_cannot_reactivate_a_company_with_another_open_dispute(): void
+    {
+        [$company, $owner, $order, $start, $end] = $this->paid();
+        $first = [
+            'object' => 'dispute', 'id' => 'dp_open_a', 'charge' => 'ch_open_a',
+            'payment_intent' => 'pi_test_cycle001',
+            'amount' => 1200, 'currency' => 'usd',
+            'livemode' => false, 'status' => 'needs_response',
+        ];
+        $second = array_replace($first, ['id' => 'dp_open_b', 'charge' => 'ch_open_b', 'amount' => 799]);
+        $this->signed('evt_open_a', 'charge.dispute.created', $first)->assertOk();
+        $this->signed('evt_open_b', 'charge.dispute.created', $second)->assertOk();
+        $first['status'] = 'won';
+        $this->signed('evt_win_a', 'charge.dispute.closed', $first)->assertOk();
+        $this->assertSame('suspended', CompanySubscription::query()->firstOrFail()->status);
+
+        $second['status'] = 'won';
+        $this->signed('evt_win_b', 'charge.dispute.closed', $second)->assertOk();
+        $this->assertTrue(CompanySubscription::query()->firstOrFail()->isCurrent());
+    }
+
     public function test_unmatched_dispute_is_flagged_for_manual_reconciliation(): void
     {
         $dispute = [
