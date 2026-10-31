@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Users\UserDirectoryController;
+use App\Http\Controllers\Admin\Contacts\ContactInboxController;
 use App\Http\Controllers\Admin\Policy\LegalPolicyController;
 use App\Http\Controllers\Admin\Media\MediaLibraryController;
 use App\Http\Controllers\Admin\Licensing\LicenseController;
@@ -17,6 +19,9 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/users', UserDirectoryController::class)->name('users.index');
+        Route::get('/contacts', [ContactInboxController::class, 'index'])->name('contacts.index');
+        Route::patch('/contacts/{message}/read', [ContactInboxController::class, 'read'])->name('contacts.read');
         Route::get('/policies', [LegalPolicyController::class, 'index'])->name('policies.index');
         Route::get('/policies/create', [LegalPolicyController::class, 'create'])->name('policies.create');
         Route::post('/policies', [LegalPolicyController::class, 'store'])->name('policies.store');
