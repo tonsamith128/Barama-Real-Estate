@@ -63,10 +63,18 @@
                 <section class="home-builder-live home-builder-live--{{ $section['type'] }}" aria-label="{{ $section['title'] }}">
                     <div @class(['home-builder-live__inner', 'home-builder-live__inner--with-image' => $sectionImage !== null, 'home-builder-live__inner--image-left' => $sectionImage && ($section['image_position'] ?? 'right') === 'left'])>
                         <div class="home-builder-live__copy">
-                        <h2>{{ $section['title'] }}</h2>
-                        @if(!empty($section['body']))<p>{{ $section['body'] }}</p>@endif
-                        @if(!empty($section['button_label']) && isset(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route'] ?? '']))
-                            <a class="button" href="{{ route(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route']]['route']) }}">{{ $section['button_label'] }}</a>
+                            <h2>{{ $section['title'] }}</h2>
+                            @if(!empty($section['body']))<p>{{ $section['body'] }}</p>@endif
+                            @if(!empty($section['button_label']) && isset(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route'] ?? '']))
+                                <a class="button" href="{{ route(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route']]['route']) }}">{{ $section['button_label'] }}</a>
+                            @endif
+                        </div>
+                        @if($sectionImage)
+                            <figure class="home-builder-live__visual">
+                                <img src="{{ route('media.homepage.show', $sectionImage) }}" loading="lazy" decoding="async"
+                                    alt="{{ $sectionImage->alt_text ?: $sectionImage->original_name }}"
+                                    width="{{ $sectionImage->width_px ?: 800 }}" height="{{ $sectionImage->height_px ?: 600 }}">
+                            </figure>
                         @endif
                     </div>
                 </section>
