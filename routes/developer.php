@@ -8,6 +8,7 @@ use App\Http\Controllers\Developer\Media\ListingGalleryController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
+use App\Http\Controllers\Developer\Team\DeveloperTeamController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
@@ -26,6 +27,11 @@ Route::middleware(['auth', 'verified'])
             ->name('gallery.preview');
         Route::delete('/company/{company}/listings/{listing}/gallery/{attachment}', [ListingGalleryController::class, 'destroy'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
+        Route::get('/company/{company}/team', [DeveloperTeamController::class,'index'])->name('team.index');
+        Route::post('/company/{company}/team', [DeveloperTeamController::class,'assign'])
+            ->middleware('throttle:10,1')->name('team.assign');
+        Route::patch('/company/{company}/team/{membership}/deactivate', [DeveloperTeamController::class,'deactivate'])
+            ->middleware('throttle:10,1')->name('team.deactivate');
         Route::get('/company/{company}/projects', [DeveloperProjectController::class, 'index'])
             ->name('projects.index');
         Route::post('/company/{company}/projects', [DeveloperProjectController::class, 'store'])
