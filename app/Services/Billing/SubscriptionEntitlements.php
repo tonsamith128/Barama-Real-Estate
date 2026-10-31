@@ -28,9 +28,18 @@ final class SubscriptionEntitlements
      */
     public function assertCanCreateListing(Company $company): void
     {
-        $subscription = $this->current($company);
-        if ($subscription === null) {
+        if (!Schema::hasTable('company_subscriptions')) {
             return;
+        }
+        $subscription = CompanySubscription::query()->where('company_id', $company->getKey())->first();
+        if ($subscription === null) {
+            // Existing companies without a paid plan keep their legacy access.
+            return;
+        }
+        if (!$subscription->isCurrent()) {
+            throw ValidationException::withMessages([
+                'subscription' => 'Your paid subscription is expired or revoked. Renew before creating listings.',
+            ]);
         }
 
         // Count only non-deleted records; soft-deleted properties do not consume the quota.
