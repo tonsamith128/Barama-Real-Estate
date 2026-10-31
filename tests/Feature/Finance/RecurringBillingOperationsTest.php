@@ -89,7 +89,7 @@ final class RecurringBillingOperationsTest extends TestCase
         ], $body);
     }
 
-    private function session(BillingOrder $order): array
+    private function checkoutSession(BillingOrder $order): array
     {
         return [
             'object' => 'checkout.session', 'id' => $order->gateway_session_id,
@@ -119,7 +119,7 @@ final class RecurringBillingOperationsTest extends TestCase
     private function paid(): array
     {
         [$company, $owner, $order] = $this->checkout();
-        $this->signed('evt_recurring_session_01', 'checkout.session.completed', $this->session($order))
+        $this->signed('evt_recurring_session_01', 'checkout.session.completed', $this->checkoutSession($order))
             ->assertOk();
         $this->assertSame('pending', $order->fresh()->status);
         $this->assertDatabaseCount('company_subscriptions', 0);
