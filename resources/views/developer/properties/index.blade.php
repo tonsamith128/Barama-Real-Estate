@@ -25,12 +25,59 @@
         <label>Currency <select name="currency"><option value="USD">USD</option><option value="KHR">KHR</option></select></label>
         <button type="submit">Save private draft</button>
     </form></section>
-    <section class="admin-card"><h2>Company properties</h2>
-    <ul class="admin-company-list">@forelse($properties as $property)
-        <li><span><strong>{{ $property->title }}</strong> · {{ ucfirst($property->status) }}
-            @foreach($property->listings as $listing)<small> · {{ $listing->transaction_type }} {{ $listing->status }}</small>@endforeach</span>
-            @if($property->status === 'draft')<form method="post" action="{{ route('developer.properties.submit', [$company, $property]) }}">@csrf
-            <button type="submit">Submit for review</button></form>@endif</li>
-        @empty<li>No property records yet.</li>@endforelse</ul>
-    {{ $properties->links() }}</section>
+    <section class="admin-card">
+        <h2>Company properties &amp; galleries</h2>
+        <p>Images remain private until the listing passes administrator approval. Up to 20 JPEG, PNG or WebP photos (12 MB each) per draft listing.</p>
+        <ul class="gallery-property-list">
+            @forelse($properties as $property)
+                <li>
+                    <header class="gallery-property-header">
+                        <strong>{{ $property->title }}</strong>
+                        <span>{{ ucfirst($property->status) }}</span>
+                    </header>
+                    @foreach($property->listings as $listing)
+                        <section class="listing-gallery" aria-label="Photos for {{ $property->title }}">
+                            <p><strong>{{ ucfirst($listing->transaction_type) }} listing</strong> · {{ $listing->status }} · {{ $listing->mediaAttachments->count() }} / 20 images</p>
+                            @if($listing->mediaAttachments->isNotEmpty())
+                                <ul class="listing-gallery__images">
+                                    @foreach($listing->mediaAttachments as $link)
+                                        <li>
+                                            @if($property->status === 'draft' && $listing->status === 'draft')
+                                                <img src="{{ route('developer.gallery.preview', [$company, $listing, $link->asset]) }}"
+                                                    alt="{{ $link->asset->alt_text ?: $property->title }}" loading="lazy">
+                                                <form method="post" action="{{ route('developer.gallery.destroy', [$company, $listing, $link]) }}">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit">Remove</button>
+                                                </form>
+                                            @else
+                                                <span>{{ $link->asset->original_name }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            @if($property->status === 'draft' && $listing->status === 'draft')
+                                <form class="listing-gallery__upload" method="post"
+                                    enctype="multipart/form-data"
+                                    action="{{ route('developer.gallery.store', [$company, $listing]) }}">
+                                    @csrf
+                                    <label>Image <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"></label>
+                                    <label>Alternative text <input name="alt_text" maxlength="255" placeholder="Describe the photo"></label>
+                                    <button type="submit">Upload private photo</button>
+                                </form>
+                            @endif
+                        </section>
+                    @endforeach
+                    @if($property->status === 'draft')
+                        <form method="post" action="{{ route('developer.properties.submit', [$company, $property]) }}">
+                            @csrf<button type="submit">Submit for administrator review</button>
+                        </form>
+                    @endif
+                </li>
+            @empty
+                <li>No property records yet.</li>
+            @endforelse
+        </ul>
+        {{ $properties->links() }}
+    </section>
 </x-layouts.admin>
