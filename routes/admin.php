@@ -29,6 +29,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::post('/appearance/reset', [AppearanceController::class,'resetDraft'])
             ->middleware('throttle:5,1')->name('appearance.reset');
         Route::get('/appearance/homepage', [HomePageBuilderController::class, 'index'])->name('homepage.index');
+        Route::post('/appearance/homepage/hero-image', [HomePageBuilderController::class, 'changeHeroImage'])
+            ->middleware('throttle:15,1')->name('homepage.hero-image.update');
         Route::post('/appearance/homepage/sections', [HomePageBuilderController::class, 'createSection'])
             ->middleware('throttle:15,1')->name('homepage.sections.store');
         Route::patch('/appearance/homepage/sections/{section}', [HomePageBuilderController::class, 'updateSection'])
