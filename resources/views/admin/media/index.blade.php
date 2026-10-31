@@ -10,6 +10,19 @@
             <p>After a verified database backup, run <code>php artisan migrate --force</code> before editing image metadata.</p></section>
     @endunless
     <section class="admin-card">
+        <div class="media-library-upload-head">
+            <div><h2>Upload image to the Media Library</h2>
+                <p>Accepted: JPEG, PNG, WebP · up to 12 MB · 24 megapixels. Original is stored privately. Select rights before adding it to the homepage.</p></div>
+            <a href="{{ route('admin.homepage.index') }}">Open Homepage Builder</a>
+        </div>
+        <form method="post" action="{{ route('admin.media.upload') }}" enctype="multipart/form-data" class="admin-form">
+            @csrf
+            <label>Image file <input type="file" name="image" accept="image/jpeg,image/png,image/webp" required></label>
+            <label>Image description <input name="alt_text" maxlength="255" placeholder="Describe what is visible"></label>
+            <button type="submit">Upload to Media Library</button>
+        </form>
+    </section>
+    <section class="admin-card">
         <form class="media-search-form" method="get" action="{{ route('admin.media.index') }}">
             <label>Search images <input name="q" type="search" maxlength="120" value="{{ $term }}" placeholder="Filename or alt text"></label>
             <label>Usage rights <select name="rights" @disabled(!$metadataReady)>
