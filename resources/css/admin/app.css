@@ -219,3 +219,17 @@
 .portfolio-record summary {cursor:pointer;font-weight:700}
 .portfolio-record p {color:#61728b}
 @media(max-width:740px){.catalog-review-card{grid-template-columns:1fr}}
+
+
+/* ===== ADMIN / 19 / APPEARANCE / PUBLISHABLE BRAND SETTINGS ===== */
+.appearance-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,1fr);gap:1rem;align-items:start;margin-top:1.4rem}
+.appearance-preview{background:linear-gradient(115deg,#122943,#1e4b64);color:#fff;border-radius:15px;padding:1.7rem;display:grid;gap:.6rem}
+.appearance-preview__brand{font-size:1.4rem;color:#fff}
+.appearance-preview small{letter-spacing:.11em;text-transform:uppercase;color:#c1e2ff}
+.appearance-preview__eyebrow{letter-spacing:.14em;font-weight:700;color:#c1e2ff;text-transform:uppercase;font-size:.75rem;margin-top:1.5rem}
+.appearance-preview h3{font-size:clamp(1.4rem,3vw,2rem);line-height:1.2;color:#fff;margin:.1rem 0}
+.appearance-preview p{color:#d5e4f3;line-height:1.6;margin:0 0 1rem}
+.appearance-preview__button{display:inline-flex;justify-self:start;padding:.7rem 1rem;background:var(--appearance-accent);border-radius:9px;color:#fff;font-weight:650}
+.appearance-grid .admin-card{margin-bottom:1rem}
+.appearance-grid .admin-form input[type=color]{padding:.25rem;width:7rem;height:2.7rem}
+@media(max-width:900px){.appearance-grid{grid-template-columns:1fr}}
