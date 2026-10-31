@@ -187,3 +187,17 @@
 .dashboard-feed:last-of-type{margin-bottom:1rem}
 .dashboard-feed span{color:#66778d;font-size:.9rem}
 @media(max-width:680px){.admin-message{flex-direction:column}}
+
+
+/* ===== ADMIN / 17 / VIEWING MANAGEMENT ===== */
+.viewing-tabs {display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.viewing-tabs a {padding:.55rem .9rem;text-decoration:none;color:var(--barama-admin-text);border:1px solid var(--barama-admin-border);border-radius:10px}
+.viewing-tabs a.is-current {background:var(--barama-admin-primary);border-color:var(--barama-admin-primary);color:#fff}
+.viewing-list {display:grid;gap:.9rem}
+.viewing-card {border:1px solid var(--barama-admin-border);border-radius:12px;background:var(--barama-admin-surface);padding:1.2rem;display:flex;justify-content:space-between;gap:1rem;align-items:start}
+.viewing-card p {margin:.35rem 0;color:#586b84;overflow-wrap:anywhere}
+.viewing-card small {display:block;margin-top:.7rem}
+.viewing-actions {display:flex;gap:.55rem;flex-wrap:wrap;align-items:center}
+.viewing-actions button {padding:.65rem .85rem;border:1px solid var(--barama-admin-border);border-radius:9px;background:var(--barama-admin-primary);color:#fff;cursor:pointer;white-space:nowrap}
+.viewing-actions form:last-child button {background:transparent;color:var(--barama-admin-text)}
+@media(max-width:700px){.viewing-card{flex-direction:column}}
