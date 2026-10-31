@@ -1,98 +1,105 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Dashboard — Barama Real Estate</title>
-    @vite(['resources/css/admin/app.css', 'resources/js/admin/app.js'])
-</head>
-<body class="admin-body">
-<div class="dashboard-layout">
-    <aside class="dashboard-sidebar">
-        <a class="dashboard-brand" href="{{ route('admin.dashboard') }}">Barama <small>Real Estate / Admin</small></a>
-        <nav aria-label="Admin navigation" class="dashboard-nav">
-            <a class="is-active" href="{{ route('admin.dashboard') }}">Overview</a>
-            <a href="{{ route('admin.catalog.index') }}">Companies &amp; listings</a>
-            <a href="{{ route('admin.appearance.index') }}">Appearance Manager</a>
-            <a href="{{ route('admin.homepage.index') }}">Homepage Builder</a>
-            <a href="{{ route('admin.media.index') }}">Media Library</a>
-            <a href="{{ route('admin.users.index') }}">User Directory</a>
-            <a href="{{ route('admin.contacts.index') }}">Contact Inbox</a>
-            <a href="{{ route('admin.viewings.index') }}">Viewing Requests</a>
-            <a href="{{ route('admin.media.index') }}">Media Library</a>
-            <a href="{{ route('admin.policies.index') }}">Policy Center</a>
-            <a href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
-            <a href="{{ route('admin.demo.index') }}">Demo content importer</a>
-            <a href="{{ route('admin.license.index') }}">License &amp; Activation</a>
-            <a href="{{ route('home') }}">View website</a>
-            <a href="{{ route('account.dashboard') }}">My account</a>
-        </nav>
-        <form method="post" action="{{ route('logout') }}">@csrf
-            <button type="submit" class="dashboard-signout">Sign out</button>
-        </form>
-    </aside>
-    <main class="dashboard-main">
-        <header class="dashboard-top">
-            <div><p class="admin-eyebrow">Administration / Overview</p>
-                <h1>Dashboard</h1><p>Manage your companies, listings, inquiries and demo content.</p></div>
-            <a class="dashboard-link" href="{{ route('home') }}">Open website</a>
-        </header>
-        @if(count($missingTables) > 0)
-            <section class="dashboard-section" role="alert">
-                <h2>Database update required</h2>
-                <p>Some recent application modules have not yet been migrated. Missing tables:</p>
-                <p><code>{{ implode(', ', $missingTables) }}</code></p>
-                <p>Back up your database, then run <code>php artisan migrate --force</code> from the Laravel
-                application root. Do not reinstall, reset the database, or delete the installation lock.</p>
-                <p>After migrations, run <code>php artisan optimize:clear</code> and refresh this page.</p>
-            </section>
-        @endif
-        <section class="dashboard-stat-grid" aria-label="Marketplace statistics">
-            @foreach($counts as $label => $count)
-                <article class="dashboard-stat"><span>{{ $label }}</span><strong>{{ number_format($count) }}</strong></article>
-            @endforeach
+<x-layouts.admin title="Admin Dashboard — Barama Real Estate">
+    <header class="workspace-dashboard-heading">
+        <div>
+            <p class="admin-eyebrow">WORKSPACE / OVERVIEW</p>
+            <h1>Platform overview</h1>
+            <p>Manage your property marketplace, customers and content from one workspace.</p>
+        </div>
+        <a class="workspace-dashboard-heading__cta" href="{{ route('home') }}">Visit website</a>
+    </header>
+
+    @if(count($missingTables) > 0)
+        <section class="dashboard-section workspace-alert" role="alert">
+            <div>
+                <strong>Database update required</strong>
+                <p>Some new modules are not yet migrated: <code>{{ implode(', ', $missingTables) }}</code>.</p>
+                <p>Back up your database, then run <code>php artisan migrate --force</code> and <code>php artisan optimize:clear</code> in the Laravel root. Never reset a customer database or reinstall the application.</p>
+            </div>
         </section>
-        <div class="dashboard-content-grid">
-            <section class="dashboard-section">
-                <h2>Quick actions</h2>
-                <div class="dashboard-actions">
-                    <a href="{{ route('admin.appearance.index') }}"><strong>Appearance Manager</strong><span>Brand, homepage and SEO settings with draft publication.</span></a>
-                    <a href="{{ route('admin.users.index') }}"><strong>User Directory</strong><span>Review accounts and active company memberships.</span></a>
-                    <a href="{{ route('admin.viewings.index') }}"><strong>Viewing Requests</strong><span>Review customer visit requests and send updates.</span></a>
-                    <a href="{{ route('admin.contacts.index') }}"><strong>Contact Inbox</strong><span>Read and review customer support messages.</span></a>
-                    <a href="{{ route('admin.catalog.index') }}"><strong>Review listings</strong><span>Onboard companies and approve new properties.</span></a>
-                    <a href="{{ route('admin.policies.index') }}"><strong>Policy Center</strong><span>Edit and publish legal pages without compliance-percentage barriers.</span></a>
-                    <a href="{{ route('admin.media.index') }}"><strong>Media Library</strong><span>Review uploaded assets and listing references.</span></a>
-                    <a href="{{ route('admin.inquiries.index') }}"><strong>Customer inquiries</strong><span>View contact requests from published listings.</span></a>
-                    <a href="{{ route('admin.demo.index') }}"><strong>Import demo content</strong><span>Preview the original Barama demo archive; signed import is staging-only.</span></a>
+    @endif
+
+    <section class="workspace-dashboard-hero" aria-label="Administration introduction">
+        <div>
+            <span class="workspace-dashboard-hero__eyebrow">BARAMA REAL ESTATE · ADMINISTRATION</span>
+            <h2>Everything in its place.</h2>
+            <p>A clear view of your growing marketplace, listing pipeline, customer activity, and essential operations.</p>
+            <div class="workspace-dashboard-hero__actions">
+                <a href="{{ route('admin.catalog.index') }}">Review listings</a>
+                <a href="{{ route('admin.appearance.index') }}">Manage appearance</a>
+            </div>
+        </div>
+        <span aria-hidden="true" class="workspace-dashboard-hero__art">⌂</span>
+    </section>
+
+    <section aria-label="Marketplace statistics" class="dashboard-stat-grid workspace-dashboard-stats">
+        @foreach($counts as $label => $count)
+            <article class="dashboard-stat">
+                <span>{{ $label }}</span>
+                <strong>{{ number_format($count) }}</strong>
+                <small>Current marketplace total</small>
+            </article>
+        @endforeach
+    </section>
+
+    <div class="dashboard-content-grid workspace-dashboard-columns">
+        <section class="dashboard-section">
+            <div class="workspace-dashboard-section-heading">
+                <div><p class="admin-eyebrow">POPULAR TASKS</p><h2>Quick actions</h2></div>
+                <span>Manage your marketplace</span>
+            </div>
+            <div class="dashboard-actions workspace-dashboard-actions">
+                <a href="{{ route('admin.catalog.index') }}"><strong>Review listings</strong><span>Onboard companies and approve projects and properties.</span></a>
+                <a href="{{ route('admin.homepage.index') }}"><strong>Homepage Builder</strong><span>Publish content sections and main navigation updates.</span></a>
+                <a href="{{ route('admin.appearance.index') }}"><strong>Appearance Manager</strong><span>Manage brand, colors, hero messaging and SEO descriptions.</span></a>
+                <a href="{{ route('admin.media.index') }}"><strong>Media Library</strong><span>Browse images, descriptions and usage-rights information.</span></a>
+                <a href="{{ route('admin.policies.index') }}"><strong>Policy Center</strong><span>Review and publish legal pages without percentage barriers.</span></a>
+                <a href="{{ route('admin.users.index') }}"><strong>User Directory</strong><span>Review registered users and company memberships.</span></a>
+                <a href="{{ route('admin.viewings.index') }}"><strong>Viewing Requests</strong><span>Review requests for customer property tours.</span></a>
+                <a href="{{ route('admin.contacts.index') }}"><strong>Contact Inbox</strong><span>Read customer and support messages.</span></a>
+                <a href="{{ route('admin.demo.index') }}"><strong>Demo content importer</strong><span>Inspect the original Barama archive; customer import still requires acceptance.</span></a>
+            </div>
+        </section>
+        <section class="dashboard-section workspace-dashboard-status">
+            <div class="workspace-dashboard-section-heading"><div><p class="admin-eyebrow">SYSTEM HEALTH</p><h2>Installation status</h2></div></div>
+            <p>The Laravel application is installed and the administration dashboard is available.</p>
+            @if($import)
+                <div class="workspace-status-item">
+                    <span class="workspace-status-item__dot"></span>
+                    <div><strong>Demo archive imported</strong>
+                        <p>Version {{ $import->archive_version }} · {{ number_format($import->marketplace_records) }} records · {{ $import->image_count }} images.</p></div>
                 </div>
-            </section>
-            <section class="dashboard-section">
-                <h2>Installation status</h2>
-                <p>The Laravel application is installed and the administration dashboard is available.</p>
-                @if($import)
-                    <p class="dashboard-note"><strong>Demo imported</strong> — version {{ $import->archive_version }} with {{ number_format($import->marketplace_records) }} records and {{ $import->image_count }} images.</p>
-                @else
-                    <p class="dashboard-note">There is no imported demo content yet. The public marketplace will only show approved published listings.</p>
-                @endif
-                <p class="dashboard-note">This is an integrated development build. Billing, full media management, licenses and update modules remain under migration.</p>
-            </section>
-        </div>
-        <div class="dashboard-content-grid">
-            <section class="dashboard-section"><h2>Recent property inquiries</h2>
-                @forelse($recentInquiries as $inquiry)
-                    <div class="dashboard-feed"><strong>{{ $inquiry->listing?->property?->title ?? 'Property' }}</strong>
-                        <span>{{ $inquiry->full_name }} · {{ $inquiry->created_at->diffForHumans() }}</span></div>
-                @empty<p class="dashboard-note">No inquiries received yet.</p>@endforelse
-                <a href="{{ route('admin.inquiries.index') }}">Open inquiry inbox</a>
-            </section>
-            <section class="dashboard-section"><h2>Recent contact messages</h2>
-                @forelse($recentContacts as $message)
-                    <div class="dashboard-feed"><strong>{{ $message->subject }}</strong>
-                        <span>{{ $message->full_name }} · {{ $message->created_at->diffForHumans() }}</span></div>
-                @empty<p class="dashboard-note">No contact messages yet.</p>@endforelse
-                <a href="{{ route('admin.contacts.index') }}">Open contact inbox</a>
-            </section>
-        </div>
-    </main>
-</div>
-</body></html>
+            @else
+                <div class="workspace-status-item">
+                    <span class="workspace-status-item__dot workspace-status-item__dot--amber"></span>
+                    <div><strong>Demo content not imported</strong>
+                        <p>Public property pages only display approved, published listings.</p></div>
+                </div>
+            @endif
+            <p class="dashboard-note">This is a Laravel development build. Billing, complete licensing, automatic updating and full visual-page editing remain under migration.</p>
+            <a href="{{ route('admin.license.index') }}">License &amp; Activation</a>
+        </section>
+    </div>
+
+    <div class="dashboard-content-grid workspace-dashboard-columns">
+        <section class="dashboard-section">
+            <div class="workspace-dashboard-section-heading">
+                <div><p class="admin-eyebrow">RECENT ACTIVITY</p><h2>Property inquiries</h2></div>
+                <a href="{{ route('admin.inquiries.index') }}">Open inbox</a>
+            </div>
+            @forelse($recentInquiries as $inquiry)
+                <div class="dashboard-feed"><strong>{{ $inquiry->listing?->property?->title ?? 'Property' }}</strong>
+                    <span>{{ $inquiry->full_name }} · {{ $inquiry->created_at->diffForHumans() }}</span></div>
+            @empty <p class="dashboard-note">No inquiries received yet.</p> @endforelse
+        </section>
+        <section class="dashboard-section">
+            <div class="workspace-dashboard-section-heading">
+                <div><p class="admin-eyebrow">CUSTOMER MESSAGES</p><h2>Contact inbox</h2></div>
+                <a href="{{ route('admin.contacts.index') }}">View messages</a>
+            </div>
+            @forelse($recentContacts as $message)
+                <div class="dashboard-feed"><strong>{{ $message->subject }}</strong>
+                    <span>{{ $message->full_name }} · {{ $message->created_at->diffForHumans() }}</span></div>
+            @empty <p class="dashboard-note">No contact messages yet.</p> @endforelse
+        </section>
+    </div>
+</x-layouts.admin>
