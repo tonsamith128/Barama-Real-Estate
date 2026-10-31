@@ -38,7 +38,7 @@ final class BillingReconciliation
                 ->whereIn('status', ['requested', 'submitted'])
                 ->where('created_at', '<', now()->subMinutes(30))->count(),
             'unmatched_disputes' => BillingDispute::query()->where('needs_reconciliation', true)->count(),
-            'tax_review_pending' => BillingTaxReview::query()->where('status', 'unreviewed')->count(),
+            'tax_review_pending' => BillingTaxReview::query()->whereIn('status', ['unreviewed', 'needs_specialist'])->count(),
             'expired_entitlements' => CompanySubscription::query()->where('status', 'active')
                 ->whereNotNull('ends_at')->where('ends_at', '<=', now())->count(),
             'checkout_enabled' => (bool) config('billing.enabled'),

@@ -2,53 +2,54 @@
     <header class="admin-heading">
         <div>
             <p class="admin-eyebrow">Developer / Finance</p>
-            <h1>{{ $company->name }} — Billing profile</h1>
-            <p>Provide business billing details and display preferences for customers across regions.</p>
+            <h1>{{ $company->name }} — {{ __('billing.profile_title', [], $billingLocale) }}</h1>
+            <p>{{ __('billing.profile_intro', [], $billingLocale) }}</p>
         </div>
         <a href="{{ route('developer.finance.plans.index', $company) }}">Back to plans</a>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
     <section class="admin-card">
-        <h2>Company billing contact</h2>
+        <h2>{{ __('billing.contact', [], $billingLocale) }}</h2>
         <form method="post" action="{{ route('developer.finance.profile.update', $company) }}" class="admin-form commerce-plan-form">
             @csrf
             @method('PUT')
-            <label>Business or billing name
+            <label>{{ __('billing.billing_name', [], $billingLocale) }}
                 <input name="billing_name" maxlength="160" required value="{{ old('billing_name', $profile?->billing_name ?? $company->name) }}">
             </label>
-            <label>Billing email
+            <label>{{ __('billing.billing_email', [], $billingLocale) }}
                 <input name="billing_email" type="email" maxlength="190" required value="{{ old('billing_email', $profile?->billing_email ?? auth()->user()?->email) }}">
             </label>
-            <label>Billing country or territory
+            <label>{{ __('billing.country', [], $billingLocale) }}
                 <select name="country_code" required>
-                    <option value="">Choose a country or territory</option>
+                    <option value="">{{ __('billing.select_country', [], $billingLocale) }}</option>
                     @foreach($countries as $code => $name)
                         <option value="{{ $code }}" @selected(old('country_code', $profile?->country_code) === $code)>{{ $name }} ({{ $code }})</option>
                     @endforeach
                 </select>
             </label>
-            <label>Street / building <input name="address_line" maxlength="190" value="{{ old('address_line', $profile?->address_line) }}"></label>
-            <label>City <input name="city" maxlength="100" value="{{ old('city', $profile?->city) }}"></label>
-            <label>State / province <input name="region" maxlength="100" value="{{ old('region', $profile?->region) }}"></label>
-            <label>Postal code <input name="postal_code" maxlength="32" value="{{ old('postal_code', $profile?->postal_code) }}"></label>
-            <label>Preferred language
+            <label>{{ __('billing.address', [], $billingLocale) }} <input name="address_line" maxlength="190" value="{{ old('address_line', $profile?->address_line) }}"></label>
+            <label>{{ __('billing.city', [], $billingLocale) }} <input name="city" maxlength="100" value="{{ old('city', $profile?->city) }}"></label>
+            <label>{{ __('billing.region', [], $billingLocale) }} <input name="region" maxlength="100" value="{{ old('region', $profile?->region) }}"></label>
+            <label>{{ __('billing.postal', [], $billingLocale) }} <input name="postal_code" maxlength="32" value="{{ old('postal_code', $profile?->postal_code) }}"></label>
+            <label>{{ __('billing.locale', [], $billingLocale) }}
                 <select name="preferred_locale" required>
                     @foreach($locales as $code => $name)
                         <option value="{{ $code }}" @selected(old('preferred_locale', $profile?->preferred_locale ?? 'en') === $code)>{{ $name }}</option>
                     @endforeach
                 </select>
             </label>
-            <label>Display currency
+            <label>{{ __('billing.display_currency', [], $billingLocale) }}
                 <select name="preferred_currency" required>
                     @foreach($currencies as $code)
                         <option value="{{ $code }}" @selected(old('preferred_currency', $profile?->preferred_currency ?? 'USD') === $code)>{{ $code }}</option>
                     @endforeach
                 </select>
             </label>
-            <label>Timezone <input name="timezone" maxlength="64" required value="{{ old('timezone', $profile?->timezone ?? 'UTC') }}" placeholder="Asia/Phnom_Penh"></label>
-            <button type="submit">Save billing preferences</button>
+            <label>{{ __('billing.timezone', [], $billingLocale) }} <input name="timezone" maxlength="64" required value="{{ old('timezone', $profile?->timezone ?? 'UTC') }}" placeholder="Asia/Phnom_Penh"></label>
+            <button type="submit">{{ __('billing.save', [], $billingLocale) }}</button>
         </form>
     </section>
-    <p class="admin-notice">Preferences do not convert prices, change USD charges, enable a payment provider, or determine tax liability. The available interface is currently in English; other languages are saved preferences for future translation support.</p>
+    <p class="admin-notice">{{ __('billing.notice', [], $billingLocale) }}</p>
+    <p class="admin-notice">Payment currency remains USD. Preferences do not convert prices, change USD charges, enable a payment provider, or determine tax liability. The available interface is currently in English; other languages are saved preferences for future translation support.</p>
 </x-layouts.admin>

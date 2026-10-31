@@ -8,6 +8,7 @@ use App\Models\BillingInvoice;
 use App\Models\BillingOrder;
 use App\Models\BillingPayment;
 use App\Models\BillingRefund;
+use App\Models\BillingTaxReview;
 use App\Models\BillingWebhookEvent;
 use App\Models\Company;
 use App\Models\CompanySubscription;
@@ -130,6 +131,7 @@ final class BillingWebhookProcessor
             'paid_at' => $paidAt,
         ]);
         $invoice->update(['status' => 'paid', 'paid_at' => $paidAt]);
+        BillingTaxReview::query()->firstOrCreate(['billing_invoice_id' => $invoice->getKey()], ['status' => 'unreviewed']);
         BillingPayment::query()->create([
             'billing_order_id' => $order->getKey(),
             'gateway' => 'stripe_test',

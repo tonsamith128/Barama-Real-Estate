@@ -6,6 +6,18 @@
         </div>
         <a href="{{ route('admin.finance.billing.index') }}">Billing ledger</a>
     </header>
+    @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
+    @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+    <section class="admin-card">
+        <h2>International commerce release gates</h2>
+        <p>Live payments are <strong>not approved</strong>. A passing local test is not merchant, tax, provider or shared-hosting acceptance.</p>
+        <ul class="commerce-inquiry-list">
+            @foreach($readiness['external_gates'] as $name => $gate)
+                <li><strong>{{ str_replace('_', ' ', ucfirst($name)) }}:</strong> {{ $gate['status'] }} — {{ $gate['required_evidence'] }}</li>
+            @endforeach
+        </ul>
+        <p>Local configuration checks passing: {{ $readiness['local_checks_pass'] ? 'Yes' : 'No' }}. For safe console reporting, run <code>php artisan billing:release-check --json</code>.</p>
+    </section>
     @if(!$summary['ready'])
         <div class="admin-errors" role="alert">
             <p>Billing migrations are missing: {{ implode(', ', $summary['missing_tables']) }}</p>
@@ -43,11 +55,38 @@
         </section>
         <section class="admin-card">
             <h2>Tax document readiness</h2>
-            <p>These are pending professional reviews, not issued legal tax invoices.</p>
+            <p>These are recorded professional-review work items, not statutory invoices, tax calculations, tax approval or legal advice.</p>
             <ul class="commerce-inquiry-list">
                 @forelse($taxReviews as $review)
-                    <li>{{ $review->invoice?->invoice_number }} · {{ $review->invoice?->order?->company?->name }}
-                        · {{ $review->status }}</li>
+                    <li>
+                        <strong>{{ $review->invoice?->invoice_number }} · {{ $review->invoice?->order?->company?->name }}</strong>
+                        · {{ $review->status }}
+                        @if($review->invoice?->paid_at)
+                            <form class="admin-form" method="post" action="{{ route('admin.finance.tax-reviews.update', $review) }}">
+                                @csrf
+                                @method('PATCH')
+                                <label>Work-queue status
+                                    <select name="status" required>
+                                        @foreach(['unreviewed' => 'Unreviewed', 'needs_specialist' => 'Specialist review required', 'reviewed_nonstatutory' => 'Internal review recorded (NOT tax approval)'] as $value => $title)
+                                            <option value="{{ $value }}" @selected($review->status === $value)>{{ $title }}</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+                                <label>Jurisdiction (ISO country code, optional)
+                                    <select name="jurisdiction">
+                                        <option value="">Unspecified</option>
+                                        @foreach(config('billing_countries', []) as $code => $country)
+                                            <option value="{{ $code }}" @selected($review->jurisdiction === $code)>{{ $country }} ({{ $code }})</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+                                <label>Professional review notes
+                                    <textarea name="review_note" rows="2" required minlength="20" maxlength="1500">{{ old('review_note', $review->review_note) }}</textarea>
+                                </label>
+                                <button type="submit">Save review note (no tax invoice)</button>
+                            </form>
+                        @endif
+                    </li>
                 @empty
                     <li>No pending tax reviews.</li>
                 @endforelse

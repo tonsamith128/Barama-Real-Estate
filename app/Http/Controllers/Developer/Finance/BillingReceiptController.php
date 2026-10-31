@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Developer\Finance;
 
 use App\Models\BillingInvoice;
 use App\Models\Company;
+use App\Models\CompanyBillingProfile;
+use Illuminate\Support\Facades\Schema;
 use App\Services\Developer\CompanyTeamManager;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -29,6 +31,9 @@ final class BillingReceiptController
             'company' => $company,
             'invoice' => $invoice,
             'order' => $invoice->order,
+            'billingLocale' => Schema::hasTable('company_billing_profiles')
+                ? (CompanyBillingProfile::query()->where('company_id', $company->getKey())
+                    ->value('preferred_locale') ?: 'en') : 'en',
         ]);
     }
 }

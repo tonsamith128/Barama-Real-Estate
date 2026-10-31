@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Finance;
 
 use App\Models\BillingOrder;
+use App\Models\BillingInvoice;
 use App\Models\CommercialPlan;
 use App\Models\Company;
 use App\Models\CompanyBillingProfile;
@@ -107,7 +108,9 @@ final class GlobalBillingCustomerTest extends TestCase
         $this->assertSame('km', $saved->preferred_locale);
         $this->assertSame('KHR', $saved->preferred_currency);
         $this->get(route('developer.finance.profile.edit', $company))->assertOk()
-            ->assertSee('International Property Company')->assertSee('Payment currency remains USD', false);
+            ->assertSee('International Property Company')
+            ->assertSee('ព័ត៌មានទូទាត់')
+            ->assertSee('Payment currency remains USD', false);
         $this->get(route('developer.finance.plans.index', $company))->assertOk()
             ->assertSee('Currency conversion and tax calculation are not provided.');
         $audit = DB::table('audit_events')->where('action', 'billing.profile.updated')->firstOrFail();
@@ -250,6 +253,29 @@ final class GlobalBillingCustomerTest extends TestCase
         });
         config(['billing.stripe.portal_test_enabled' => false]);
         $this->post(route('developer.finance.subscription.portal', $company))->assertStatus(503);
+    }
+
+    public function test_paid_receipt_uses_saved_khmer_locale_without_issuing_tax_invoice(): void
+    {
+        $company = $this->company('translated');
+        $owner = $this->member($company);
+        $this->actingAs($owner)->put(route('developer.finance.profile.update', $company),
+            $this->profile())->assertRedirect();
+        $subscription = $this->paidSubscription($company, $owner);
+        $invoice = BillingInvoice::query()->create([
+            'billing_order_id' => $subscription->billing_order_id,
+            'invoice_number' => 'BRM-LOCALE-TEST',
+            'status' => 'paid', 'currency' => 'USD',
+            'total_cents' => 2499,
+            'customer_billing_name' => 'International Property Company',
+            'customer_country_code' => 'KH',
+            'paid_at' => now(),
+        ]);
+        $this->get(route('developer.finance.receipts.show', [$company, $invoice]))
+            ->assertOk()->assertSee('ការបញ្ជាក់ការទូទាត់')
+            ->assertSee('NOT a tax invoice')
+            ->assertSee('USD 24.99');
+        $this->assertSame('KH', $invoice->fresh()->customer_country_code);
     }
 
     public function test_existing_paid_subscription_blocks_duplicate_recurring_checkout(): void

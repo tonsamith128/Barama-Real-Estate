@@ -22,9 +22,12 @@ final class CompanyBillingProfileController
         $teams->assertOwner($request->user(), $company);
         abort_unless(Schema::hasTable('company_billing_profiles'), 503, 'Run billing migrations.');
 
+        $profile = CompanyBillingProfile::query()->where('company_id', $company->getKey())->first();
+
         return view('developer.finance.profile.edit', [
             'company' => $company,
-            'profile' => CompanyBillingProfile::query()->where('company_id', $company->getKey())->first(),
+            'profile' => $profile,
+            'billingLocale' => $profile?->preferred_locale ?? 'en',
             'countries' => config('billing_countries'),
             'locales' => GlobalBillingPreferences::LOCALES,
             'currencies' => GlobalBillingPreferences::CURRENCIES,

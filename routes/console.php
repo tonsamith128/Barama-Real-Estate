@@ -13,3 +13,13 @@ Artisan::command('billing:audit {--json : Print JSON only}', function (BillingRe
 
     $this->line($output);
 })->purpose('Read-only billing reconciliation status');
+
+
+// Read-only readiness report. --strict is intentionally nonzero while any
+// externally verified acceptance requirement is outstanding.
+Artisan::command('billing:release-check {--json : Print JSON only} {--strict : Fail until all release gates are approved}', function (\App\Services\Billing\BillingReleaseReadiness $readiness): int {
+    $report = $readiness->report();
+    $this->line(json_encode($report, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+
+    return $this->option('strict') && !$report['live_ready'] ? 2 : 0;
+})->purpose('Check local billing prerequisites; never authorizes live payments');

@@ -7,12 +7,13 @@ namespace App\Http\Controllers\Admin\Finance;
 use App\Models\BillingDispute;
 use App\Models\BillingTaxReview;
 use App\Services\Billing\BillingReconciliation;
+use App\Services\Billing\BillingReleaseReadiness;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class BillingReconciliationController
 {
-    public function __invoke(Request $request, BillingReconciliation $reconciliation): View
+    public function __invoke(Request $request, BillingReconciliation $reconciliation, BillingReleaseReadiness $readiness): View
     {
         abort_unless($request->user()?->isSystemAdministrator(), 403);
 
@@ -20,6 +21,7 @@ final class BillingReconciliationController
 
         return view('admin.finance.reconciliation.index', [
             'summary' => $summary,
+            'readiness' => $readiness->report(),
             'disputes' => $summary['ready']
                 ? BillingDispute::query()->with('payment.order.company')->latest()->limit(30)->get()
                 : collect(),
