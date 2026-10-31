@@ -8,6 +8,10 @@ use App\Models\CommercialPlan;
 use App\Models\Company;
 use App\Models\CompanyPlanInquiry;
 use App\Services\Developer\CompanyTeamManager;
+use App\Services\Billing\BillingCheckout;
+use App\Services\Billing\SubscriptionEntitlements;
+use App\Models\BillingInvoice;
+use App\Models\BillingOrder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,9 +35,28 @@ final class CompanyPlanController
             'company' => $company,
             'plans' => CommercialPlan::query()->published()
                 ->orderBy('sort_order')->orderBy('name')->get(),
+            'billingEnabled' => (bool) config('billing.enabled'),
+            'subscription' => app(SubscriptionEntitlements::class)->current($company),
+            'orders' => Schema::hasTable('billing_orders')
+                ? BillingOrder::query()->with('invoice')->where('company_id', $company->getKey())->latest()->limit(10)->get()
+                : collect(),
             'inquiry' => CompanyPlanInquiry::query()->with('plan')
                 ->where('company_id', $company->getKey())->first(),
         ]);
+    }
+
+    public function checkout(
+        Request $request,
+        Company $company,
+        CommercialPlan $plan,
+        CompanyTeamManager $teams,
+        BillingCheckout $checkout,
+    ): RedirectResponse {
+        $this->authorizeOwner($request, $company, $teams);
+        abort_unless(Schema::hasTable('billing_orders') && Schema::hasTable('billing_invoices')
+            && Schema::hasTable('company_subscriptions'), 503, 'Run pending billing migrations.');
+        $session = $checkout->start($request->user(), $company, $plan);
+        return redirect()->away($session['url']);
     }
 
     public function inquire(

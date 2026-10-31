@@ -4,7 +4,8 @@
             <h1>Business Pricing Plans</h1>
             <p>Configure public plan descriptions and review company interest. Payment processing and subscription activation are not enabled.</p>
         </div>
-        <a href="{{ route('pricing.index') }}" target="_blank" rel="noopener">View pricing page</a>
+        <div><a href="{{ route('pricing.index') }}" target="_blank" rel="noopener">View pricing page</a> ·
+        <a href="{{ route('admin.finance.billing.index') }}">Billing ledger</a></div>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif

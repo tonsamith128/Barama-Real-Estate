@@ -1,6 +1,6 @@
 # Barama — Commercial pricing plan catalog and company inquiries
 
-Status: **development foundation**. This is NOT a payment gateway, an invoice system, a subscription service, or a merchant-of-record implementation.
+Status: **development foundation**. This milestone has been extended with a disabled-by-default Stripe test-mode billing foundation. See [Billing and subscriptions](BILLING_SUBSCRIPTIONS.md). No live payments are available.
 
 ## Features
 
@@ -10,8 +10,8 @@ Status: **development foundation**. This is NOT a payment gateway, an invoice sy
 - The public `/pricing` page displays **only published** plans, and the safe Homepage Builder navigation can include Pricing.
 - Active **company owners only** can open their company plan page and submit a plan inquiry; no unrelated company member may read or alter it.
 - One current inquiry per company may be updated on a subsequent selection; administrators can review inquiries in Finance. Audit entries are written for plan changes and requests.
-- Existing listing creation and permissions are **unchanged**. The numeric proposed listing limit is informational and is not enforced until an entitlement engine and verified billing are available.
-- No money is charged, no payment method is collected, and no administrator action in this module can mark an invoice as paid.
+- Existing unentitled legacy companies retain existing listing behavior. Current verified paid entitlements now enforce their listing allowance; no browser checkout or inquiry alone activates this entitlement.
+- Live money cannot be charged by the test-only gateway. Test checkout is disabled unless explicitly configured, and administrator forms cannot mark invoices paid.
 
 ## Database tables
 

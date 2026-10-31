@@ -28,6 +28,8 @@ Route::middleware(['auth', 'verified'])
             ->name('gallery.preview');
         Route::delete('/company/{company}/listings/{listing}/gallery/{attachment}', [ListingGalleryController::class, 'destroy'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
+        Route::post('/company/{company}/plans/{plan}/checkout', [CompanyPlanController::class, 'checkout'])
+            ->middleware('throttle:2,1')->name('finance.plans.checkout');
         Route::get('/company/{company}/plans', [CompanyPlanController::class, 'index'])->name('finance.plans.index');
         Route::post('/company/{company}/plans/{plan}/inquire', [CompanyPlanController::class, 'inquire'])
             ->middleware('throttle:5,1')->name('finance.plans.inquire');

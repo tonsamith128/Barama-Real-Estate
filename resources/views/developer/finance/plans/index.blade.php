@@ -7,6 +7,27 @@
         <a href="{{ route('developer.dashboard') }}">Back to workspace</a>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
+    @if($subscription)
+        <section class="admin-card">
+            <h2>Verified company entitlement</h2>
+            <p>Plan #{{ $subscription->commercial_plan_id }} · {{ ucfirst($subscription->status) }} ·
+                {{ number_format($subscription->listing_limit) }} listing allowance ·
+                {{ $subscription->ends_at?->format('Y-m-d') ?? 'No scheduled expiration' }}</p>
+            <p>Entitlements are created only by a verified paid provider webhook.</p>
+        </section>
+    @endif
+    @if($orders->isNotEmpty())
+        <section class="admin-card">
+            <h2>Company invoices and orders</h2>
+            <ul class="commerce-inquiry-list">
+                @foreach($orders as $order)
+                    <li>{{ $order->invoice?->invoice_number }} · {{ $order->plan_name }} ·
+                        {{ $order->currency }} {{ number_format($order->amount_cents / 100, 2) }} ·
+                        {{ $order->invoice?->status ?? 'Pending' }}</li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
     @if($inquiry)
         <section class="admin-card">
             <h2>Current inquiry</h2>
@@ -24,6 +45,12 @@
                 </p>
                 <p>{{ $plan->description }}</p>
                 <p>Proposed listing allowance: {{ number_format($plan->listing_limit) }}</p>
+                @if($billingEnabled && $plan->price_cents > 0)
+                    <form method="post" action="{{ route('developer.finance.plans.checkout', [$company, $plan]) }}">
+                        @csrf
+                        <button type="submit">Open Stripe test checkout</button>
+                    </form>
+                @endif
                 <form method="post" action="{{ route('developer.finance.plans.inquire', [$company, $plan]) }}">
                     @csrf
                     <button type="submit">Request plan information</button>
@@ -33,5 +60,5 @@
             <section class="admin-card"><p>No company plans have been published.</p></section>
         @endforelse
     </div>
-    <p class="admin-notice">This feature records interest only. There is no checkout, automatic entitlement, invoice or payment confirmation.</p>
+    <p class="admin-notice">Checkout is disabled by default and supports Stripe test-mode only. No live payments or automatic renewals. A browser redirect does not activate an entitlement.</p>
 </x-layouts.admin>
