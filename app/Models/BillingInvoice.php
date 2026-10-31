@@ -12,6 +12,7 @@ final class BillingInvoice extends Model
     protected $fillable = [
         'billing_order_id', 'invoice_number', 'status', 'total_cents',
         'refunded_cents', 'currency', 'paid_at',
+        'customer_billing_name', 'customer_country_code',
     ];
 
     protected function casts(): array
