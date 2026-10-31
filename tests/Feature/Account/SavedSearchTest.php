@@ -79,7 +79,7 @@ final class SavedSearchTest extends TestCase
             'offer' => 'sale',
         ])->assertRedirect();
         $this->get(route('account.dashboard'))->assertOk()
-            ->assertSee("Make room for what's next.")
+            ->assertSee("Make room for what's next.", false)
             ->assertSee('Saved searches')
             ->assertSee('Villas in city');
         $this->get(route('account.searches.index'))->assertSee('YOUR PERSONAL COLLECTION');
