@@ -7,6 +7,11 @@
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+    <section class="admin-card">
+        <h2>Homepage Layout &amp; Navigation</h2>
+        <p>Manage custom content sections and configure the order of the desktop and mobile navigation links.</p>
+        <p><a href="{{ route('admin.homepage.index') }}">Open Homepage Builder</a></p>
+    </section>
     <div class="appearance-grid">
         <section class="admin-card">
             <h2>Brand, home and search identity</h2>
