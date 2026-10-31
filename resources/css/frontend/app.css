@@ -421,3 +421,18 @@ button, input { font: inherit; }
 @media(max-width:900px){.customer-welcome__decoration,.customer-search-intro__icon{display:none}}
 @media(max-width:650px){.marketplace__header--premium{border-radius:14px}.customer-welcome{border-radius:15px}.customer-shell{width:min(100% - 1.1rem,82rem)}.customer-search-grid{grid-template-columns:1fr}.customer-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.customer-search-card,.customer-nav a{transition:none}.customer-search-card:hover,.customer-nav a:hover{transform:none}}
+
+
+/* ===== FRONTEND / 22 / HOMEPAGE MEDIA & PREMIUM IMAGE LAYOUT ===== */
+.home-hero__inner--with-image{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(290px,.9fr);align-items:center;gap:clamp(1.5rem,4vw,4rem)}
+.home-hero__copy{min-width:0}
+.home-hero__visual,.home-builder-live__visual{margin:0;overflow:hidden;border-radius:22px;position:relative}
+.home-hero__visual{aspect-ratio:4/4.25;border:1px solid #ffffff44;box-shadow:0 32px 70px rgba(0,0,0,.25)}
+.home-hero__visual img,.home-builder-live__visual img{width:100%;height:100%;display:block;object-fit:cover}
+.home-builder-live__inner--with-image{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.9fr);gap:clamp(1.5rem,4vw,4rem);align-items:center}
+.home-builder-live__inner--image-left .home-builder-live__visual{grid-column:1;grid-row:1}
+.home-builder-live__inner--image-left .home-builder-live__copy{grid-column:2;grid-row:1}
+.home-builder-live__visual{aspect-ratio:4/3;border:1px solid var(--barama-border);box-shadow:0 22px 55px rgba(16,38,68,.11)}
+.home-builder-live__copy{min-width:0}
+@media(max-width:920px){.home-hero__inner--with-image,.home-builder-live__inner--with-image{grid-template-columns:1fr}.home-hero__visual{max-height:340px;aspect-ratio:16/8}.home-builder-live__inner--image-left .home-builder-live__visual,.home-builder-live__inner--image-left .home-builder-live__copy{grid-column:auto;grid-row:auto}}
+@media(max-width:520px){.home-hero__visual{max-height:260px}.home-builder-live__visual{aspect-ratio:16/10}}

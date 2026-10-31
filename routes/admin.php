@@ -29,6 +29,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::post('/appearance/reset', [AppearanceController::class,'resetDraft'])
             ->middleware('throttle:5,1')->name('appearance.reset');
         Route::get('/appearance/homepage', [HomePageBuilderController::class, 'index'])->name('homepage.index');
+        Route::post('/appearance/homepage/hero-image', [HomePageBuilderController::class, 'changeHeroImage'])
+            ->middleware('throttle:15,1')->name('homepage.hero-image.update');
         Route::post('/appearance/homepage/sections', [HomePageBuilderController::class, 'createSection'])
             ->middleware('throttle:15,1')->name('homepage.sections.store');
         Route::patch('/appearance/homepage/sections/{section}', [HomePageBuilderController::class, 'updateSection'])
@@ -62,6 +64,8 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
+        Route::post('/media', [MediaLibraryController::class, 'upload'])
+            ->middleware('throttle:8,1')->name('media.upload');
         Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
         Route::patch('/media/{asset}/metadata', [MediaLibraryController::class, 'updateMetadata'])
             ->middleware('throttle:20,1')->name('media.metadata.update');

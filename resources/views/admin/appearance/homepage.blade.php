@@ -12,6 +12,21 @@
 
     <div class="home-builder-grid">
         <div>
+            <section class="admin-card builder-media-intro">
+                <div class="home-builder-heading"><div><p class="admin-eyebrow">VISUAL CONTENT</p><h2>Homepage image library</h2>
+                    <p>Use owned or licensed assets without copying files. The public homepage never exposes drafts.</p></div>
+                    <a href="{{ route('admin.media.index') }}">Upload / manage images</a>
+                </div>
+                @unless($mediaReady)
+                    <p role="alert">Media Library metadata migrations must be applied before selecting homepage images.</p>
+                @endunless
+                <form method="get" action="{{ route('admin.homepage.index') }}" class="builder-media-search">
+                    <label>Find approved images <input name="media_q" type="search" maxlength="80" value="{{ $mediaTerm }}" placeholder="Search by filename"></label>
+                    <button type="submit">Search images</button>
+                    @if($mediaTerm !== '')<a href="{{ route('admin.homepage.index') }}">Clear</a>@endif
+                </form>
+                <p class="builder-media-intro__hint">{{ $mediaAssets->count() }} selectable images shown. Rights status must be owned or licensed, with a named rights holder.</p>
+            </section>
             <section class="admin-card">
                 <div class="home-builder-heading">
                     <div><h2>Homepage sections</h2><p>{{ count($draft['home_sections']) }} of 12 sections. Sections are displayed below the property catalog.</p></div>
@@ -65,6 +80,13 @@
                                             @endforeach
                                         </select>
                                     </label>
+                                    <label>Image placement
+                                        <select name="image_position">
+                                            <option value="right" @selected(($section['image_position'] ?? 'right') === 'right')>Right of content</option>
+                                            <option value="left" @selected(($section['image_position'] ?? 'right') === 'left')>Left of content</option>
+                                        </select>
+                                    </label>
+                                    <x-appearance.media-picker :assets="$mediaAssets" :selected-id="$section['image_asset_id'] ?? null" label="Choose image for this section" />
                                     <label class="home-builder-check"><input type="checkbox" name="enabled" value="1" @checked($section['enabled'])> Show section on homepage</label>
                                     <button type="submit">Save section</button>
                                 </form>
@@ -92,12 +114,26 @@
                             @foreach($menu as $key=>$item)<option value="{{ $key }}">{{ $item['label'] }}</option>@endforeach
                         </select>
                     </label>
+                    <label>Image placement <select name="image_position">
+                        <option value="right">Right of content</option><option value="left">Left of content</option>
+                    </select></label>
+                    <x-appearance.media-picker :assets="$mediaAssets" label="Choose image for new section" />
                     <label class="home-builder-check"><input type="checkbox" name="enabled" value="1" checked> Show section after publishing</label>
                     <button type="submit" @disabled(count($draft['home_sections']) >= 12)>Add to draft</button>
                 </form>
             </section>
         </div>
         <div>
+            <section class="admin-card">
+                <p class="admin-eyebrow">FEATURED VISUAL</p>
+                <h2>Homepage hero image</h2>
+                <p>Select a Media Library image to appear beside the main homepage headline. The published image remains unchanged until you click Publish.</p>
+                <form method="post" action="{{ route('admin.homepage.hero-image.update') }}" class="admin-form">
+                    @csrf
+                    <x-appearance.media-picker :assets="$mediaAssets" :selected-id="$draft['hero_image_asset_id'] ?? null" label="Choose hero image" />
+                    <button type="submit">Save hero image to draft</button>
+                </form>
+            </section>
             <section class="admin-card">
                 <h2>Main navigation</h2>
                 <p>Use safe built-in destinations. The same order applies to the desktop and mobile menu.</p>

@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 final class HomePageEditorService
 {
+    public function __construct(private readonly HomepageMediaAccess $media) {}
+
     /** Only verified internal destinations are allowed; never store arbitrary URLs. */
     public const MENU = [
         'properties' => ['route' => 'properties.index', 'label' => 'Properties'],
@@ -71,6 +73,16 @@ final class HomePageEditorService
                 [$sections[$position], $sections[$target]] = [$sections[$target], $sections[$position]];
             }
             $draft['home_sections'] = $sections;
+            return $draft;
+        });
+    }
+
+    public function changeHeroImage(User $actor, ?int $assetId): void
+    {
+        $this->media->validateSelection($assetId);
+
+        $this->mutate($actor, 'appearance.hero.image_changed', function (array $draft) use ($assetId): array {
+            $draft['hero_image_asset_id'] = $assetId;
             return $draft;
         });
     }
@@ -156,9 +168,13 @@ final class HomePageEditorService
 
     private function section(string $id, array $attributes): array
     {
+        $assetId = $attributes['image_asset_id'] ?? null;
+        $this->media->validateSelection($assetId);
         return [
             'id' => $id,
             'type' => $attributes['type'],
+            'image_asset_id' => $assetId,
+            'image_position' => $attributes['image_position'] ?? 'right',
             'title' => $attributes['title'],
             'body' => $attributes['body'] ?? '',
             'button_label' => $attributes['button_label'] ?? '',

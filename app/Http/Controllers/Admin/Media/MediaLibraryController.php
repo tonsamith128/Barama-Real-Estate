@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin\Media;
 
 use App\Models\MediaAsset;
 use App\Services\Media\MediaMetadataManager;
+use App\Services\Media\AdminMediaUploader;
 use App\Services\Media\PrivateImageLocator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,6 +53,23 @@ final class MediaLibraryController
             'rightsOptions' => MediaMetadataManager::RIGHTS,
             'metadataReady' => $metadataReady,
         ]);
+    }
+
+    public function upload(Request $request, AdminMediaUploader $uploader): RedirectResponse
+    {
+        abort_unless($request->user()?->isSystemAdministrator(), 403);
+
+        $data = $request->validate([
+            'image' => ['required', 'file', 'max:12288'],
+            'alt_text' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $asset = $uploader->upload(
+            $request->user(), $data['image'], $data['alt_text'] ?? null
+        );
+
+        return redirect()->route('admin.media.index')
+            ->with('notice', 'Image saved privately as asset #'.$asset->getKey().'. Record the rights holder and rights status before using it on the homepage.');
     }
 
     public function updateMetadata(

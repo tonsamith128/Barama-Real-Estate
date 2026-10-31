@@ -2,7 +2,9 @@
 <x-layouts.frontend title="Barama Real Estate — Find Properties and Developments">
     <main id="main-content">
         <section class="home-hero">
-            <div class="home-hero__inner">
+            @php($heroImage = $homepageImages->get($appearanceSettings['hero_image_asset_id'] ?? 0))
+            <div @class(['home-hero__inner', 'home-hero__inner--with-image' => $heroImage !== null])>
+                <div class="home-hero__copy">
                 <p class="home-eyebrow">{{ $appearanceSettings['hero_eyebrow'] }}</p>
                 <h1>{{ $appearanceSettings['hero_title'] }}</h1>
                 <p>{{ $appearanceSettings['hero_description'] }}</p>
@@ -11,6 +13,15 @@
                     <input id="home-keywords" name="q" type="search" placeholder="Search by name or reference" maxlength="120">
                     <button class="button" type="submit">Search properties</button>
                 </form>
+                </div>
+                @if($heroImage)
+                    <figure class="home-hero__visual">
+                        <img src="{{ route('media.homepage.show', $heroImage) }}"
+                            alt="{{ $heroImage->alt_text ?: $heroImage->original_name }}"
+                            width="{{ $heroImage->width_px ?: 960 }}" height="{{ $heroImage->height_px ?: 720 }}"
+                            fetchpriority="high" decoding="async">
+                    </figure>
+                @endif
             </div>
         </section>
         <section class="home-content" aria-label="Marketplace overview">
@@ -48,12 +59,22 @@
         </section>
         @foreach($appearanceSettings['home_sections'] ?? [] as $section)
             @if(!empty($section['enabled']) && in_array($section['type'] ?? '', ['text', 'feature', 'cta'], true))
+                @php($sectionImage = $homepageImages->get($section['image_asset_id'] ?? 0))
                 <section class="home-builder-live home-builder-live--{{ $section['type'] }}" aria-label="{{ $section['title'] }}">
-                    <div class="home-builder-live__inner">
-                        <h2>{{ $section['title'] }}</h2>
-                        @if(!empty($section['body']))<p>{{ $section['body'] }}</p>@endif
-                        @if(!empty($section['button_label']) && isset(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route'] ?? '']))
-                            <a class="button" href="{{ route(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route']]['route']) }}">{{ $section['button_label'] }}</a>
+                    <div @class(['home-builder-live__inner', 'home-builder-live__inner--with-image' => $sectionImage !== null, 'home-builder-live__inner--image-left' => $sectionImage && ($section['image_position'] ?? 'right') === 'left'])>
+                        <div class="home-builder-live__copy">
+                            <h2>{{ $section['title'] }}</h2>
+                            @if(!empty($section['body']))<p>{{ $section['body'] }}</p>@endif
+                            @if(!empty($section['button_label']) && isset(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route'] ?? '']))
+                                <a class="button" href="{{ route(\App\Services\Appearance\HomePageEditorService::MENU[$section['button_route']]['route']) }}">{{ $section['button_label'] }}</a>
+                            @endif
+                        </div>
+                        @if($sectionImage)
+                            <figure class="home-builder-live__visual">
+                                <img src="{{ route('media.homepage.show', $sectionImage) }}" loading="lazy" decoding="async"
+                                    alt="{{ $sectionImage->alt_text ?: $sectionImage->original_name }}"
+                                    width="{{ $sectionImage->width_px ?: 800 }}" height="{{ $sectionImage->height_px ?: 600 }}">
+                            </figure>
                         @endif
                     </div>
                 </section>
