@@ -1,10 +1,11 @@
 @props(['title' => 'Barama Real Estate'])
+@php($appearanceSettings = app(\App\Services\Appearance\SiteAppearanceService::class)->published())
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--barama-primary: {{ $appearanceSettings['primary_color'] }};">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Find properties for sale and rent, explore real estate developments and connect with companies on Barama Real Estate.">
+    <meta name="description" content="{{ $appearanceSettings['meta_description'] }}">
     <title>{{ $title }}</title>
     @vite(['resources/css/frontend/app.css', 'resources/js/frontend/app.js'])
 </head>
@@ -12,7 +13,7 @@
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="site-header">
         <div class="site-header__inner">
-            <a class="site-logo" href="{{ route('home') }}"><span class="site-logo__mark">B</span><span>Barama <small>Real Estate</small></span></a>
+            <a class="site-logo" href="{{ route('home') }}"><span class="site-logo__mark">B</span><span>{{ $appearanceSettings['brand_short'] }} <small>{{ $appearanceSettings['brand_subtitle'] }}</small></span></a>
             <nav class="site-nav" aria-label="Main navigation">
                 <a @class(['is-active' => request()->routeIs('properties.*')]) href="{{ route('properties.index') }}">Properties</a>
                 <a @class(['is-active' => request()->routeIs('projects.*')]) href="{{ route('projects.index') }}">Projects</a>
@@ -52,8 +53,8 @@
     {{ $slot }}
     <footer class="site-footer">
         <div class="site-footer__inner">
-            <div><a class="site-logo" href="{{ route('home') }}">Barama Real Estate</a>
-                <p>Discover properties, developments and trusted connections.</p></div>
+            <div><a class="site-logo" href="{{ route('home') }}">{{ $appearanceSettings['brand_name'] }}</a>
+                <p>{{ $appearanceSettings['footer_text'] }}</p></div>
             <nav aria-label="Footer navigation">
                 <a href="{{ route('about') }}">About</a>
                 <a href="{{ route('faq') }}">Help &amp; FAQ</a>

@@ -1,10 +1,11 @@
+@php($appearanceSettings = app(\App\Services\Appearance\SiteAppearanceService::class)->published())
 <x-layouts.frontend title="Barama Real Estate — Find Properties and Developments">
     <main id="main-content">
         <section class="home-hero">
             <div class="home-hero__inner">
-                <p class="home-eyebrow">BARAMA REAL ESTATE</p>
-                <h1>Find your next place to call home.</h1>
-                <p>Explore properties for sale and rent, discover developments, and connect with real estate companies.</p>
+                <p class="home-eyebrow">{{ $appearanceSettings['hero_eyebrow'] }}</p>
+                <h1>{{ $appearanceSettings['hero_title'] }}</h1>
+                <p>{{ $appearanceSettings['hero_description'] }}</p>
                 <form method="get" action="{{ route('properties.index') }}" role="search" class="home-search">
                     <label for="home-keywords">Search properties</label>
                     <input id="home-keywords" name="q" type="search" placeholder="Search by name or reference" maxlength="120">

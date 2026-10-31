@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\Dashboard\DashboardController;
+use App\Http\Controllers\Admin\Appearance\AppearanceController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Users\UserDirectoryController;
@@ -19,6 +20,13 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/appearance', [AppearanceController::class,'index'])->name('appearance.index');
+        Route::post('/appearance/draft', [AppearanceController::class,'save'])
+            ->middleware('throttle:15,1')->name('appearance.save');
+        Route::post('/appearance/publish', [AppearanceController::class,'publish'])
+            ->middleware('throttle:5,1')->name('appearance.publish');
+        Route::post('/appearance/reset', [AppearanceController::class,'resetDraft'])
+            ->middleware('throttle:5,1')->name('appearance.reset');
         Route::get('/users', UserDirectoryController::class)->name('users.index');
         Route::get('/viewings', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'decide'])
