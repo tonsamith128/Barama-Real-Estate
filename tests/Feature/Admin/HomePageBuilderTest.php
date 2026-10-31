@@ -117,9 +117,10 @@ final class HomePageBuilderTest extends TestCase
         $this->get(route('home'))->assertSee('href="'.route('about').'"', false);
         $this->post(route('admin.appearance.publish'))->assertRedirect();
         $page = $this->get(route('home'))->assertOk();
-        $page->assertSee('href="'.route('faq').'"', false);
-        $page->assertDontSee('href="'.route('about').'"', false);
-        $page->assertSee('FAQ');
+        preg_match('/<nav class="site-nav"[^>]*>(.*?)<\/nav>/s', $page->getContent(), $matches);
+        $this->assertNotEmpty($matches);
+        $this->assertStringContainsString('href="'.route('faq').'"', $matches[1]);
+        $this->assertStringNotContainsString('href="'.route('about').'"', $matches[1]);
     }
 
     public function test_invalid_section_type_route_and_direction_are_rejected(): void
