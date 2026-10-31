@@ -233,3 +233,27 @@
 .appearance-grid .admin-card{margin-bottom:1rem}
 .appearance-grid .admin-form input[type=color]{padding:.25rem;width:7rem;height:2.7rem}
 @media(max-width:900px){.appearance-grid{grid-template-columns:1fr}}
+
+
+/* ===== ADMIN / 20 / HOMEPAGE SECTIONS AND MENU BUILDER ===== */
+.home-builder-grid {display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr);align-items:start;gap:1.15rem}
+.home-builder-grid .admin-card {margin-bottom:1.15rem}
+.home-builder-heading,.home-builder-section__heading {display:flex;align-items:flex-start;justify-content:space-between;gap:.9rem}
+.home-builder-draft-label {font-size:.8rem;padding:.4rem .7rem;border-radius:99px;background:#f1f5fb;color:#29436d;font-weight:750;white-space:nowrap}
+.home-builder-sections {display:grid;gap:.75rem}
+.home-builder-section {border:1px solid var(--barama-admin-border);border-radius:13px;padding:1.1rem;background:var(--barama-admin-surface)}
+.home-builder-section h3 {font-size:1.1rem;margin:.3rem 0}
+.home-builder-section small,.home-builder-section span {color:#596c89}
+.home-builder-section p {white-space:pre-line;overflow-wrap:anywhere;color:#536985}
+.home-builder-section details {border-top:1px solid var(--barama-admin-border);margin-top:.8rem;padding-top:.85rem}
+.home-builder-section summary {font-weight:700;cursor:pointer}
+.home-builder-section details .admin-form {margin-top:1rem}
+.home-builder-actions {display:flex;align-items:center;justify-content:flex-end;gap:.35rem;flex-wrap:wrap}
+.home-builder-actions button {padding:.35rem .55rem;border:1px solid var(--barama-admin-border);border-radius:8px;cursor:pointer;background:var(--barama-admin-surface);color:var(--barama-admin-text)}
+.home-builder-actions button:hover {background:#e8f0ff}
+.home-builder-check {display:flex!important;flex-direction:row!important;align-items:center;gap:.7rem}
+.home-builder-navigation {display:grid;gap:.6rem;margin:1rem 0 1.3rem}
+.home-builder-navigation__item {display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.75rem;border:1px solid var(--barama-admin-border);border-radius:10px}
+.home-builder-navigation__item strong {font-size:.9rem}
+@media(max-width:960px){.home-builder-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.home-builder-section__heading,.home-builder-heading{flex-direction:column}}
