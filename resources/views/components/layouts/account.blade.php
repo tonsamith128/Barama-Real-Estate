@@ -12,7 +12,7 @@
                 <a @class(['is-current' => request()->routeIs('account.notifications.*')]) href="{{ route('account.notifications.index') }}">Notifications</a>
                 <a @class(['is-current' => request()->routeIs('account.profile.*')]) href="{{ route('account.profile.edit') }}">Profile &amp; security</a>
                 @if(auth()->user()->isSystemAdministrator())
-                    <a href="{{ route('admin.dashboard') }}">Administration</a>
+                    <a href="{{ route('admin.dashboard') }}">Open Admin Dashboard</a>
                 @elseif(auth()->user()->companyMemberships()->where('status','active')->exists())
                     <a href="{{ route('developer.dashboard') }}">Developer workspace</a>
                 @endif
