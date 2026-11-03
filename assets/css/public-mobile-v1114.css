@@ -1,0 +1,134 @@
+/* BARAMA_PUBLIC_MOBILE_V1114 */
+/* Mobile-only public navigation + Hero quick-action card refinement. */
+@media (max-width: 575.98px) {
+    /* Keep the public navigation compact: the existing SVG becomes the visual label. */
+    .site-header.is-menu-open .site-navigation {
+        right: .65rem;
+        left: .65rem;
+        padding: .72rem;
+        border-radius: 20px;
+    }
+
+    .site-header.is-menu-open .main-nav {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        gap: .45rem !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .site-header.is-menu-open .main-nav a {
+        display: grid !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 54px;
+        place-items: center;
+        padding: 0 !important;
+        border-radius: 14px;
+        font-size: 0 !important;
+        line-height: 1 !important;
+        text-align: center;
+    }
+
+    .site-header.is-menu-open .main-nav a svg {
+        display: block !important;
+        width: 24px !important;
+        height: 24px !important;
+        margin: 0 !important;
+        flex: 0 0 auto;
+    }
+
+    .site-header.is-menu-open .main-nav a.is-active {
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--barama-primary) 28%, transparent);
+    }
+
+    /* Two vertical Hero action cards per row on phones. */
+    .market-intent-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: .68rem !important;
+        margin-top: 1.2rem !important;
+    }
+
+    .market-intent {
+        position: relative;
+        display: flex !important;
+        min-width: 0 !important;
+        min-height: 166px;
+        flex-direction: column;
+        align-items: flex-start !important;
+        justify-content: flex-start;
+        gap: .72rem !important;
+        padding: 1rem .9rem !important;
+        border-radius: 18px !important;
+    }
+
+    .market-intent__icon {
+        width: 42px !important;
+        height: 42px !important;
+        flex: 0 0 42px;
+    }
+
+    .market-intent__icon svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .market-intent > span:nth-child(2) {
+        display: block;
+        min-width: 0;
+        width: 100%;
+        padding-right: .1rem;
+    }
+
+    .market-intent strong {
+        display: block;
+        font-size: .98rem !important;
+        line-height: 1.2;
+    }
+
+    .market-intent small {
+        display: -webkit-box !important;
+        margin-top: .34rem !important;
+        overflow: hidden;
+        font-size: .78rem !important;
+        line-height: 1.4 !important;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+    }
+
+    .market-intent__arrow {
+        position: absolute !important;
+        top: .95rem;
+        right: .9rem;
+        margin: 0 !important;
+    }
+}
+
+@media (max-width: 370px) {
+    .site-header.is-menu-open .main-nav a {
+        min-height: 50px;
+    }
+
+    .site-header.is-menu-open .main-nav a svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .market-intent-grid {
+        gap: .55rem !important;
+    }
+
+    .market-intent {
+        min-height: 156px;
+        padding: .88rem .78rem !important;
+    }
+
+    .market-intent strong {
+        font-size: .92rem !important;
+    }
+
+    .market-intent small {
+        font-size: .74rem !important;
+    }
+}
