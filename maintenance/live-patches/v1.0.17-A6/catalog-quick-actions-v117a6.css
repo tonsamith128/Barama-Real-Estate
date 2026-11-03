@@ -1,0 +1,12 @@
+/* Barama v1.0.17-A6: Catalog header actions only */
+.barama-catalog-v117a6__header{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.barama-catalog-v117a6__action{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:42px;white-space:nowrap;font:inherit;font-size:.83rem;font-weight:750;transition:background-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.barama-catalog-v117a6__action:first-child{background:#165dff;color:#fff;border-color:#165dff}
+.barama-catalog-v117a6__action:first-child:hover{background:#084ce3;color:#fff;border-color:#084ce3}
+.barama-catalog-v117a6__action:last-child{background:var(--barama-card,#fff);color:var(--barama-text,#17213a);border:1px solid var(--barama-border,#d8dfeb)}
+.barama-catalog-v117a6__action:last-child:hover{border-color:#165dff;color:#165dff}
+.barama-catalog-v117a6__action svg{width:17px;height:17px;flex:none}
+.barama-catalog-v117a6__action:focus-visible{outline:3px solid #165dff;outline-offset:3px}
+#barama-catalog-v117a6-location,#barama-catalog-v117a6-amenity{scroll-margin-top:110px}
+@media(max-width:650px){.barama-catalog-v117a6__header{justify-content:flex-start}.barama-catalog-v117a6__action{flex:1 1 auto}}
+@media(prefers-reduced-motion:reduce){.barama-catalog-v117a6__action{transition:none}}
