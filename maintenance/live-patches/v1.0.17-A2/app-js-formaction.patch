@@ -1,0 +1,24 @@
+--- a/assets/js/app.js
++++ b/assets/js/app.js
+@@ -199,9 +199,9 @@
+             try {
+                 const response = await window.fetch(
+-                    submitter?.formAction || form.action,
++                    (submitter?.hasAttribute('formaction') ? submitter.formAction : form.action),
+                     {
+-                    method: submitter?.formMethod || form.method || 'POST',
++                    method: (submitter?.hasAttribute('formmethod') ? submitter.formMethod : form.method) || 'POST',
+                     body: new FormData(form),
+                     credentials: 'same-origin',
+                     headers: {
+@@ -1598,9 +1598,9 @@
+             try {
+                 const response = await window.fetch(
+-                    submitter?.formAction || form.action,
++                    (submitter?.hasAttribute('formaction') ? submitter.formAction : form.action),
+                     {
+-                        method: submitter?.formMethod || form.method || 'POST',
++                        method: (submitter?.hasAttribute('formmethod') ? submitter.formMethod : form.method) || 'POST',
+                         body: new FormData(form),
+                         credentials: 'same-origin',
+                         headers: {
