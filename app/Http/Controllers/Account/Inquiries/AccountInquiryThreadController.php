@@ -33,6 +33,6 @@ final class AccountInquiryThreadController
         $conversation->send($request->user(), $inquiry, $data['body'], 'account');
 
         return redirect()->route('account.inquiries.show', $inquiry)
-            ->with('notice', 'Your message was saved and the relevant account notified.');
+            ->with('notice', 'Your message was saved in the private inquiry conversation.');
     }
 }

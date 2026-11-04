@@ -144,7 +144,7 @@ final class PrivateConversationTest extends TestCase
         $guestInquiry = $this->inquiry('guest', null, $manager);
 
         $this->actingAs($manager)->get(route('developer.inquiries.show', $guestInquiry))
-            ->assertOk()->assertSee('in-app replies are unavailable');
+            ->assertOk()->assertSee('In-app replies are unavailable');
         $this->post(route('developer.inquiries.messages.store', $guestInquiry), [
             'body' => 'Reply to an anonymous inquiry',
         ])->assertSessionHasErrors('body');

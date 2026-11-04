@@ -28,7 +28,7 @@
         @empty
             <div class="conversation-empty">
                 <h3>No replies yet</h3>
-                <p>Start a conversation using the message field below.</p>
+                <p>No messages have been recorded for this inquiry yet.</p>
             </div>
         @endforelse
     </div>
