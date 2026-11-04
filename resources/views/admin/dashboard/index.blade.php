@@ -41,6 +41,100 @@
         @endforeach
     </section>
 
+
+    <section class="workspace-operations" aria-labelledby="review-queue-heading">
+        <div class="workspace-dashboard-section-heading">
+            <div><p class="admin-eyebrow">OPERATIONS CENTER</p><h2 id="review-queue-heading">Your review queue</h2></div>
+            <span>Live counts · follow links to review safely</span>
+        </div>
+        <div class="workspace-queue-grid">
+            @foreach([
+                ['label' => 'Pending projects', 'count' => $reviewCounts['projects'], 'href' => route('admin.catalog.index')],
+                ['label' => 'Pending listings', 'count' => $reviewCounts['listings'], 'href' => route('admin.catalog.index')],
+                ['label' => 'New inquiries', 'count' => $reviewCounts['inquiries'], 'href' => route('admin.inquiries.index')],
+                ['label' => 'Pending viewings', 'count' => $reviewCounts['viewings'], 'href' => route('admin.viewings.index')],
+                ['label' => 'Unread contact requests', 'count' => $reviewCounts['contacts'], 'href' => route('admin.contacts.index')],
+            ] as $task)
+                <a class="workspace-queue-tile" href="{{ $task['href'] }}">
+                    <span>{{ $task['label'] }}</span><strong>{{ number_format($task['count']) }}</strong>
+                    <small>{{ $task['count'] > 0 ? 'Open workspace to review' : 'Nothing waiting' }}</small>
+                </a>
+            @endforeach
+        </div>
+    </section>
+
+    <div class="workspace-dashboard-columns dashboard-content-grid">
+        <section class="dashboard-section workspace-activity-panel" aria-labelledby="activity-heading">
+            <div class="workspace-dashboard-section-heading">
+                <div><p class="admin-eyebrow">REAL-TIME RECORDS</p><h2 id="activity-heading">Marketplace activity</h2></div>
+                <nav class="workspace-period-switch" aria-label="Activity period">
+                    <a @class(['is-current' => $activityDays === 7]) href="{{ route('admin.dashboard', ['days' => 7]) }}" @if($activityDays === 7) aria-current="page" @endif>7 days</a>
+                    <a @class(['is-current' => $activityDays === 30]) href="{{ route('admin.dashboard', ['days' => 30]) }}" @if($activityDays === 30) aria-current="page" @endif>30 days</a>
+                </nav>
+            </div>
+            <div class="workspace-chart-legend"><span>Inquiries</span><span>Viewing requests</span></div>
+            <div class="workspace-activity-chart" role="img" aria-label="Daily inquiries and viewing requests over the past {{ $activityDays }} days">
+                @foreach($activity as $point)
+                    @php($total = $point['inquiries'] + $point['viewings'])
+                    <div class="workspace-activity-day" title="{{ $point['label'] }}: {{ $point['inquiries'] }} inquiries, {{ $point['viewings'] }} viewings">
+                        <div class="workspace-activity-track">
+                            @if($total > 0)
+                                <div class="workspace-activity-bar" style="height: {{ max(6, (int) round($total / $activityMax * 100)) }}%">
+                                    @if($point['viewings'] > 0)
+                                        <span class="workspace-activity-viewings" style="height: {{ (int) round($point['viewings'] / $total * 100) }}%"></span>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="workspace-activity-zero" aria-hidden="true"></span>
+                            @endif
+                        </div>
+                        <small>{{ $activityDays === 7 || $loop->iteration % 5 === 1 ? $point['label'] : '·' }}</small>
+                    </div>
+                @endforeach
+            </div>
+            <p class="dashboard-note">Counts come from stored inquiries and viewing requests. No external analytics service or customer tracking is used.</p>
+        </section>
+        <section class="dashboard-section" aria-labelledby="waiting-review-heading">
+            <div class="workspace-dashboard-section-heading">
+                <div><p class="admin-eyebrow">MODERATION</p><h2 id="waiting-review-heading">Waiting for review</h2></div>
+                <a href="{{ route('admin.catalog.index') }}">Open catalog</a>
+            </div>
+            @forelse($pendingProjects as $project)
+                <div class="workspace-compact-record">
+                    <div><strong>{{ $project->name }}</strong><small>Project · {{ $project->company?->name ?? 'Company unavailable' }}</small></div>
+                    <span class="workspace-status-pill">Pending</span>
+                </div>
+            @empty
+                <p class="dashboard-note">No projects waiting for moderation.</p>
+            @endforelse
+            @foreach($pendingListings as $offer)
+                <div class="workspace-compact-record">
+                    <div><strong>{{ $offer->property?->title ?? 'Property unavailable' }}</strong><small>Listing · {{ $offer->property?->company?->name ?? 'Company unavailable' }}</small></div>
+                    <span class="workspace-status-pill">Pending</span>
+                </div>
+            @endforeach
+            <a class="workspace-panel-footer" href="{{ route('admin.catalog.index') }}">Review all submissions</a>
+        </section>
+    </div>
+
+    <section class="dashboard-section workspace-viewing-queue" aria-labelledby="dashboard-viewings-heading">
+        <div class="workspace-dashboard-section-heading">
+            <div><p class="admin-eyebrow">CUSTOMER APPOINTMENTS</p><h2 id="dashboard-viewings-heading">Pending viewing requests</h2></div>
+            <a href="{{ route('admin.viewings.index') }}">Manage viewings</a>
+        </div>
+        <div class="workspace-viewing-grid">
+            @forelse($pendingViewings as $viewing)
+                <article class="workspace-viewing-card">
+                    <strong>{{ $viewing->listing?->property?->title ?? 'Property unavailable' }}</strong>
+                    <span>{{ $viewing->user?->name ?? 'Customer' }}</span>
+                    <time datetime="{{ $viewing->requested_at->toIso8601String() }}">{{ $viewing->requested_at->format('M j, Y · g:i A') }}</time>
+                </article>
+            @empty
+                <p class="dashboard-note">No pending viewing requests.</p>
+            @endforelse
+        </div>
+    </section>
+
     <div class="dashboard-content-grid workspace-dashboard-columns">
         <section class="dashboard-section">
             <div class="workspace-dashboard-section-heading">

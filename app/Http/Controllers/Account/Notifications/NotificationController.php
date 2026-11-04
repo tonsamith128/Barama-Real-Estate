@@ -14,9 +14,19 @@ final class NotificationController
     public function index(Request $request): View
     {
         return view('account.notifications.index', [
+            'unreadCount' => AccountNotification::query()
+                ->where('user_id', $request->user()->getKey())->whereNull('read_at')->count(),
             'notifications' => AccountNotification::query()->where('user_id', $request->user()->getKey())
                 ->latest()->paginate(20),
         ]);
+    }
+
+    public function readAll(Request $request): RedirectResponse
+    {
+        AccountNotification::query()->where('user_id', $request->user()->getKey())
+            ->whereNull('read_at')->update(['read_at' => now()]);
+
+        return back()->with('notice', 'All your notifications have been marked as read.');
     }
 
     public function read(Request $request, AccountNotification $notification): RedirectResponse

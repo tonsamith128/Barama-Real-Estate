@@ -44,6 +44,8 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
 
         Route::get('/notifications', [NotificationController::class, 'index'])
             ->name('notifications.index');
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])
+            ->middleware('throttle:10,1')->name('notifications.read-all');
         Route::patch('/notifications/{notification}/read', [NotificationController::class, 'read'])
             ->name('notifications.read');
     });

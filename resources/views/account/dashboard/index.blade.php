@@ -23,6 +23,48 @@
         @endforeach
     </div>
 
+
+    <div class="customer-grid customer-priority-grid">
+        <section class="customer-card" aria-labelledby="upcoming-viewings-heading">
+            <div class="customer-card__heading">
+                <div><p class="customer-eyebrow">Appointments</p><h2 id="upcoming-viewings-heading">Upcoming viewings</h2></div>
+                <a href="{{ route('account.viewings.index') }}">View requests</a>
+            </div>
+            @forelse($upcomingViewings as $viewing)
+                <div class="customer-record customer-record--full">
+                    <div>
+                        <strong>{{ $viewing->listing?->property?->title ?? 'Property unavailable' }}</strong>
+                        <p><time datetime="{{ $viewing->requested_at->toIso8601String() }}">{{ $viewing->requested_at->format('M j, Y · g:i A') }}</time></p>
+                    </div>
+                    <span class="customer-status">{{ ucfirst($viewing->status) }}</span>
+                </div>
+            @empty
+                <p class="customer-empty">No upcoming viewings. Open a published property to request an appointment.</p>
+            @endforelse
+        </section>
+        <section class="customer-card" aria-labelledby="account-unread-heading">
+            <div class="customer-card__heading">
+                <div><p class="customer-eyebrow">Personal inbox</p><h2 id="account-unread-heading">Unread updates</h2></div>
+                <a href="{{ route('account.notifications.index') }}">All notifications</a>
+            </div>
+            @forelse($unreadNotifications as $notification)
+                <div class="customer-record customer-record--full customer-record--unread">
+                    <div><strong>{{ $notification->title }}</strong>
+                        <p>{{ $notification->message }}</p>
+                        <small>{{ $notification->created_at->diffForHumans() }}</small></div>
+                </div>
+            @empty
+                <p class="customer-empty">You're all caught up. New property updates will appear here.</p>
+            @endforelse
+            @if($metrics['Unread notifications'] > 0)
+                <form method="post" action="{{ route('account.notifications.read-all') }}">
+                    @csrf
+                    <button class="button button--secondary customer-bulk-action" type="submit">Mark all as read</button>
+                </form>
+            @endif
+        </section>
+    </div>
+
     <div class="customer-grid">
         <section class="customer-card">
             <div class="customer-card__heading"><h2>Your saved homes</h2>
