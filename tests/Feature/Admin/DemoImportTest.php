@@ -26,6 +26,7 @@ final class DemoImportTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
     }
 
     protected function tearDown(): void
