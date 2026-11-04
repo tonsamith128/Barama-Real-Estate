@@ -16,15 +16,15 @@ use App\Models\Property;
 use App\Models\User;
 use App\Models\ViewingRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 final class DashboardController
 {
     /**
-     * Older installations may receive new controller files before migrations
-     * run. Surface actionable schema status instead of an SQL 500.
-     * Other database errors continue to reach Laravel exception reporting.
+     * Avoid optional-table SQL failures after a code-only upgrade.
+     * Never hide unrelated database failures or silently run migrations.
      */
     public function __invoke(Request $request): View
     {
@@ -42,6 +42,42 @@ final class DashboardController
         $count = static fn (string $table, callable $query): int =>
             $exists[$table] ? (int) $query() : 0;
 
+        // A fixed allowlist prevents unbounded reports on large installations.
+        $days = in_array($request->query('days'), ['7', '30'], true)
+            ? (int) $request->query('days') : 7;
+        $since = now()->startOfDay()->subDays($days - 1);
+        $daily = [];
+        foreach (['inquiries', 'viewing_requests'] as $table) {
+            $daily[$table] = $exists[$table]
+                ? DB::table($table)->selectRaw('DATE(created_at) AS activity_day, COUNT(*) AS total')
+                    ->where('created_at', '>=', $since)
+                    ->groupByRaw('DATE(created_at)')
+                    ->pluck('total', 'activity_day')->all()
+                : [];
+        }
+        $activity = [];
+        for ($day = 0; $day < $days; $day++) {
+            $date = $since->copy()->addDays($day);
+            $key = $date->toDateString();
+            $activity[] = [
+                'label' => $date->format('M j'),
+                'inquiries' => (int) ($daily['inquiries'][$key] ?? 0),
+                'viewings' => (int) ($daily['viewing_requests'][$key] ?? 0),
+            ];
+        }
+        $activityMax = max(1, ...array_map(
+            static fn (array $point): int => $point['inquiries'] + $point['viewings'],
+            $activity,
+        ));
+
+        $reviewCounts = [
+            'projects' => $count('projects', fn () => Project::query()->where('status', 'pending')->count()),
+            'listings' => $count('listings', fn () => Listing::query()->where('status', 'pending')->count()),
+            'inquiries' => $count('inquiries', fn () => Inquiry::query()->where('status', 'new')->count()),
+            'viewings' => $count('viewing_requests', fn () => ViewingRequest::query()->where('status', 'pending')->count()),
+            'contacts' => $count('contact_messages', fn () => ContactMessage::query()->where('status', 'new')->count()),
+        ];
+
         return view('admin.dashboard.index', [
             'counts' => [
                 'Users' => User::query()->count(),
@@ -50,11 +86,24 @@ final class DashboardController
                 'Properties' => $count('properties', fn () => Property::query()->count()),
                 'Listings' => $count('listings', fn () => Listing::query()->count()),
                 'Media images' => $count('media_assets', fn () => MediaAsset::query()->count()),
-                'New inquiries' => $count('inquiries', fn () => Inquiry::query()->where('status', 'new')->count()),
-                'Contact messages' => $count('contact_messages', fn () => ContactMessage::query()->where('status', 'new')->count()),
-                'Viewing requests' => $count('viewing_requests', fn () => ViewingRequest::query()->where('status', 'pending')->count()),
+                'New inquiries' => $reviewCounts['inquiries'],
+                'Contact messages' => $reviewCounts['contacts'],
+                'Viewing requests' => $reviewCounts['viewings'],
                 'Draft legal policies' => $count('legal_policies', fn () => LegalPolicy::query()->where('status', 'draft')->count()),
             ],
+            'reviewCounts' => $reviewCounts,
+            'pendingProjects' => $exists['projects']
+                ? Project::query()->where('status', 'pending')->with('company')->oldest()->limit(4)->get()
+                : collect(),
+            'pendingListings' => $exists['listings']
+                ? Listing::query()->where('status', 'pending')->with('property.company')->oldest()->limit(4)->get()
+                : collect(),
+            'pendingViewings' => $exists['viewing_requests']
+                ? ViewingRequest::query()->where('status', 'pending')->with(['listing.property', 'user'])
+                    ->orderBy('requested_at')->limit(4)->get() : collect(),
+            'activityDays' => $days,
+            'activity' => $activity,
+            'activityMax' => $activityMax,
             'missingTables' => array_keys(array_filter($exists, fn (bool $present) => !$present)),
             'import' => $exists['demo_imports'] ? DemoImport::query()->latest()->first() : null,
             'recentInquiries' => $exists['inquiries']
