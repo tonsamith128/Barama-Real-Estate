@@ -41,18 +41,9 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
-      - name: Build integrated QA and installer hotfix packages
+      - name: Build and verify one complete integrated QA package
         run: |
           bash scripts/build-qa-package.sh
-          bash scripts/build-installer-routing-hotfix.sh
-          bash scripts/build-cpanel-postinstall-upgrade.sh
-          python3 scripts/verify-cpanel-upgrade-assets.py
-          bash scripts/build-media-library-upgrade.sh
-          bash scripts/build-policy-center-upgrade.sh
-          bash scripts/build-customer-dashboard-upgrade.sh
-          bash scripts/build-dashboard-viewing-upgrade.sh
-          bash scripts/build-catalog-moderation-upgrade.sh
-          bash scripts/build-appearance-upgrade.sh
       - name: Apache root-domain installer and private-source security smoke
         run: bash tests/Installer/RootApacheSmoke.sh
       - name: HTTP five-step MySQL fresh-install acceptance FROM PACKAGE
@@ -99,21 +90,5 @@ jobs:
           path: |
             dist/Barama-Laravel-Integrated-QA.zip
             dist/Barama-Laravel-Integrated-QA.zip.sha256
-            dist/Barama-Installer-Routing-Hotfix.zip
-            dist/Barama-Installer-Routing-Hotfix.zip.sha256
-            dist/Barama-Laravel-cPanel-PostInstall-Upgrade.zip
-            dist/Barama-Laravel-cPanel-PostInstall-Upgrade.zip.sha256
-            dist/Barama-Laravel-MediaLibrary-QA-Upgrade.zip
-            dist/Barama-Laravel-MediaLibrary-QA-Upgrade.zip.sha256
-            dist/Barama-Laravel-PolicyCenter-QA-Upgrade.zip
-            dist/Barama-Laravel-PolicyCenter-QA-Upgrade.zip.sha256
-            dist/Barama-Laravel-Customer-Admin-Frontend-QA-Upgrade.zip
-            dist/Barama-Laravel-Customer-Admin-Frontend-QA-Upgrade.zip.sha256
-            dist/Barama-Laravel-Dashboard-Viewing-QA-Upgrade.zip
-            dist/Barama-Laravel-Dashboard-Viewing-QA-Upgrade.zip.sha256
-            dist/Barama-Laravel-Catalog-Moderation-QA-Upgrade.zip
-            dist/Barama-Laravel-Catalog-Moderation-QA-Upgrade.zip.sha256
-            dist/Barama-Laravel-Appearance-QA-Upgrade.zip
-            dist/Barama-Laravel-Appearance-QA-Upgrade.zip.sha256
           if-no-files-found: error
           retention-days: 7
