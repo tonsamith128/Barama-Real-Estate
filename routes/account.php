@@ -9,6 +9,7 @@ use App\Http\Controllers\Account\Profile\ProfileController;
 use App\Http\Controllers\Account\SavedListings\SavedListingsController;
 use App\Http\Controllers\Account\SavedSearches\SavedSearchController;
 use App\Http\Controllers\Account\Viewings\ViewingRequestController;
+use App\Http\Controllers\Account\Inquiries\AccountInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'throttle:60,1'])
@@ -36,6 +37,9 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
             ->middleware('throttle:12,1')->name('searches.destroy');
 
         Route::get('/inquiries', AccountInquiryController::class)->name('inquiries.index');
+        Route::get('/inquiries/{inquiry}', [AccountInquiryThreadController::class, 'show'])->name('inquiries.show');
+        Route::post('/inquiries/{inquiry}/messages', [AccountInquiryThreadController::class, 'store'])
+            ->middleware('throttle:8,1')->name('inquiries.messages.store');
         Route::get('/viewings', [ViewingRequestController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{listing}', [ViewingRequestController::class, 'store'])
             ->middleware('throttle:5,1')->name('viewings.store');

@@ -19,9 +19,28 @@ final class DeveloperPropertyController
     public function index(Request $request, Company $company, CompanyCatalogWriter $writer): View
     {
         $writer->assertCanManage($request->user(), $company);
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', Rule::in(['draft', 'pending', 'approved', 'rejected'])],
+        ]);
+        $keyword = trim((string) ($filters['q'] ?? ''));
+        $query = $company->properties()->with(['listings.mediaAttachments.asset']);
+        if ($keyword !== '') {
+            // Escape SQL LIKE wildcards so a literal search stays literal.
+            $needle = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $keyword);
+            $query->where(function ($match) use ($needle): void {
+                $match->where('title', 'like', '%'.$needle.'%')
+                    ->orWhere('reference_code', 'like', '%'.$needle.'%');
+            });
+        }
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
         return view('developer.properties.index', [
             'company' => $company,
-            'properties' => $company->properties()->with(['listings.mediaAttachments.asset'])->latest()->paginate(15),
+            'properties' => $query->latest()->paginate(15)->withQueryString(),
+            'filters' => ['q' => $keyword, 'status' => $filters['status'] ?? ''],
             'projects' => Project::query()->where('company_id', $company->getKey())->orderBy('name')->get(),
             'types' => MarketplaceStatus::PROPERTY_TYPES,
         ]);

@@ -8,7 +8,7 @@
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
     <section class="admin-card">
         <h2>Assign an existing verified account</h2>
-        <p>Ask the team member to register and verify their email before adding them. This does not send invitation emails.</p>
+        <p>Ask the team member to register and verify their email before adding them. The member receives an in-app account notification. Email invitations are not enabled.</p>
         <form class="admin-form" method="post" action="{{ route('developer.team.assign', $company) }}">
             @csrf
             <label>Registered email <input type="email" name="email" required maxlength="190" value="{{ old('email') }}"></label>

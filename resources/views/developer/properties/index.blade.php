@@ -27,6 +27,22 @@
     </form></section>
     <section class="admin-card">
         <h2>Company properties &amp; galleries</h2>
+        <form class="property-workflow-filters" method="get" action="{{ route('developer.properties.index', $company) }}" role="search" aria-label="Filter company properties">
+            <label>Search title or reference
+                <input type="search" name="q" maxlength="120" value="{{ $filters['q'] }}" placeholder="Search your company catalog">
+            </label>
+            <label>Review status
+                <select name="status">
+                    <option value="">All statuses</option>
+                    @foreach(['draft' => 'Draft', 'pending' => 'Pending review', 'approved' => 'Approved', 'rejected' => 'Needs revision'] as $value => $label)
+                        <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <button type="submit">Apply filters</button>
+            <a href="{{ route('developer.properties.index', $company) }}">Reset</a>
+        </form>
+        <p class="property-workflow-result">{{ number_format($properties->total()) }} matching properties</p>
         <p>Images remain private until the listing passes administrator approval. Up to 20 JPEG, PNG or WebP photos (12 MB each) per draft listing.</p>
         <ul class="gallery-property-list">
             @forelse($properties as $property)

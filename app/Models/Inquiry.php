@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class Inquiry extends Model
 {
@@ -21,6 +22,11 @@ final class Inquiry extends Model
     public function listing(): BelongsTo
     {
         return $this->belongsTo(Listing::class);
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(InquiryMessage::class);
     }
 
     public function requester(): BelongsTo
