@@ -14,20 +14,20 @@
 | Company-scoped developer workspace | Implemented foundation | Membership isolation tests |
 | Developer property draft/submission | Implemented | Company-scoped write and review tests |
 | Admin company onboarding and listing moderation | Implemented foundation | Auth/approval tests |
-| Inquiry capture and inboxes | Admin + company manager response status and customer notifications implemented; actual replies still manual | Tenant isolation + response audit tests |
+| Inquiry capture and inboxes | Linked customers, authorized company managers and admins use private inquiry threads with stored messages, audit records and in-app notifications; guest inquiries remain outside private messaging | Message, notification and tenant isolation tests |
 | Original v0.9.26 demo archive preview | Implemented | ZIP structure and synthetic signed fixture |
 | Signed demo import | **Staging-only** | Crypto + mapping tests; real detached signature/entitlement still needed |
 | Demo media gallery and public delivery | Implemented for imported demo | Hidden/published image visibility tests |
 | Legal-policy content | Draft import only | Template status asserted |
-| Appearance/site settings | Inactive import only | Settings status asserted |
+| Appearance/site settings | Draft/publish brand, homepage sections, navigation, images and SEO implemented; imported settings remain inactive for review | Appearance publishing and homepage builder tests |
 | Media Library upload/editor | **Partially implemented:** tenant-scoped validated image upload, private listing galleries, administrative inventory, and protected previews | 46 Laravel QA tests / 223 assertions (foundation workflow) |
 | Full company/project/property management/editing | Partial — developer drafts, listing gallery and administrator approval are available | Tenant-isolation tests; full editing pending |
 | Account saved properties, viewing requests and notifications | Implemented customer foundations; verified admin and company viewing decisions and notifications | 68 Laravel tests / 365 assertions on development branch |
 | Existing customer account/password/role/MFA upgrade | Not migrated | Pending |
 | Policy Center publishing and legal editor | **Implemented foundation:** admin draft editing, publish/unpublish, safe HTML and public pages; full editor/consents pending | 51 Laravel tests / 254 assertions (development foundation) |
 | Appearance builder/homepage and footer | **Partially implemented:** publishable brand, hero/footer, primary color, SEO, ordered safe navigation and homepage content/CTA sections | Admin editor/permission/publication tests; visual drag/drop and media layout still pending |
-| Localization/Khmer and SEO | Partial: publication-safe sitemap/robots in hardening branch; translation and advanced SEO pending | PHP feature tests for sitemap |
-| Developer team invitations and billing | Not migrated | Pending |
+| Localization/Khmer and SEO | Partial: publication-safe sitemap/robots on Main; translation and advanced SEO pending | PHP feature tests for sitemap |
+| Developer company team and billing | Verified account assignment, permission changes and deactivation implemented with in-app notifications; external invitations and billing are not implemented | Permission and notification regression tests |
 | Invoice, payment and subscriptions | Not migrated | Pending |
 | License activation and entitlement | Partial: purchase-code activation and publisher revalidation on Main; full lifecycle pending | Unit tests; customer-domain publisher acceptance pending |
 | Signed updater and rollback | Not migrated | Pending |
