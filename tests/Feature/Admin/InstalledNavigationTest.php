@@ -24,7 +24,7 @@ final class InstalledNavigationTest extends TestCase
         $this->get('/')->assertOk()
             ->assertSee('Find your next place to call home')
             ->assertSee('Recently listed properties')
-            ->assertSee('There are no published listings yet')
+            ->assertSee('Property listings will appear here')
             ->assertDontSee('Laravel 13 Development Preview');
     }
 
@@ -40,7 +40,7 @@ final class InstalledNavigationTest extends TestCase
             ->assertSee('/dashboard', false);
         $this->get('/dashboard')->assertOk()
             ->assertSee('Review listings')
-            ->assertSee('Demo content importer')
+            ->assertDontSee('Demo content importer')
             ->assertSee('License &amp; Activation', false);
         $this->get('/dashboard/license')->assertOk()
             ->assertSee('Purchase Code / License Key');

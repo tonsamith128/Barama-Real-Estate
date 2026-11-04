@@ -42,15 +42,14 @@
                 </div>
             @else
                 <div class="home-empty">
-                    <h3>We're preparing the property catalog.</h3>
-                    <p>There are no published listings yet. Once approved properties are added, they will appear here automatically.</p>
+                    <h3>No published properties yet.</h3>
+                    <p>Property listings will appear here after an administrator approves and publishes them.</p>
                     <div class="actions">
                         <a class="button button--secondary" href="{{ route('projects.index') }}">Explore projects</a>
                         <a class="button button--secondary" href="{{ route('companies.index') }}">Explore companies</a>
                         @auth
                             @if(auth()->user()->isSystemAdministrator())
                                 <a class="button" href="{{ route('admin.catalog.index') }}">Manage listings</a>
-                                <a class="button button--secondary" href="{{ route('admin.demo.index') }}">Demo importer</a>
                             @endif
                         @endauth
                     </div>

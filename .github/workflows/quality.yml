@@ -1,4 +1,4 @@
-name: Laravel v2 Quality
+name: Barama Laravel 13 Quality
 
 on:
   push:
@@ -23,6 +23,8 @@ jobs:
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes
         run: php scripts/verify-laravel-only.php
+      - name: Reject stale partial overlays and misleading production UI
+        run: php scripts/verify-ui-hygiene.php
       - name: Composer manifest validation
         run: composer validate --no-check-publish
       - name: Install PHP dependencies

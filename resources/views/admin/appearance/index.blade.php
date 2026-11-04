@@ -38,7 +38,7 @@
                     <p class="appearance-preview__eyebrow">{{ $live['hero_eyebrow'] }}</p>
                     <h3>{{ $live['hero_title'] }}</h3>
                     <p>{{ $live['hero_description'] }}</p>
-                    <span class="appearance-preview__button">Search properties</span>
+                    <a class="appearance-preview__button" href="{{ route('properties.index') }}" target="_blank" rel="noopener">Open property search</a>
                 </div>
                 <p>Live theme color: <code>{{ $live['primary_color'] }}</code></p>
                 <p><a href="{{ route('home') }}" target="_blank" rel="noopener">View public homepage</a></p>
@@ -52,10 +52,6 @@
                 <form method="post" action="{{ route('admin.appearance.reset') }}">@csrf @method('POST')
                     <button type="submit">Discard draft changes</button>
                 </form>
-            </section>
-            <section class="admin-card">
-                <h2>Not included in this module</h2>
-                <p>This is a safe, publishable appearance settings manager. Full page-block editing, visual drag-and-drop layout, media placement, custom menu builder and per-page themes still require migration.</p>
             </section>
         </div>
     </div>

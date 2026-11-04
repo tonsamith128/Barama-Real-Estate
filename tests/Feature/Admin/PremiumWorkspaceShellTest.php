@@ -29,7 +29,7 @@ final class PremiumWorkspaceShellTest extends TestCase
             ->assertSee('Homepage Builder')
             ->assertSee('Media Library')
             ->assertSee('Review listings')
-            ->assertSee('Demo content importer')
+            ->assertDontSee('Demo content importer')
             ->assertSee('License &amp; Activation', false)
             ->assertSee('Contact inbox')
             ->assertSee('View website')

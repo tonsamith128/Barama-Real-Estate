@@ -150,27 +150,25 @@
                 <a href="{{ route('admin.users.index') }}"><strong>User Directory</strong><span>Review registered users and company memberships.</span></a>
                 <a href="{{ route('admin.viewings.index') }}"><strong>Viewing Requests</strong><span>Review requests for customer property tours.</span></a>
                 <a href="{{ route('admin.contacts.index') }}"><strong>Contact Inbox</strong><span>Read customer and support messages.</span></a>
-                <a href="{{ route('admin.demo.index') }}"><strong>Demo content importer</strong><span>Inspect the original Barama archive; customer import still requires acceptance.</span></a>
             </div>
         </section>
         <section class="dashboard-section workspace-dashboard-status">
-            <div class="workspace-dashboard-section-heading"><div><p class="admin-eyebrow">SYSTEM HEALTH</p><h2>Installation status</h2></div></div>
-            <p>The Laravel application is installed and the administration dashboard is available.</p>
-            @if($import)
+            <div class="workspace-dashboard-section-heading"><div><p class="admin-eyebrow">MARKETPLACE STATUS</p><h2>Published content</h2></div></div>
+            <p>Only listings that pass publication checks appear in the public marketplace.</p>
+            @if($publishedListingCount > 0)
                 <div class="workspace-status-item">
-                    <span class="workspace-status-item__dot"></span>
-                    <div><strong>Demo archive imported</strong>
-                        <p>Version {{ $import->archive_version }} · {{ number_format($import->marketplace_records) }} records · {{ $import->image_count }} images.</p></div>
+                    <span class="workspace-status-item__dot" aria-hidden="true"></span>
+                    <div><strong>{{ number_format($publishedListingCount) }} publicly visible listings</strong>
+                        <p>Review current properties and their publication status in Catalog Moderation.</p></div>
                 </div>
             @else
                 <div class="workspace-status-item">
-                    <span class="workspace-status-item__dot workspace-status-item__dot--amber"></span>
-                    <div><strong>Demo content not imported</strong>
-                        <p>Public property pages only display approved, published listings.</p></div>
+                    <span class="workspace-status-item__dot workspace-status-item__dot--amber" aria-hidden="true"></span>
+                    <div><strong>No published listings</strong>
+                        <p>Approved property listings will appear on the website once published.</p></div>
                 </div>
             @endif
-            <p class="dashboard-note">This is a Laravel development build. Billing, complete licensing, automatic updating and full visual-page editing remain under migration.</p>
-            <a href="{{ route('admin.license.index') }}">License &amp; Activation</a>
+            <a href="{{ route('admin.catalog.index') }}">Open catalog moderation</a>
         </section>
     </div>
 

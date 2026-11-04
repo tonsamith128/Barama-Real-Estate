@@ -27,6 +27,14 @@
             </div>
 
             <nav class="workspace-nav" aria-label="{{ $developerArea ? 'Developer navigation' : 'Admin navigation' }}">
+                @unless($developerArea)
+                    <div class="workspace-nav__search" hidden data-workspace-search>
+                        <label for="workspace-navigation-query">Find a tool</label>
+                        <input id="workspace-navigation-query" type="search" autocomplete="off"
+                            placeholder="Search workspace pages" data-workspace-nav-search>
+                        <small role="status" aria-live="polite" data-workspace-search-status></small>
+                    </div>
+                @endunless
                 @if($developerArea)
                     <span class="workspace-nav__label">YOUR BUSINESS</span>
                     <a @class(['is-current' => request()->routeIs('developer.dashboard')]) href="{{ route('developer.dashboard') }}">Overview</a>
@@ -47,7 +55,9 @@
                     <a @class(['is-current' => request()->routeIs('admin.viewings.*')]) href="{{ route('admin.viewings.index') }}">Viewing requests</a>
                     <a @class(['is-current' => request()->routeIs('admin.contacts.*')]) href="{{ route('admin.contacts.index') }}">Contact inbox</a>
                     <span class="workspace-nav__label">SYSTEM</span>
-                    <a @class(['is-current' => request()->routeIs('admin.demo.*')]) href="{{ route('admin.demo.index') }}">Demo content importer</a>
+                    @if(\App\Services\DemoImport\DemoContentImporter::stagingEnabled())
+                        <a @class(['is-current' => request()->routeIs('admin.demo.*')]) href="{{ route('admin.demo.index') }}">Staging data import</a>
+                    @endif
                     <a @class(['is-current' => request()->routeIs('admin.license.*')]) href="{{ route('admin.license.index') }}">License &amp; Activation</a>
                 @endif
                 <span class="workspace-nav__label">QUICK LINKS</span>

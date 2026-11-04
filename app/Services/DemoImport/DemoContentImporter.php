@@ -19,6 +19,17 @@ use ZipArchive;
  */
 final class DemoContentImporter
 {
+    /**
+     * Staging import is an opt-in development tool, not a production module.
+     * Share the same gate across UI, routes and archive handling.
+     */
+    public static function stagingEnabled(): bool
+    {
+        return app()->environment(['local', 'testing', 'staging'])
+            && config('demo.enable_staging_import') === true
+            && (string) config('demo.publisher_public_key') !== '';
+    }
+
     public function __construct(private readonly DemoArchiveInspector $inspector)
     {
     }

@@ -1,6 +1,6 @@
 # Barama Laravel 13 — integrated QA acceptance
 
-**Current status:** Development test build, NOT a CodeCanyon/customer production release.
+**Current status:** Development test build, NOT a customer production release. The single integrated QA archive replaces historical partial module overlays.
 
 ## Current integrated modules
 
@@ -24,21 +24,21 @@
 
 ## One combined QA procedure
 
-1. Use GitHub Actions on PR #160. All jobs must pass.
+1. Dispatch the manual Barama Release Acceptance workflow on the exact GitHub Main commit being evaluated; require a successful run.
 2. Download the **development-only** `barama-laravel-integrated-qa` artifact; verify its SHA256. It includes the complete Laravel source, bundled Composer dependencies, compiled frontend assets and independent Installer.
 3. Upload to a NEW isolated staging subdomain; set HTTPS and the document root to the archive's `public/` folder. Never overwrite a running customer installation.
 4. Install on a dedicated empty MySQL database at `/installer/`. Create the first administrator, verify lock and remove Installer directories.
 5. Verify login, Admin Dashboard, marketplace moderation and public browse routes.
 6. Register a verified developer account. Admin creates and approves a company with that email as owner. Developer creates a draft listing, submits for review, Admin approves, then listing appears publicly.
 7. Send an inquiry from a public property; verify admin inbox and that only an active member of the listing's company can see it in Developer inbox.
-8. Open Admin > System > Demo Importer. Preview the **original, unmodified** v0.9.26 demo ZIP. Do NOT import on a live or nonempty database.
-9. To test import, use a SECOND clean staging installation with **no manually created catalog records**, then configure explicitly on the server:
+8. Staging archive import is hidden in normal production administration. For acceptance, use a SECOND clean staging installation with no marketplace records and configure the following server-side prerequisites before opening Admin > System > Staging Data Import:
    - `APP_ENV=staging`
    - `BARAMA_ENABLE_STAGING_DEMO_IMPORT=true`
    - `BARAMA_PUBLISHER_PUBLIC_KEY_B64` set to the independently validated public key corresponding to the pinned fingerprint.
    - Clear Laravel config cache if already built.
    - Enter the original detached publisher signature from the official published-package metadata (not from the ZIP).
    - The importer verifies the archive digest, the pinned Ed25519 signature, every image hash, and content relationships; it refuses any existing marketplace records, prevents duplicates, and inserts inside a database transaction with private-file cleanup.
+9. On the isolated staging installation, open Admin > System > Staging Data Import, inspect the original unmodified archive and verify the signature independently. This route is not available when the explicit staging controls are disabled.
 10. Verify counts, public images and policy drafts. Imported policies and appearance settings are intentionally inactive and require operator review.
 
 ## Gates not yet satisfied

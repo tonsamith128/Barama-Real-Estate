@@ -1,29 +1,31 @@
-# Laravel v2 — automated milestone acceptance
+# Laravel 13 — current CI and release acceptance
 
-**Date:** 2026-10-30  
-**GitHub Actions run:** https://github.com/tonsamith128/Barama-Real-Estate/actions/runs/41050471989  
-**Verified source commit:** `10c6bde392722994ccc5c0a01194e703ce10eef1`  
-**Result:** PASS — Laravel 13 foundation and newly authored slice only.
+## Automated quality (every push and pull request)
 
-## Verified steps
+Use the GitHub Actions run for the exact commit being reviewed, not a
+historical pull-request number or stale test count.
 
-- PHP 8.3.36 environment prepared.
-- All checked PHP files passed `php -l` syntax validation.
-- `scripts/verify-structure.php` PASSED: native nested application structure and exactly two first-party CSS source files.
-- `scripts/verify-no-legacy.php` (historical; now replaced by `scripts/verify-laravel-only.php`) PASSED: retired application paths not present in this isolated branch.
-- Composer manifest validation and `composer install` PASSED.
-- `php artisan route:list` PASSED: 22 Laravel routes.
-- `composer test` PASSED: **24 tests, 92 assertions**, including authentication, public real-estate visibility and Developer company membership isolation.
-- Vite build PASSED: produced both admin and frontend CSS bundles with cache-busted filenames and the JS bundles.
+- PHP syntax for source and installer files.
+- Native Laravel structure and grouped frontend/admin styles.
+- Laravel-only runtime guard and production UI/obsolete-overlay guard.
+- Composer manifest validation and dependency installation.
+- Route discovery and complete current Laravel test suite.
+- Standalone installer and root-domain routing checks.
+- Vite build for the current frontend and administration assets.
 
-## Not yet accepted
+A passing workflow applies to its tested SHA only.
 
-This green CI run **does not verify** a full compatibility with existing customer installations or make Barama v2 releasable. Still required:
+## Manually dispatched integrated acceptance
 
-- v1 database/role/password/MFA schema reconciliation and safe customer data conversion;
-- full website, media, inquiries, leads, account, admin, developer writes, billing and page-builder parity;
-- production licensing, installer, signed update, backup, demo importer and failure recovery;
-- real MySQL and aaPanel/cPanel installation tests, browser/accessibility/language tests, performance checks;
-- exact customer ZIP, publish and rollback approval.
+The Barama Manual Release Acceptance workflow packages the complete
+development QA archive with scripts/build-qa-package.sh. It exercises
+Apache root rewrite/security, a five-step MySQL 8 fresh install from
+the extracted archive and application tests on that installed copy.
+No obsolete per-module upgrade or installer hotfix overlay ZIP is built.
 
-**Do not merge or deploy this development branch to a live v1 website.** Later commits require fresh CI; the above result applies to the pinned SHA only.
+## Independent release gates still outstanding
+
+Passing CI is not proof of production completeness, existing customer
+data conversion, safe upgrades, provider eligibility, language review,
+accessibility, performance, rollback or independent aaPanel/cPanel and
+real-device testing. Keep production deployment blocked until accepted.

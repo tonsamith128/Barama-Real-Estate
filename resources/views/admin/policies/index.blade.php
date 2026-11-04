@@ -24,6 +24,6 @@
 <button type="submit">Unpublish</button></form>
 @endif
 </div></td></tr>
-@empty<tr><td colspan="3">No legal pages. Create your first page or import draft templates through the demo importer.</td></tr>@endforelse
+@empty<tr><td colspan="3">No legal pages yet. Create a policy draft, review it, and publish when ready.</td></tr>@endforelse
 </tbody></table>{{ $policies->links() }}
 </section></main></body></html>

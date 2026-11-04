@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Admin\Dashboard;
 
 use App\Models\Company;
 use App\Models\ContactMessage;
-use App\Models\DemoImport;
 use App\Models\Inquiry;
 use App\Models\LegalPolicy;
 use App\Models\Listing;
@@ -32,7 +31,7 @@ final class DashboardController
 
         $required = [
             'companies', 'projects', 'properties', 'listings', 'media_assets',
-            'inquiries', 'legal_policies', 'demo_imports', 'contact_messages',
+            'inquiries', 'legal_policies', 'contact_messages',
             'viewing_requests',
         ];
         $exists = [];
@@ -105,7 +104,8 @@ final class DashboardController
             'activity' => $activity,
             'activityMax' => $activityMax,
             'missingTables' => array_keys(array_filter($exists, fn (bool $present) => !$present)),
-            'import' => $exists['demo_imports'] ? DemoImport::query()->latest()->first() : null,
+            'publishedListingCount' => $exists['listings']
+                ? Listing::query()->visibleToPublic()->count() : 0,
             'recentInquiries' => $exists['inquiries']
                 ? Inquiry::query()->with('listing.property')->latest()->limit(5)->get() : collect(),
             'recentContacts' => $exists['contact_messages']
