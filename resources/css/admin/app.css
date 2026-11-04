@@ -519,3 +519,13 @@
 .property-workflow-result{font-size:.85rem;color:#667d96;margin:0 0 1.1rem}
 @media(max-width:740px){.conversation-list-item{align-items:stretch;flex-direction:column}.conversation-list-item__actions{align-self:flex-start}.conversation-compose__footer{align-items:stretch;flex-direction:column}.conversation-compose__footer button{align-self:flex-start}.conversation-item{max-width:100%}}
 @media(prefers-reduced-motion:reduce){.conversation-list-item,.conversation-compose button{scroll-behavior:auto}}
+
+/* ===== ADMIN / 27 / PROGRESSIVE WORKSPACE SEARCH ===== */
+.workspace-nav__search{display:grid;gap:.35rem;margin:.4rem .4rem .8rem;padding:.6rem;background:#ffffff0d;border:1px solid #ffffff18;border-radius:12px}
+.workspace-nav__search[hidden],.workspace-nav a[hidden],.workspace-nav__label[hidden]{display:none!important}
+.workspace-nav__search label{font-size:.7rem;color:#aec5e4;font-weight:750}
+.workspace-nav__search input{width:100%;min-width:0;border:1px solid #6883a356;border-radius:8px;padding:.58rem .7rem;background:#10233c;color:#fff;font:inherit;font-size:.84rem}
+.workspace-nav__search input::placeholder{color:#94abc8}
+.workspace-nav__search small{min-height:.9rem;font-size:.7rem;color:#b8cced}
+.workspace-nav__search input:focus-visible{outline:2px solid #8db9ff;outline-offset:2px}
+

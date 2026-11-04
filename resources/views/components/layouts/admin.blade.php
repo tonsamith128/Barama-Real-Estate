@@ -27,6 +27,14 @@
             </div>
 
             <nav class="workspace-nav" aria-label="{{ $developerArea ? 'Developer navigation' : 'Admin navigation' }}">
+                @unless($developerArea)
+                    <div class="workspace-nav__search" hidden data-workspace-search>
+                        <label for="workspace-navigation-query">Find a tool</label>
+                        <input id="workspace-navigation-query" type="search" autocomplete="off"
+                            placeholder="Search workspace pages" data-workspace-nav-search>
+                        <small role="status" aria-live="polite" data-workspace-search-status></small>
+                    </div>
+                @endunless
                 @if($developerArea)
                     <span class="workspace-nav__label">YOUR BUSINESS</span>
                     <a @class(['is-current' => request()->routeIs('developer.dashboard')]) href="{{ route('developer.dashboard') }}">Overview</a>
