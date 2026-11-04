@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Developer\Dashboard\DeveloperDashboardController;
+use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Developer\Media\ListingGalleryController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
@@ -16,6 +17,9 @@ Route::middleware(['auth', 'verified'])
     ->group(function (): void {
         Route::get('/', DeveloperDashboardController::class)->name('dashboard');
         Route::get('/inquiries', DeveloperInquiryController::class)->name('inquiries.index');
+        Route::get('/inquiries/{inquiry}', [DeveloperInquiryThreadController::class, 'show'])->name('inquiries.show');
+        Route::post('/inquiries/{inquiry}/messages', [DeveloperInquiryThreadController::class, 'store'])
+            ->middleware('throttle:8,1')->name('inquiries.messages.store');
         Route::patch('/inquiries/{inquiry}/respond', [DeveloperInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/viewings', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'index'])->name('viewings.index');

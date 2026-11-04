@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\Appearance\AppearanceController;
 use App\Http\Controllers\Admin\Appearance\HomePageBuilderController;
 use App\Http\Controllers\Admin\DemoImport\DemoImportController;
+use App\Http\Controllers\Admin\Inquiries\AdminInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Users\UserDirectoryController;
 use App\Http\Controllers\Admin\Contacts\ContactInboxController;
@@ -63,6 +64,9 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::post('/license/revalidate', [LicenseController::class, 'revalidate'])
             ->middleware('throttle:2,1')->name('license.revalidate');
         Route::get('/inquiries', AdminInquiryController::class)->name('inquiries.index');
+        Route::get('/inquiries/{inquiry}', [AdminInquiryThreadController::class, 'show'])->name('inquiries.show');
+        Route::post('/inquiries/{inquiry}/messages', [AdminInquiryThreadController::class, 'store'])
+            ->middleware('throttle:8,1')->name('inquiries.messages.store');
         Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
