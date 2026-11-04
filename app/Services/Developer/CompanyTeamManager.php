@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Developer;
 
+use App\Models\AccountNotification;
 use App\Models\Company;
 use App\Models\CompanyMembership;
 use App\Models\User;
@@ -42,11 +43,21 @@ final class CompanyTeamManager
                     'email' => 'The original company owner role cannot be changed here.',
                 ]);
             }
+            $changed = $membership === null || $membership->status !== 'active'
+                || $membership->role !== $role;
             CompanyMembership::query()->updateOrCreate(
                 ['company_id' => $company->getKey(), 'user_id' => $recipient->getKey()],
                 ['role' => $role, 'status' => 'active'],
             );
-            $this->audit($actor, $company, $recipient->getKey(), 'member.assigned');
+            if ($changed) {
+                AccountNotification::query()->create([
+                    'user_id' => $recipient->getKey(),
+                    'title' => 'Your company access was updated',
+                    'message' => 'You now have '.ucfirst($role).' access to '.$company->name.'. Open your Developer workspace to view permissions.',
+                    'type' => 'company',
+                ]);
+                $this->audit($actor, $company, $recipient->getKey(), 'member.assigned');
+            }
         });
     }
 
@@ -61,6 +72,12 @@ final class CompanyTeamManager
             abort_unless($locked->role !== 'owner', 409);
             abort_unless($locked->status === 'active', 409);
             $locked->update(['status' => 'inactive']);
+            AccountNotification::query()->create([
+                'user_id' => $locked->user_id,
+                'title' => 'Company workspace access changed',
+                'message' => 'Your access to '.$company->name.' has been deactivated. Contact the company owner if you believe this is incorrect.',
+                'type' => 'company',
+            ]);
             $this->audit($actor, $company, $locked->user_id, 'member.deactivated');
         });
     }
