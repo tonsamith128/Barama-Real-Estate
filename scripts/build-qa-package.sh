@@ -62,6 +62,7 @@ printf '%s\n' "QA_PACKAGE_ZIP_CRC_PASS"
     cd "$TARGET"
     php scripts/verify-structure.php
     php scripts/verify-laravel-only.php
+    php scripts/verify-ui-hygiene.php
 )
 sha256sum "dist/$NAME.zip" > "dist/$NAME.zip.sha256"
 echo "QA_PACKAGE_CREATED: dist/$NAME.zip"
