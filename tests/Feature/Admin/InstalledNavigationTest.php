@@ -40,7 +40,7 @@ final class InstalledNavigationTest extends TestCase
             ->assertSee('/dashboard', false);
         $this->get('/dashboard')->assertOk()
             ->assertSee('Review listings')
-            ->assertSee('Demo content importer')
+            ->assertDontSee('Demo content importer')
             ->assertSee('License &amp; Activation', false);
         $this->get('/dashboard/license')->assertOk()
             ->assertSee('Purchase Code / License Key');

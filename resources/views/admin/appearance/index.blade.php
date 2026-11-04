@@ -55,7 +55,7 @@
             </section>
             <section class="admin-card">
                 <h2>Not included in this module</h2>
-                <p>This is a safe, publishable appearance settings manager. Full page-block editing, visual drag-and-drop layout, media placement, custom menu builder and per-page themes still require migration.</p>
+                <p>Use the Homepage Builder to manage published content sections, navigation links and homepage images.</p>
             </section>
         </div>
     </div>

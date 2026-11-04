@@ -47,8 +47,12 @@ final class DemoImportTest extends TestCase
         $this->get('/dashboard/system/demo-importer')->assertForbidden();
     }
 
-    public function test_only_super_administrator_can_view_demo_importer(): void
+    public function test_only_super_administrator_can_view_enabled_staging_importer(): void
     {
+        config([
+            'demo.enable_staging_import' => true,
+            'demo.publisher_public_key' => base64_encode(random_bytes(32)),
+        ]);
         $admin = User::factory()->create(['system_role' => 'super_admin']);
         $this->actingAs($admin)
             ->get('/dashboard')
@@ -56,7 +60,18 @@ final class DemoImportTest extends TestCase
             ->assertSee('Admin Dashboard');
         $this->get('/dashboard/system/demo-importer')
             ->assertOk()
-            ->assertSee('Demo Content Importer');
+            ->assertSee('Staging Data Import');
+    }
+
+    public function test_disabled_importer_has_no_admin_entrypoint_or_upload_endpoint(): void
+    {
+        config(['demo.enable_staging_import' => false]);
+        $admin = User::factory()->create(['system_role' => 'super_admin']);
+        $this->actingAs($admin)->get('/dashboard')
+            ->assertOk()->assertDontSee('Staging data import');
+        $this->get(route('admin.demo.index'))->assertNotFound();
+        $this->post(route('admin.demo.preview'))->assertNotFound();
+        $this->post(route('admin.demo.install'))->assertNotFound();
     }
 
     public function test_original_demo_zip_shape_can_be_previewed_and_imported_when_signed(): void

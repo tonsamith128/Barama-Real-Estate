@@ -47,7 +47,9 @@
                     <a @class(['is-current' => request()->routeIs('admin.viewings.*')]) href="{{ route('admin.viewings.index') }}">Viewing requests</a>
                     <a @class(['is-current' => request()->routeIs('admin.contacts.*')]) href="{{ route('admin.contacts.index') }}">Contact inbox</a>
                     <span class="workspace-nav__label">SYSTEM</span>
-                    <a @class(['is-current' => request()->routeIs('admin.demo.*')]) href="{{ route('admin.demo.index') }}">Demo content importer</a>
+                    @if(\App\Services\DemoImport\DemoContentImporter::stagingEnabled())
+                        <a @class(['is-current' => request()->routeIs('admin.demo.*')]) href="{{ route('admin.demo.index') }}">Staging data import</a>
+                    @endif
                     <a @class(['is-current' => request()->routeIs('admin.license.*')]) href="{{ route('admin.license.index') }}">License &amp; Activation</a>
                 @endif
                 <span class="workspace-nav__label">QUICK LINKS</span>

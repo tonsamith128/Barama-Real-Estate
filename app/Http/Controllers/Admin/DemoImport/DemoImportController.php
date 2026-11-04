@@ -19,22 +19,27 @@ final class DemoImportController
         abort_unless($request->user()?->isSystemAdministrator(), 403);
     }
 
+    private function requireStaging(): void
+    {
+        abort_unless(DemoContentImporter::stagingEnabled(), 404);
+    }
+
     public function index(Request $request): View
     {
         $this->requireAdmin($request);
+        $this->requireStaging();
         $stage = $request->session()->get('barama_demo_stage');
         return view('admin.demo-import.index', [
             'stage' => is_array($stage) ? $stage : null,
             'import' => DemoImport::query()->latest()->first(),
-            'enabled' => app()->environment(['local', 'testing', 'staging'])
-                && config('demo.enable_staging_import') === true
-                && (string) config('demo.publisher_public_key') !== '',
+            'enabled' => true,
         ]);
     }
 
     public function preview(Request $request, DemoContentImporter $importer): RedirectResponse
     {
         $this->requireAdmin($request);
+        $this->requireStaging();
         $data = $request->validate(['archive' => ['required','file','max:65536']]);
         $file = $data['archive'];
         $directory = storage_path('app/private/demo-stage');
@@ -74,6 +79,7 @@ final class DemoImportController
     public function install(Request $request, DemoContentImporter $importer): RedirectResponse
     {
         $this->requireAdmin($request);
+        $this->requireStaging();
         $request->validate([
             'signature' => ['required','string','max:512'],
             'confirmation' => ['required','in:IMPORT VERIFIED DEMO'],
