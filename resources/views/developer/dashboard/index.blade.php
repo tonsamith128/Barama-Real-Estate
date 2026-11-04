@@ -1,35 +1,112 @@
 <x-layouts.admin title="Developer Workspace — Barama Real Estate">
-    <header class="admin-heading">
+    <header class="workspace-dashboard-heading">
         <div>
-            <p class="admin-eyebrow">Barama Real Estate</p>
+            <p class="admin-eyebrow">COMPANY MANAGEMENT / OVERVIEW</p>
             <h1>Developer Workspace</h1>
-            <p>Your active company memberships are listed below.</p>
+            <p>Manage your companies, listing submissions, inquiries and customer viewings.</p>
         </div>
-        <a href="{{ route('developer.inquiries.index') }}">Company inquiries</a> · <a href="{{ route('developer.viewings.index') }}">Viewing requests</a> · <a href="{{ route('home') }}">Public website</a>
+        <a class="workspace-dashboard-heading__cta" href="{{ route('home') }}">View website</a>
     </header>
 
-    <section aria-labelledby="companies-heading" class="admin-card">
-        <h2 id="companies-heading">Your companies</h2>
-        <ul class="admin-company-list">
-            @forelse ($companies as $company)
-                <li>
-                    <strong><a href="{{ route('developer.properties.index', $company) }}">{{ $company->name }} · Manage properties</a></strong>
-                    <span>{{ ucfirst($company->status) }}</span>
-                    @if($company->status === 'approved')
-                        <a href="{{ route('developer.projects.index', $company) }}">Manage projects</a>
-                        @if($company->memberships()->where('user_id', auth()->id())->where('role','owner')->where('status','active')->exists())
-                            <a href="{{ route('developer.team.index', $company) }}">Manage team</a>
-                        @endif
+    <section class="workspace-dashboard-hero workspace-developer-hero">
+        <div>
+            <span class="workspace-dashboard-hero__eyebrow">BARAMA REAL ESTATE · DEVELOPER</span>
+            <h2>Your portfolio at a glance.</h2>
+            <p>Follow your properties from private draft to publication, monitor leads, and coordinate viewing requests from one secure workspace.</p>
+            <div class="workspace-dashboard-hero__actions">
+                <a href="#company-directory">Manage your companies</a>
+                <a href="{{ route('developer.inquiries.index') }}">Company inquiries</a>
+                <a href="{{ route('developer.viewings.index') }}">Viewing requests</a>
+            </div>
+        </div>
+        <span aria-hidden="true" class="workspace-dashboard-hero__art">⌂</span>
+    </section>
+
+    <section aria-label="Your company portfolio statistics" class="workspace-dashboard-stats dashboard-stat-grid">
+        @foreach($metrics as $label => $value)
+            <article class="dashboard-stat">
+                <span>{{ $label }}</span><strong>{{ number_format($value) }}</strong>
+                <small>Within active memberships</small>
+            </article>
+        @endforeach
+    </section>
+
+    <div class="workspace-developer-queue" aria-label="Your customer operations">
+        <a href="{{ route('developer.inquiries.index') }}" class="workspace-queue-tile">
+            <span>New company inquiries</span><strong>{{ number_format($newInquiries) }}</strong>
+            <small>Open customer inquiry inbox</small>
+        </a>
+        <a href="{{ route('developer.viewings.index') }}" class="workspace-queue-tile">
+            <span>Pending viewing requests</span><strong>{{ number_format($pendingViewings) }}</strong>
+            <small>Review customer appointments</small>
+        </a>
+    </div>
+
+    <section class="dashboard-section workspace-company-directory" id="company-directory" aria-labelledby="company-directory-heading">
+        <div class="workspace-dashboard-section-heading">
+            <div><p class="admin-eyebrow">YOUR PORTFOLIO</p><h2 id="company-directory-heading">Company directory</h2></div>
+            <span>{{ number_format($companies->total()) }} active {{ $companies->total() === 1 ? 'membership' : 'memberships' }}</span>
+        </div>
+        <div class="workspace-company-grid">
+            @forelse($companies as $company)
+                @php($role = $roles->get($company->getKey(), 'member'))
+                @php($canManage = $company->status === 'approved' && in_array($role, ['owner', 'manager'], true))
+                <article class="workspace-company-card">
+                    <div class="workspace-company-card__heading">
+                        <span class="workspace-company-card__mark" aria-hidden="true">{{ strtoupper(mb_substr($company->name, 0, 1)) }}</span>
+                        <div>
+                            <h3>{{ $company->name }}</h3>
+                            <small>{{ ucfirst($role) }} membership</small>
+                        </div>
+                        <span class="workspace-status-pill">{{ ucfirst($company->status) }}</span>
+                    </div>
+                    <div class="workspace-company-card__stats">
+                        <div><strong>{{ number_format($company->properties_count) }}</strong><span>Properties</span></div>
+                        <div><strong>{{ number_format($company->projects_count) }}</strong><span>Projects</span></div>
+                        <div><strong>{{ number_format($company->active_members_count) }}</strong><span>Team members</span></div>
+                    </div>
+                    @if($canManage)
+                        <div class="workspace-company-card__actions">
+                            <a href="{{ route('developer.properties.index', $company) }}">Manage properties</a>
+                            <a href="{{ route('developer.projects.index', $company) }}">Manage projects</a>
+                            @if($role === 'owner')
+                                <a href="{{ route('developer.team.index', $company) }}">Manage team</a>
+                            @endif
+                        </div>
+                    @else
+                        <p class="workspace-company-card__note">
+                            {{ $company->status !== 'approved'
+                                ? 'Company approval is required before editing catalog content.'
+                                : 'This membership has read-only access. Contact the company owner to request management permissions.' }}
+                        </p>
                     @endif
-                </li>
+                </article>
             @empty
-                <li>No active company memberships. Contact an administrator to obtain access.</li>
+                <div class="workspace-company-empty">
+                    <h3>No company memberships yet</h3>
+                    <p>An administrator can assign your verified account to an approved company.</p>
+                    <a href="{{ route('account.dashboard') }}">Return to your account</a>
+                </div>
             @endforelse
-        </ul>
+        </div>
         {{ $companies->links() }}
     </section>
 
-    <p class="admin-notice">
-        Property drafts and review submission are enabled for active company owners and managers. Other Developer tools remain under migration.
-    </p>
+    <section class="dashboard-section workspace-company-leads" aria-labelledby="latest-leads-heading">
+        <div class="workspace-dashboard-section-heading">
+            <div><p class="admin-eyebrow">CUSTOMER RELATIONSHIPS</p><h2 id="latest-leads-heading">Recent company inquiries</h2></div>
+            <a href="{{ route('developer.inquiries.index') }}">View all inquiries</a>
+        </div>
+        @forelse($recentInquiries as $inquiry)
+            <div class="workspace-compact-record">
+                <div>
+                    <strong>{{ $inquiry->listing?->property?->title ?? 'Property unavailable' }}</strong>
+                    <small>{{ $inquiry->listing?->property?->company?->name ?? 'Company unavailable' }} · {{ $inquiry->created_at->diffForHumans() }}</small>
+                </div>
+                <span class="workspace-status-pill">{{ ucfirst($inquiry->status) }}</span>
+            </div>
+        @empty
+            <p class="dashboard-note">No company inquiries are available to your management role yet.</p>
+        @endforelse
+    </section>
 </x-layouts.admin>
