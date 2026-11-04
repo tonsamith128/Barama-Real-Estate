@@ -436,3 +436,20 @@ button, input { font: inherit; }
 .home-builder-live__copy{min-width:0}
 @media(max-width:920px){.home-hero__inner--with-image,.home-builder-live__inner--with-image{grid-template-columns:1fr}.home-hero__visual{max-height:340px;aspect-ratio:16/8}.home-builder-live__inner--image-left .home-builder-live__visual,.home-builder-live__inner--image-left .home-builder-live__copy{grid-column:auto;grid-row:auto}}
 @media(max-width:520px){.home-hero__visual{max-height:260px}.home-builder-live__visual{aspect-ratio:16/10}}
+
+
+/* ===== FRONTEND / 23 / CUSTOMER APPOINTMENTS AND NOTIFICATION ACTIONS ===== */
+.customer-priority-grid{margin:0 0 1rem}
+.customer-priority-grid .customer-card{border-radius:18px}
+.customer-priority-grid .customer-card__heading{align-items:start}
+.customer-priority-grid .customer-eyebrow{margin:0 0 .3rem;font-size:.7rem}
+.customer-priority-grid .customer-record{gap:.7rem}
+.customer-priority-grid .customer-record strong{display:block;font-size:.87rem;line-height:1.4}
+.customer-priority-grid .customer-record p{font-size:.8rem;margin:.3rem 0 0;white-space:normal}
+.customer-priority-grid .customer-record small{white-space:normal}
+.customer-bulk-action{margin-top:1.1rem;cursor:pointer}
+.customer-notification-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin:0 0 1.2rem;border-bottom:1px solid var(--barama-border);padding:0 0 1rem}
+.customer-notification-actions p{margin:0;color:var(--barama-muted);font-size:.87rem}
+.customer-notification-actions .button{cursor:pointer}
+html[data-theme="dark"] .customer-priority-grid .customer-card{background:var(--barama-surface)}
+@media(max-width:650px){.customer-priority-grid .customer-record{align-items:flex-start;flex-direction:column}.customer-notification-actions{align-items:stretch}}
