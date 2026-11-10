@@ -159,3 +159,35 @@ files against their recorded SHA-256 fingerprints and reports only class/functio
 names, source-reference filenames, and lexical risk-category counts. This is
 not a substitute for authenticated code review or execution tracing and prints
 no file bodies, SQL data or secrets.
+
+
+## Live-only updater metadata audit and scanner correction — 2026-11-10
+
+Owner-run metadata audit checked the three remaining live-only files
+against previously recorded SHA-256 values. **All three fingerprints match**
+and the audit did not execute any target PHP, query MySQL, or write live files.
+
+| File | Observed lexical hints | Interpretation |
+|---|---|---|
+| ProductionHostWorkerV1.php | 3 file-mutation, 4 database-operation matches; no process-exec/network match | Sensitive worker functionality, not yet behavior-reviewed |
+| PortableUpdateApplyV1.php | 6 file-mutation, 15 database, 6 archive, 9 hash/signature matches; no process-exec/network match | Potential updater apply/recovery logic, requires signature/transaction/rollback review |
+| barama-updater-completed-receipt-v100.php | 3 hash/signature matches; no process/file/database/network match | Receipt output template, content not reviewed |
+
+**False positive in the first metadata audit:** the generic regex for class
+declarations also matched prose that looked like `class is`, resulting in
+`DECLARED_CLASSES=PortableUpdateApplyV1,is`. The token `is` matched
+hundreds of unrelated PHP source files, yielding a misleading
+`REFERENCE_FILE_COUNT=326`. This must **not** be treated as evidence
+of 326 actual updater callers or as an accurate dependency graph.
+
+The corrected script uses only known, exact expected class names,
+requires literal search tokens of at least 12 characters, and separately
+labels lexical function matches. The owner must rerun the corrected
+script on aaPanel to establish the new literal reference counts.
+
+Neither zero exact literal callers nor an unchanged SHA-256 proves that an
+updater worker is dormant or secure. Check dynamic references and any
+independently configured host cron/systemd tasks with a narrowly scoped,
+read-only process configuration review before adapting the functionality.
+
+**No deletion, auto-updating, or deployment is authorized by these audits.**
