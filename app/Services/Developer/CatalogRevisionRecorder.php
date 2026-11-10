@@ -44,7 +44,22 @@ final class CatalogRevisionRecorder
             default => throw new InvalidArgumentException('Unknown catalog revision subject.'),
         };
 
-        return $subject->only($fields);
+        $snapshot = $subject->only($fields);
+        // Date-only legacy fields are calendar dates, not instants. Eloquent
+        // JSON encoding of Carbon otherwise converts them to prior-day UTC.
+        $dateFields = match ($type) {
+            'project' => ['launch_date', 'expected_completion_date', 'completed_at'],
+            'listing' => ['available_from'],
+            default => [],
+        };
+        foreach ($dateFields as $field) {
+            $date = $subject->getAttribute($field);
+            $snapshot[$field] = $date instanceof \\DateTimeInterface
+                ? $date->format('Y-m-d')
+                : ($date === null ? null : (string) $date);
+        }
+
+        return $snapshot;
     }
 
     /**
