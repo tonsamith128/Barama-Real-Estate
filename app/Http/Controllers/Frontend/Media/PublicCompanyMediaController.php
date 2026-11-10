@@ -20,6 +20,10 @@ final class PublicCompanyMediaController
 
         // This stable URL may change its underlying asset after approval.
         // Do not reuse the long-lived cache policy for immutable digest URLs.
-        return $locator->response($asset);
+        $response = $locator->response($asset);
+        $response->setPrivate();
+        $response->headers->addCacheControlDirective('no-store');
+
+        return $response;
     }
 }
