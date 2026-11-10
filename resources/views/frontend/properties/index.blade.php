@@ -15,6 +15,20 @@
                 <input class="field__control" id="property-search" name="q" type="search"
                     value="{{ $filters['q'] ?? '' }}" placeholder="Property, reference or company">
             </label>
+            <label class="field" for="property-location">
+                <span>Location</span>
+                <input class="field__control" id="property-location" name="location" type="search"
+                    maxlength="100" value="{{ $filters['location'] ?? '' }}" placeholder="City, district or address">
+            </label>
+            <label class="field" for="property-bedrooms">
+                <span>Minimum bedrooms</span>
+                <select class="field__control" id="property-bedrooms" name="min_bedrooms">
+                    <option value="">Any bedrooms</option>
+                    @foreach ([1, 2, 3, 4, 5] as $bedrooms)
+                        <option value="{{ $bedrooms }}" @selected((int) ($filters['min_bedrooms'] ?? 0) === $bedrooms)>{{ $bedrooms }}+ bedrooms</option>
+                    @endforeach
+                </select>
+            </label>
             <label class="field" for="property-offer">
                 <span>Transaction</span>
                 <select class="field__control" id="property-offer" name="offer">
@@ -71,7 +85,7 @@
                         <label for="saved-search-name">Name this search</label>
                         <input id="saved-search-name" name="name" required minlength="3" maxlength="70"
                             value="{{ old('name') }}" placeholder="e.g. Family homes under 200k">
-                        @foreach(['q','offer','type','sort','min_price','max_price'] as $key)
+                        @foreach(['q','location','min_bedrooms','offer','type','sort','min_price','max_price'] as $key)
                             @if(isset($filters[$key]) && $filters[$key] !== '')
                                 <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
                             @endif
