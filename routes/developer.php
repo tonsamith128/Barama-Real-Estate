@@ -6,6 +6,7 @@ use App\Http\Controllers\Developer\Dashboard\DeveloperDashboardController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Developer\Media\ListingGalleryController;
+use App\Http\Controllers\Developer\Media\ProjectGalleryController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
@@ -38,6 +39,17 @@ Route::middleware(['auth', 'verified'])
             ->name('gallery.preview');
         Route::delete('/company/{company}/listings/{listing}/gallery/{attachment}', [ListingGalleryController::class, 'destroy'])
             ->middleware('throttle:30,1')->name('gallery.destroy');
+        Route::post('/company/{company}/listings/{listing}/gallery/{attachment}/order', [ListingGalleryController::class, 'order'])
+            ->middleware('throttle:30,1')->name('gallery.order');
+
+        Route::post('/company/{company}/projects/{project}/gallery', [ProjectGalleryController::class, 'store'])
+            ->middleware('throttle:10,1')->name('projects.gallery.store');
+        Route::get('/company/{company}/projects/{project}/gallery/{asset}', [ProjectGalleryController::class, 'preview'])
+            ->name('projects.gallery.preview');
+        Route::delete('/company/{company}/projects/{project}/gallery/{attachment}', [ProjectGalleryController::class, 'destroy'])
+            ->middleware('throttle:30,1')->name('projects.gallery.destroy');
+        Route::post('/company/{company}/projects/{project}/gallery/{attachment}/order', [ProjectGalleryController::class, 'order'])
+            ->middleware('throttle:30,1')->name('projects.gallery.order');
         Route::get('/company/{company}/team', [DeveloperTeamController::class,'index'])->name('team.index');
         Route::post('/company/{company}/team', [DeveloperTeamController::class,'assign'])
             ->middleware('throttle:10,1')->name('team.assign');
