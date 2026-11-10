@@ -128,3 +128,41 @@ jobs:
           '
           APP_ENV=testing APP_DEBUG=false DB_CONNECTION=sqlite DB_DATABASE=:memory: \
             SESSION_DRIVER=array CACHE_STORE=array composer test
+
+  archived-php-schema-replica:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: barama_legacy_qa
+          MYSQL_USER: barama_legacy_ci
+          MYSQL_PASSWORD: ci_only_legacy_password
+          MYSQL_ROOT_PASSWORD: ci_only_legacy_root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_only_legacy_root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      CI: 'true'
+      APP_ENV: testing
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: barama_legacy_qa
+      DB_USERNAME: barama_legacy_ci
+      DB_PASSWORD: ci_only_legacy_password
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring
+          coverage: none
+      - name: Rehearse actual pinned archived PHP schema in isolated MySQL
+        run: bash scripts/acceptance/legacy-php-schema-replica.sh
