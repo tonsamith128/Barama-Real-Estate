@@ -1,0 +1,62 @@
+name: Barama Isolated Company Upgrade and Restore
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql-upgrade-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: barama_company_qa
+          MYSQL_USER: barama_ci
+          MYSQL_PASSWORD: ci_only_company_password
+          MYSQL_ROOT_PASSWORD: ci_only_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_only_root_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      CI: 'true'
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: barama_company_qa
+      DB_USERNAME: barama_ci
+      DB_PASSWORD: ci_only_company_password
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, fileinfo, pdo_sqlite, pdo_mysql, curl, openssl, zip, sodium
+          coverage: none
+      - name: Install MySQL client if absent
+        run: |
+          set -Eeuo pipefail
+          if ! command -v mysqldump >/dev/null || ! command -v mysql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq default-mysql-client
+          fi
+      - name: Validate Composer and install Laravel dependencies
+        run: |
+          composer validate --no-check-publish
+          composer install --no-interaction --prefer-dist --no-progress
+      - name: Isolated pre-feature upgrade, rollback and database restore
+        run: bash scripts/acceptance/company-workflow-mysql-recovery.sh
