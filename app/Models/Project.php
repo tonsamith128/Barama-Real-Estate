@@ -17,11 +17,20 @@ final class Project extends Model
     protected $fillable = [
         'company_id', 'name', 'slug', 'project_type', 'status',
         'completion_status', 'description', 'published_at',
+        'location_id', 'address_line', 'latitude', 'longitude',
+        'launch_date', 'expected_completion_date', 'completed_at',
     ];
 
     protected function casts(): array
     {
-        return ['published_at' => 'datetime'];
+        return [
+            'published_at' => 'datetime',
+            'launch_date' => 'date',
+            'expected_completion_date' => 'date',
+            'completed_at' => 'date',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
+        ];
     }
 
     public function scopePubliclyVisible(Builder $query): Builder
@@ -35,6 +44,11 @@ final class Project extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function properties(): HasMany
