@@ -113,3 +113,49 @@ unused.
 
 **Source parity gate status:** Archive file matching PASSED; extra-file
 classification PENDING; production-data, migration and rollback gates PENDING.
+
+
+## Extra-files audit — 2026-11-10
+
+An additional owner-run, read-only inspection of the **five** live-only PHP
+files reported that all were readable, all passed `php -l`, and none had a
+literal reference among the 348 first-party PHP files scanned. The original
+SHA-256 fingerprints and Git blob hashes are retained in the audit output.
+
+The exact Git blob identities were then checked against the connected GitHub
+repository:
+
+| Live extra file | Git blob result | Code classification |
+|---|---|---|
+| `ApprovedCompanyMediaEditPolicy.php` | Exact blob available (`7302b6c4...`) | Company-only, approved-status administrator media override requiring combined privileges |
+| `CompanyWorkflowNotificationService.php` | Exact blob available (`894b3759...`) | In-app moderation transition alerts: pending to administrators, approved/rejected to active company owners; transition-key deduplication |
+| `ProductionHostWorkerV1.php` | Exact blob not found | Unreviewed update worker |
+| `PortableUpdateApplyV1.php` | Exact blob not found | Unreviewed update application code |
+| `barama-updater-completed-receipt-v100.php` | Exact blob not found | Unreviewed completion receipt template |
+
+Git blob presence means the first two **contents** can be independently
+inspected. A blob 404 for the other three does *not* prove that their files are
+malicious, unused or unrelated to a prior valid release; their exact bytes
+cannot be reviewed from this connected GitHub repository.
+
+Review boundaries:
+- The company-media exception must not become a blanket developer edit
+  permission or bypass company ownership checks in Laravel.
+- Company status notifications should be emitted only from committed,
+  authoritative transitions, deduplicated and recipient-scoped.
+- Any updater worker, apply operation or receipt that can modify commercial
+  installations requires independent signature, authorization, file-scope,
+  backup, rollback and idempotency acceptance.
+- `EXPLICIT_REFERENCE_FILE_COUNT=0` is only a lexical scan result. Composer
+  autoloading, PHP string-built names, cron, shell scripts, settings stored in
+  MySQL, and external workers can reference files without an exact literal
+  being present in the scanned source.
+- All five live files remain **untouched**; none are candidates for removal
+  until their runtime roles have been verified.
+
+A new read-only utility, `support/barama_live_update_workers_metadata_audit.sh`,
+is available on this development branch. It verifies the three unreviewed
+files against their recorded SHA-256 fingerprints and reports only class/function
+names, source-reference filenames, and lexical risk-category counts. This is
+not a substitute for authenticated code review or execution tracing and prints
+no file bodies, SQL data or secrets.
