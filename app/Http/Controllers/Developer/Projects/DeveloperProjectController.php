@@ -20,7 +20,7 @@ final class DeveloperProjectController
         $manager->assertOwnerAccess($request->user(), $company);
         return view('developer.projects.index', [
             'company' => $company,
-            'projects' => $company->projects()->latest()->paginate(20),
+            'projects' => $company->projects()->with('mediaAttachments.asset')->latest()->paginate(20),
             'locations' => Location::query()->where('status', 'active')->orderBy('country_code')->orderBy('name')->limit(500)->get(),
         ]);
     }
