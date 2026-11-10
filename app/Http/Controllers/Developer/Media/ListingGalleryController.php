@@ -42,6 +42,19 @@ final class ListingGalleryController
             ->with('notice', 'Image detached from this listing.');
     }
 
+    public function order(
+        Request $request, Company $company, Listing $listing,
+        MediaAttachment $attachment, ListingGalleryManager $gallery,
+    ): RedirectResponse {
+        $gallery->authorizeDraft($request->user(), $company, $listing);
+        $data = $request->validate([
+            'action' => ['required', \Illuminate\Validation\Rule::in(['primary', 'up', 'down'])],
+        ]);
+        $gallery->changeOrder($request->user(), $company, $listing,
+            $attachment, $data['action']);
+        return back()->with('notice', 'Listing photo order saved.');
+    }
+
     public function preview(
         Request $request, Company $company, Listing $listing,
         MediaAsset $asset, ListingGalleryManager $gallery,
