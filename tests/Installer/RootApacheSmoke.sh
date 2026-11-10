@@ -48,6 +48,20 @@ if [[ ! "$php_module" =~ ^php([0-9]+)\.([0-9]+)$ ]] ||
     exit 1
 fi
 
+# Verify Apache's own PHP runtime has the required Laravel extensions.
+php_version="${php_module#php}"
+required_php_packages=()
+for extension in mysql mbstring xml curl zip; do
+    package="php${php_version}-${extension}"
+    if ! apt-cache show "$package" >/dev/null 2>&1; then
+        echo "APACHE_PHP_REQUIRED_EXTENSION_PACKAGE_MISSING=$package" >&2
+        exit 1
+    fi
+    required_php_packages+=("$package")
+done
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+    "${required_php_packages[@]}"
+
 sudo a2dismod mpm_event >/dev/null 2>&1 || true
 sudo a2dismod mpm_worker >/dev/null 2>&1 || true
 sudo a2enmod mpm_prefork rewrite "$php_module" >/dev/null
