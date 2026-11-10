@@ -15,7 +15,7 @@ final class Project extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'name', 'slug', 'project_type', 'status',
+        'company_id', 'location_id', 'name', 'slug', 'project_type', 'status',
         'completion_status', 'description', 'published_at',
     ];
 
@@ -30,6 +30,11 @@ final class Project extends Model
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
             ->whereHas('company', fn (Builder $company) => $company->publiclyVisible());
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function company(): BelongsTo
