@@ -12,6 +12,10 @@ namespace App\Domain\RealEstate;
 final class MarketplaceStatus
 {
     public const COMPANY_APPROVED = 'approved';
+
+    public const COMPANY_TYPES = [
+        'developer', 'agency', 'property_company', 'owner',
+    ];
     public const PROPERTY_APPROVED = 'approved';
     public const LISTING_PUBLISHED = 'published';
 
