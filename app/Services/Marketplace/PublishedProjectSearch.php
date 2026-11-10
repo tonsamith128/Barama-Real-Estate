@@ -23,7 +23,7 @@ final class PublishedProjectSearch
     {
         return Project::query()
             ->publiclyVisible()
-            ->with('company')
+            ->with(['company', 'amenities' => fn ($query) => $query->active(), 'milestones'])
             ->where('slug', $slug)
             ->firstOrFail();
     }
