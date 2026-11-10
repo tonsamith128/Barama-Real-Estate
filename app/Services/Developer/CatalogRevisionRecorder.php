@@ -73,7 +73,7 @@ final class CatalogRevisionRecorder
         if (!in_array($type, ['project', 'property', 'listing'], true)
             || !in_array($event, [
                 'created', 'revised', 'submitted', 'approved', 'rejected',
-                'unpublished', 'gallery_changed',
+                'unpublished', 'gallery_changed', 'amenities_changed', 'milestone_changed',
             ], true)) {
             throw new InvalidArgumentException('Unsupported catalog revision.');
         }
