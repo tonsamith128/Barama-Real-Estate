@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Developer\Projects;
 
+use App\Domain\RealEstate\MarketplaceStatus;
 use App\Models\Company;
 use App\Models\Project;
 use App\Services\Developer\ProjectManager;
@@ -50,8 +51,8 @@ final class DeveloperProjectController
     {
         return $request->validate([
             'name' => ['required', 'string', 'min:4', 'max:190'],
-            'project_type' => ['required', Rule::in(['residential', 'commercial', 'mixed_use', 'industrial', 'other'])],
-            'completion_status' => ['nullable', Rule::in(['planning', 'under_construction', 'completed'])],
+            'project_type' => ['required', Rule::in(MarketplaceStatus::PROJECT_TYPES)],
+            'completion_status' => ['nullable', Rule::in(MarketplaceStatus::PROJECT_COMPLETION_STATES)],
             'description' => ['nullable', 'string', 'max:12000'],
         ]);
     }
