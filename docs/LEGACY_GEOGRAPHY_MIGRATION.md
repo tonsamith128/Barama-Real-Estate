@@ -72,3 +72,44 @@ without verifying provenance and licensing.
 
 **Do not run `php artisan migrate` on the existing Pure PHP site or replace
 its files with the Laravel clean-install ZIP.**
+
+
+## Live aaPanel source reconciliation — 2026-11-10
+
+Owner-run `support/barama_aapanel_full_source_compare.sh` compared the installed
+Pure PHP source with pinned archive commit
+`a0af1e5d4d29f38441e3357ae6001b263f1c79cd`.
+
+| Evidence | Verified result |
+|---|---:|
+| Archived PHP files in comparison scope | 389 |
+| Exact Git blob matches | 389 |
+| Different files | 0 |
+| Missing files | 0 |
+| Symlinks skipped | 0 |
+| Extra live PHP files | 5 |
+
+The **archived subset is an exact match**, but the deployed source as a whole
+is not identical because of these five additions:
+
+1. `application/app/Services/ApprovedCompanyMediaEditPolicy.php`
+2. `application/app/Services/CompanyWorkflowNotificationService.php`
+3. `application/app/Services/Updates/ProductionHostWorkerV1.php`
+4. `application/app/Services/Updates/PortableUpdateApplyV1.php`
+5. `application/resources/views/workspace/barama-updater-completed-receipt-v100.php`
+
+These are **unclassified deployment additions**, not evidence of harmless files.
+Names imply media/notification/update responsibilities, but function and caller
+relationships remain unverified. **Do not delete, replace or merge their code**
+without explicit assessment and a verified rollback path. The source audit did
+not read the database, verify runtime calls or compare private media.
+
+Next read-only check: run `support/barama_aapanel_extras_audit.sh` from this
+development branch with integrity verification. It prints size, SHA-256 and
+Git blob hashes, PHP syntax status, modification timestamps, and filenames of
+literal references only (never source text, credentials, SQL rows or secrets).
+Reference scanning is not runtime tracing and cannot prove a dynamic include is
+unused.
+
+**Source parity gate status:** Archive file matching PASSED; extra-file
+classification PENDING; production-data, migration and rollback gates PENDING.
