@@ -35,7 +35,8 @@ final class CompanyMediaController
                 ->orderBy('user_id')->orderBy('capability')
                 ->paginate(10, ['*'], 'grants_page'),
             'companies' => Company::query()->where('status', 'approved')
-                ->whereNotNull('published_at')->orderBy('name')->limit(100)->get(),
+                ->whereNotNull('published_at')->where('published_at', '<=', now())
+                ->orderBy('name')->limit(100)->get(),
             'assets' => MediaAsset::query()->whereIn('usage_rights', ['owned', 'licensed'])
                 ->whereIn('mime_type', ['image/png', 'image/jpeg', 'image/webp'])
                 ->where('path', 'like', 'private/media/%')
