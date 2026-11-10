@@ -39,6 +39,10 @@
                 <p>{{ $listing->property->address_line }}</p>
             @endif
 
+            @if($listing->property->amenities->isNotEmpty())
+                <h2>Property amenities</h2>
+                <p>{{ $listing->property->amenities->pluck('name')->join(', ') }}</p>
+            @endif
             @if ($listing->property->description)
                 <h2>Property details</h2>
                 <div class="property-detail__description">{{ $listing->property->description }}</div>
