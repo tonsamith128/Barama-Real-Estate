@@ -54,7 +54,7 @@ final class CatalogRevisionRecorder
         };
         foreach ($dateFields as $field) {
             $date = $subject->getAttribute($field);
-            $snapshot[$field] = $date instanceof \\DateTimeInterface
+            $snapshot[$field] = $date instanceof \DateTimeInterface
                 ? $date->format('Y-m-d')
                 : ($date === null ? null : (string) $date);
         }
