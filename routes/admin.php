@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Users\UserDirectoryController;
 use App\Http\Controllers\Admin\Contacts\ContactInboxController;
 use App\Http\Controllers\Admin\Policy\LegalPolicyController;
 use App\Http\Controllers\Admin\Media\MediaLibraryController;
+use App\Http\Controllers\Admin\Media\CompanyMediaController;
 use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
@@ -69,6 +70,15 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
             ->middleware('throttle:8,1')->name('inquiries.messages.store');
         Route::patch('/inquiries/{inquiry}/respond', [AdminInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
+        Route::get('/company-media', [CompanyMediaController::class, 'index'])->name('company-media.index');
+        Route::post('/company-media/capabilities', [CompanyMediaController::class, 'grant'])
+            ->middleware('throttle:10,1')->name('company-media.capabilities.grant');
+        Route::delete('/company-media/capabilities/{grant}', [CompanyMediaController::class, 'revoke'])
+            ->middleware('throttle:10,1')->name('company-media.capabilities.revoke');
+        Route::post('/company-media/revisions', [CompanyMediaController::class, 'request'])
+            ->middleware('throttle:10,1')->name('company-media.revisions.request');
+        Route::post('/company-media/revisions/{revision}/decision', [CompanyMediaController::class, 'decide'])
+            ->middleware('throttle:10,1')->name('company-media.revisions.decide');
         Route::get('/media', MediaLibraryController::class)->name('media.index');
         Route::post('/media', [MediaLibraryController::class, 'upload'])
             ->middleware('throttle:8,1')->name('media.upload');

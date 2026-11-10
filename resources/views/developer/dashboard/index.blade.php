@@ -42,6 +42,27 @@
         </a>
     </div>
 
+    <section class="admin-card" aria-labelledby="new-company-heading">
+        <h2 id="new-company-heading">Register a company</h2>
+        <p>Create a private draft first. Your company will not appear publicly until an administrator approves it.</p>
+        @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
+        @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+        <form class="admin-form" method="post" action="{{ route('developer.companies.apply') }}">@csrf
+            <label>Company name <input name="name" value="{{ old('name') }}" required maxlength="190" minlength="3"></label>
+            <label>Company type
+                <select name="company_type" required>
+                    @foreach(\App\Services\Developer\CompanyApplicationService::COMPANY_TYPES as $type)
+                        <option value="{{ $type }}" @selected(old('company_type', 'developer') === $type)>{{ ucwords(str_replace('_', ' ', $type)) }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label>Company description
+                <textarea name="description" maxlength="12000" rows="3">{{ old('description') }}</textarea>
+            </label>
+            <button type="submit">Create private draft</button>
+        </form>
+    </section>
+
     <section class="dashboard-section workspace-company-directory" id="company-directory" aria-labelledby="company-directory-heading">
         <div class="workspace-dashboard-section-heading">
             <div><p class="admin-eyebrow">YOUR PORTFOLIO</p><h2 id="company-directory-heading">Company directory</h2></div>
@@ -65,6 +86,37 @@
                         <div><strong>{{ number_format($company->projects_count) }}</strong><span>Projects</span></div>
                         <div><strong>{{ number_format($company->active_members_count) }}</strong><span>Team members</span></div>
                     </div>
+                    @if($role === 'owner' && $company->status === 'rejected' && $rejectionReasons->get($company->getKey()))
+                        <p class="workspace-company-card__note" role="status">Changes requested: {{ $rejectionReasons->get($company->getKey()) }}</p>
+                    @endif
+                    @if($role === 'owner' && in_array($company->status, ['draft', 'rejected'], true))
+                        <div class="workspace-company-card__actions">
+                            <details>
+                                <summary>Edit company application</summary>
+                                <form class="admin-form" method="post" action="{{ route('developer.companies.application.update', $company) }}">
+                                    @csrf @method('PATCH')
+                                    <label>Company name <input name="name" value="{{ $company->name }}" minlength="3" maxlength="190" required></label>
+                                    <label>Company type
+                                        <select name="company_type" required>
+                                            @foreach(\App\Services\Developer\CompanyApplicationService::COMPANY_TYPES as $type)
+                                                <option value="{{ $type }}" @selected($company->company_type === $type)>{{ ucwords(str_replace('_', ' ', $type)) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+                                    <label>Description <textarea name="description" maxlength="12000" rows="3">{{ $company->description }}</textarea></label>
+                                    <button type="submit">Save changes</button>
+                                </form>
+                            </details>
+                            @if($company->status === 'draft')
+                                <form method="post" action="{{ route('developer.companies.application.submit', $company) }}">
+                                    @csrf
+                                    <button type="submit">Submit for review</button>
+                                </form>
+                            @endif
+                        </div>
+                    @elseif($role === 'owner' && $company->status === 'pending')
+                        <p class="workspace-company-card__note">Your application is under administrator review.</p>
+                    @endif
                     @if($canManage)
                         <div class="workspace-company-card__actions">
                             <a href="{{ route('developer.properties.index', $company) }}">Manage properties</a>
@@ -84,7 +136,7 @@
             @empty
                 <div class="workspace-company-empty">
                     <h3>No company memberships yet</h3>
-                    <p>An administrator can assign your verified account to an approved company.</p>
+                    <p>You can register a company draft above, or an administrator can assign you to an approved company.</p>
                     <a href="{{ route('account.dashboard') }}">Return to your account</a>
                 </div>
             @endforelse

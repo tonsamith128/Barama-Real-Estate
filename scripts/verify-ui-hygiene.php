@@ -27,11 +27,22 @@ foreach ($retired as $name) {
     }
 }
 
-$workflow = (string) file_get_contents($root.'/.github/workflows/release-acceptance.yml');
-if (!str_contains($workflow, 'bash scripts/build-qa-package.sh')
-    || str_contains($workflow, 'scripts/build-installer-routing-hotfix.sh')
-    || preg_match('~dist/Barama-Laravel-[^\\s]*-Upgrade\\.zip~', $workflow)) {
-    $errors[] = 'Manual release workflow must build only the integrated QA archive.';
+$workflowFile = $root.'/.github/workflows/release-acceptance.yml';
+if (is_file($workflowFile)) {
+    // Source checkout: enforce the historical manual release-workflow guard.
+    $workflow = (string) file_get_contents($workflowFile);
+    if (!str_contains($workflow, 'bash scripts/build-qa-package.sh')
+        || str_contains($workflow, 'scripts/build-installer-routing-hotfix.sh')
+        || preg_match('~dist/Barama-Laravel-[^\\s]*-Upgrade\\.zip~', $workflow)) {
+        $errors[] = 'Manual release workflow must build only the integrated QA archive.';
+    }
+} elseif (is_file($root.'/QA_BUILD_INFO.txt') && !is_dir($root.'/.github')) {
+    // Integrated QA archives intentionally omit .github and include an
+    // explicit package marker. Keep every other UI guard active.
+    fwrite(STDOUT, "RELEASE_WORKFLOW_GUARD=SOURCE_ONLY_QA_PACKAGE_MARKED\\n");
+} else {
+    // Never allow an unmarked source tree to bypass the workflow policy.
+    $errors[] = 'Missing release workflow outside an identified QA package.';
 }
 
 $templates = [

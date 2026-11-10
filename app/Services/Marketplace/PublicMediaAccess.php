@@ -20,7 +20,9 @@ final class PublicMediaAccess
         foreach ($asset->attachments as $attachment) {
             $id = $attachment->entity_id;
             $visible = match ($attachment->entity_type) {
-                'company' => Company::query()->publiclyVisible()->whereKey($id)->exists(),
+                'company' => in_array($attachment->collection, ['logo', 'cover'], true)
+                    && (bool) $attachment->is_primary
+                    && Company::query()->publiclyVisible()->whereKey($id)->exists(),
                 'project' => Project::query()->publiclyVisible()->whereKey($id)->exists(),
                 'property' => Property::query()->approved()->whereKey($id)
                     ->whereHas('listings', fn ($listings) => $listings->visibleToPublic())->exists(),

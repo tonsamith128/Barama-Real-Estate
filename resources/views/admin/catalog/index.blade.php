@@ -3,7 +3,7 @@
         <div><p class="admin-eyebrow">Administration / Marketplace</p>
             <h1>Catalog Moderation</h1>
             <p>Review projects and property listings, onboard verified companies and preserve review history.</p></div>
-        <a href="{{ route('admin.dashboard') }}">Admin Dashboard</a>
+        <div><a href="{{ route('admin.company-media.index') }}">Company Media Reviews</a> · <a href="{{ route('admin.dashboard') }}">Admin Dashboard</a></div>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif

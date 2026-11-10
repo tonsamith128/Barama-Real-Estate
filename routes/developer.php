@@ -10,12 +10,19 @@ use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
+use App\Http\Controllers\Developer\Companies\CompanyApplicationController;
 
 Route::middleware(['auth', 'verified'])
     ->prefix('developer')
     ->name('developer.')
     ->group(function (): void {
         Route::get('/', DeveloperDashboardController::class)->name('dashboard');
+        Route::post('/company-applications', [CompanyApplicationController::class, 'store'])
+            ->middleware('throttle:5,1')->name('companies.apply');
+        Route::patch('/company-applications/{company}', [CompanyApplicationController::class, 'update'])
+            ->middleware('throttle:10,1')->name('companies.application.update');
+        Route::post('/company-applications/{company}/submit', [CompanyApplicationController::class, 'submit'])
+            ->middleware('throttle:5,1')->name('companies.application.submit');
         Route::get('/inquiries', DeveloperInquiryController::class)->name('inquiries.index');
         Route::get('/inquiries/{inquiry}', [DeveloperInquiryThreadController::class, 'show'])->name('inquiries.show');
         Route::post('/inquiries/{inquiry}/messages', [DeveloperInquiryThreadController::class, 'store'])

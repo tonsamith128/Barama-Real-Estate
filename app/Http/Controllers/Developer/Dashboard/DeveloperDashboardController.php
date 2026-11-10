@@ -14,6 +14,7 @@ use App\Services\Developer\AccessibleCompanies;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class DeveloperDashboardController
 {
@@ -46,9 +47,21 @@ final class DeveloperDashboardController
         $inquiries = Inquiry::query()->whereHas('listing.property.company', $managedCompany);
         $viewings = ViewingRequest::query()->whereHas('listing.property.company', $managedCompany);
 
+        $rejectedOwnedIds = $companies->getCollection()
+            ->filter(fn ($company) => $company->status === 'rejected'
+                && $roles->get($company->getKey()) === 'owner')
+            ->modelKeys();
+        $rejectionReasons = DB::table('moderation_decisions')
+            ->where('subject_type', 'company')
+            ->where('decision', 'rejected')
+            ->whereIn('subject_id', $rejectedOwnedIds)
+            ->orderByDesc('id')
+            ->get()->unique('subject_id')->pluck('reason', 'subject_id');
+
         return view('developer.dashboard.index', [
             'companies' => $companies,
             'roles' => $roles,
+            'rejectionReasons' => $rejectionReasons,
             'metrics' => [
                 'Active companies' => $companies->total(),
                 'Company properties' => Property::query()->whereHas('company.memberships', $memberOf)->count(),
