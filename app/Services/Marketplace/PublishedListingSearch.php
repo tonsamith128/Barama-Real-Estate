@@ -62,7 +62,7 @@ final class PublishedListingSearch
     {
         return Listing::query()
             ->visibleToPublic()
-            ->with(['property.company', 'property.project', 'mediaAttachments.asset'])
+            ->with(['property.company', 'property.project', 'property.amenities' => fn ($query) => $query->active(), 'mediaAttachments.asset'])
             ->where('slug', $slug)
             ->firstOrFail();
     }

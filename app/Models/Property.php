@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Property extends Model
@@ -26,8 +27,8 @@ final class Property extends Model
     protected function casts(): array
     {
         return [
-            'bedrooms' => 'integer',
-            'bathrooms' => 'integer',
+            'bedrooms' => 'decimal:1',
+            'bathrooms' => 'decimal:1',
             'area_value' => 'decimal:2',
             'parking_spaces' => 'integer',
             'floor_number' => 'integer',
@@ -52,6 +53,11 @@ final class Property extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function amenities(): BelongsToMany
+    {
+        return $this->belongsToMany(Amenity::class, 'property_amenities');
     }
 
     public function project(): BelongsTo

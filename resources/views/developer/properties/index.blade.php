@@ -19,8 +19,8 @@
         <label>Location/address <input name="address_line" value="{{ old('address_line') }}"></label>
         <label>Description <textarea name="description" rows="4">{{ old('description') }}</textarea></label>
         @include('developer.catalog.property-legacy-fields', ['property' => null])
-        <label>Bedrooms <input type="number" name="bedrooms" min="0" max="100" value="{{ old('bedrooms') }}"></label>
-        <label>Bathrooms <input type="number" name="bathrooms" min="0" max="100" value="{{ old('bathrooms') }}"></label>
+        <label>Bedrooms <input type="number" name="bedrooms" min="0" max="100" step="0.5" value="{{ old('bedrooms') }}"></label>
+        <label>Bathrooms <input type="number" name="bathrooms" min="0" max="100" step="0.5" value="{{ old('bathrooms') }}"></label>
         <label>Transaction <select name="transaction_type"><option value="sale">Sale</option><option value="rent">Rent</option></select></label>
         <label>Price <input type="number" name="price" min="0" step=".01" required></label>
         <label>Currency <select name="currency"><option value="USD">USD</option><option value="KHR">KHR</option></select></label>
@@ -53,14 +53,70 @@
                         <strong>{{ $property->title }}</strong>
                         <span>{{ ucfirst($property->status) }}</span>
                     </header>
+                    <section class="admin-card">
+                        <h3>Property amenities</h3>
+                        <p>@forelse($property->amenities as $amenity){{ $amenity->name }}@unless($loop->last), @endunless
+                            @empty None selected @endforelse</p>
+                        @if(in_array($property->status, ['draft', 'rejected'], true))
+                            <form method="post" action="{{ route('developer.properties.amenities.update', [$company, $property]) }}">
+                                @csrf @method('PUT')
+                                @foreach($amenities as $amenity)
+                                    <label><input type="checkbox" name="amenity_ids[]" value="{{ $amenity->id }}"
+                                        @checked($property->amenities->contains('id', $amenity->id))>
+                                        {{ $amenity->name }}
+                                    </label>
+                                @endforeach
+                                <button type="submit">Save amenities</button>
+                            </form>
+                        @endif
+                    </section>
+                    @if(in_array($property->status, ['draft','approved'], true) && $property->listings->count() < 10)
+                        <details><summary>Create an additional sale or rental offer</summary>
+                            <form class="admin-form" method="post" action="{{ route('developer.properties.offers.store', [$company, $property]) }}">
+                                @csrf
+                                <label>Transaction <select name="transaction_type">
+                                    <option value="sale">Sale</option><option value="rent">Rent</option>
+                                </select></label>
+                                <label>Price <input type="number" name="price" step=".01" min="0" required></label>
+                                <label>Currency <select name="currency"><option>USD</option><option>KHR</option></select></label>
+                                @include('developer.catalog.listing-legacy-fields', ['listing' => null])
+                                <label>Negotiable <input type="checkbox" name="negotiable" value="1"></label>
+                                <button type="submit">Save private offer</button>
+                            </form>
+                        </details>
+                    @endif
                     @foreach($property->listings as $listing)
                         <section class="listing-gallery" aria-label="Photos for {{ $property->title }}">
                             <p><strong>{{ ucfirst($listing->transaction_type) }} listing</strong> · {{ $listing->status }} · {{ $listing->mediaAttachments->count() }} / 20 images</p>
+                            @if(in_array($listing->status, ['draft', 'rejected'], true))
+                                <details><summary>Edit this offer (not other published offers)</summary>
+                                    <form class="admin-form" method="post" action="{{ route('developer.properties.offers.update', [$company, $property, $listing]) }}">
+                                        @csrf @method('PUT')
+                                        <label>Transaction <select name="transaction_type">
+                                            <option value="sale" @selected($listing->transaction_type==='sale')>Sale</option>
+                                            <option value="rent" @selected($listing->transaction_type==='rent')>Rent</option>
+                                        </select></label>
+                                        <label>Price <input type="number" step=".01" min="0" name="price" value="{{ $listing->price }}" required></label>
+                                        <label>Currency <select name="currency">
+                                            <option @selected($listing->currency==='USD')>USD</option>
+                                            <option @selected($listing->currency==='KHR')>KHR</option>
+                                        </select></label>
+                                        @include('developer.catalog.listing-legacy-fields', ['listing' => $listing])
+                                        <label>Negotiable <input type="checkbox" name="negotiable" value="1" @checked($listing->negotiable)></label>
+                                        <button type="submit">Update private offer</button>
+                                    </form>
+                                </details>
+                            @endif
+                            @if($listing->status === 'draft' && in_array($property->status, ['draft','approved'], true))
+                                <form method="post" action="{{ route('developer.properties.offers.submit', [$company, $property, $listing]) }}">
+                                    @csrf<button type="submit">Submit this offer only</button>
+                                </form>
+                            @endif
                             @if($listing->mediaAttachments->isNotEmpty())
                                 <ul class="listing-gallery__images">
                                     @foreach($listing->mediaAttachments as $link)
                                         <li>
-                                            @if($property->status === 'draft' && $listing->status === 'draft')
+                                            @if(in_array($property->status, ['draft', 'approved'], true) && $listing->status === 'draft')
                                                 <img src="{{ route('developer.gallery.preview', [$company, $listing, $link->asset]) }}"
                                                     alt="{{ $link->asset->alt_text ?: $property->title }}" loading="lazy">
                                                 @if($link->is_primary)<strong>Primary photo</strong>@endif
@@ -82,7 +138,7 @@
                                     @endforeach
                                 </ul>
                             @endif
-                            @if($property->status === 'draft' && $listing->status === 'draft')
+                            @if(in_array($property->status, ['draft', 'approved'], true) && $listing->status === 'draft')
                                 <form class="listing-gallery__upload" method="post"
                                     enctype="multipart/form-data"
                                     action="{{ route('developer.gallery.store', [$company, $listing]) }}">

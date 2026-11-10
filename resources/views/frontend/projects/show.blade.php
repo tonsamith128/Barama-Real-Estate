@@ -25,6 +25,22 @@
             @if ($project->completion_status)
                 <p>Status: {{ ucfirst(str_replace('_', ' ', $project->completion_status)) }}</p>
             @endif
+            @if($project->amenities->isNotEmpty())
+                <h2>Project amenities</h2>
+                <p>{{ $project->amenities->pluck('name')->join(', ') }}</p>
+            @endif
+            @if($project->milestones->isNotEmpty())
+                <h2>Development milestones</h2>
+                <ul>
+                    @foreach($project->milestones as $milestone)
+                        <li>
+                            <strong>{{ $milestone->title }}</strong>
+                            · {{ ucfirst(str_replace('_', ' ', $milestone->status)) }}
+                            @if($milestone->target_date) · {{ $milestone->target_date->format('Y-m-d') }} @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
             @if ($project->description)
                 <div class="property-detail__description">{{ $project->description }}</div>
             @endif

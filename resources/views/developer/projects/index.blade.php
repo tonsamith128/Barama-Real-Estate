@@ -83,6 +83,86 @@
                         </form>
                     @endif
                 </section>
+                <section class="admin-card">
+                    <h3>Project amenities</h3>
+                    <p>
+                        @forelse($project->amenities as $amenity)
+                            {{ $amenity->name }}@unless($loop->last), @endunless
+                        @empty None selected
+                        @endforelse
+                    </p>
+                    @if(in_array($project->status, ['draft', 'rejected'], true))
+                        <form method="post" action="{{ route('developer.projects.amenities.update', [$company, $project]) }}">
+                            @csrf @method('PUT')
+                            @foreach($amenities as $amenity)
+                                <label><input type="checkbox" name="amenity_ids[]" value="{{ $amenity->id }}"
+                                    @checked($project->amenities->contains('id', $amenity->id))>
+                                    {{ $amenity->name }}
+                                </label>
+                            @endforeach
+                            <button type="submit">Save amenities</button>
+                        </form>
+                    @endif
+                </section>
+                <section class="admin-card">
+                    <h3>Development milestones</h3>
+                    @forelse($project->milestones as $milestone)
+                        <div class="portfolio-record">
+                            <strong>{{ $milestone->title }}</strong>
+                            <p>{{ str_replace('_', ' ', ucfirst($milestone->status)) }}
+                                @if($milestone->target_date) · Target: {{ $milestone->target_date->format('Y-m-d') }} @endif
+                                @if($milestone->completed_date) · Completed: {{ $milestone->completed_date->format('Y-m-d') }} @endif
+                            </p>
+                            @if($milestone->description)<p>{{ $milestone->description }}</p>@endif
+                            @if(in_array($project->status, ['draft', 'rejected'], true))
+                                <details>
+                                    <summary>Edit milestone</summary>
+                                    <form method="post" class="admin-form" action="{{ route('developer.projects.milestones.update', [$company, $project, $milestone]) }}">
+                                        @csrf @method('PUT')
+                                        <label>Title <input name="title" required maxlength="190" value="{{ $milestone->title }}"></label>
+                                        <label>Description <textarea name="description" maxlength="6000">{{ $milestone->description }}</textarea></label>
+                                        <label>Status <select name="status">
+                                            @foreach(['planned','in_progress','completed','delayed'] as $state)
+                                                <option value="{{ $state }}" @selected($milestone->status===$state)>{{ ucfirst(str_replace('_', ' ', $state)) }}</option>
+                                            @endforeach
+                                        </select></label>
+                                        <label>Target date <input type="date" name="target_date" value="{{ $milestone->target_date?->format('Y-m-d') }}"></label>
+                                        <label>Completed date <input type="date" name="completed_date" value="{{ $milestone->completed_date?->format('Y-m-d') }}"></label>
+                                        <button type="submit">Save milestone</button>
+                                    </form>
+                                </details>
+                                @foreach(['up'=>'Move up','down'=>'Move down'] as $direction=>$label)
+                                    <form method="post" action="{{ route('developer.projects.milestones.move', [$company, $project, $milestone]) }}">
+                                        @csrf<input type="hidden" name="direction" value="{{ $direction }}">
+                                        <button type="submit">{{ $label }}</button>
+                                    </form>
+                                @endforeach
+                                <form method="post" action="{{ route('developer.projects.milestones.destroy', [$company, $project, $milestone]) }}">
+                                    @csrf @method('DELETE')
+                                    <button type="submit">Remove milestone</button>
+                                </form>
+                            @endif
+                        </div>
+                    @empty<p>No milestones added yet.</p>@endforelse
+                    @if(in_array($project->status, ['draft', 'rejected'], true))
+                        <details><summary>Add a milestone</summary>
+                            <form method="post" class="admin-form" action="{{ route('developer.projects.milestones.store', [$company, $project]) }}">
+                                @csrf
+                                <label>Title <input name="title" required maxlength="190"></label>
+                                <label>Description <textarea name="description" maxlength="6000"></textarea></label>
+                                <label>Status <select name="status">
+                                    <option value="planned">Planned</option>
+                                    <option value="in_progress">In progress</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="completed">Completed</option>
+                                </select></label>
+                                <label>Target date <input name="target_date" type="date"></label>
+                                <label>Actual completion <input name="completed_date" type="date"></label>
+                                <button type="submit">Create milestone</button>
+                            </form>
+                        </details>
+                    @endif
+                </section>
                 <p><a href="{{ route('developer.projects.history', [$company, $project]) }}">Revision history</a></p>
                 @if(in_array($project->status, ['draft','rejected'], true))
                     <details><summary>Edit project</summary>

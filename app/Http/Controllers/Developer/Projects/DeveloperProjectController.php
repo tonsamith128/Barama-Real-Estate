@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Developer\Projects;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\Location;
+use App\Models\Amenity;
 use App\Services\Developer\ProjectManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ final class DeveloperProjectController
         $manager->assertOwnerAccess($request->user(), $company);
         return view('developer.projects.index', [
             'company' => $company,
-            'projects' => $company->projects()->with('mediaAttachments.asset')->latest()->paginate(20),
+            'projects' => $company->projects()->with(['mediaAttachments.asset', 'amenities', 'milestones'])->latest()->paginate(20),
+            'amenities' => Amenity::query()->active()->orderBy('name')->get(),
             'locations' => Location::query()->where('status', 'active')->orderBy('country_code')->orderBy('name')->limit(500)->get(),
         ]);
     }
