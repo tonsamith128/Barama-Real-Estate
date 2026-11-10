@@ -42,19 +42,23 @@ final class CatalogReviewService
     {
         $this->assertAdmin($actor);
         DB::transaction(function () use ($actor, $listing): void {
-            $offer = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
-            $property = $offer->property()->lockForUpdate()->firstOrFail();
+            $property = \App\Models\Property::query()->lockForUpdate()
+                ->findOrFail($listing->property_id);
+            $offer = $property->listings()->lockForUpdate()->findOrFail($listing->getKey());
             $company = $property->company()->firstOrFail();
             abort_unless($company->status === 'approved'
                 && $company->published_at?->lte(now()), 422);
-            abort_unless($property->status === 'pending' && $offer->status === 'pending', 422);
+            abort_unless(in_array($property->status, ['pending', 'approved'], true)
+                && $offer->status === 'pending', 422);
 
             $beforeProperty = $this->revisions->snapshot($property, 'property');
             $beforeListing = $this->revisions->snapshot($offer, 'listing');
-            $property->update(['status' => 'approved']);
+            if ($property->status === 'pending') {
+                $property->update(['status' => 'approved']);
+                $this->revisions->record($actor, 'property', $property, 'approved', $beforeProperty,
+                    $this->revisions->snapshot($property, 'property'));
+            }
             $offer->update(['status' => 'published', 'published_at' => now()]);
-            $this->revisions->record($actor, 'property', $property, 'approved', $beforeProperty,
-                $this->revisions->snapshot($property, 'property'));
             $this->revisions->record($actor, 'listing', $offer, 'approved', $beforeListing,
                 $this->revisions->snapshot($offer, 'listing'));
             $this->record($actor, 'listing', $offer->getKey(), 'approved', null);
@@ -65,16 +69,20 @@ final class CatalogReviewService
     {
         $this->assertAdmin($actor);
         DB::transaction(function () use ($actor, $listing, $reason): void {
-            $locked = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
-            $property = $locked->property()->lockForUpdate()->firstOrFail();
-            abort_unless($locked->status === 'pending' && $property->status === 'pending', 409);
+            $property = \App\Models\Property::query()->lockForUpdate()
+                ->findOrFail($listing->property_id);
+            $locked = $property->listings()->lockForUpdate()->findOrFail($listing->getKey());
+            abort_unless($locked->status === 'pending'
+                && in_array($property->status, ['pending', 'approved'], true), 409);
 
             $beforeProperty = $this->revisions->snapshot($property, 'property');
             $beforeListing = $this->revisions->snapshot($locked, 'listing');
             $locked->update(['status' => 'rejected', 'published_at' => null]);
-            $property->update(['status' => 'rejected']);
-            $this->revisions->record($actor, 'property', $property, 'rejected', $beforeProperty,
-                $this->revisions->snapshot($property, 'property'));
+            if ($property->status === 'pending') {
+                $property->update(['status' => 'rejected']);
+                $this->revisions->record($actor, 'property', $property, 'rejected', $beforeProperty,
+                    $this->revisions->snapshot($property, 'property'));
+            }
             $this->revisions->record($actor, 'listing', $locked, 'rejected', $beforeListing,
                 $this->revisions->snapshot($locked, 'listing'));
             $this->record($actor, 'listing', $locked->getKey(), 'rejected', $reason);
@@ -85,16 +93,23 @@ final class CatalogReviewService
     {
         $this->assertAdmin($actor);
         DB::transaction(function () use ($actor, $listing, $reason): void {
-            $locked = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
-            $property = $locked->property()->lockForUpdate()->firstOrFail();
+            $property = \App\Models\Property::query()->lockForUpdate()
+                ->findOrFail($listing->property_id);
+            $locked = $property->listings()->lockForUpdate()->findOrFail($listing->getKey());
             abort_unless($locked->status === 'published' && $property->status === 'approved', 409);
 
             $beforeProperty = $this->revisions->snapshot($property, 'property');
             $beforeListing = $this->revisions->snapshot($locked, 'listing');
             $locked->update(['status' => 'draft', 'published_at' => null]);
-            $property->update(['status' => 'draft']);
-            $this->revisions->record($actor, 'property', $property, 'unpublished', $beforeProperty,
-                $this->revisions->snapshot($property, 'property'));
+            // A sibling sale/rental offer can remain publicly visible.
+            $stillPublished = $property->listings()
+                ->where('id', '!=', $locked->getKey())
+                ->where('status', 'published')->exists();
+            if (!$stillPublished) {
+                $property->update(['status' => 'draft']);
+                $this->revisions->record($actor, 'property', $property, 'unpublished', $beforeProperty,
+                    $this->revisions->snapshot($property, 'property'));
+            }
             $this->revisions->record($actor, 'listing', $locked, 'unpublished', $beforeListing,
                 $this->revisions->snapshot($locked, 'listing'));
             $this->record($actor, 'listing', $locked->getKey(), 'unpublished', $reason);
