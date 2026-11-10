@@ -86,6 +86,9 @@
                         <div><strong>{{ number_format($company->projects_count) }}</strong><span>Projects</span></div>
                         <div><strong>{{ number_format($company->active_members_count) }}</strong><span>Team members</span></div>
                     </div>
+                    @if($role === 'owner' && $company->status === 'rejected' && $rejectionReasons->get($company->getKey()))
+                        <p class="workspace-company-card__note" role="status">Changes requested: {{ $rejectionReasons->get($company->getKey()) }}</p>
+                    @endif
                     @if($role === 'owner' && in_array($company->status, ['draft', 'rejected'], true))
                         <div class="workspace-company-card__actions">
                             <details>
