@@ -24,6 +24,7 @@
                 @endforeach
             </select></label>
             <label>Description <textarea name="description" maxlength="12000" rows="4">{{ old('description') }}</textarea></label>
+            @include('developer.catalog.project-legacy-fields', ['project' => null])
             <button type="submit">Create private draft</button>
         </form>
     </section>
@@ -50,6 +51,7 @@
                                 @endforeach
                             </select></label>
                             <label>Description <textarea name="description" rows="3">{{ $project->description }}</textarea></label>
+                            @include('developer.catalog.project-legacy-fields', ['project' => $project])
                             <button type="submit">Save changes</button>
                         </form>
                     </details>
