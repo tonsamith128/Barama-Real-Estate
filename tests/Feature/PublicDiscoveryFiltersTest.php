@@ -15,6 +15,14 @@ final class PublicDiscoveryFiltersTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // CI runs PHP feature tests before the separate Vite build step.
+        $this->withoutVite();
+    }
+
     public function test_property_filters_match_address_and_minimum_bedrooms_without_exposing_drafts(): void
     {
         $company = $this->approvedCompany();
