@@ -33,7 +33,7 @@ echo "========== INITIALIZE PRE-FEATURE LARAVEL SCHEMA =========="
 while IFS= read -r migration; do
     php artisan migrate --path="$migration" --force --no-interaction --quiet
 done < <(find database/migrations -maxdepth 1 -type f -name '*.php' \
-    ! -name '2026_11_10_*' | LC_ALL=C sort)
+    ! -name '2026_11_10_*' ! -name '2026_11_11_*' | LC_ALL=C sort)
 
 echo "========== SEED EXISTING CUSTOMER-LIKE RECORDS =========="
 php <<'PHP'
@@ -82,6 +82,8 @@ $checks = [
   'new_project_milestones' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='project_milestones'",
   'new_country_governance' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='location_countries'",
   'new_external_registry' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='location_hierarchy_registry'",
+  'new_identity_map' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='legacy_identity_maps'",
+  'new_import_batches' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='legacy_import_batches'",
   'new_location_uuid' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='locations' AND column_name='uuid'",
   'decimal_bedrooms' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='properties' AND column_name='bedrooms' AND data_type='decimal'",
   'project_completed_at' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='projects' AND column_name='completed_at'",
@@ -209,8 +211,8 @@ mysqldump --host="$DB_HOST" --port="${DB_PORT:-3306}" --user="$DB_USERNAME" \
 test -s "$QA/upgrade.sql"
 echo "SQL_BACKUP=CREATED_PRIVATE_CI_ONLY"
 
-echo "========== ROLLBACK SEVEN ADDITIVE MIGRATIONS =========="
-php artisan migrate:rollback --step=7 --force --no-interaction --quiet
+echo "========== ROLLBACK EIGHT ADDITIVE MIGRATIONS =========="
+php artisan migrate:rollback --step=8 --force --no-interaction --quiet
 
 php <<'PHP'
 <?php
@@ -234,10 +236,12 @@ $governanceAbsent = (int) $db->query("SELECT COUNT(*) FROM information_schema.ta
  'location_data_packs','location_hierarchy_registry')")->fetchColumn();
 $geoUuidAbsent = (int) $db->query("SELECT COUNT(*) FROM information_schema.columns
  WHERE table_schema=DATABASE() AND table_name='locations' AND column_name='uuid'")->fetchColumn();
+$identityAbsent = (int) $db->query("SELECT COUNT(*) FROM information_schema.tables
+ WHERE table_schema=DATABASE() AND table_name IN ('legacy_import_batches','legacy_identity_maps')")->fetchColumn();
 $original = (int) $db->query("SELECT COUNT(*) FROM account_notifications WHERE title='Existing notification'")->fetchColumn();
 if ($absent !== 0 || $dedupeAbsent !== 0 || $catalogAbsent !== 0
     || $legacyFieldAbsent !== 0 || $governanceAbsent !== 0
-    || $geoUuidAbsent !== 0 || $original !== 1) {
+    || $geoUuidAbsent !== 0 || $identityAbsent !== 0 || $original !== 1) {
     throw new RuntimeException('MIGRATION_ROLLBACK_FAILED');
 }
 echo "ADDITIVE_MIGRATIONS_ROLLBACK=PASS\n";
