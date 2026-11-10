@@ -92,17 +92,25 @@ for relative, expected in targets.items():
     print('MODIFIED_UTC=' + datetime.fromtimestamp(
         stat.st_mtime, timezone.utc).isoformat())
     code = raw.decode('utf-8', errors='replace')
-    # Names only, not method arguments, function bodies, or string literals.
-    classes = sorted(set(re.findall(
-        r'\b(?:final\s+)?(?:class|interface|trait)\s+([A-Za-z_][A-Za-z_0-9]*)', code
-    )))
+    # Only recognize an exact, known declaration: a PHP docblock may
+    # contain prose such as "class is", which must NEVER become a search token.
+    expected_classes = {
+        'ProductionHostWorkerV1.php': 'ProductionHostWorkerV1',
+        'PortableUpdateApplyV1.php': 'PortableUpdateApplyV1',
+    }
+    expected_class = expected_classes.get(path.name)
+    classes = []
+    if expected_class and re.search(
+        r'\bclass\s+' + re.escape(expected_class) + r'\b', code
+    ):
+        classes.append(expected_class)
     functions = sorted(set(re.findall(
         r'\bfunction\s+([A-Za-z_][A-Za-z_0-9]*)\s*\(', code
     )))
-    print('DECLARED_CLASSES=' + (','.join(classes[:20]) or 'NONE_DETECTED'))
-    print('DECLARED_FUNCTIONS=' + (','.join(functions[:30]) or 'NONE_DETECTED'))
+    print('EXPECTED_DECLARED_CLASSES=' + (','.join(classes) or 'NONE_DETECTED'))
+    print('POSSIBLE_DECLARED_FUNCTIONS=' + (','.join(functions[:30]) or 'NONE_DETECTED'))
     if len(functions) > 30:
-        print(f'UNLISTED_FUNCTION_COUNT={len(functions)-30}')
+        print(f'UNLISTED_POSSIBLE_FUNCTION_COUNT={len(functions)-30}')
     for category, pattern in sensitive_categories.items():
         print(category + '_LEXICAL_MATCHES=' + str(len(
             re.findall(pattern, code, flags=re.IGNORECASE)
@@ -110,6 +118,9 @@ for relative, expected in targets.items():
     # Scan only approved first-party source paths. Do not inspect logs, config
     # secrets or runtime storage, and do not print matched lines.
     needles = {path.name, path.stem, *classes}
+    # A defensive minimum prevents short generic words from ever inflating
+    # reference counts, even if a future parser produces spurious symbols.
+    needles = sorted(token for token in needles if len(token) >= 12)
     references = set()
     for candidate in sources:
         if candidate == path:
@@ -120,12 +131,14 @@ for relative, expected in targets.items():
             continue
         if any(token.encode('utf-8') in data for token in needles):
             references.add(candidate.relative_to(root).as_posix())
-    print(f'REFERENCE_FILE_COUNT={len(references)}')
+    print('REFERENCE_SEARCH_TOKENS=' + ','.join(needles))
+    print(f'EXACT_LITERAL_REFERENCE_FILE_COUNT={len(references)}')
     for reference in sorted(references)[:30]:
         print('REFERENCE_FILE=' + reference)
     if len(references) > 30:
         print(f'UNLISTED_REFERENCE_COUNT={len(references)-30}')
-print('DISCLAIMER=Lexical_matches_are_hints_not_runtime_or_security_assurance')
+print('DISCLAIMER=Exact_literal_references_are_not_a_complete_runtime_dependency_graph')
+print('DECLARATION_PARSER=Known_class_names_only;_function_names_are_lexical_hints')
 print('DYNAMIC_CLASS_LOADING_AND_EXTERNAL_CRON_CALLS=NOT_EXCLUDED')
 print('SOURCE_CONTENTS=NOT_PRINTED')
 print('LIVE_FILES=UNCHANGED')
