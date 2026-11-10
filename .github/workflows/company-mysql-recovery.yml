@@ -60,3 +60,71 @@ jobs:
           composer install --no-interaction --prefer-dist --no-progress
       - name: Isolated pre-feature upgrade, rollback and database restore
         run: bash scripts/acceptance/company-workflow-mysql-recovery.sh
+
+  packaged-hosting-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: barama_installer_qa
+          MYSQL_USER: barama
+          MYSQL_PASSWORD: ci_installer_password
+          MYSQL_ROOT_PASSWORD: ci_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, fileinfo, pdo_mysql, pdo_sqlite, curl, openssl, zip, sodium
+          coverage: none
+      - name: Install PHP dependencies and compile QA assets
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Build source-guarded integrated QA ZIP and verify permissions
+        run: |
+          bash scripts/build-qa-package.sh
+          unzip -tq dist/Barama-Laravel-Integrated-QA.zip
+          sha256sum -c dist/Barama-Laravel-Integrated-QA.zip.sha256
+      - name: Isolated Apache root-domain rewrite and private-file protection
+        run: bash tests/Installer/RootApacheSmoke.sh
+      - name: Isolated five-step HTTP installer against a fresh MySQL 8 database
+        env:
+          INSTALLER_TEST_DB: barama_installer_qa
+          INSTALLER_TEST_USER: barama
+          INSTALLER_TEST_PASSWORD: ci_installer_password
+        run: |
+          set -Eeuo pipefail
+          WORK="$(mktemp -d /tmp/barama-independent-installer.XXXXXXXX)"
+          trap 'rm -rf -- "$WORK"' EXIT
+          unzip -q dist/Barama-Laravel-Integrated-QA.zip -d "$WORK"
+          cd "$WORK/Barama-Laravel-Integrated-QA"
+          test ! -e .env
+          test ! -d .git
+          test ! -d node_modules
+          test "$(stat -c '%a' public/index.php)" = 644
+          php tests/Installer/RootRoutingTest.php
+          php -S 127.0.0.1:8765 -t public > "$WORK/installer-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; rm -rf -- "$WORK"' EXIT
+          python3 tests/Installer/InstallerHttpAcceptance.py
+          php -r '
+            $dbh = new PDO("mysql:host=127.0.0.1;dbname=barama_installer_qa;charset=utf8mb4", "barama", "ci_installer_password");
+            $record = $dbh->query("SELECT email,system_role FROM users LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            if (!$record || $record["email"] !== "installer-test@example.invalid" || $record["system_role"] !== "super_admin") {
+                exit(1);
+            }
+            echo "ISOLATED_INSTALLER_ADMIN=PASS\n";
+          '
+          APP_ENV=testing APP_DEBUG=false DB_CONNECTION=sqlite DB_DATABASE=:memory: \
+            SESSION_DRIVER=array CACHE_STORE=array composer test
