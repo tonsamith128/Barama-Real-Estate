@@ -7,6 +7,7 @@ use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Developer\Media\ListingGalleryController;
 use App\Http\Controllers\Developer\Media\ProjectGalleryController;
+use App\Http\Controllers\Developer\Catalog\CatalogRevisionController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
@@ -63,6 +64,10 @@ Route::middleware(['auth', 'verified'])
             ->middleware('throttle:15,1')->name('projects.update');
         Route::post('/company/{company}/projects/{project}/submit', [DeveloperProjectController::class, 'submit'])
             ->middleware('throttle:10,1')->name('projects.submit');
+        Route::get('/company/{company}/projects/{project}/history', [CatalogRevisionController::class, 'project'])
+            ->name('projects.history');
+        Route::get('/company/{company}/properties/{property}/history', [CatalogRevisionController::class, 'property'])
+            ->name('properties.history');
         Route::get('/company/{company}/properties/{property}/edit', [DeveloperPropertyController::class, 'edit'])
             ->name('properties.edit');
         Route::put('/company/{company}/properties/{property}', [DeveloperPropertyController::class, 'update'])
