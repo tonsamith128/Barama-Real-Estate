@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Domain\RealEstate\MarketplaceStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -15,7 +16,7 @@ final class Company extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name', 'slug', 'company_type', 'status', 'description', 'published_at',
+        'name', 'slug', 'company_type', 'location_id', 'status', 'description', 'published_at',
     ];
 
     protected function casts(): array
@@ -28,6 +29,11 @@ final class Company extends Model
         return $query->where('status', MarketplaceStatus::COMPANY_APPROVED)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function projects(): HasMany
