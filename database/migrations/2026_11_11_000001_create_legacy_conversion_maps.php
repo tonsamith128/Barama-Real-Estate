@@ -69,6 +69,12 @@ return new class extends Migration {
                 'Cannot delete legacy identity evidence while mappings exist.'
             );
         }
+        if (Schema::hasTable('legacy_import_batches')
+            && DB::table('legacy_import_batches')->exists()) {
+            throw new RuntimeException(
+                'Cannot discard recorded legacy import batches during rollback.'
+            );
+        }
         Schema::dropIfExists('legacy_company_membership_reviews');
         Schema::dropIfExists('legacy_identity_maps');
         Schema::dropIfExists('legacy_import_batches');
