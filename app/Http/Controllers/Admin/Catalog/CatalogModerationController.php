@@ -9,6 +9,7 @@ use App\Models\CompanyMembership;
 use App\Models\Listing;
 use App\Models\Project;
 use App\Services\Moderation\CatalogReviewService;
+use App\Services\Moderation\CompanyReviewService;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,8 @@ final class CatalogModerationController
             'pending' => Listing::query()->where('status', 'pending')
                 ->with('property.company')->orderBy('created_at')->paginate(20),
             'companies' => Company::query()->orderBy('name')->paginate(20, ['*'], 'companies_page'),
+            'pendingCompanies' => Company::query()->where('status', 'pending')
+                ->orderBy('created_at')->orderBy('id')->paginate(10, ['*'], 'pending_companies_page'),
         ]);
     }
 
@@ -74,6 +77,28 @@ final class CatalogModerationController
 
         return redirect()->route('admin.catalog.index')
             ->with('notice', 'Company approved and assigned to the verified owner.');
+    }
+
+    public function companyDecision(
+        Request $request,
+        Company $company,
+        CompanyReviewService $reviews,
+    ): RedirectResponse {
+        $this->authorizeAdmin($request);
+
+        $data = $request->validate([
+            'decision' => ['required', Rule::in(['approved', 'rejected'])],
+            'reason' => ['nullable', 'required_if:decision,rejected', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $reviews->decide(
+            $request->user(),
+            $company,
+            $data['decision'],
+            $data['reason'] ?? null,
+        );
+
+        return back()->with('notice', 'Company review completed.');
     }
 
     public function approve(Request $request, Listing $listing): RedirectResponse
