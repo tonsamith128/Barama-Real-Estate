@@ -20,6 +20,8 @@
                 <h2>{{ $search->name }}</h2>
                 <div class="customer-search-card__tags">
                     @if(!empty($search->filters['q']))<span>{{ $search->filters['q'] }}</span>@endif
+                    @if(!empty($search->filters['location']))<span>Location: {{ $search->filters['location'] }}</span>@endif
+                    @if(!empty($search->filters['min_bedrooms']))<span>{{ $search->filters['min_bedrooms'] }}+ bedrooms</span>@endif
                     @if(!empty($search->filters['offer']))<span>For {{ $search->filters['offer'] }}</span>@endif
                     @if(!empty($search->filters['type']))<span>{{ ucfirst(str_replace('_',' ',$search->filters['type'])) }}</span>@endif
                     @if(isset($search->filters['min_price']))<span>Minimum USD {{ number_format((float)$search->filters['min_price']) }}</span>@endif
