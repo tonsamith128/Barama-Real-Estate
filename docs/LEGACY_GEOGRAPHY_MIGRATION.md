@@ -191,3 +191,34 @@ independently configured host cron/systemd tasks with a narrowly scoped,
 read-only process configuration review before adapting the functionality.
 
 **No deletion, auto-updating, or deployment is authorized by these audits.**
+
+
+## Corrected owner-run live update-worker audit — November 10, 2026
+
+The corrected metadata audit completed successfully against the deployed
+Pure PHP installation and verified all three previously captured SHA-256
+fingerprints with `SHA256_MATCH_PREVIOUS_AUDIT=YES` and
+`STATE=VERIFIED_UNCHANGED`.
+
+| Live-only artifact | Specific literal reference files | Risk-related lexical matches |
+|---|---:|---|
+| `ProductionHostWorkerV1.php` | 0 | 3 file-mutation, 4 database-operation |
+| `PortableUpdateApplyV1.php` | 0 | 6 file-mutation, 15 database-operation, 6 archive, 9 hash/signature |
+| `barama-updater-completed-receipt-v100.php` | 0 | 3 hash/signature |
+
+The reference scanner used only each exact known class name and filename
+(including the filename stem), across 351 first-party source files; it no
+longer used the spurious `is` token. Its earlier 326-reference result is
+**invalid** and must not be used in release decisions.
+
+**These are not confirmed-unused files.** A zero literal reference count does
+not inspect PHP autoloaded dynamic classes, external shell scripts, cron,
+systemd or database-stored updater configuration. Lexical matches are
+non-executing indicators, not independently reviewed behavior. No source
+contents, credentials or SQL rows were printed, and live files remained
+unchanged.
+
+**Disposition:** retain all five extra files; do not delete, run updater
+apply methods, deploy or attempt Laravel cutover. Next release gates are
+independent updater code review, legacy-to-Laravel data adapter dry runs,
+backup and rollback rehearsal, and physical hosting acceptance.
