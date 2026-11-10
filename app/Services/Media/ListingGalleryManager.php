@@ -75,7 +75,9 @@ final class ListingGalleryManager
                     }
                 }
 
-                $count = (clone $gallery)->count();
+                $existingIds = (clone $gallery)->orderBy('position')->orderBy('id')
+                    ->pluck('id')->map(fn ($id) => (int) $id)->all();
+                $count = count($existingIds);
                 if ($count >= self::MAX_IMAGES) {
                     throw ValidationException::withMessages([
                         'image' => 'A listing may contain at most 20 images.',
@@ -110,6 +112,9 @@ final class ListingGalleryManager
                     'position' => (int) ((clone $gallery)->max('position') ?? -1) + 1,
                     'is_primary' => $count === 0,
                 ]);
+                $this->revisions->record($actor, 'listing', $locked, 'gallery_changed',
+                    ['media_attachment_ids' => $existingIds],
+                    ['media_attachment_ids' => [...$existingIds, (int) $attachment->getKey()]]);
                 DB::table('audit_events')->insert([
                     'actor_id' => $actor->getKey(),
                     'action' => 'developer.listing.media_added',
@@ -138,9 +143,15 @@ final class ListingGalleryManager
         DB::transaction(function () use ($actor, $company, $listing, $attachment): void {
             $locked = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
             $this->authorizeDraft($actor, $company, $locked);
+            $beforeIds = MediaAttachment::query()
+                ->where('entity_type', 'listing')->where('entity_id', $locked->getKey())
+                ->where('collection', 'gallery')
+                ->orderBy('position')->orderBy('id')
+                ->pluck('id')->map(fn ($id) => (int) $id)->all();
             $link = MediaAttachment::query()
                 ->where('entity_type', 'listing')
                 ->where('entity_id', $locked->getKey())
+                ->where('collection', 'gallery')
                 ->whereKey($attachment->getKey())->firstOrFail();
             $link->delete(); // retain shared media and physical assets
             $remaining = MediaAttachment::query()
@@ -149,6 +160,9 @@ final class ListingGalleryManager
             foreach ($remaining as $i => $item) {
                 $item->update(['position' => $i, 'is_primary' => $i === 0]);
             }
+            $this->revisions->record($actor, 'listing', $locked, 'gallery_changed',
+                ['media_attachment_ids' => $beforeIds],
+                ['media_attachment_ids' => $remaining->pluck('id')->map(fn ($id) => (int) $id)->all()]);
             DB::table('audit_events')->insert([
                 'actor_id' => $actor->getKey(),
                 'action' => 'developer.listing.media_detached',
