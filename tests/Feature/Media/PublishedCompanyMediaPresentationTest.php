@@ -79,10 +79,12 @@ final class PublishedCompanyMediaPresentationTest extends TestCase
             ->assertOk()->assertSee($logoUrl)->assertSee($coverUrl)
             ->assertSee('Property Group eligible-company');
 
-        $this->get($logoUrl)
-            ->assertOk()->assertHeader('Content-Type', 'image/png')
-            ->assertHeader('X-Content-Type-Options', 'nosniff')
-            ->assertHeader('Cache-Control', 'private, no-store');
+        $response = $this->get($logoUrl);
+        $response->assertOk()->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $cache = (string) $response->baseResponse->headers->get('Cache-Control');
+        $this->assertStringContainsString('no-store', $cache);
+        $this->assertStringContainsString('private', $cache);
 
         $this->get($coverUrl)
             ->assertOk()->assertHeader('Content-Type', 'image/png');
@@ -134,7 +136,11 @@ final class PublishedCompanyMediaPresentationTest extends TestCase
         $attachment->update(['collection' => 'history_logo', 'is_primary' => false]);
         $this->attach($company, $replacement, 'logo');
 
-        $this->get($url)->assertOk()->assertHeader('Cache-Control', 'private, no-store');
+        $response = $this->get($url);
+        $response->assertOk();
+        $cache = (string) $response->baseResponse->headers->get('Cache-Control');
+        $this->assertStringContainsString('no-store', $cache);
+        $this->assertStringContainsString('private', $cache);
         $this->assertDatabaseHas('media_assets', ['id' => $original->getKey()]);
         $this->assertDatabaseHas('media_assets', ['id' => $replacement->getKey()]);
         $this->get(route('media.demo.show', ['digest' => $original->checksum_sha256]))
