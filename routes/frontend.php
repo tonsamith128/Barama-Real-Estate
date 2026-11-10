@@ -13,6 +13,7 @@ use App\Http\Controllers\Frontend\Legal\LegalPageController;
 use App\Http\Controllers\Frontend\Inquiries\InquiryController;
 use App\Http\Controllers\Frontend\Media\PublicDemoMediaController;
 use App\Http\Controllers\Frontend\Media\PublicHomepageMediaController;
+use App\Http\Controllers\Frontend\Media\PublicCompanyMediaController;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('seo.sitemap');
@@ -36,6 +37,10 @@ Route::get('/company/{slug}', [CompanyController::class, 'show'])->name('compani
 
 Route::get('/media/homepage/{asset}', PublicHomepageMediaController::class)
     ->name('media.homepage.show');
+
+Route::get('/media/company/{slug}/{collection}', PublicCompanyMediaController::class)
+    ->whereIn('collection', ['logo', 'cover'])
+    ->name('media.company.show');
 
 Route::get('/media/demo/{digest}', PublicDemoMediaController::class)->name('media.demo.show');
 
