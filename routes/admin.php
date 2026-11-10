@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Media\CompanyMediaController;
 use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
+use App\Http\Controllers\Admin\Geography\GeographyController;
 
 // Every action independently authorizes the verified system administrator.
 Route::middleware(['auth', 'verified', 'throttle:30,1'])
@@ -85,6 +86,19 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/media/{asset}', [MediaLibraryController::class, 'preview'])->name('media.preview');
         Route::patch('/media/{asset}/metadata', [MediaLibraryController::class, 'updateMetadata'])
             ->middleware('throttle:20,1')->name('media.metadata.update');
+        Route::get('/geography', [GeographyController::class, 'index'])->name('geography.index');
+        Route::post('/geography/countries', [GeographyController::class, 'registerCountry'])
+            ->middleware('throttle:10,1')->name('geography.countries.store');
+        Route::post('/geography/countries/{country}/enable', [GeographyController::class, 'enable'])
+            ->middleware('throttle:10,1')->name('geography.countries.enable');
+        Route::post('/geography/countries/{country}/disable', [GeographyController::class, 'disable'])
+            ->middleware('throttle:10,1')->name('geography.countries.disable');
+        Route::post('/geography/countries/{country}/default', [GeographyController::class, 'default'])
+            ->middleware('throttle:10,1')->name('geography.countries.default');
+        Route::post('/geography/locations', [GeographyController::class, 'storeLocation'])
+            ->middleware('throttle:10,1')->name('geography.locations.store');
+        Route::put('/geography/locations/{location}', [GeographyController::class, 'updateLocation'])
+            ->middleware('throttle:10,1')->name('geography.locations.update');
         Route::get('/catalog', [CatalogModerationController::class, 'index'])->name('catalog.index');
         Route::post('/catalog/companies', [CatalogModerationController::class, 'createCompany'])
             ->middleware('throttle:10,1')->name('catalog.companies.create');
