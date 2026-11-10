@@ -65,7 +65,8 @@ final class ListingGalleryManager
                 $this->authorizeDraft($actor, $company, $locked);
                 $gallery = MediaAttachment::query()
                     ->where('entity_type', 'listing')
-                    ->where('entity_id', $locked->getKey());
+                    ->where('entity_id', $locked->getKey())
+                    ->where('collection', 'gallery');
                 $existing = MediaAsset::query()->where('checksum_sha256', $sha)->first();
 
                 if ($existing !== null) {
@@ -156,6 +157,7 @@ final class ListingGalleryManager
             $link->delete(); // retain shared media and physical assets
             $remaining = MediaAttachment::query()
                 ->where('entity_type', 'listing')->where('entity_id', $locked->getKey())
+                ->where('collection', 'gallery')
                 ->orderBy('position')->orderBy('id')->get();
             foreach ($remaining as $i => $item) {
                 $item->update(['position' => $i, 'is_primary' => $i === 0]);
