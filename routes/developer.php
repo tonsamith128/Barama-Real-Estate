@@ -11,6 +11,9 @@ use App\Http\Controllers\Developer\Catalog\CatalogRevisionController;
 use App\Http\Controllers\Developer\Inquiries\DeveloperInquiryController;
 use App\Http\Controllers\Developer\Properties\DeveloperPropertyController;
 use App\Http\Controllers\Developer\Projects\DeveloperProjectController;
+use App\Http\Controllers\Developer\Projects\ProjectMilestoneController;
+use App\Http\Controllers\Developer\Properties\ListingOfferController;
+use App\Http\Controllers\Developer\Catalog\CatalogAmenityController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
 use App\Http\Controllers\Developer\Companies\CompanyApplicationController;
 
@@ -64,6 +67,16 @@ Route::middleware(['auth', 'verified'])
             ->middleware('throttle:15,1')->name('projects.update');
         Route::post('/company/{company}/projects/{project}/submit', [DeveloperProjectController::class, 'submit'])
             ->middleware('throttle:10,1')->name('projects.submit');
+        Route::put('/company/{company}/projects/{project}/amenities', [CatalogAmenityController::class, 'project'])
+            ->middleware('throttle:15,1')->name('projects.amenities.update');
+        Route::post('/company/{company}/projects/{project}/milestones', [ProjectMilestoneController::class, 'store'])
+            ->middleware('throttle:15,1')->name('projects.milestones.store');
+        Route::put('/company/{company}/projects/{project}/milestones/{milestone}', [ProjectMilestoneController::class, 'update'])
+            ->middleware('throttle:15,1')->name('projects.milestones.update');
+        Route::delete('/company/{company}/projects/{project}/milestones/{milestone}', [ProjectMilestoneController::class, 'destroy'])
+            ->middleware('throttle:15,1')->name('projects.milestones.destroy');
+        Route::post('/company/{company}/projects/{project}/milestones/{milestone}/move', [ProjectMilestoneController::class, 'move'])
+            ->middleware('throttle:15,1')->name('projects.milestones.move');
         Route::get('/company/{company}/projects/{project}/history', [CatalogRevisionController::class, 'project'])
             ->name('projects.history');
         Route::get('/company/{company}/properties/{property}/history', [CatalogRevisionController::class, 'property'])
@@ -78,6 +91,14 @@ Route::middleware(['auth', 'verified'])
             ->middleware('throttle:15,1')->name('properties.store');
         Route::post('/company/{company}/properties/{property}/submit', [DeveloperPropertyController::class, 'submit'])
             ->middleware('throttle:10,1')->name('properties.submit');
+        Route::put('/company/{company}/properties/{property}/amenities', [CatalogAmenityController::class, 'property'])
+            ->middleware('throttle:15,1')->name('properties.amenities.update');
+        Route::post('/company/{company}/properties/{property}/offers', [ListingOfferController::class, 'store'])
+            ->middleware('throttle:10,1')->name('properties.offers.store');
+        Route::put('/company/{company}/properties/{property}/offers/{offer}', [ListingOfferController::class, 'update'])
+            ->middleware('throttle:15,1')->name('properties.offers.update');
+        Route::post('/company/{company}/properties/{property}/offers/{offer}/submit', [ListingOfferController::class, 'submit'])
+            ->middleware('throttle:10,1')->name('properties.offers.submit');
     });
 
 // All Developer mutations require active owner/manager company membership.
