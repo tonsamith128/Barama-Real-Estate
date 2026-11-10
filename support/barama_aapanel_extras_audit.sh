@@ -81,7 +81,7 @@ for relative, tokens in targets:
         print("STATE=UNREADABLE")
         continue
 
-    digest = hashlib.sha1(f"blob {len(data)}\\0".encode("ascii") + data).hexdigest()
+    digest = hashlib.sha1(f"blob {len(data)}".encode("ascii") + bytes([0]) + data).hexdigest()
     # SHA-1 is only for Git blob identity; SHA-256 is included separately.
     print("STATE=PRESENT")
     print(f"SIZE_BYTES={len(data)}")
