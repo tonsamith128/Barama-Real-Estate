@@ -101,34 +101,11 @@ final class CatalogModerationController
         return back()->with('notice', 'Company review completed.');
     }
 
-    public function approve(Request $request, Listing $listing): RedirectResponse
-    {
+    public function approve(
+        Request $request, Listing $listing, CatalogReviewService $moderation,
+    ): RedirectResponse {
         $this->authorizeAdmin($request);
-        $actorId = $request->user()->getKey();
-        DB::transaction(function () use ($listing, $actorId): void {
-            $offer = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
-            $property = $offer->property()->lockForUpdate()->firstOrFail();
-            $company = $property->company()->firstOrFail();
-
-            abort_unless($company->status === 'approved' &&
-                $company->published_at !== null &&
-                $company->published_at->lte(now()), 422);
-            abort_unless($property->status === 'pending' && $offer->status === 'pending', 422);
-
-            $property->update(['status' => 'approved']);
-            $offer->update([
-                'status' => 'published',
-                'published_at' => now(),
-            ]);
-            DB::table('audit_events')->insert([
-                'actor_id' => $actorId,
-                'action' => 'admin.listing.approved',
-                'subject_type' => 'listing',
-                'subject_id' => $offer->getKey(),
-                'context' => json_encode(['company_id' => $company->getKey()], JSON_THROW_ON_ERROR),
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-        });
+        $moderation->approveListing($request->user(), $listing);
 
         return redirect()->route('admin.catalog.index')
             ->with('notice', 'Property and listing approved for public display.');
