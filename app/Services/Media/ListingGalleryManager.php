@@ -37,7 +37,7 @@ final class ListingGalleryManager
             404
         );
         abort_unless($listing->status === 'draft'
-            && $listing->property->status === 'draft', 409);
+            && in_array($listing->property->status, ['draft', 'approved'], true), 409);
     }
 
     public function upload(
