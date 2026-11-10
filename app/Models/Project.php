@@ -51,6 +51,14 @@ final class Project extends Model
         return $this->belongsTo(Location::class);
     }
 
+    public function mediaAttachments(): HasMany
+    {
+        return $this->hasMany(MediaAttachment::class, 'entity_id')
+            ->where('entity_type', 'project')
+            ->where('collection', 'gallery')
+            ->orderBy('position')->orderBy('id');
+    }
+
     public function properties(): HasMany
     {
         return $this->hasMany(Property::class);
