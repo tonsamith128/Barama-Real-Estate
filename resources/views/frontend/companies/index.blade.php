@@ -12,6 +12,11 @@
             @forelse ($companies as $company)
                 <article class="property-card">
                     <h2 class="property-card__title"><a href="{{ route('companies.show', $company->slug) }}">{{ $company->name }}</a></h2>
+                    @if(isset($companyMedia[$company->getKey()]['logo']))
+                        <img loading="lazy" decoding="async"
+                            src="{{ route('media.company.show', ['slug' => $company->slug, 'collection' => 'logo']) }}"
+                            alt="{{ $company->name }} company logo" width="72" height="72">
+                    @endif
                     <p class="property-card__meta">{{ ucfirst(str_replace('_', ' ', $company->company_type)) }}</p>
                     @if ($company->description)
                         <p>{{ \Illuminate\Support\Str::limit($company->description, 150) }}</p>
