@@ -6,6 +6,19 @@
             <a href="{{ route('projects.index') }}">Projects</a>
         </nav>
         <article class="property-detail">
+            @php($cover = $project->mediaAttachments->first()?->asset)
+            @if($cover)
+                <img class="property-detail__image" src="{{ route('media.demo.show', $cover->checksum_sha256) }}"
+                    alt="{{ $cover->alt_text ?: $project->name }}" loading="lazy">
+            @endif
+            @if($project->mediaAttachments->count() > 1)
+                <div class="property-photo-gallery" aria-label="Project photo gallery">
+                    @foreach($project->mediaAttachments->skip(1) as $attachment)
+                        <img src="{{ route('media.demo.show', $attachment->asset->checksum_sha256) }}"
+                            alt="{{ $attachment->asset->alt_text ?: $project->name }}" loading="lazy">
+                    @endforeach
+                </div>
+            @endif
             <p class="marketplace__eyebrow">{{ ucfirst(str_replace('_', ' ', $project->project_type)) }}</p>
             <h1>{{ $project->name }}</h1>
             <p>{{ $project->company->name }}</p>
