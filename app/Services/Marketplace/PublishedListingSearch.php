@@ -24,11 +24,23 @@ final class PublishedListingSearch
             $query->whereHas('property', function (Builder $property) use ($keyword): void {
                 $property->where(function (Builder $match) use ($keyword): void {
                     $match->where('title', 'like', '%'.$keyword.'%')
+                        ->orWhere('address_line', 'like', '%'.$keyword.'%')
                         ->orWhere('reference_code', 'like', '%'.$keyword.'%')
                         ->orWhereHas('company', fn (Builder $company) => $company
                             ->where('name', 'like', '%'.$keyword.'%'));
                 });
             });
+        }
+
+        $location = trim((string) ($filters['location'] ?? ''));
+        if ($location !== '') {
+            $query->whereHas('property', fn (Builder $property) => $property
+                ->where('address_line', 'like', '%'.$location.'%'));
+        }
+
+        if (isset($filters['min_bedrooms'])) {
+            $query->whereHas('property', fn (Builder $property) => $property
+                ->where('bedrooms', '>=', (int) $filters['min_bedrooms']));
         }
 
         if (!empty($filters['offer'])) {
