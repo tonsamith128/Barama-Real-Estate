@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Developer\Properties;
 use App\Domain\RealEstate\MarketplaceStatus;
 use App\Models\Company;
 use App\Models\Project;
+use App\Models\Location;
 use App\Models\Property;
 use App\Services\Developer\CompanyCatalogWriter;
 use Illuminate\Http\RedirectResponse;
@@ -43,6 +44,7 @@ final class DeveloperPropertyController
             'filters' => ['q' => $keyword, 'status' => $filters['status'] ?? ''],
             'projects' => Project::query()->where('company_id', $company->getKey())->orderBy('name')->get(),
             'types' => MarketplaceStatus::PROPERTY_TYPES,
+            'locations' => Location::query()->where('status', 'active')->orderBy('country_code')->orderBy('name')->limit(500)->get(),
         ]);
     }
 
@@ -65,6 +67,8 @@ final class DeveloperPropertyController
             'property' => $property->load('listings'),
             'projects' => Project::query()->where('company_id', $company->getKey())->orderBy('name')->get(),
             'types' => MarketplaceStatus::PROPERTY_TYPES,
+            'locations' => Location::query()->where('status', 'active')
+                ->orderBy('country_code')->orderBy('name')->limit(500)->get(),
         ]);
     }
 
@@ -92,11 +96,23 @@ final class DeveloperPropertyController
             'bathrooms' => ['nullable','integer','between:0,100'],
             'area_value' => ['nullable','numeric','between:0,9999999999'],
             'area_unit' => ['nullable',Rule::in(['m2','sqft','acre','hectare'])],
+            'location_id' => ['nullable', 'integer', Rule::exists('locations','id')->where('status','active')],
+            'parking_spaces' => ['nullable','integer','between:0,1000'],
+            'floor_number' => ['nullable','integer','between:-30,1000'],
+            'total_floors' => ['nullable','integer','between:0,1000'],
+            'land_area_value' => ['nullable','numeric','between:0,999999999999'],
+            'land_area_unit' => ['nullable',Rule::in(['m2','sqft','acre','hectare'])],
+            'furnishing_status' => ['nullable',Rule::in(['unfurnished','partly_furnished','furnished'])],
+            'year_built' => ['nullable','integer','between:1800,2200'],
+            'latitude' => ['nullable','numeric','between:-90,90','required_with:longitude'],
+            'longitude' => ['nullable','numeric','between:-180,180','required_with:latitude'],
             'transaction_type' => ['required',Rule::in(['sale','rent'])],
             'price' => ['required','numeric','between:0,999999999999'],
             'currency' => ['required',Rule::in(['USD','KHR'])],
             'pricing_period' => ['nullable','string','max:24'],
             'negotiable' => ['nullable','boolean'],
+            'deposit_amount' => ['nullable','numeric','between:0,999999999999'],
+            'available_from' => ['nullable','date_format:Y-m-d'],
         ]);
     }
 

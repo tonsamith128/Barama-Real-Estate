@@ -18,7 +18,9 @@ final class Property extends Model
     protected $fillable = [
         'company_id', 'project_id', 'reference_code', 'title', 'property_type',
         'status', 'description', 'address_line', 'bedrooms', 'bathrooms',
-        'area_value', 'area_unit',
+        'area_value', 'area_unit', 'location_id', 'parking_spaces',
+        'floor_number', 'total_floors', 'land_area_value', 'land_area_unit',
+        'furnishing_status', 'year_built', 'latitude', 'longitude',
     ];
 
     protected function casts(): array
@@ -27,6 +29,13 @@ final class Property extends Model
             'bedrooms' => 'integer',
             'bathrooms' => 'integer',
             'area_value' => 'decimal:2',
+            'parking_spaces' => 'integer',
+            'floor_number' => 'integer',
+            'total_floors' => 'integer',
+            'land_area_value' => 'decimal:2',
+            'year_built' => 'integer',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 
@@ -38,6 +47,11 @@ final class Property extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function project(): BelongsTo

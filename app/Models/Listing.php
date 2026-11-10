@@ -18,6 +18,7 @@ final class Listing extends Model
     protected $fillable = [
         'property_id', 'slug', 'transaction_type', 'status', 'price',
         'currency', 'pricing_period', 'negotiable', 'published_at', 'expires_at',
+        'deposit_amount', 'available_from',
     ];
 
     protected function casts(): array
@@ -27,6 +28,8 @@ final class Listing extends Model
             'negotiable' => 'boolean',
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'deposit_amount' => 'decimal:2',
+            'available_from' => 'date',
         ];
     }
 

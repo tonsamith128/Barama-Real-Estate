@@ -18,11 +18,13 @@
             @foreach($projects as $project)<option value="{{ $project->id }}">{{ $project->name }}</option>@endforeach</select></label>
         <label>Location/address <input name="address_line" value="{{ old('address_line') }}"></label>
         <label>Description <textarea name="description" rows="4">{{ old('description') }}</textarea></label>
+        @include('developer.catalog.property-legacy-fields', ['property' => null])
         <label>Bedrooms <input type="number" name="bedrooms" min="0" max="100" value="{{ old('bedrooms') }}"></label>
         <label>Bathrooms <input type="number" name="bathrooms" min="0" max="100" value="{{ old('bathrooms') }}"></label>
         <label>Transaction <select name="transaction_type"><option value="sale">Sale</option><option value="rent">Rent</option></select></label>
         <label>Price <input type="number" name="price" min="0" step=".01" required></label>
         <label>Currency <select name="currency"><option value="USD">USD</option><option value="KHR">KHR</option></select></label>
+        @include('developer.catalog.listing-legacy-fields', ['listing' => null])
         <button type="submit">Save private draft</button>
     </form></section>
     <section class="admin-card">
@@ -61,6 +63,14 @@
                                             @if($property->status === 'draft' && $listing->status === 'draft')
                                                 <img src="{{ route('developer.gallery.preview', [$company, $listing, $link->asset]) }}"
                                                     alt="{{ $link->asset->alt_text ?: $property->title }}" loading="lazy">
+                                                @if($link->is_primary)<strong>Primary photo</strong>@endif
+                                                @foreach(['primary'=>'Make primary', 'up'=>'Move up', 'down'=>'Move down'] as $action=>$label)
+                                                    <form method="post" action="{{ route('developer.gallery.order', [$company, $listing, $link]) }}">
+                                                        @csrf
+                                                        <input type="hidden" name="action" value="{{ $action }}">
+                                                        <button type="submit">{{ $label }}</button>
+                                                    </form>
+                                                @endforeach
                                                 <form method="post" action="{{ route('developer.gallery.destroy', [$company, $listing, $link]) }}">
                                                     @csrf @method('DELETE')
                                                     <button type="submit">Remove</button>
@@ -84,6 +94,7 @@
                             @endif
                         </section>
                     @endforeach
+                    <p><a href="{{ route('developer.properties.history', [$company, $property]) }}">Revision history</a></p>
                     @if(in_array($property->status, ['draft', 'rejected'], true))
                         <p><a href="{{ route('developer.properties.edit', [$company, $property]) }}">Edit property draft</a></p>
                     @endif

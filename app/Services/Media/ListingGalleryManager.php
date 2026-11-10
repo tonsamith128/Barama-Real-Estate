@@ -22,7 +22,12 @@ final class ListingGalleryManager
     public const MAX_IMAGES = 20;
     public const MAX_BYTES = 12 * 1024 * 1024;
 
-    public function __construct(private readonly CompanyCatalogWriter $access) {}
+    public function __construct(
+        private readonly CompanyCatalogWriter $access,
+        private readonly PrivateGalleryImageInspector $inspector,
+        private readonly GalleryOrderService $order,
+        private readonly \App\Services\Developer\CatalogRevisionRecorder $revisions,
+    ) {}
 
     public function authorizeDraft(User $actor, Company $company, Listing $listing): void
     {
@@ -43,35 +48,11 @@ final class ListingGalleryManager
         ?string $alt = null,
     ): MediaAttachment {
         $this->authorizeDraft($actor, $company, $listing);
-        if (!$file->isValid() || $file->getSize() < 1 ||
-            $file->getSize() > self::MAX_BYTES) {
-            throw ValidationException::withMessages([
-                'image' => 'Please upload an image no larger than 12 MB.',
-            ]);
-        }
-
-        $source = $file->getRealPath();
-        $info = $source ? @getimagesize($source) : false;
-        $mimes = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-        ];
-        if (!is_array($info) || !isset($mimes[$info['mime'] ?? '']) ||
-            (int) $info[0] < 1 || (int) $info[1] < 1 ||
-            (int) $info[0] > 8000 || (int) $info[1] > 8000 ||
-            (int) $info[0] * (int) $info[1] > 24000000) {
-            throw ValidationException::withMessages([
-                'image' => 'Only valid JPEG, PNG or WebP images up to 24 megapixels are accepted.',
-            ]);
-        }
-
-        $sha = hash_file('sha256', $source);
-        if (!is_string($sha)) {
-            throw new RuntimeException('Could not validate image integrity.');
-        }
-        $mime = $info['mime'];
-        $name = $sha.'.'.$mimes[$mime];
+        $validated = $this->inspector->inspect($file);
+        $sha = $validated['sha'];
+        $mime = $validated['mime'];
+        $name = $validated['name'];
+        $info = $validated['info'];
         $disk = Storage::disk('local');
         $savedByThisRequest = false;
 
@@ -84,7 +65,8 @@ final class ListingGalleryManager
                 $this->authorizeDraft($actor, $company, $locked);
                 $gallery = MediaAttachment::query()
                     ->where('entity_type', 'listing')
-                    ->where('entity_id', $locked->getKey());
+                    ->where('entity_id', $locked->getKey())
+                    ->where('collection', 'gallery');
                 $existing = MediaAsset::query()->where('checksum_sha256', $sha)->first();
 
                 if ($existing !== null) {
@@ -94,7 +76,9 @@ final class ListingGalleryManager
                     }
                 }
 
-                $count = (clone $gallery)->count();
+                $existingIds = (clone $gallery)->orderBy('position')->orderBy('id')
+                    ->pluck('id')->map(fn ($id) => (int) $id)->all();
+                $count = count($existingIds);
                 if ($count >= self::MAX_IMAGES) {
                     throw ValidationException::withMessages([
                         'image' => 'A listing may contain at most 20 images.',
@@ -129,6 +113,9 @@ final class ListingGalleryManager
                     'position' => (int) ((clone $gallery)->max('position') ?? -1) + 1,
                     'is_primary' => $count === 0,
                 ]);
+                $this->revisions->record($actor, 'listing', $locked, 'gallery_changed',
+                    ['media_attachment_ids' => $existingIds],
+                    ['media_attachment_ids' => [...$existingIds, (int) $attachment->getKey()]]);
                 DB::table('audit_events')->insert([
                     'actor_id' => $actor->getKey(),
                     'action' => 'developer.listing.media_added',
@@ -157,17 +144,27 @@ final class ListingGalleryManager
         DB::transaction(function () use ($actor, $company, $listing, $attachment): void {
             $locked = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
             $this->authorizeDraft($actor, $company, $locked);
+            $beforeIds = MediaAttachment::query()
+                ->where('entity_type', 'listing')->where('entity_id', $locked->getKey())
+                ->where('collection', 'gallery')
+                ->orderBy('position')->orderBy('id')
+                ->pluck('id')->map(fn ($id) => (int) $id)->all();
             $link = MediaAttachment::query()
                 ->where('entity_type', 'listing')
                 ->where('entity_id', $locked->getKey())
+                ->where('collection', 'gallery')
                 ->whereKey($attachment->getKey())->firstOrFail();
             $link->delete(); // retain shared media and physical assets
             $remaining = MediaAttachment::query()
                 ->where('entity_type', 'listing')->where('entity_id', $locked->getKey())
+                ->where('collection', 'gallery')
                 ->orderBy('position')->orderBy('id')->get();
             foreach ($remaining as $i => $item) {
                 $item->update(['position' => $i, 'is_primary' => $i === 0]);
             }
+            $this->revisions->record($actor, 'listing', $locked, 'gallery_changed',
+                ['media_attachment_ids' => $beforeIds],
+                ['media_attachment_ids' => $remaining->pluck('id')->map(fn ($id) => (int) $id)->all()]);
             DB::table('audit_events')->insert([
                 'actor_id' => $actor->getKey(),
                 'action' => 'developer.listing.media_detached',
@@ -181,4 +178,33 @@ final class ListingGalleryManager
             ]);
         });
     }
+
+    public function changeOrder(
+        User $actor, Company $company, Listing $listing,
+        MediaAttachment $attachment, string $action,
+    ): void {
+        $this->authorizeDraft($actor, $company, $listing);
+
+        DB::transaction(function () use ($actor, $company, $listing, $attachment, $action): void {
+            $locked = Listing::query()->lockForUpdate()->findOrFail($listing->getKey());
+            $this->authorizeDraft($actor, $company, $locked);
+            $positions = $this->order->change('listing', (int) $locked->getKey(),
+                (int) $attachment->getKey(), $action);
+
+            if ($positions['before'] !== $positions['after']) {
+                $this->revisions->record($actor, 'listing', $locked, 'gallery_changed',
+                    ['media_attachment_ids' => $positions['before']],
+                    ['media_attachment_ids' => $positions['after']]);
+                DB::table('audit_events')->insert([
+                    'actor_id' => $actor->getKey(),
+                    'action' => 'developer.listing.gallery_reordered',
+                    'subject_type' => 'listing',
+                    'subject_id' => $locked->getKey(),
+                    'context' => json_encode(['company_id' => $company->getKey()], JSON_THROW_ON_ERROR),
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+        });
+    }
+
 }

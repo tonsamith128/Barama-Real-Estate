@@ -25,6 +25,7 @@
             <label>Area unit <select name="area_unit"><option value="">Not specified</option>
                 @foreach(['m2','sqft','acre','hectare'] as $unit)<option value="{{ $unit }}" @selected(old('area_unit',$property->area_unit)===$unit)>{{ $unit }}</option>@endforeach
             </select></label>
+            @include('developer.catalog.property-legacy-fields', ['property' => $property])
             @foreach($property->listings as $listing)
                 <fieldset><legend>Listing: {{ $listing->transaction_type }}</legend>
                     <label>Transaction <select name="transaction_type">
@@ -35,6 +36,7 @@
                         @foreach(['USD','KHR'] as $currency)<option value="{{ $currency }}" @selected(old('currency',$listing->currency)===$currency)>{{ $currency }}</option>@endforeach
                     </select></label>
                     <label>Negotiable <input type="checkbox" name="negotiable" value="1" @checked(old('negotiable',$listing->negotiable))></label>
+                    @include('developer.catalog.listing-legacy-fields', ['listing' => $listing])
                 </fieldset>
             @endforeach
             <button type="submit">Save draft changes</button>

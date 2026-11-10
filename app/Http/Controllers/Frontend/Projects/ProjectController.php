@@ -19,7 +19,7 @@ final class ProjectController
     public function show(string $slug, PublishedProjectSearch $search): View
     {
         return view('frontend.projects.show', [
-            'project' => $search->findPublicBySlug($slug),
+            'project' => $search->findPublicBySlug($slug)->load('mediaAttachments.asset'),
         ]);
     }
 }
