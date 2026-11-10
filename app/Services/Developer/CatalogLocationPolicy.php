@@ -23,10 +23,24 @@ final class CatalogLocationPolicy
             return;
         }
 
-        if ($this->hierarchy->activePath($locationId) === []) {
+        $path = $this->hierarchy->activePath($locationId);
+        if ($path === []) {
             throw ValidationException::withMessages([
                 'location_id' => 'Choose an active location with a valid geographic hierarchy.',
             ]);
+        }
+
+        // Fresh installs without imported country governance retain existing
+        // location behavior. Once configured, disabled/unregistered countries
+        // cannot be selected for new catalog writes.
+        if (\App\Models\LocationCountry::query()->exists()) {
+            $country = strtoupper((string) end($path)->country_code);
+            if ($country === '' || !\App\Models\LocationCountry::query()
+                ->where('country_code', $country)->where('enabled', true)->exists()) {
+                throw ValidationException::withMessages([
+                    'location_id' => 'Selected location country is not enabled.',
+                ]);
+            }
         }
     }
 }
