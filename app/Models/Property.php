@@ -16,7 +16,7 @@ final class Property extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'project_id', 'reference_code', 'title', 'property_type',
+        'company_id', 'project_id', 'location_id', 'reference_code', 'title', 'property_type',
         'status', 'description', 'address_line', 'bedrooms', 'bathrooms',
         'area_value', 'area_unit',
     ];
@@ -33,6 +33,11 @@ final class Property extends Model
     public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', MarketplaceStatus::PROPERTY_APPROVED);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function company(): BelongsTo
