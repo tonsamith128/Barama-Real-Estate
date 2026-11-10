@@ -4,7 +4,8 @@
 **Legacy schema:** `application/database/migrations/0003_create_real_estate_domain.php`
 **Legacy governance:** `application/database/migrations/0028_create_global_location_governance.php`
 **Legacy location packs:** `application/database/migrations/0029_create_global_location_hierarchy.php`
-**Laravel foundation:** `database/migrations/2026_11_10_000001_create_geographic_location_foundation.php`
+**Existing Laravel schema:** `database/migrations/2026_10_30_000004_create_demo_content_tables.php` (already creates `locations` and nullable `location_id` relations)
+**Additive Laravel extension:** `database/migrations/2026_11_10_000001_create_geographic_location_foundation.php`
 
 ## Source verification
 
@@ -19,9 +20,11 @@ The read-only aaPanel inventory run on 2026-11-10 reported:
 ## Compatible geographic model
 
 The old `locations` table has UUID, global slug, parent ID, country code,
-name, type, coordinates, status, sort order and timestamps. The new Laravel
-table preserves those concepts without importing data or attempting to reuse
-legacy numeric IDs in an installed customer database.
+name, type, coordinates, status, sort order and timestamps. The existing Laravel
+`locations` table already has the hierarchy and links to company/project/property.
+This migration **only adds nullable UUID and coordinate fields plus a query index**.
+Nullable UUID avoids changing any prior QA/demo records; the later data adapter
+must backfill unique UUIDs after reconciliation. No legacy IDs are reused.
 
 - `Location::parent()` and `Location::children()` represent the hierarchy.
 - `Location::companies()`, `projects()`, `properties()` connect these assets
