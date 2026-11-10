@@ -65,6 +65,7 @@ final class ListingGalleryController
             'media_asset_id' => $asset->getKey(),
             'entity_type' => 'listing',
             'entity_id' => $listing->getKey(),
+            'collection' => 'gallery',
         ])->exists(), 404);
         return $locator->response($asset);
     }
