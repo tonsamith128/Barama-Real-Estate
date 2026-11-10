@@ -36,7 +36,9 @@ return new class extends Migration {
             $table->string('reconciliation_state', 32)->default('pending_review');
             $table->timestamp('created_at')->nullable();
             $table->unique(['batch_id','source_table','source_id'],'legacy_identity_source_unique');
-            $table->unique(['batch_id','source_table','target_id'],'legacy_identity_target_unique');
+            // Identical source media bytes may intentionally deduplicate to one
+            // target MediaAsset. Preserve every distinct source identity mapping.
+            $table->index(['batch_id','source_table','target_id'],'legacy_identity_target_idx');
             $table->index(['source_table','source_uuid'],'legacy_identity_uuid_idx');
         });
     }
