@@ -13,7 +13,11 @@ final class PublishedCompanySearch
     /** @param array<string, mixed> $filters Validated by BrowseCompaniesRequest. */
     public function browse(array $filters = []): LengthAwarePaginator
     {
-        $query = Company::query()->publiclyVisible();
+        $query = Company::query()->publiclyVisible()
+            ->withCount([
+                'projects as published_projects_count' => fn (Builder $projects) => $projects->publiclyVisible(),
+                'listings as published_listings_count' => fn (Builder $listings) => $listings->visibleToPublic(),
+            ]);
 
         $keyword = trim((string) ($filters['q'] ?? ''));
         if ($keyword !== '') {
