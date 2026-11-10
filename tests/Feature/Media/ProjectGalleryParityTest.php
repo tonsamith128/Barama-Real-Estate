@@ -166,6 +166,8 @@ final class ProjectGalleryParityTest extends TestCase
 
         $project->update(['status' => 'published', 'published_at' => now()->subHour()]);
         $this->get(route('media.demo.show', $asset->checksum_sha256))->assertOk();
+        $this->get(route('projects.show', $project->slug))
+            ->assertOk()->assertSee($asset->checksum_sha256);
     }
 
     public function test_listing_photos_can_be_reordered_without_cross_listing_mutation(): void
