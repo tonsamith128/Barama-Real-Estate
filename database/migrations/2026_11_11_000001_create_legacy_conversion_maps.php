@@ -41,17 +41,35 @@ return new class extends Migration {
             $table->index(['batch_id','source_table','target_id'],'legacy_identity_target_idx');
             $table->index(['source_table','source_uuid'],'legacy_identity_uuid_idx');
         });
+
+        Schema::create('legacy_company_membership_reviews', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('batch_id')->constrained('legacy_import_batches')->restrictOnDelete();
+            $table->unsignedBigInteger('source_company_id');
+            $table->unsignedBigInteger('source_user_id');
+            $table->foreignId('target_membership_id')->constrained('company_user')->restrictOnDelete();
+            $table->string('source_role', 40);
+            $table->string('source_status', 24);
+            $table->string('decision', 32)->default('needs_independent_approval');
+            $table->timestamps();
+            $table->unique(['batch_id','source_company_id','source_user_id'], 'legacy_membership_review_source_unique');
+        });
     }
 
     public function down(): void
     {
         // Explicitly fail rather than discard a real conversion's evidence.
+        if (Schema::hasTable('legacy_company_membership_reviews')
+            && DB::table('legacy_company_membership_reviews')->exists()) {
+            throw new RuntimeException('Cannot discard legacy membership role review evidence.');
+        }
         if (Schema::hasTable('legacy_identity_maps')
             && DB::table('legacy_identity_maps')->exists()) {
             throw new RuntimeException(
                 'Cannot delete legacy identity evidence while mappings exist.'
             );
         }
+        Schema::dropIfExists('legacy_company_membership_reviews');
         Schema::dropIfExists('legacy_identity_maps');
         Schema::dropIfExists('legacy_import_batches');
     }
