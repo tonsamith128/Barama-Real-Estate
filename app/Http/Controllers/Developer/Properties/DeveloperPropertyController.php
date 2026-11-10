@@ -67,6 +67,8 @@ final class DeveloperPropertyController
             'property' => $property->load('listings'),
             'projects' => Project::query()->where('company_id', $company->getKey())->orderBy('name')->get(),
             'types' => MarketplaceStatus::PROPERTY_TYPES,
+            'locations' => Location::query()->where('status', 'active')
+                ->orderBy('country_code')->orderBy('name')->limit(500)->get(),
         ]);
     }
 
