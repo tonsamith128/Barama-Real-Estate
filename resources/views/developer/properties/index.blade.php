@@ -63,6 +63,14 @@
                                             @if($property->status === 'draft' && $listing->status === 'draft')
                                                 <img src="{{ route('developer.gallery.preview', [$company, $listing, $link->asset]) }}"
                                                     alt="{{ $link->asset->alt_text ?: $property->title }}" loading="lazy">
+                                                @if($link->is_primary)<strong>Primary photo</strong>@endif
+                                                @foreach(['primary'=>'Make primary', 'up'=>'Move up', 'down'=>'Move down'] as $action=>$label)
+                                                    <form method="post" action="{{ route('developer.gallery.order', [$company, $listing, $link]) }}">
+                                                        @csrf
+                                                        <input type="hidden" name="action" value="{{ $action }}">
+                                                        <button type="submit">{{ $label }}</button>
+                                                    </form>
+                                                @endforeach
                                                 <form method="post" action="{{ route('developer.gallery.destroy', [$company, $listing, $link]) }}">
                                                     @csrf @method('DELETE')
                                                     <button type="submit">Remove</button>
@@ -86,6 +94,7 @@
                             @endif
                         </section>
                     @endforeach
+                    <p><a href="{{ route('developer.properties.history', [$company, $property]) }}">Revision history</a></p>
                     @if(in_array($property->status, ['draft', 'rejected'], true))
                         <p><a href="{{ route('developer.properties.edit', [$company, $property]) }}">Edit property draft</a></p>
                     @endif
