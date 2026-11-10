@@ -48,12 +48,12 @@ final class Listing extends Model
     public function scopeVisibleToPublic(Builder $query): Builder
     {
         return $query
-            ->where('status', MarketplaceStatus::LISTING_PUBLISHED)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+            ->where('listings.status', MarketplaceStatus::LISTING_PUBLISHED)
+            ->whereNotNull('listings.published_at')
+            ->where('listings.published_at', '<=', now())
             ->where(function (Builder $builder): void {
-                $builder->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
+                $builder->whereNull('listings.expires_at')
+                    ->orWhere('listings.expires_at', '>', now());
             })
             ->whereHas('property', function (Builder $property): void {
                 $property->approved()
