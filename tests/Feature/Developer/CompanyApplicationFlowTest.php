@@ -87,8 +87,10 @@ final class CompanyApplicationFlowTest extends TestCase
             'reason' => 'Company registration details need clarification.',
         ])->assertRedirect();
         $this->assertSame('rejected', $company->fresh()->status);
+        $this->actingAs($owner)->get(route('developer.dashboard'))
+            ->assertOk()->assertSeeText('Company registration details need clarification.');
 
-        $this->actingAs($owner)->post(route('developer.companies.application.submit', $company))
+        $this->post(route('developer.companies.application.submit', $company))
             ->assertStatus(409);
 
         $this->patch(route('developer.companies.application.update', $company),
