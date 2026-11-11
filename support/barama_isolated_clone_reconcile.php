@@ -75,6 +75,8 @@ try {
         'properties'=>'properties','listings'=>'listings',
         'media_assets'=>'media_assets','media_attachments'=>'media_attachments',
         'inquiries'=>'inquiries',
+        'saved_searches'=>'saved_searches',
+        'viewing_requests'=>'viewing_requests',
     ];
     $integrity=[];
     $maps=[];
@@ -82,7 +84,8 @@ try {
     foreach ($tableKinds as $table=>$destination) {
         $sourceColumns=$table==='media_attachments' ? 'id,NULL AS uuid' : 'id,uuid';
         if(in_array($table,
-            ['companies','projects','properties','listings','users','locations','amenities'],true)) {
+            ['companies','projects','properties','listings','users','locations','amenities',
+             'viewing_requests'],true)) {
             $sourceColumns.=',status';
         }
         // The legacy polymorphic attachment has no UUID.
@@ -161,6 +164,73 @@ try {
         'source'=>count($sourceSaved),'target'=>count($targetSaved),
     ];
 
+    foreach (['comparison_items','recent_listing_views'] as $activity) {
+        $oldActivity=getRows($source,'SELECT user_id,listing_id FROM '.$activity.' ORDER BY user_id,listing_id');
+        $newActivity=getRows($target,'SELECT user_id,listing_id FROM '.$activity.' ORDER BY user_id,listing_id');
+        $pairs=[];
+        foreach($newActivity as $row) {
+            $key=(int)$row['user_id'].':'.(int)$row['listing_id'];
+            if(isset($pairs[$key])) {
+                $integrity['duplicate_'.$activity]=1;
+            }
+            $pairs[$key]=true;
+        }
+        foreach($oldActivity as $row) {
+            $user=$userMap[(int)$row['user_id']]??null;
+            $listing=$listingMap[(int)$row['listing_id']]??null;
+            if($user===null || $listing===null || !isset($pairs[$user.':'.$listing])) {
+                $integrity['legacy_relationship_mismatch_'.$activity]=1;
+            }
+        }
+        if(count($oldActivity)!==count($newActivity)) {
+            $integrity['count_mismatch_'.$activity]=1;
+        }
+        $reportCounts[$activity]=[
+            'source'=>count($oldActivity),'target'=>count($newActivity),
+        ];
+    }
+
+    // Sample-by-identity checks preserve source date windows and alert opt-in
+    // as private evidence; imported notifications and historical appointments
+    // never become active merely because the data exists.
+    foreach (getRows($source,'SELECT id,location_id,alert_frequency,alerts_enabled,
+           bedrooms_min FROM saved_searches ORDER BY id') as $record) {
+        $targetId=$maps['saved_searches'][(int)$record['id']]??null;
+        $row=$targetId===null?null:getRows($target,
+            'SELECT legacy_filter_evidence,legacy_alert_frequency,
+                legacy_alerts_enabled,legacy_review_required
+             FROM saved_searches WHERE id='.(int)$targetId);
+        if($row===null || count($row)!==1) {
+            $integrity['saved_search_evidence_missing']=1;
+            continue;
+        }
+        $evidence=json_decode((string)$row[0]['legacy_filter_evidence'],true);
+        $mappedLocation=$record['location_id']===null?null:($maps['locations'][(int)$record['location_id']]??null);
+        if(!is_array($evidence) || ($evidence['location_id']??null)!==$mappedLocation
+            || (string)($evidence['bedrooms_min']??'')!==(string)($record['bedrooms_min']??'')
+            || $row[0]['legacy_alert_frequency']!==$record['alert_frequency']
+            || (int)$row[0]['legacy_alerts_enabled']!==0
+            || (int)$row[0]['legacy_review_required']!==1) {
+            $integrity['saved_search_filter_or_alert_evidence_mismatch']=1;
+        }
+    }
+    foreach (getRows($source,'SELECT id,preferred_date,preferred_time_window,
+            status,company_id FROM viewing_requests ORDER BY id') as $record) {
+        $targetId=$maps['viewing_requests'][(int)$record['id']]??null;
+        $row=$targetId===null?null:getRows($target,
+            'SELECT legacy_preferred_date,legacy_preferred_window,
+                legacy_original_status,legacy_company_id,status
+             FROM viewing_requests WHERE id='.(int)$targetId);
+        if($row===null || count($row)!==1
+            || $row[0]['legacy_preferred_date']!==$record['preferred_date']
+            || $row[0]['legacy_preferred_window']!==$record['preferred_time_window']
+            || $row[0]['legacy_original_status']!==$record['status']
+            || (int)$row[0]['legacy_company_id']!==($maps['companies'][(int)$record['company_id']]??-1)
+            || $row[0]['status']!=='legacy_review') {
+            $integrity['historical_viewing_appointment_mismatch']=1;
+        }
+    }
+
     $review=getRows($target, 'SELECT source_company_id,source_user_id,
          source_role,source_status,target_membership_id,decision
          FROM legacy_company_membership_reviews WHERE batch_id='.$batchId);
@@ -209,6 +279,10 @@ try {
         'published_imported_properties'=>"SELECT COUNT(*) FROM properties WHERE status<>'draft'",
         'published_imported_listings'=>"SELECT COUNT(*) FROM listings
             WHERE status<>'draft' OR published_at IS NOT NULL",
+        'imported_old_viewings_are_review_only'=>"SELECT COUNT(*) FROM viewing_requests
+            WHERE legacy_uuid IS NOT NULL AND (status<>'legacy_review' OR legacy_original_status IS NULL)",
+        'imported_search_alerts_disabled'=>"SELECT COUNT(*) FROM saved_searches
+            WHERE legacy_uuid IS NOT NULL AND (legacy_alerts_enabled<>0 OR legacy_review_required<>1)",
         'inappropriate_media_rights'=>"SELECT COUNT(*) FROM media_assets
             WHERE usage_rights<>'unreviewed' OR path NOT LIKE 'private/media/%'",
     ];
@@ -221,7 +295,8 @@ try {
     $sourceTables=$source->query("SELECT TABLE_NAME FROM information_schema.TABLES
         WHERE TABLE_SCHEMA=DATABASE() AND TABLE_TYPE='BASE TABLE'")->fetchAll(PDO::FETCH_COLUMN);
     $covered=[...array_keys($tableKinds),
-        'saved_listings','company_members','property_amenities','project_amenities',
+        'saved_listings','comparison_items','recent_listing_views',
+        'company_members','property_amenities','project_amenities',
         'location_countries','location_data_packs','location_hierarchy_registry'];
     $unconverted=[];
     foreach($sourceTables as $table) {
