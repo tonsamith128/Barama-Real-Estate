@@ -27,6 +27,17 @@ jobs:
           php -l support/barama_isolated_clone_inventory.php
           php -l support/barama_isolated_media_inventory.php
           php -l support/barama_isolated_clone_stage.php
+      - name: Refuse unsafe sensitive legacy backup comparison
+        run: |
+          set -Eeuo pipefail
+          if APP_ENV=production php support/barama_sensitive_restore_compare.php --compare-restores > /tmp/barama-restore-negative.log 2>&1; then
+            echo "FAILED=PRODUCTION_RESTORE_COMPARISON_ACCEPTED"; exit 1
+          fi
+          if ! grep -q 'RESTORE_DENIED=PRIVATE_TESTING_ONLY' /tmp/barama-restore-negative.log; then
+            echo "FAILED=RESTORE_GUARD_MESSAGE"; exit 1
+          fi
+          rm -f /tmp/barama-restore-negative.log
+          echo "SENSITIVE_RESTORE_PRODUCTION_GUARD=PASS"
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes
