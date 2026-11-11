@@ -133,6 +133,17 @@ echo "PRODUCTION_AND_EXTERNAL_SIDE_EFFECT_GATES=PASS"
 
 echo "========== STAGE INTO DISPOSABLE TARGET ONLY =========="
 php support/barama_isolated_clone_stage.php --stage > "$QA/staged.json"
+php support/barama_isolated_clone_reconcile.php > "$QA/reconciled.json"
+php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+ if(($j["integrity_status"]??"")!=="MAPPED_CORE_VERIFIED"
+ || ($j["production_release_status"]??"")==="RELEASE_READY"
+ || ($j["unconverted_nonempty_source_tables"]["leads"]??0)!==1
+ || ($j["mapped_core_counts"]["saved_listings"]["target"]??0)!==1
+ || ($j["mapped_core_counts"]["company_members"]["independent_role_reviews"]??0)!==1
+ || ($j["integrity_blockers"]??[])!==[])
+ {exit(1);}
+ echo "INDEPENDENT_POST_IMPORT_UUID_RELATIONSHIP_AND_ROLE_AUDIT=PASS
+";' "$QA/reconciled.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
  if($j["mode"]!=="DISPOSABLE_TARGET_STAGED"
  || ($j["unmapped_legacy_data_counts"]["leads"]??0)!==1
