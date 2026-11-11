@@ -13,7 +13,13 @@ final class SavedSearch extends Model
 
     protected function casts(): array
     {
-        return ['filters' => 'array'];
+        return [
+            'filters' => 'array',
+            'legacy_filter_evidence' => 'array',
+            'legacy_review_required' => 'boolean',
+            'legacy_alerts_enabled' => 'boolean',
+            'legacy_last_checked_at' => 'datetime',
+        ];
     }
 
     public function user(): BelongsTo
