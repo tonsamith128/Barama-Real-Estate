@@ -74,7 +74,8 @@ try {
         'companies'=>'companies','projects'=>'projects',
         'properties'=>'properties','listings'=>'listings',
         'media_assets'=>'media_assets','media_attachments'=>'media_attachments',
-        'inquiries'=>'inquiries',
+        'inquiries'=>'legacy_customer_inquiries',
+        'leads'=>'legacy_customer_leads',
         'saved_searches'=>'saved_searches',
         'viewing_requests'=>'viewing_requests',
     ];
@@ -85,8 +86,11 @@ try {
         $sourceColumns=$table==='media_attachments' ? 'id,NULL AS uuid' : 'id,uuid';
         if(in_array($table,
             ['companies','projects','properties','listings','users','locations','amenities',
-             'viewing_requests'],true)) {
+             'viewing_requests','inquiries'],true)) {
             $sourceColumns.=',status';
+        }
+        if($table==='leads') {
+            $sourceColumns.=',stage AS status';
         }
         // The legacy polymorphic attachment has no UUID.
         $src=getRows($source,'SELECT '.$sourceColumns.' FROM '.$table.' ORDER BY id');
@@ -136,6 +140,34 @@ try {
             'source'=>count($src),'identity_mappings'=>count($new),
             'unique_destination_records'=>count($byTarget),
         ];
+    }
+
+    // Historical inquiry/lead ownership and source status must survive
+    // without becoming active customer communications or CRM outreach.
+    foreach ([
+        'inquiries'=>['legacy_customer_inquiries','status','source_status'],
+        'leads'=>['legacy_customer_leads','stage','source_stage'],
+    ] as $kind=>[$dest,$statusColumn,$destStatusColumn]) {
+        $sourceRecords=getRows($source,'SELECT id,company_id,'.$statusColumn
+            .' FROM '.$kind.' ORDER BY id');
+        $archivedRecords=getRows($target,'SELECT id,company_id,'.$destStatusColumn
+            .',review_status FROM '.$dest.' ORDER BY id');
+        $byId=[];
+        foreach ($archivedRecords as $r) {
+            $byId[(int)$r['id']]=$r;
+        }
+        foreach ($sourceRecords as $original) {
+            $targetId=$maps[$kind][(int)$original['id']]??null;
+            $copy=$targetId===null?null:($byId[$targetId]??null);
+            if ($copy===null
+                || (string)$copy[$destStatusColumn] !== (string)$original[$statusColumn]
+                || $copy['review_status']!=='needs_review'
+                || ($original['company_id']===null
+                    ? $copy['company_id']!==null
+                    : (int)$copy['company_id']!==($maps['companies'][(int)$original['company_id']]??-1))) {
+                $integrity['archived_'.$kind.'_relationship_or_privacy_mismatch']=1;
+            }
+        }
     }
 
     // Relationship reconciliation cannot trust only row counts. Check exact
@@ -281,6 +313,10 @@ try {
             WHERE status<>'draft' OR published_at IS NOT NULL",
         'imported_old_viewings_are_review_only'=>"SELECT COUNT(*) FROM viewing_requests
             WHERE legacy_uuid IS NOT NULL AND (status<>'legacy_review' OR legacy_original_status IS NULL)",
+        'archived_customer_leads_are_private'=>"SELECT COUNT(*) FROM legacy_customer_leads
+            WHERE review_status<>'needs_review' OR reviewed_at IS NOT NULL",
+        'archived_customer_inquiries_are_private'=>"SELECT COUNT(*) FROM legacy_customer_inquiries
+            WHERE review_status<>'needs_review' OR reviewed_at IS NOT NULL",
         'imported_search_alerts_disabled'=>"SELECT COUNT(*) FROM saved_searches
             WHERE legacy_uuid IS NOT NULL AND (legacy_alerts_enabled<>0 OR legacy_review_required<>1)",
         'inappropriate_media_rights'=>"SELECT COUNT(*) FROM media_assets
