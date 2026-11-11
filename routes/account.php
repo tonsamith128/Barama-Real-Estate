@@ -34,6 +34,8 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
             ->middleware('throttle:12,1')->name('searches.store');
         Route::patch('/searches/{savedSearch}', [SavedSearchController::class, 'rename'])
             ->middleware('throttle:12,1')->name('searches.rename');
+        Route::patch('/searches/{savedSearch}/review', [SavedSearchController::class, 'review'])
+            ->middleware('throttle:12,1')->name('searches.review');
         Route::delete('/searches/{savedSearch}', [SavedSearchController::class, 'destroy'])
             ->middleware('throttle:12,1')->name('searches.destroy');
 
