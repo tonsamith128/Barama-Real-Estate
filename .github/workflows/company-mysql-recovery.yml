@@ -167,6 +167,9 @@ jobs:
           coverage: none
       - name: Rehearse actual pinned archived PHP schema in isolated MySQL
         run: bash scripts/acceptance/legacy-php-schema-replica.sh
+      - name: Verify two independent synthetic legacy finance/security backup restores
+        timeout-minutes: 10
+        run: bash scripts/acceptance/sensitive-restore-replica-qa.sh
       - name: Rehearse legacy to Laravel private clone staging, identities and media
         timeout-minutes: 15
         run: bash scripts/acceptance/legacy-clone-stage-synthetic.sh
