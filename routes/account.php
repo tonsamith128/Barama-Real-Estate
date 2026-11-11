@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Account\Dashboard\DashboardController;
+use App\Http\Controllers\Account\Activity\CustomerActivityController;
 use App\Http\Controllers\Account\Inquiries\AccountInquiryController;
 use App\Http\Controllers\Account\Notifications\NotificationController;
 use App\Http\Controllers\Account\Profile\ProfileController;
@@ -35,6 +36,18 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
             ->middleware('throttle:12,1')->name('searches.rename');
         Route::delete('/searches/{savedSearch}', [SavedSearchController::class, 'destroy'])
             ->middleware('throttle:12,1')->name('searches.destroy');
+
+        Route::get('/activity', [CustomerActivityController::class, 'index'])->name('activity.index');
+        Route::post('/activity/comparison/{listing}', [CustomerActivityController::class, 'compare'])
+            ->middleware('throttle:20,1')->name('activity.comparison.store');
+        Route::delete('/activity/comparison/{listing}', [CustomerActivityController::class, 'removeComparison'])
+            ->middleware('throttle:20,1')->name('activity.comparison.destroy');
+        Route::post('/activity/recent/{listing}', [CustomerActivityController::class, 'remember'])
+            ->middleware('throttle:20,1')->name('activity.recent.store');
+        Route::delete('/activity/recent/{listing}', [CustomerActivityController::class, 'forget'])
+            ->middleware('throttle:20,1')->name('activity.recent.destroy');
+        Route::delete('/activity/recent', [CustomerActivityController::class, 'clear'])
+            ->middleware('throttle:10,1')->name('activity.recent.clear');
 
         Route::get('/inquiries', AccountInquiryController::class)->name('inquiries.index');
         Route::get('/inquiries/{inquiry}', [AccountInquiryThreadController::class, 'show'])->name('inquiries.show');
