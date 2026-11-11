@@ -50,6 +50,7 @@ final class BaramaLegacyCloneStager
             $this->copyProjects();
             $this->copyProperties();
             $this->copyListings();
+            $this->copySavedListings();
             $this->copyPivot('project_amenities','projects','amenities','project_id','amenity_id');
             $this->copyPivot('property_amenities','properties','amenities','property_id','amenity_id');
             $this->copyCountryPacks();
@@ -88,7 +89,8 @@ final class BaramaLegacyCloneStager
             'identity_map_rows'=>array_sum($this->counts)-($this->counts['company_members']??0)
                 -($this->counts['project_amenities']??0)-($this->counts['property_amenities']??0)
                 -($this->counts['location_countries']??0)-($this->counts['location_data_packs']??0)
-                -($this->counts['location_hierarchy_registry']??0),
+                -($this->counts['location_hierarchy_registry']??0)
+                -($this->counts['saved_listings']??0),
             'media_private_files_created'=>count($this->filesCreated),
             'legacy_passwords_copied'=>false,
             'legacy_admin_roles_activated'=>false,
@@ -103,7 +105,7 @@ final class BaramaLegacyCloneStager
     {
         $tables = [
             'users','companies','company_user','locations','projects','properties',
-            'listings','amenities','property_amenities','project_amenities',
+            'listings','saved_listings','amenities','property_amenities','project_amenities',
             'media_assets','media_attachments','inquiries','location_countries',
             'location_data_packs','location_hierarchy_registry',
             'legacy_import_batches','legacy_identity_maps',
@@ -414,6 +416,21 @@ final class BaramaLegacyCloneStager
         }
     }
 
+    private function copySavedListings(): void
+    {
+        // Historical saved listings are a simple user/listing association.
+        // Keep the original relationship privately; imported users remain
+        // unverified and all imported listings stay unpublished.
+        foreach ($this->rows('saved_listings','user_id,listing_id') as $r) {
+            $this->insert('saved_listings',[
+                'user_id'=>$this->mapped('users',$r['user_id']),
+                'listing_id'=>$this->mapped('listings',$r['listing_id']),
+                'created_at'=>$r['created_at'],
+                'updated_at'=>$r['created_at'],
+            ]);
+        }
+    }
+
     private function copyPivot(
         string $table,string $parentTable,string $otherTable,
         string $parentField,string $otherField,
@@ -484,7 +501,9 @@ final class BaramaLegacyCloneStager
         }
         $sha=hash_file('sha256',$path);
         $sourceSha=trim((string)($r['checksum_sha256']??''));
-        if ($sha===false || ($sourceSha!=='' && !hash_equals(strtolower($sourceSha),$sha))) {
+        if ($sha===false
+            || preg_match('/^[0-9a-fA-F]{64}$/D',$sourceSha)!==1
+            || !hash_equals(strtolower($sourceSha),$sha)) {
             throw new RuntimeException('Source media integrity mismatch.');
         }
         return [$path,$sha,$exts[$mime]];
@@ -587,6 +606,10 @@ final class BaramaLegacyCloneStager
             if (count($this->maps[$table]??[])!==($this->counts[$table]??0)) {
                 throw new RuntimeException('Conversion lost one or more source identities.');
             }
+        }
+        if ((int)$this->target->query('SELECT COUNT(*) FROM saved_listings')
+            ->fetchColumn()!==($this->counts['saved_listings']??0)) {
+            throw new RuntimeException('Saved listing relationships lost during staging.');
         }
         if ((int)$this->target->query('SELECT COUNT(*) FROM legacy_company_membership_reviews')
             ->fetchColumn()!==($this->counts['company_members']??0)) {
