@@ -31,7 +31,22 @@
                         Automatic alerts remain disabled.</p>
                 @endif
                 <div class="customer-search-card__footer">
-                    <a class="button" href="{{ route('properties.index', $search->filters) }}">View matches</a>
+                    @if($search->legacy_review_required)
+                        <details>
+                            <summary>Review imported filters</summary>
+                            <p>Only the search text, sale/rent, property type and price limits are currently applied.
+                                Earlier geographic, bedroom and other historical criteria may not be included.
+                                Reviewing does not subscribe you to alerts.</p>
+                            <form method="post" action="{{ route('account.searches.review', $search) }}">
+                                @csrf @method('PATCH')
+                                <label><input type="checkbox" name="accept_supported_filters" value="1" required>
+                                    I understand and want to use the supported filters.</label>
+                                <button type="submit">Accept supported filters</button>
+                            </form>
+                        </details>
+                    @else
+                        <a class="button" href="{{ route('properties.index', $search->filters) }}">View matches</a>
+                    @endif
                     <details><summary>Manage</summary>
                         <form method="post" action="{{ route('account.searches.rename', $search) }}" class="customer-search-card__rename">
                             @csrf @method('PATCH')
