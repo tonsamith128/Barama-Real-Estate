@@ -116,6 +116,21 @@ php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR)
  if($j["gate"]!=="HASH_AND_SIZE_VERIFIED"||$j["media_asset_counts"]["verified"]!==1){exit(1);}
  echo "SOURCE_PRIVATE_MEDIA_SHA256=PASS\n";' "$QA/media.json"
 
+echo "========== NEGATIVE ENVIRONMENT AND PERMISSION GATES =========="
+if APP_ENV=production php support/barama_isolated_clone_stage.php --stage > "$QA/not-testing.txt" 2>&1; then
+    echo "FAILED=PRODUCTION_ENV_ACCEPTED"; exit 9
+fi
+if BARAMA_MAIL_DISABLED=no php support/barama_isolated_clone_stage.php --stage > "$QA/mail-enabled.txt" 2>&1; then
+    echo "FAILED=EXTERNAL_EMAIL_RISK_ACCEPTED"; exit 9
+fi
+if BARAMA_SOURCE_DB=barama_live_production php support/barama_isolated_clone_stage.php --stage > "$QA/live-db-name.txt" 2>&1; then
+    echo "FAILED=LIVE_DATABASE_NAME_ACCEPTED"; exit 9
+fi
+if BARAMA_TARGET_OFFLINE_VERIFIED=no php support/barama_isolated_clone_stage.php --stage > "$QA/online-target.txt" 2>&1; then
+    echo "FAILED=ONLINE_TARGET_ACCEPTED"; exit 9
+fi
+echo "PRODUCTION_AND_EXTERNAL_SIDE_EFFECT_GATES=PASS"
+
 echo "========== STAGE INTO DISPOSABLE TARGET ONLY =========="
 php support/barama_isolated_clone_stage.php --stage > "$QA/staged.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
@@ -140,6 +155,10 @@ $checks=[
 'mapped_legacy_user'=>"SELECT COUNT(*) FROM legacy_identity_maps WHERE source_table='users'",
 'mapped_media_asset'=>"SELECT COUNT(*) FROM legacy_identity_maps WHERE source_table='media_assets'",
 'private_image'=>"SELECT COUNT(*) FROM media_assets WHERE usage_rights='unreviewed'",
+'fractional_property'=>"SELECT COUNT(*) FROM properties WHERE bedrooms=2.5 AND bathrooms=1.5",
+'original_published_status_preserved'=>"SELECT COUNT(*) FROM legacy_identity_maps WHERE source_table='listings' AND source_status='published'",
+'saved_published_offer_privately_mapped'=>"SELECT COUNT(*) FROM saved_listings s JOIN legacy_identity_maps m ON m.target_id=s.listing_id AND m.source_table='listings' WHERE m.source_status='published'",
+'gallery_attachment'=>"SELECT COUNT(*) FROM media_attachments WHERE entity_type='listing' AND collection='gallery' AND is_primary=1",
 'saved_listing'=>"SELECT COUNT(*) FROM saved_listings",
 'inactive_membership'=>"SELECT COUNT(*) FROM company_user WHERE status='inactive' AND role='member'",
 'original_role_review'=>"SELECT COUNT(*) FROM legacy_company_membership_reviews WHERE source_role='owner' AND decision='needs_independent_approval'",
