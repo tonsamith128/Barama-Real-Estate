@@ -52,6 +52,12 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/viewings', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'decide'])
             ->middleware('throttle:10,1')->name('viewings.decide');
+        Route::post('/viewings/{viewing}/propose', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'propose'])
+            ->middleware('throttle:10,1')->name('viewings.propose');
+        Route::post('/viewings/{viewing}/cancel', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'cancel'])
+            ->middleware('throttle:10,1')->name('viewings.cancel');
+        Route::post('/viewings/{viewing}/review', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'review'])
+            ->middleware('throttle:10,1')->name('viewings.review');
         Route::get('/contacts', [ContactInboxController::class, 'index'])->name('contacts.index');
         Route::patch('/contacts/{message}/read', [ContactInboxController::class, 'read'])->name('contacts.read');
         Route::get('/policies', [LegalPolicyController::class, 'index'])->name('policies.index');
