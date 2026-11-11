@@ -44,18 +44,26 @@ Then run, against a **fresh Laravel QA schema**, never production:
 
     php support/barama_isolated_clone_stage.php --stage
 
+Before any subsequent testing or account re-enrollment, run an **independent read-only reconciliation**:
+
+    php support/barama_isolated_clone_reconcile.php
+
+Review the mapped_core_counts, integrity_blockers, and unconverted_nonempty_source_tables values privately. Only MAPPED_CORE_VERIFIED is a structural pass; production_release_status remains BLOCKED regardless. No password, private media path or customer text is printed. Confirm the source and destination counts again from your independently restored encrypted backups.
+
 Behavior:
 - Source PDO is read-only; all SQL imports run in a target-only transaction.
 - Imported users get new random unusable passwords, unverified email status and unprivileged user roles. Old password hashes and security tokens are not copied.
 - Companies, projects, properties and listings are imported as unpublished private drafts, regardless of prior source publication. The original status is preserved in legacy_identity_maps for separate moderator review.
 - Company memberships are imported as inactive ordinary members; source member roles/status remain in legacy_company_membership_reviews, awaiting independent reauthorization.
 - Legacy numeric IDs and UUIDs are mapped to new target IDs. Never reuse historical integer primary keys as Laravel foreign keys.
+- Customer saved-listing relationships are restored as private links to the mapped users and listing IDs. Saved searches, comparison lists, recent views and viewing requests remain unmapped pending complete destination parity.
+- The read-only plan enumerates **every legacy table** found in the isolated source schema, not just a fixed list. Any table without a safe adapter is counted under unmapped_legacy_data_counts, including previously unrecognized legacy tables.
 - Supported source images are verified by size, MIME, safe path and SHA-256, copied into the private Laravel local disk, and marked as needing rights review. Missing media, unsafe paths, unrecognized formats and bad hashes abort staging.
 - Invalid relationships, duplicates, unrepresentable field lengths and nonempty target tables abort staging rather than silently delete or truncate data.
 - On error, target SQL is rolled back and only the new staging files created by that attempt are removed.
 - Replaying staging into a nonempty target is denied.
 
-**Scope is not full production migration.** Leads, billing, payments, customer saved items/viewings, some company-only inquiries, historical security events, non-image media and original role grants do not yet have complete destination adapters. Their source counts are flagged under unmapped_legacy_data_counts. The source clone remains the authoritative evidence; never drop or discard its unconverted records. Staging success always reports **BLOCKED** for production release.
+**Scope is not full production migration.** Leads, billing, payments, saved searches, customer viewing requests, comparison lists, recent views, some company-only inquiries, historical security events, non-image media and original role grants do not yet have complete destination adapters. Their source counts are flagged under unmapped_legacy_data_counts. The source clone remains the authoritative evidence; never drop or discard its unconverted records. Staging success always reports **BLOCKED** for production release.
 
 ## 4. Independent automated evidence
 
@@ -63,7 +71,8 @@ GitHub Actions now exercises:
 - Pinned archived PHP migrations in a synthetic MySQL 8 source schema.
 - A second fresh Laravel MySQL target schema.
 - The read-only source integrity/media auditors, and --plan mode.
-- The target-only importer with legacy UUID/ID mapping, new unprivileged users, private listing states and verified copied media.
+- The target-only importer with legacy UUID/ID mapping, new unprivileged users, private listing states, saved-listing links and verified copied media.
+- The independent read-only post-import verifier compares UUIDs, source IDs and destination rows, tests exact saved-listing and company-member relationships, and detects permission/publication bypass. It always blocks production release even on a green core mapping.
 - Rejection of importer replay into nonempty target and rejection of deliberately tampered source media.
 - Eight additive Laravel migrations with backup, rollback, reapplication and SQL restoration.
 - QA package, private-path denial, Apache rewrite, fresh five-step installer, Laravel PHP feature tests and asset build.
