@@ -170,6 +170,52 @@ try {
         }
     }
 
+    // Compare every nullable legacy relationship to its precise mapped
+    // Laravel destination, rather than comparing only company ownership.
+    foreach ([
+        'inquiries'=>[
+            'table'=>'legacy_customer_inquiries',
+            'relations'=>[
+                'company_id'=>'companies','project_id'=>'projects',
+                'property_id'=>'properties','listing_id'=>'listings',
+                'user_id'=>'users','assigned_user_id'=>'users',
+            ],
+        ],
+        'leads'=>[
+            'table'=>'legacy_customer_leads',
+            'relations'=>[
+                'company_id'=>'companies','inquiry_id'=>'inquiries',
+                'assigned_user_id'=>'users','preferred_location_id'=>'locations',
+            ],
+        ],
+    ] as $kind=>$spec) {
+        $fields=array_keys($spec['relations']);
+        $cols='id,uuid,'.implode(',',$fields);
+        $srcRecords=getRows($source,'SELECT '.$cols.' FROM '.$kind.' ORDER BY id');
+        $targetRecords=getRows($target,'SELECT id,source_uuid,'.implode(',',$fields)
+            .' FROM '.$spec['table'].' ORDER BY id');
+        $targetById=[];
+        foreach ($targetRecords as $row) {
+            $targetById[(int)$row['id']]=$row;
+        }
+        foreach ($srcRecords as $old) {
+            $targetId=$maps[$kind][(int)$old['id']]??null;
+            $new=$targetId===null?null:($targetById[$targetId]??null);
+            if ($new===null || $new['source_uuid']!==$old['uuid']) {
+                $integrity['archived_'.$kind.'_uuid_or_identity_mismatch']=1;
+                continue;
+            }
+            foreach ($spec['relations'] as $foreign=>$parentTable) {
+                $mapped=$old[$foreign]===null?null:
+                    ($maps[$parentTable][(int)$old[$foreign]]??null);
+                $actual=$new[$foreign]===null?null:(int)$new[$foreign];
+                if ($mapped!==$actual) {
+                    $integrity['archived_'.$kind.'_'.$foreign.'_mismatch']=1;
+                }
+            }
+        }
+    }
+
     // Relationship reconciliation cannot trust only row counts. Check exact
     // old-to-new pairs and ownership for each imported saved listing.
     $userMap=$maps['users'];
