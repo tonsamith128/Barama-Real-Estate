@@ -120,6 +120,28 @@ VALUES (:uuid,:property,:slug,:transaction,:status,:price,'USD',:published)")
 $sale=(int)$db->query("SELECT id FROM listings WHERE slug='qa-offer-sale'")->fetchColumn();
 $db->prepare("INSERT INTO saved_listings(user_id,listing_id,created_at)
 VALUES (:owner,:sale,NOW())")->execute(['owner'=>$owner,'sale'=>$sale]);
+$db->prepare("INSERT INTO comparison_items(user_id,listing_id,position,created_at)
+VALUES (:owner,:sale,0,NOW())")->execute(['owner'=>$owner,'sale'=>$sale]);
+$db->prepare("INSERT INTO recent_listing_views
+(user_id,listing_id,first_viewed_at,last_viewed_at,view_count)
+VALUES (:owner,:sale,'2026-10-01 10:00:00','2026-10-10 10:00:00',4)")
+    ->execute(['owner'=>$owner,'sale'=>$sale]);
+$db->prepare("INSERT INTO saved_searches
+(uuid,user_id,name,query_text,transaction_type,property_type,location_id,
+ bedrooms_min,price_min,price_max,currency,alert_frequency,alerts_enabled,last_checked_at,
+ created_at,updated_at)
+VALUES ('00000000-0000-4000-8000-000000000012',:owner,
+'Legacy Battambang Search','Duplex','sale','house',:location,
+2.5,150000,300000,'USD','daily',1,'2026-10-15 09:00:00',NOW(),NOW())")
+    ->execute(['owner'=>$owner,'location'=>$province]);
+$db->prepare("INSERT INTO viewing_requests
+(uuid,user_id,listing_id,company_id,preferred_date,preferred_time_window,
+alternate_date,alternate_time_window,message,status,company_note,created_at,updated_at)
+VALUES ('00000000-0000-4000-8000-000000000013',:owner,:sale,:company,
+'2026-10-18','morning','2026-10-20','afternoon','Private synthetic tour request',
+'confirmed','Legacy confirmed by company',NOW(),NOW())")
+    ->execute(['owner'=>$owner,'sale'=>$sale,'company'=>$company]);
+
 $db->prepare("INSERT INTO leads
 (uuid,company_id,contact_name,source,stage,created_at,updated_at)
 VALUES ('00000000-0000-4000-8000-000000000011',:company,'Private Synthetic Lead',
@@ -157,6 +179,10 @@ $checks = [
     'old_external_location_mapping' => "SELECT COUNT(*) FROM location_hierarchy_registry WHERE external_code='QA-KH-01'",
     'old_country_pack' => "SELECT COUNT(*) FROM location_data_packs WHERE country_code='KH'",
     'old_saved_listing' => "SELECT COUNT(*) FROM saved_listings WHERE user_id=$owner AND listing_id=$sale",
+    'old_comparison' => "SELECT COUNT(*) FROM comparison_items WHERE user_id=$owner AND listing_id=$sale",
+    'old_recent_view' => "SELECT COUNT(*) FROM recent_listing_views WHERE user_id=$owner AND listing_id=$sale AND view_count=4",
+    'old_saved_search' => "SELECT COUNT(*) FROM saved_searches WHERE user_id=$owner AND location_id=$province AND bedrooms_min=2.5 AND alerts_enabled=1",
+    'old_viewing_request' => "SELECT COUNT(*) FROM viewing_requests WHERE user_id=$owner AND listing_id=$sale AND company_id=$company AND status='confirmed'",
     'old_company_owner_membership' => "SELECT COUNT(*) FROM company_members WHERE company_id=$company AND user_id=$owner AND member_role='owner'",
     'old_admin_role_assignment' => "SELECT COUNT(*) FROM user_roles WHERE user_id=$owner",
     'old_customer_lead' => "SELECT COUNT(*) FROM leads WHERE company_id=$company",
