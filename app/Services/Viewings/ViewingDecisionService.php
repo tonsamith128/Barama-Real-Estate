@@ -59,6 +59,9 @@ final class ViewingDecisionService
                     'decision' => 'This request has already been processed or cancelled.',
                 ]);
             }
+            if ($decision === 'confirmed') {
+                $this->requirePublicOffer($locked);
+            }
             if ($decision === 'confirmed' && $locked->requested_at->isPast()) {
                 throw ValidationException::withMessages([
                     'decision' => 'A past viewing time cannot be confirmed.',
@@ -88,6 +91,7 @@ final class ViewingDecisionService
             $kind = $this->requireCompanyOperator($actor, $locked);
             $this->requireNotHeld($locked);
             abort_unless(in_array($locked->status, ['pending', 'confirmed'], true), 409);
+            $this->requirePublicOffer($locked);
             $this->requireFuture($proposed);
             $old = $locked->status;
             $locked->forceFill([
@@ -236,6 +240,16 @@ final class ViewingDecisionService
     private function requireNotHeld(ViewingRequest $viewing): void
     {
         abort_unless($viewing->review_status !== 'held', 409);
+    }
+
+    private function requirePublicOffer(ViewingRequest $viewing): void
+    {
+        if (!Listing::query()->visibleToPublic()
+            ->whereKey($viewing->listing_id)->exists()) {
+            throw ValidationException::withMessages([
+                'decision' => 'This listing is no longer approved for new viewing confirmations.',
+            ]);
+        }
     }
 
     private function requireFuture(CarbonImmutable $date): void
