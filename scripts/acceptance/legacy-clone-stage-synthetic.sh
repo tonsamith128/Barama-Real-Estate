@@ -191,6 +191,22 @@ if(!is_file($targetPath)||hash_file('sha256',$targetPath)!==$media['checksum_sha
 echo "PRIVATE_LARAVEL_MEDIA_COPY=PASS\n";
 PHP
 
+echo "========== PROVE INDEPENDENT AUDIT DETECTS TAMPERING =========="
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET"     -e "UPDATE company_user SET status='active' WHERE status='inactive'"
+if php support/barama_isolated_clone_reconcile.php > "$QA/role-escalation.txt" 2>&1; then
+    echo "FAILED=ESCALATED_MEMBERSHIP_NOT_DETECTED"; exit 9
+fi
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET"     -e "UPDATE company_user SET status='inactive' WHERE status='active'"
+echo "INDEPENDENT_ROLE_ESCALATION_DETECTION=PASS"
+
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET"     -e "UPDATE legacy_identity_maps SET source_uuid='ffffffff-ffff-4fff-8fff-ffffffffffff' WHERE source_table='users'"
+if php support/barama_isolated_clone_reconcile.php > "$QA/broken-uuid.txt" 2>&1; then
+    echo "FAILED=LEGACY_UUID_TAMPER_NOT_DETECTED"; exit 9
+fi
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET"     -e "UPDATE legacy_identity_maps SET source_uuid='00000000-0000-4000-8000-000000000001' WHERE source_table='users'"
+php support/barama_isolated_clone_reconcile.php > "$QA/restored-reconciliation.json"
+echo "INDEPENDENT_UUID_MAPPING_TAMPER_DETECTION=PASS"
+
 echo "========== PROVE REPLAY AND TAMPERING ARE REJECTED =========="
 if php support/barama_isolated_clone_stage.php --stage > "$QA/replay.txt" 2>&1; then
     echo "FAILED=TARGET_REPLAY_WAS_ACCEPTED"; exit 9
