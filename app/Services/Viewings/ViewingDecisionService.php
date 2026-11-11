@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Viewings;
 
 use App\Models\AccountNotification;
+use App\Models\Listing;
 use App\Models\User;
 use App\Models\ViewingEvent;
 use App\Models\ViewingRequest;
@@ -15,6 +16,34 @@ use Illuminate\Validation\ValidationException;
 final class ViewingDecisionService
 {
     /** All transitions are serialized by locking the original viewing row. */
+
+    public function submit(
+        User $actor, Listing $listing, CarbonImmutable $requested, ?string $message,
+    ): ViewingRequest {
+        abort_unless(Listing::query()->visibleToPublic()
+            ->whereKey($listing->getKey())->exists(), 404);
+        $this->requireFuture($requested);
+
+        return DB::transaction(function () use ($actor, $listing, $requested, $message): ViewingRequest {
+            $viewing = ViewingRequest::query()->create([
+                'user_id' => $actor->getKey(),
+                'listing_id' => $listing->getKey(),
+                'requested_at' => $requested,
+                'message' => $message,
+                'status' => 'pending',
+            ]);
+            $this->record($viewing, $actor, 'customer', 'submitted',
+                null, 'pending', null, $requested);
+            $this->notify($viewing, 'Viewing request submitted',
+                'Your request to view '.$listing->property->title
+                .' was sent. The appointment is not confirmed.');
+            $this->notifyCompany($viewing, 'New customer viewing request',
+                'A customer requested a property viewing. Open your company workspace to review it.');
+            $this->audit($viewing, $actor, 'viewing.submitted');
+
+            return $viewing;
+        });
+    }
 
     public function decide(User $actor, ViewingRequest $viewing, string $decision): void
     {
@@ -156,7 +185,7 @@ final class ViewingDecisionService
         abort_unless($actor->isSystemAdministrator(), 403);
         abort_unless(in_array($decision, ['hold', 'release'], true), 422);
         DB::transaction(function () use ($actor, $viewing, $decision, $reason): void {
-            $locked = $this->locked($viewing);
+            $locked = $this->locked($viewing, true);
             $from = $locked->review_status ?? 'clear';
             $to = $decision === 'hold' ? 'held' : 'clear';
             abort_unless($from !== $to, 409);
@@ -174,14 +203,14 @@ final class ViewingDecisionService
         });
     }
 
-    private function locked(ViewingRequest $viewing): ViewingRequest
+    private function locked(ViewingRequest $viewing, bool $allowHistoricalReview = false): ViewingRequest
     {
         $locked = ViewingRequest::query()->lockForUpdate()
             ->findOrFail($viewing->getKey());
         // Never turn an imported historical appointment into a new real
         // appointment merely because an admin or company clicks a button.
-        abort_unless($locked->legacy_uuid === null
-            && $locked->status !== 'legacy_review', 409);
+        abort_unless($allowHistoricalReview || ($locked->legacy_uuid === null
+            && $locked->status !== 'legacy_review'), 409);
         return $locked;
     }
 
