@@ -60,7 +60,10 @@ function privateDb(string $kind): PDO
             PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>false,
         ]);
     $pdo->exec('SET SESSION TRANSACTION READ ONLY');
-    if ($pdo->query('SELECT DATABASE()')->fetchColumn()!==$db) {
+    $identity=$pdo->query('SELECT DATABASE()');
+    $actualDb=$identity->fetchColumn();
+    $identity->closeCursor();
+    if ($actualDb!==$db) {
         throw new RuntimeException('Clone schema mismatch.');
     }
     return $pdo;
