@@ -98,13 +98,13 @@ try {
         'users','locations','amenities','companies','company_members','projects',
         'properties','listings','project_amenities','property_amenities',
         'location_countries','location_data_packs','location_hierarchy_registry',
-        'media_assets','media_attachments','inquiries',
+        'media_assets','media_attachments','inquiries','saved_listings',
     ];
     $destTables=[
         'users','locations','amenities','companies','company_user','projects',
         'properties','listings','project_amenities','property_amenities',
         'location_countries','location_data_packs','location_hierarchy_registry',
-        'media_assets','media_attachments','inquiries','legacy_import_batches',
+        'media_assets','media_attachments','inquiries','saved_listings','legacy_import_batches',
         'legacy_identity_maps','legacy_company_membership_reviews',
     ];
     foreach ($supported as $table) {
@@ -122,18 +122,19 @@ try {
     foreach ($supported as $table) {
         $legacyCounts[$table]=(int)$source->query('SELECT COUNT(*) FROM '.$table)->fetchColumn();
     }
-    // Never suggest completion while source data has no safe Laravel adapter.
-    $unmappedTables=[
-        'leads','user_roles','role_permissions','entity_status_history',
-        'saved_listings','viewing_requests','invoices','invoice_items',
-        'payment_transactions','payments','transactions','billing_subscriptions',
-        'email_outbox','email_templates','security_audit_events',
-    ];
-    foreach ($unmappedTables as $table) {
-        if (in_array($table,$sourceTables,true)) {
-            $unmapped[$table]=(int)$source->query('SELECT COUNT(*) FROM '.$table)->fetchColumn();
+    // Report EVERY source table without an adapter, even if a future source
+    // migration introduces an unfamiliar table. This is an inventory, not
+    // permission to omit records. Never rely on a handwritten short list.
+    foreach ($sourceTables as $table) {
+        if (in_array($table,$supported,true)) {
+            continue;
         }
+        if (preg_match('/^[a-z][a-z0-9_]*$/D',$table)!==1) {
+            throw new RuntimeException('Unsafe or unrecognized source table name.');
+        }
+        $unmapped[$table]=(int)$source->query('SELECT COUNT(*) FROM '.$table)->fetchColumn();
     }
+    ksort($unmapped);
     if ($mode==='--plan') {
         echo json_encode([
             'mode'=>'READ_ONLY_PLAN','legacy_record_counts'=>$legacyCounts,
@@ -150,6 +151,9 @@ try {
     $stage=new BaramaLegacyCloneStager($source,$target,$mediaSource,$mediaTarget);
     $result=$stage->stage();
     $result['unmapped_legacy_data_counts']=$unmapped;
+    $result['unmapped_nonempty_table_count']=count(array_filter(
+        $unmapped,static fn(int $count):bool=>$count>0
+    ));
     $result['source_changed']=false;
     $result['release_gate']='BLOCKED_UNTIL_ALL_HISTORICAL_DATA_AND_PERMISSIONS_RECONCILED';
     echo json_encode($result,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR),"\n";
