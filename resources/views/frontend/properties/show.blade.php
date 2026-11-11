@@ -54,6 +54,14 @@
                         @csrf<button class="button button--secondary" type="submit">Save property</button>
                     </form>
                     <a class="button button--secondary" href="{{ route('account.saved.index') }}">Your saved homes</a>
+                    <form method="post" action="{{ route('account.activity.comparison.store', $listing) }}">
+                        @csrf
+                        <button class="button button--secondary" type="submit">Add to compare</button>
+                    </form>
+                    <form method="post" action="{{ route('account.activity.recent.store', $listing) }}">
+                        @csrf
+                        <button class="button button--secondary" type="submit">Remember this property</button>
+                    </form>
                 </section>
                 <section class="viewing-form" aria-labelledby="viewing-heading">
                     <h2 id="viewing-heading">Request a property viewing</h2>
