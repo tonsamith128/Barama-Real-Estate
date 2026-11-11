@@ -14,7 +14,7 @@
                         <p>Requested for {{ $viewing->requested_at->format('M j, Y \a\t g:i A') }}</p>
                     @endif
                     @if($viewing->message)<p>{{ $viewing->message }}</p>@endif</div>
-                <div><span class="customer-status">{{ ucfirst($viewing->status) }}</span>
+                <div><span class="customer-status">{{ $viewing->legacy_uuid ? 'Needs review' : ucfirst($viewing->status) }}</span>
                     @if($viewing->status === 'pending')
                         <form method="post" action="{{ route('account.viewings.cancel', $viewing) }}">@csrf @method('PATCH')
                             <button class="button button--secondary" type="submit">Cancel request</button>
