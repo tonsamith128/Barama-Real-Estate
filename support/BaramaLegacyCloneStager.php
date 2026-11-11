@@ -134,6 +134,13 @@ final class BaramaLegacyCloneStager
             'source_account_email_collisions'=>"SELECT COUNT(*) FROM
                 (SELECT LOWER(TRIM(email)) AS e,COUNT(*) AS total FROM users
                  GROUP BY LOWER(TRIM(email)) HAVING COUNT(*)>1) t",
+            'lead_inquiry_company_mismatch'=>"SELECT COUNT(*)
+                FROM leads l JOIN inquiries i ON i.id=l.inquiry_id
+                WHERE i.company_id IS NOT NULL AND l.company_id<>i.company_id",
+            'viewing_company_mismatch'=>"SELECT COUNT(*)
+                FROM viewing_requests v JOIN listings l ON l.id=v.listing_id
+                JOIN properties p ON p.id=l.property_id
+                WHERE v.company_id<>p.company_id",
             'source_media_unknown_type'=>"SELECT COUNT(*) FROM media_attachments
                 WHERE entity_type NOT IN ('company','project','property','listing')",
             'source_media_orphan_company'=>"SELECT COUNT(*)
