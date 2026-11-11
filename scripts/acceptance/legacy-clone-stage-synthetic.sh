@@ -131,6 +131,23 @@ if BARAMA_TARGET_OFFLINE_VERIFIED=no php support/barama_isolated_clone_stage.php
 fi
 echo "PRODUCTION_AND_EXTERNAL_SIDE_EFFECT_GATES=PASS"
 
+echo "========== NEGATIVE SOURCE RELATIONSHIP AND MISSING PRIVATE FILE =========="
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$SOURCE"     -e "UPDATE properties SET company_id=NULL WHERE reference_code='QA-PROPERTY-1'"
+if php support/barama_isolated_clone_stage.php --stage > "$QA/unassigned-property.txt" 2>&1; then
+    echo "FAILED=UNASSIGNED_LEGACY_PROPERTY_ACCEPTED"; exit 9
+fi
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$SOURCE"     -e "UPDATE properties SET company_id=(SELECT id FROM companies WHERE slug='qa-synthetic-realty') WHERE reference_code='QA-PROPERTY-1'"
+echo "INVALID_OWNER_SOURCE_DENIED=PASS"
+
+mv -- "$SRC_MEDIA/uploads/qa-picture.png" "$QA/temporarily-missing-picture.png"
+if php support/barama_isolated_clone_stage.php --stage > "$QA/missing-picture.txt" 2>&1; then
+    echo "FAILED=MISSING_PRIVATE_IMAGE_ACCEPTED"; exit 9
+fi
+mv -- "$QA/temporarily-missing-picture.png" "$SRC_MEDIA/uploads/qa-picture.png"
+test "$(MYSQL_PWD="$DB_PASSWORD" mysql -N -h 127.0.0.1 -u "$DB_USERNAME"     "$TARGET" -e "SELECT COUNT(*) FROM users")" = 0
+test "$(MYSQL_PWD="$DB_PASSWORD" mysql -N -h 127.0.0.1 -u "$DB_USERNAME"     "$TARGET" -e "SELECT COUNT(*) FROM legacy_import_batches")" = 0
+echo "MISSING_MEDIA_ROLLBACK_KEEPS_TARGET_EMPTY=PASS"
+
 echo "========== STAGE INTO DISPOSABLE TARGET ONLY =========="
 php support/barama_isolated_clone_stage.php --stage > "$QA/staged.json"
 php support/barama_isolated_clone_reconcile.php > "$QA/reconciled.json"
