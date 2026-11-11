@@ -266,6 +266,75 @@ final class ViewingLifecycleAndArchivedCustomerReviewTest extends TestCase
         ]);
     }
 
+    public function test_revoked_company_role_cannot_change_an_existing_viewing(): void
+    {
+        $listing=$this->published('role-revoked');
+        $customer=User::factory()->create();
+        $manager=User::factory()->create();
+        $this->membership($manager,$listing);
+        $viewing=$this->requestViewing($customer,$listing);
+        $this->actingAs($manager)->get(route('developer.viewings.index'))
+            ->assertOk()->assertSee('QA Viewing Property role-revoked');
+
+        CompanyMembership::query()->where('user_id',$manager->id)->update(['status'=>'inactive']);
+        $this->post(route('developer.viewings.propose',$viewing),[
+            'proposed_at'=>now()->addDays(7)->format('Y-m-d H:i:s'),
+        ])->assertNotFound();
+        $this->assertSame('pending',$viewing->fresh()->status);
+        $this->assertDatabaseCount('viewing_events',1);
+    }
+
+    public function test_admin_may_review_historical_appointment_without_activating_it(): void
+    {
+        $listing=$this->published('legacy-review');
+        $customer=User::factory()->create();
+        $admin=User::factory()->create(['system_role'=>'super_admin']);
+        $viewing=ViewingRequest::query()->create([
+            'user_id'=>$customer->id,'listing_id'=>$listing->id,
+            'requested_at'=>now()->subMonth(),'status'=>'legacy_review',
+        ]);
+        $viewing->forceFill([
+            'legacy_uuid'=>'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            'legacy_original_status'=>'confirmed',
+        ])->save();
+        $this->actingAs($admin)->post(route('admin.viewings.review',$viewing),[
+            'decision'=>'hold','reason'=>'Check original customer identity',
+        ])->assertRedirect();
+        $this->assertSame('held',$viewing->fresh()->review_status);
+        $this->post(route('admin.viewings.review',$viewing),[
+            'decision'=>'release','reason'=>'Historical source reconciled',
+        ])->assertRedirect();
+        $this->post(route('admin.viewings.decide',$viewing),[
+            'decision'=>'confirmed',
+        ])->assertStatus(409);
+        $this->assertSame('legacy_review',$viewing->fresh()->status);
+        $this->assertDatabaseCount('account_notifications',0);
+        $this->assertDatabaseHas('viewing_events',[
+            'viewing_request_id'=>$viewing->id,'event_type'=>'admin_review_release',
+        ]);
+    }
+
+    public function test_viewing_transition_evidence_cannot_be_deleted_by_rollback(): void
+    {
+        $listing=$this->published('viewing-rollback');
+        $customer=User::factory()->create();
+        $viewing=$this->requestViewing($customer,$listing);
+        $this->assertDatabaseCount('viewing_events',1);
+        $migration=require database_path(
+            'migrations/2026_11_11_000003_add_viewing_decision_history_and_review.php');
+        try {
+            $migration->down();
+            $this->fail('Rollback must preserve all viewing event evidence.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString(
+                'Cannot discard immutable viewing decision history',
+                $error->getMessage()
+            );
+        }
+        $this->assertTrue(Schema::hasTable('viewing_events'));
+        $this->assertDatabaseCount('viewing_events',1);
+    }
+
     public function test_customer_archive_migration_refuses_data_destructive_rollback(): void
     {
         $listing=$this->published('rollback-archive');
