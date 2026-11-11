@@ -80,15 +80,13 @@ try {
     $maps=[];
     $reportCounts=[];
     foreach ($tableKinds as $table=>$destination) {
-        $src=getRows($source,'SELECT id,uuid'.(
-            in_array($table,['companies','projects','properties','listings','users','locations','amenities'],true)
-                ? ',status' : ''
-        ).' FROM '.$table.' ORDER BY id');
-        if($table==='media_attachments') {
-            // The legacy polymorphic attachment has no UUID; the mapping
-            // intentionally records NULL for this source kind.
-            $src=getRows($source,'SELECT id,NULL AS uuid FROM media_attachments ORDER BY id');
+        $sourceColumns=$table==='media_attachments' ? 'id,NULL AS uuid' : 'id,uuid';
+        if(in_array($table,
+            ['companies','projects','properties','listings','users','locations','amenities'],true)) {
+            $sourceColumns.=',status';
         }
+        // The legacy polymorphic attachment has no UUID.
+        $src=getRows($source,'SELECT '.$sourceColumns.' FROM '.$table.' ORDER BY id');
         $new=getRows($target,
             'SELECT source_id,source_uuid,target_id,source_status
              FROM legacy_identity_maps WHERE batch_id='.$batchId.'
