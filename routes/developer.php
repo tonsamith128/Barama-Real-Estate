@@ -37,6 +37,10 @@ Route::middleware(['auth', 'verified'])
         Route::get('/viewings', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'decide'])
             ->middleware('throttle:10,1')->name('viewings.decide');
+        Route::post('/viewings/{viewing}/propose', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'propose'])
+            ->middleware('throttle:10,1')->name('viewings.propose');
+        Route::post('/viewings/{viewing}/cancel', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'cancel'])
+            ->middleware('throttle:10,1')->name('viewings.cancel');
         Route::post('/company/{company}/listings/{listing}/gallery', [ListingGalleryController::class, 'store'])
             ->middleware('throttle:10,1')->name('gallery.store');
         Route::get('/company/{company}/listings/{listing}/gallery/{asset}', [ListingGalleryController::class, 'preview'])

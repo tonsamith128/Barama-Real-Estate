@@ -63,6 +63,7 @@ final class BaramaLegacyCloneStager
             $this->copyMedia();
             $this->copyMediaLinks();
             $this->copyInquiries();
+            $this->copyLeads();
             $this->verifyMappedCounts();
 
             $this->target->prepare('UPDATE legacy_import_batches
@@ -133,6 +134,13 @@ final class BaramaLegacyCloneStager
             'source_account_email_collisions'=>"SELECT COUNT(*) FROM
                 (SELECT LOWER(TRIM(email)) AS e,COUNT(*) AS total FROM users
                  GROUP BY LOWER(TRIM(email)) HAVING COUNT(*)>1) t",
+            'lead_inquiry_company_mismatch'=>"SELECT COUNT(*)
+                FROM leads l JOIN inquiries i ON i.id=l.inquiry_id
+                WHERE i.company_id IS NOT NULL AND l.company_id<>i.company_id",
+            'viewing_company_mismatch'=>"SELECT COUNT(*)
+                FROM viewing_requests v JOIN listings l ON l.id=v.listing_id
+                JOIN properties p ON p.id=l.property_id
+                WHERE v.company_id<>p.company_id",
             'source_media_unknown_type'=>"SELECT COUNT(*) FROM media_attachments
                 WHERE entity_type NOT IN ('company','project','property','listing')",
             'source_media_orphan_company'=>"SELECT COUNT(*)
@@ -170,6 +178,7 @@ final class BaramaLegacyCloneStager
             'location_data_packs','location_hierarchy_registry',
             'legacy_import_batches','legacy_identity_maps',
             'legacy_company_membership_reviews',
+            'legacy_customer_inquiries','legacy_customer_leads',
         ];
         foreach ($tables as $table) {
             if ((int) $this->target->query('SELECT COUNT(*) FROM '.$table)->fetchColumn() !== 0) {
@@ -741,24 +750,68 @@ final class BaramaLegacyCloneStager
         }
     }
 
+    /**
+     * The native Laravel inquiry model requires a published listing and an
+     * email. The legacy schema also includes company-only and anonymous
+     * contacts. Preserve EVERY original record in a private review table,
+     * never invent a listing or send an outbound customer message.
+     */
     private function copyInquiries(): void
     {
         foreach ($this->rows('inquiries') as $r) {
-            if ($r['listing_id']===null || empty($r['contact_email'])) {
-                // Company-only inquiries need a different destination schema,
-                // never attach them to an unrelated listing or invent an email.
-                throw new RuntimeException('Unmapped company-only/customer inquiry requires manual adapter.');
-            }
-            $id=$this->insert('inquiries',array_merge([
-                'listing_id'=>$this->mapped('listings',$r['listing_id']),
-                'requester_id'=>$this->mapped('users',$r['user_id'],true),
-                'full_name'=>$this->limited($r['contact_name'],120),
-                'email'=>$this->limited($r['contact_email'],190),
-                'phone'=>$this->limited($r['contact_phone'],50,true),
-                'message'=>$r['message'],'status'=>'new',
+            $id=$this->insert('legacy_customer_inquiries',array_merge([
+                'batch_id'=>$this->batchId,
+                'source_uuid'=>$r['uuid'],
+                'company_id'=>$this->mapped('companies',$r['company_id'],true),
+                'project_id'=>$this->mapped('projects',$r['project_id'],true),
+                'property_id'=>$this->mapped('properties',$r['property_id'],true),
+                'listing_id'=>$this->mapped('listings',$r['listing_id'],true),
+                'user_id'=>$this->mapped('users',$r['user_id'],true),
+                'assigned_user_id'=>$this->mapped('users',$r['assigned_user_id'],true),
+                'contact_name'=>$this->limited($r['contact_name'],160),
+                'contact_email'=>$this->limited($r['contact_email'],191,true),
+                'contact_phone'=>$this->limited($r['contact_phone'],60,true),
+                'preferred_contact'=>$this->limited($r['preferred_contact'],24,true),
+                'subject'=>$this->limited($r['subject'],191,true),
+                'message'=>$r['message'],
+                'source'=>$this->limited($r['source'],60),
+                'source_status'=>$this->limited($r['status'],32),
                 'responded_at'=>$r['responded_at'],
+                'closed_at'=>$r['closed_at'],
+                'review_status'=>'needs_review',
             ],$this->timestamps($r)));
             $this->map('inquiries',$r,$id,(string)$r['status']);
+        }
+    }
+
+    private function copyLeads(): void
+    {
+        foreach ($this->rows('leads') as $r) {
+            $id=$this->insert('legacy_customer_leads',array_merge([
+                'batch_id'=>$this->batchId,
+                'source_uuid'=>$r['uuid'],
+                'company_id'=>$this->mapped('companies',$r['company_id']),
+                'inquiry_id'=>$this->mapped('inquiries',$r['inquiry_id'],true),
+                'assigned_user_id'=>$this->mapped('users',$r['assigned_user_id'],true),
+                'preferred_location_id'=>$this->mapped('locations',$r['preferred_location_id'],true),
+                'contact_name'=>$this->limited($r['contact_name'],160),
+                'contact_email'=>$this->limited($r['contact_email'],191,true),
+                'contact_phone'=>$this->limited($r['contact_phone'],60,true),
+                'source'=>$this->limited($r['source'],60),
+                'source_stage'=>$this->limited($r['stage'],32),
+                'transaction_type'=>$this->limited($r['transaction_type'],24,true),
+                'property_type'=>$this->limited($r['property_type'],50,true),
+                'budget_min'=>$r['budget_min'],
+                'budget_max'=>$r['budget_max'],
+                'currency'=>$r['currency'],
+                'notes'=>$r['notes'],
+                'last_contact_at'=>$r['last_contact_at'],
+                'next_follow_up_at'=>$r['next_follow_up_at'],
+                'won_at'=>$r['won_at'],'lost_at'=>$r['lost_at'],
+                'deleted_at'=>$r['deleted_at'],
+                'review_status'=>'needs_review',
+            ],$this->timestamps($r)));
+            $this->map('leads',$r,$id,(string)$r['stage']);
         }
     }
 
@@ -766,7 +819,7 @@ final class BaramaLegacyCloneStager
     {
         foreach (['users','locations','amenities','companies','projects',
             'properties','listings','media_assets','media_attachments','inquiries',
-            'saved_searches','viewing_requests'] as $table) {
+            'saved_searches','viewing_requests','leads'] as $table) {
             if (count($this->maps[$table]??[])!==($this->counts[$table]??0)) {
                 throw new RuntimeException('Conversion lost one or more source identities.');
             }

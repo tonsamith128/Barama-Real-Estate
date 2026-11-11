@@ -88,6 +88,10 @@ $checks = [
   'new_recent_listing_views' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='recent_listing_views'",
   'new_saved_search_history' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='saved_searches' AND column_name='legacy_uuid'",
   'new_viewing_history' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='viewing_requests' AND column_name='legacy_uuid'",
+  'new_viewing_events' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='viewing_events'",
+  'new_viewing_proposal' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='viewing_requests' AND column_name='proposed_at'",
+  'new_customer_archive_leads' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='legacy_customer_leads'",
+  'new_customer_archive_inquiries' => "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='legacy_customer_inquiries'",
   'new_location_uuid' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='locations' AND column_name='uuid'",
   'decimal_bedrooms' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='properties' AND column_name='bedrooms' AND data_type='decimal'",
   'project_completed_at' => "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='projects' AND column_name='completed_at'",
@@ -215,8 +219,8 @@ mysqldump --host="$DB_HOST" --port="${DB_PORT:-3306}" --user="$DB_USERNAME" \
 test -s "$QA/upgrade.sql"
 echo "SQL_BACKUP=CREATED_PRIVATE_CI_ONLY"
 
-echo "========== ROLLBACK NINE ADDITIVE MIGRATIONS =========="
-php artisan migrate:rollback --step=9 --force --no-interaction --quiet
+echo "========== ROLLBACK ELEVEN ADDITIVE MIGRATIONS =========="
+php artisan migrate:rollback --step=11 --force --no-interaction --quiet
 
 php <<'PHP'
 <?php
@@ -248,11 +252,17 @@ $customerColumnsAbsent = (int) $db->query("SELECT COUNT(*) FROM information_sche
  WHERE table_schema=DATABASE() AND
  ((table_name='saved_searches' AND column_name='legacy_uuid')
   OR (table_name='viewing_requests' AND column_name='legacy_uuid'))")->fetchColumn();
+$viewingWorkflowAbsent = (int) $db->query("SELECT COUNT(*) FROM information_schema.tables
+ WHERE table_schema=DATABASE() AND table_name IN ('viewing_events','legacy_customer_leads','legacy_customer_inquiries')")->fetchColumn();
+$viewingProposalAbsent = (int) $db->query("SELECT COUNT(*) FROM information_schema.columns
+ WHERE table_schema=DATABASE() AND table_name='viewing_requests' AND column_name='proposed_at'")->fetchColumn();
 $original = (int) $db->query("SELECT COUNT(*) FROM account_notifications WHERE title='Existing notification'")->fetchColumn();
 if ($absent !== 0 || $dedupeAbsent !== 0 || $catalogAbsent !== 0
     || $legacyFieldAbsent !== 0 || $governanceAbsent !== 0
     || $geoUuidAbsent !== 0 || $identityAbsent !== 0
-    || $engagementAbsent !== 0 || $customerColumnsAbsent !== 0 || $original !== 1) {
+    || $engagementAbsent !== 0 || $customerColumnsAbsent !== 0
+    || $viewingWorkflowAbsent !== 0 || $viewingProposalAbsent !== 0
+    || $original !== 1) {
     throw new RuntimeException('MIGRATION_ROLLBACK_FAILED');
 }
 echo "ADDITIVE_MIGRATIONS_ROLLBACK=PASS\n";

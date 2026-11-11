@@ -60,6 +60,8 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
             ->middleware('throttle:5,1')->name('viewings.store');
         Route::patch('/viewings/{viewing}/cancel', [ViewingRequestController::class, 'cancel'])
             ->name('viewings.cancel');
+        Route::post('/viewings/{viewing}/reschedule-response', [ViewingRequestController::class, 'respond'])
+            ->middleware('throttle:10,1')->name('viewings.respond');
 
         Route::get('/notifications', [NotificationController::class, 'index'])
             ->name('notifications.index');

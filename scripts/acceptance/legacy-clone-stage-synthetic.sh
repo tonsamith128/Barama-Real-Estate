@@ -103,7 +103,10 @@ php support/barama_isolated_clone_stage.php --plan > "$QA/plan.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
  if(($j["legacy_record_counts"]["saved_listings"]??0)!==1
  || ($j["unmapped_legacy_data_counts"]["user_roles"]??0)!==1
- || ($j["unmapped_legacy_data_counts"]["leads"]??0)!==1
+ || ($j["legacy_record_counts"]["leads"]??0)!==1
+ || ($j["legacy_record_counts"]["inquiries"]??0)!==1
+ || array_key_exists("leads",$j["unmapped_legacy_data_counts"])
+ || array_key_exists("inquiries",$j["unmapped_legacy_data_counts"])
  || array_key_exists("saved_listings",$j["unmapped_legacy_data_counts"])
  || array_key_exists("saved_searches",$j["unmapped_legacy_data_counts"])
  || array_key_exists("viewing_requests",$j["unmapped_legacy_data_counts"])
@@ -157,7 +160,10 @@ php support/barama_isolated_clone_reconcile.php > "$QA/reconciled.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
  if(($j["integrity_status"]??"")!=="MAPPED_CORE_VERIFIED"
  || ($j["production_release_status"]??"")==="RELEASE_READY"
- || ($j["unconverted_nonempty_source_tables"]["leads"]??0)!==1
+ || ($j["mapped_core_counts"]["leads"]["source"]??0)!==1
+ || ($j["mapped_core_counts"]["inquiries"]["source"]??0)!==1
+ || array_key_exists("leads",$j["unconverted_nonempty_source_tables"])
+ || array_key_exists("inquiries",$j["unconverted_nonempty_source_tables"])
  || ($j["mapped_core_counts"]["saved_listings"]["target"]??0)!==1
  || ($j["mapped_core_counts"]["saved_searches"]["source"]??0)!==1
  || ($j["mapped_core_counts"]["viewing_requests"]["source"]??0)!==1
@@ -170,7 +176,9 @@ php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR)
 ";' "$QA/reconciled.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
  if($j["mode"]!=="DISPOSABLE_TARGET_STAGED"
- || ($j["unmapped_legacy_data_counts"]["leads"]??0)!==1
+ || ($j["mapped_record_counts"]["leads"]??0)!==1
+ || ($j["mapped_record_counts"]["inquiries"]??0)!==1
+ || array_key_exists("leads",$j["unmapped_legacy_data_counts"])
  || ($j["unmapped_nonempty_table_count"]??0)<2
  || $j["release_gate"]==="RELEASE_READY"){exit(1);}
  echo "LEGACY_UUID_AND_ID_STAGING=PASS\n";' "$QA/staged.json"
@@ -199,6 +207,9 @@ $checks=[
 'recent_view_count'=>"SELECT COUNT(*) FROM recent_listing_views WHERE view_count=4",
 'archived_search'=>"SELECT COUNT(*) FROM saved_searches WHERE legacy_uuid IS NOT NULL AND legacy_review_required=1 AND legacy_alerts_enabled=0",
 'archived_viewing'=>"SELECT COUNT(*) FROM viewing_requests WHERE status='legacy_review' AND legacy_original_status='confirmed' AND legacy_preferred_window='morning'",
+'archived_company_inquiry'=>"SELECT COUNT(*) FROM legacy_customer_inquiries WHERE listing_id IS NULL AND contact_email IS NULL AND review_status='needs_review' AND source_status='new'",
+'archived_lead'=>"SELECT COUNT(*) FROM legacy_customer_leads WHERE inquiry_id IS NOT NULL AND review_status='needs_review' AND source_stage='new'",
+'no_live_imported_inquiry'=>"SELECT COUNT(*) FROM inquiries",
 'inactive_membership'=>"SELECT COUNT(*) FROM company_user WHERE status='inactive' AND role='member'",
 'original_role_review'=>"SELECT COUNT(*) FROM legacy_company_membership_reviews WHERE source_role='owner' AND decision='needs_independent_approval'",
 'wrong_membership'=>"SELECT COUNT(*) FROM company_user WHERE status<>'inactive' OR role<>'member'",
@@ -207,7 +218,7 @@ $checks=[
 foreach($checks as $name=>$sql){
  $value=(int)$db->query($sql)->fetchColumn();
  $expected=$name==='private_sale_rental'?2:
-    (in_array($name,['wrong_membership','unapproved_roles'],true)?0:1);
+    (in_array($name,['wrong_membership','unapproved_roles','no_live_imported_inquiry'],true)?0:1);
  if($value!==$expected){throw new RuntimeException('QA_FAILED='.$name);}
  echo strtoupper($name)."=PASS\n";
 }

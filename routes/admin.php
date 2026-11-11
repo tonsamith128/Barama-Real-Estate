@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\Licensing\LicenseController;
 use App\Http\Controllers\Admin\Inquiries\AdminInquiryController;
 use App\Http\Controllers\Admin\Catalog\CatalogModerationController;
 use App\Http\Controllers\Admin\Geography\GeographyController;
+use App\Http\Controllers\Admin\CustomerRecovery\ArchivedCustomerReviewController;
 
 // Every action independently authorizes the verified system administrator.
 Route::middleware(['auth', 'verified', 'throttle:30,1'])
@@ -52,6 +53,18 @@ Route::middleware(['auth', 'verified', 'throttle:30,1'])
         Route::get('/viewings', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'index'])->name('viewings.index');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'decide'])
             ->middleware('throttle:10,1')->name('viewings.decide');
+        Route::post('/viewings/{viewing}/propose', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'propose'])
+            ->middleware('throttle:10,1')->name('viewings.propose');
+        Route::post('/viewings/{viewing}/cancel', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'cancel'])
+            ->middleware('throttle:10,1')->name('viewings.cancel');
+        Route::post('/viewings/{viewing}/review', [\App\Http\Controllers\Admin\Viewings\AdminViewingController::class, 'review'])
+            ->middleware('throttle:10,1')->name('viewings.review');
+        Route::get('/customer-recovery', [ArchivedCustomerReviewController::class,'index'])
+            ->name('customer-recovery.index');
+        Route::post('/customer-recovery/inquiries/{inquiry}', [ArchivedCustomerReviewController::class,'inquiry'])
+            ->middleware('throttle:10,1')->name('customer-recovery.inquiries.review');
+        Route::post('/customer-recovery/leads/{lead}', [ArchivedCustomerReviewController::class,'lead'])
+            ->middleware('throttle:10,1')->name('customer-recovery.leads.review');
         Route::get('/contacts', [ContactInboxController::class, 'index'])->name('contacts.index');
         Route::patch('/contacts/{message}/read', [ContactInboxController::class, 'read'])->name('contacts.read');
         Route::get('/policies', [LegalPolicyController::class, 'index'])->name('policies.index');
