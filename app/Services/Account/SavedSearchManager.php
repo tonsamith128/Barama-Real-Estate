@@ -53,6 +53,29 @@ final class SavedSearchManager
         });
     }
 
+    /**
+     * A user may explicitly accept ONLY filters currently supported by the
+     * Laravel browse form. Original historic criteria remain in the private
+     * evidence column; legacy automatic alerts are never enabled here.
+     */
+    public function acceptImportedFilters(User $user, SavedSearch $savedSearch): void
+    {
+        $this->assertOwner($user, $savedSearch);
+
+        DB::transaction(function () use ($user, $savedSearch): void {
+            $row = SavedSearch::query()->where('user_id', $user->getKey())
+                ->whereKey($savedSearch->getKey())->lockForUpdate()->firstOrFail();
+            abort_unless($row->legacy_uuid !== null, 404);
+            if (!$row->legacy_review_required) {
+                return;
+            }
+            $row->forceFill([
+                'legacy_review_required' => false,
+                'legacy_alerts_enabled' => false,
+            ])->save();
+        });
+    }
+
     public function remove(User $user, SavedSearch $savedSearch): void
     {
         $this->assertOwner($user, $savedSearch);

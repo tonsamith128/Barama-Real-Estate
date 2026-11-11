@@ -52,6 +52,10 @@ final class BaramaLegacyCloneStager
             $this->copyProperties();
             $this->copyListings();
             $this->copySavedListings();
+            $this->copySavedSearches();
+            $this->copyComparisonItems();
+            $this->copyRecentListingViews();
+            $this->copyViewingRequests();
             $this->copyPivot('project_amenities','projects','amenities','project_id','amenity_id');
             $this->copyPivot('property_amenities','properties','amenities','property_id','amenity_id');
             $this->copyCountryPacks();
@@ -91,7 +95,9 @@ final class BaramaLegacyCloneStager
                 -($this->counts['project_amenities']??0)-($this->counts['property_amenities']??0)
                 -($this->counts['location_countries']??0)-($this->counts['location_data_packs']??0)
                 -($this->counts['location_hierarchy_registry']??0)
-                -($this->counts['saved_listings']??0),
+                -($this->counts['saved_listings']??0)
+                -($this->counts['comparison_items']??0)
+                -($this->counts['recent_listing_views']??0),
             'media_private_files_created'=>count($this->filesCreated),
             'legacy_passwords_copied'=>false,
             'legacy_admin_roles_activated'=>false,
@@ -120,6 +126,10 @@ final class BaramaLegacyCloneStager
             'saved_listing_invalid_offer'=>"SELECT COUNT(*)
                 FROM saved_listings s LEFT JOIN listings l ON l.id=s.listing_id
                 WHERE l.id IS NULL",
+            'viewing_company_mismatch'=>"SELECT COUNT(*)
+                FROM viewing_requests v JOIN listings l ON l.id=v.listing_id
+                JOIN properties p ON p.id=l.property_id
+                WHERE p.company_id<>v.company_id",
             'source_account_email_collisions'=>"SELECT COUNT(*) FROM
                 (SELECT LOWER(TRIM(email)) AS e,COUNT(*) AS total FROM users
                  GROUP BY LOWER(TRIM(email)) HAVING COUNT(*)>1) t",
@@ -153,7 +163,9 @@ final class BaramaLegacyCloneStager
     {
         $tables = [
             'users','companies','company_user','locations','projects','properties',
-            'listings','saved_listings','amenities','property_amenities','project_amenities',
+            'listings','saved_listings','saved_searches','viewing_requests',
+            'comparison_items','recent_listing_views',
+            'amenities','property_amenities','project_amenities',
             'media_assets','media_attachments','inquiries','location_countries',
             'location_data_packs','location_hierarchy_registry',
             'legacy_import_batches','legacy_identity_maps',
@@ -479,6 +491,109 @@ final class BaramaLegacyCloneStager
         }
     }
 
+    /**
+     * Preserve all original saved-search criteria privately; do not silently
+     * claim that old location/bedroom filters work in Laravel browsing.
+     * Alerts remain disabled until explicit user re-enrollment and review.
+     */
+    private function copySavedSearches(): void
+    {
+        foreach ($this->rows('saved_searches') as $r) {
+            $filters=[];
+            if (!empty($r['query_text'])) {
+                $filters['q']=$this->limited($r['query_text'],100);
+            }
+            if (in_array($r['transaction_type'],['sale','rent'],true)) {
+                $filters['offer']=$r['transaction_type'];
+            }
+            if (!empty($r['property_type'])) {
+                $filters['type']=$r['property_type'];
+            }
+            foreach (['price_min'=>'min_price','price_max'=>'max_price'] as $source=>$field) {
+                if ($r[$source]!==null) {
+                    $filters[$field]=(string)$r[$source];
+                }
+            }
+            $evidence=[
+                'transaction_type'=>$r['transaction_type'],
+                'property_type'=>$r['property_type'],
+                'location_id'=>$this->mapped('locations',$r['location_id'],true),
+                'bedrooms_min'=>$r['bedrooms_min'],
+                'price_min'=>$r['price_min'],'price_max'=>$r['price_max'],
+                'currency'=>$r['currency'],
+            ];
+            $id=$this->insert('saved_searches',array_merge([
+                'user_id'=>$this->mapped('users',$r['user_id']),
+                'name'=>$this->limited($r['name'],120),
+                'filters'=>json_encode($filters,JSON_THROW_ON_ERROR),
+                'legacy_uuid'=>$r['uuid'],
+                'legacy_filter_evidence'=>json_encode($evidence,JSON_THROW_ON_ERROR),
+                // Even matching filters require consent and native-language
+                // acceptance before imported searches become actionable.
+                'legacy_review_required'=>1,
+                'legacy_alert_frequency'=>$r['alert_frequency'],
+                'legacy_alerts_enabled'=>0,
+                'legacy_last_checked_at'=>$r['last_checked_at'],
+            ],$this->timestamps($r)));
+            $this->map('saved_searches',$r,$id,'pending_customer_filter_review');
+        }
+    }
+
+    private function copyComparisonItems(): void
+    {
+        foreach ($this->rows('comparison_items','user_id,listing_id') as $r) {
+            $this->insert('comparison_items',[
+                'user_id'=>$this->mapped('users',$r['user_id']),
+                'listing_id'=>$this->mapped('listings',$r['listing_id']),
+                'position'=>$r['position'],
+                'created_at'=>$r['created_at'],
+                'updated_at'=>$r['created_at'],
+            ]);
+        }
+    }
+
+    private function copyRecentListingViews(): void
+    {
+        foreach ($this->rows('recent_listing_views','user_id,listing_id') as $r) {
+            $this->insert('recent_listing_views',[
+                'user_id'=>$this->mapped('users',$r['user_id']),
+                'listing_id'=>$this->mapped('listings',$r['listing_id']),
+                'first_viewed_at'=>$r['first_viewed_at'],
+                'last_viewed_at'=>$r['last_viewed_at'],
+                'view_count'=>$r['view_count'],
+                'created_at'=>$r['first_viewed_at'],
+                'updated_at'=>$r['last_viewed_at'],
+            ]);
+        }
+    }
+
+    private function copyViewingRequests(): void
+    {
+        foreach ($this->rows('viewing_requests') as $r) {
+            $id=$this->insert('viewing_requests',array_merge([
+                'user_id'=>$this->mapped('users',$r['user_id']),
+                'listing_id'=>$this->mapped('listings',$r['listing_id']),
+                // midnight is only a database compatibility timestamp; the
+                // real preferred date/window is stored in separate columns.
+                'requested_at'=>$r['preferred_date'].' 00:00:00',
+                'status'=>'legacy_review',
+                'message'=>$r['message'],
+                'legacy_uuid'=>$r['uuid'],
+                'legacy_company_id'=>$this->mapped('companies',$r['company_id']),
+                'legacy_preferred_date'=>$r['preferred_date'],
+                'legacy_preferred_window'=>$r['preferred_time_window'],
+                'legacy_alternate_date'=>$r['alternate_date'],
+                'legacy_alternate_window'=>$r['alternate_time_window'],
+                'legacy_scheduled_for'=>$r['scheduled_for'],
+                'legacy_original_status'=>$r['status'],
+                'legacy_company_note'=>$r['company_note'],
+                'legacy_cancelled_at'=>$r['cancelled_at'],
+                'legacy_completed_at'=>$r['completed_at'],
+            ],$this->timestamps($r)));
+            $this->map('viewing_requests',$r,$id,(string)$r['status']);
+        }
+    }
+
     private function copyPivot(
         string $table,string $parentTable,string $otherTable,
         string $parentField,string $otherField,
@@ -650,9 +765,16 @@ final class BaramaLegacyCloneStager
     private function verifyMappedCounts(): void
     {
         foreach (['users','locations','amenities','companies','projects',
-            'properties','listings','media_assets','media_attachments','inquiries'] as $table) {
+            'properties','listings','media_assets','media_attachments','inquiries',
+            'saved_searches','viewing_requests'] as $table) {
             if (count($this->maps[$table]??[])!==($this->counts[$table]??0)) {
                 throw new RuntimeException('Conversion lost one or more source identities.');
+            }
+        }
+        foreach (['comparison_items','recent_listing_views'] as $activity) {
+            if ((int)$this->target->query('SELECT COUNT(*) FROM '.$activity)
+                ->fetchColumn()!==($this->counts[$activity]??0)) {
+                throw new RuntimeException('Historic customer activity count mismatch.');
             }
         }
         if ((int)$this->target->query('SELECT COUNT(*) FROM saved_listings')

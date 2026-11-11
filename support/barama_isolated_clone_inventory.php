@@ -79,13 +79,15 @@ try {
         'location_hierarchy_registry','companies','company_members','projects',
         'properties','listings','amenities','property_amenities',
         'project_amenities','media_assets','media_attachments','inquiries',
-        'leads','saved_listings','viewing_requests','entity_status_history',
+        'leads','saved_listings','saved_searches','viewing_requests',
+        'comparison_items','recent_listing_views','entity_status_history',
     ];
     $targetTablesRequired = [
         'users','locations','companies','company_user','projects','properties',
         'listings','amenities','property_amenities','project_amenities',
         'media_assets','media_attachments','inquiries','saved_listings',
-        'viewing_requests','moderation_decisions','catalog_revisions',
+        'viewing_requests','comparison_items','recent_listing_views',
+        'saved_searches','moderation_decisions','catalog_revisions',
     ];
     $srcCounts = $dstCounts = [];
     foreach ($legacyTables as $table) {
@@ -130,6 +132,34 @@ try {
         'orphan_media_asset' => [
             ['media_attachments','media_assets'],
             'SELECT COUNT(*) FROM media_attachments x LEFT JOIN media_assets m ON x.media_asset_id=m.id WHERE m.id IS NULL',
+        ],
+        'orphan_saved_search_user' => [
+            ['saved_searches','users'],
+            'SELECT COUNT(*) FROM saved_searches x LEFT JOIN users u ON u.id=x.user_id WHERE u.id IS NULL',
+        ],
+        'orphan_saved_search_location' => [
+            ['saved_searches','locations'],
+            'SELECT COUNT(*) FROM saved_searches x LEFT JOIN locations l ON l.id=x.location_id WHERE x.location_id IS NOT NULL AND l.id IS NULL',
+        ],
+        'orphan_comparison_user' => [
+            ['comparison_items','users'],
+            'SELECT COUNT(*) FROM comparison_items x LEFT JOIN users u ON u.id=x.user_id WHERE u.id IS NULL',
+        ],
+        'orphan_comparison_listing' => [
+            ['comparison_items','listings'],
+            'SELECT COUNT(*) FROM comparison_items x LEFT JOIN listings l ON l.id=x.listing_id WHERE l.id IS NULL',
+        ],
+        'orphan_recent_view_user' => [
+            ['recent_listing_views','users'],
+            'SELECT COUNT(*) FROM recent_listing_views x LEFT JOIN users u ON u.id=x.user_id WHERE u.id IS NULL',
+        ],
+        'orphan_recent_view_listing' => [
+            ['recent_listing_views','listings'],
+            'SELECT COUNT(*) FROM recent_listing_views x LEFT JOIN listings l ON l.id=x.listing_id WHERE l.id IS NULL',
+        ],
+        'viewing_company_mismatch' => [
+            ['viewing_requests','listings','properties'],
+            'SELECT COUNT(*) FROM viewing_requests v JOIN listings l ON l.id=v.listing_id JOIN properties p ON p.id=l.property_id WHERE v.company_id<>p.company_id',
         ],
         'missing_saved_listing_user' => [
             ['saved_listings','users'],

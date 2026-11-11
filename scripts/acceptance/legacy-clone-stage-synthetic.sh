@@ -105,6 +105,9 @@ php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR)
  || ($j["unmapped_legacy_data_counts"]["user_roles"]??0)!==1
  || ($j["unmapped_legacy_data_counts"]["leads"]??0)!==1
  || array_key_exists("saved_listings",$j["unmapped_legacy_data_counts"])
+ || array_key_exists("saved_searches",$j["unmapped_legacy_data_counts"])
+ || array_key_exists("viewing_requests",$j["unmapped_legacy_data_counts"])
+ || array_key_exists("comparison_items",$j["unmapped_legacy_data_counts"])
  || ($j["release_gate"]??"")!=="BLOCKED_UNTIL_INDEPENDENT_RECONCILIATION")
  {exit(1);}
  echo "FULL_LEGACY_TABLE_INVENTORY_AND_CUSTOMER_BLOCKERS=PASS
@@ -156,6 +159,10 @@ php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR)
  || ($j["production_release_status"]??"")==="RELEASE_READY"
  || ($j["unconverted_nonempty_source_tables"]["leads"]??0)!==1
  || ($j["mapped_core_counts"]["saved_listings"]["target"]??0)!==1
+ || ($j["mapped_core_counts"]["saved_searches"]["source"]??0)!==1
+ || ($j["mapped_core_counts"]["viewing_requests"]["source"]??0)!==1
+ || ($j["mapped_core_counts"]["comparison_items"]["target"]??0)!==1
+ || ($j["mapped_core_counts"]["recent_listing_views"]["target"]??0)!==1
  || ($j["mapped_core_counts"]["company_members"]["independent_role_reviews"]??0)!==1
  || ($j["integrity_blockers"]??[])!==[])
  {exit(1);}
@@ -188,6 +195,10 @@ $checks=[
 'saved_published_offer_privately_mapped'=>"SELECT COUNT(*) FROM saved_listings s JOIN legacy_identity_maps m ON m.target_id=s.listing_id AND m.source_table='listings' WHERE m.source_status='published'",
 'gallery_attachment'=>"SELECT COUNT(*) FROM media_attachments WHERE entity_type='listing' AND collection='gallery' AND is_primary=1",
 'saved_listing'=>"SELECT COUNT(*) FROM saved_listings",
+'customer_comparison'=>"SELECT COUNT(*) FROM comparison_items",
+'recent_view_count'=>"SELECT COUNT(*) FROM recent_listing_views WHERE view_count=4",
+'archived_search'=>"SELECT COUNT(*) FROM saved_searches WHERE legacy_uuid IS NOT NULL AND legacy_review_required=1 AND legacy_alerts_enabled=0",
+'archived_viewing'=>"SELECT COUNT(*) FROM viewing_requests WHERE status='legacy_review' AND legacy_original_status='confirmed' AND legacy_preferred_window='morning'",
 'inactive_membership'=>"SELECT COUNT(*) FROM company_user WHERE status='inactive' AND role='member'",
 'original_role_review'=>"SELECT COUNT(*) FROM legacy_company_membership_reviews WHERE source_role='owner' AND decision='needs_independent_approval'",
 'wrong_membership'=>"SELECT COUNT(*) FROM company_user WHERE status<>'inactive' OR role<>'member'",

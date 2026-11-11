@@ -99,12 +99,15 @@ try {
         'properties','listings','project_amenities','property_amenities',
         'location_countries','location_data_packs','location_hierarchy_registry',
         'media_assets','media_attachments','inquiries','saved_listings',
+        'saved_searches','viewing_requests','comparison_items','recent_listing_views',
     ];
     $destTables=[
         'users','locations','amenities','companies','company_user','projects',
         'properties','listings','project_amenities','property_amenities',
         'location_countries','location_data_packs','location_hierarchy_registry',
-        'media_assets','media_attachments','inquiries','saved_listings','legacy_import_batches',
+        'media_assets','media_attachments','inquiries','saved_listings',
+        'saved_searches','viewing_requests','comparison_items','recent_listing_views',
+        'legacy_import_batches',
         'legacy_identity_maps','legacy_company_membership_reviews',
     ];
     foreach ($supported as $table) {
