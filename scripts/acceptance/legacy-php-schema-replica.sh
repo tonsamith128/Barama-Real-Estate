@@ -142,10 +142,21 @@ VALUES ('00000000-0000-4000-8000-000000000013',:owner,:sale,:company,
 'confirmed','Legacy confirmed by company',NOW(),NOW())")
     ->execute(['owner'=>$owner,'sale'=>$sale,'company'=>$company]);
 
+// A company-only inquiry cannot be placed in Laravel's public listing-only
+// inquiry table without making up a property. Stage it privately instead.
+$db->prepare("INSERT INTO inquiries
+(uuid,company_id,user_id,contact_name,contact_email,message,status,created_at,updated_at)
+VALUES ('00000000-0000-4000-8000-000000000014',:company,:owner,
+'Private Synthetic Customer',NULL,'Synthetic historical company-only question',
+'new',NOW(),NOW())")->execute(['company'=>$company,'owner'=>$owner]);
+$privateInquiry=(int)$db->lastInsertId();
 $db->prepare("INSERT INTO leads
-(uuid,company_id,contact_name,source,stage,created_at,updated_at)
-VALUES ('00000000-0000-4000-8000-000000000011',:company,'Private Synthetic Lead',
-'inquiry','new',NOW(),NOW())")->execute(['company'=>$company]);
+(uuid,company_id,inquiry_id,contact_name,contact_email,source,stage,
+budget_min,budget_max,currency,notes,created_at,updated_at)
+VALUES ('00000000-0000-4000-8000-000000000011',:company,:inquiry,
+'Private Synthetic Lead',NULL,'inquiry','new',250000,350000,'USD',
+'Private synthetic follow up',NOW(),NOW())")
+    ->execute(['company'=>$company,'inquiry'=>$privateInquiry]);
 
 $db->exec("INSERT INTO amenities
 (uuid,name,slug,category,status)
@@ -185,7 +196,8 @@ $checks = [
     'old_viewing_request' => "SELECT COUNT(*) FROM viewing_requests WHERE user_id=$owner AND listing_id=$sale AND company_id=$company AND status='confirmed'",
     'old_company_owner_membership' => "SELECT COUNT(*) FROM company_members WHERE company_id=$company AND user_id=$owner AND member_role='owner'",
     'old_admin_role_assignment' => "SELECT COUNT(*) FROM user_roles WHERE user_id=$owner",
-    'old_customer_lead' => "SELECT COUNT(*) FROM leads WHERE company_id=$company",
+    'old_private_company_inquiry' => "SELECT COUNT(*) FROM inquiries WHERE id=$privateInquiry AND company_id=$company AND listing_id IS NULL AND contact_email IS NULL",
+    'old_customer_lead' => "SELECT COUNT(*) FROM leads WHERE company_id=$company AND inquiry_id=$privateInquiry",
 ];
 foreach ($checks as $name => $query) {
     $count = (int) $db->query($query)->fetchColumn();
