@@ -122,6 +122,15 @@ php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR)
  if($j["gate"]!=="HASH_AND_SIZE_VERIFIED"||$j["media_asset_counts"]["verified"]!==1){exit(1);}
  echo "SOURCE_PRIVATE_MEDIA_SHA256=PASS\n";' "$QA/media.json"
 
+echo "========== OPERATOR READ-ONLY EVIDENCE BUNDLE PREFLIGHT =========="
+export BARAMA_PRIVATE_EVIDENCE_DIR="$QA/barama-private-rehearsal-evidence"
+mkdir -m 700 "$BARAMA_PRIVATE_EVIDENCE_DIR"
+bash support/barama_real_clone_readonly_preflight.sh --preflight > "$QA/read-only-preflight.txt"
+grep -q 'READ_ONLY_SOURCE_MEDIA_AND_MIGRATION_PREFLIGHT=PASS' "$QA/read-only-preflight.txt"
+grep -q 'DATABASE_MUTATED=NO' "$QA/read-only-preflight.txt"
+test "$(find "$BARAMA_PRIVATE_EVIDENCE_DIR" -name evidence.sha256 | wc -l)" -eq 1
+echo "PRIVATE_READ_ONLY_EVIDENCE_BUNDLE=PASS"
+
 echo "========== NEGATIVE ENVIRONMENT AND PERMISSION GATES =========="
 if APP_ENV=production php support/barama_isolated_clone_stage.php --stage > "$QA/not-testing.txt" 2>&1; then
     echo "FAILED=PRODUCTION_ENV_ACCEPTED"; exit 9
