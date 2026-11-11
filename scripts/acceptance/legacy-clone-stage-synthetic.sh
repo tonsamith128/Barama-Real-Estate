@@ -101,6 +101,15 @@ php support/barama_isolated_clone_inventory.php > "$QA/inventory.json"
 php support/barama_isolated_media_inventory.php > "$QA/media.json"
 php support/barama_isolated_clone_stage.php --plan > "$QA/plan.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+ if(($j["legacy_record_counts"]["saved_listings"]??0)!==1
+ || ($j["unmapped_legacy_data_counts"]["user_roles"]??0)!==1
+ || ($j["unmapped_legacy_data_counts"]["leads"]??0)!==1
+ || array_key_exists("saved_listings",$j["unmapped_legacy_data_counts"])
+ || ($j["release_gate"]??"")!=="BLOCKED_UNTIL_INDEPENDENT_RECONCILIATION")
+ {exit(1);}
+ echo "FULL_LEGACY_TABLE_INVENTORY_AND_CUSTOMER_BLOCKERS=PASS
+";' "$QA/plan.json"
+php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
  if($j["gate"]!=="STRUCTURAL_PREFLIGHT_PASS"){exit(1);}
  echo "TWO_CLONE_STRUCTURAL_INTEGRITY=PASS\n";' "$QA/inventory.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
@@ -110,7 +119,10 @@ php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR)
 echo "========== STAGE INTO DISPOSABLE TARGET ONLY =========="
 php support/barama_isolated_clone_stage.php --stage > "$QA/staged.json"
 php -r '$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
- if($j["mode"]!=="DISPOSABLE_TARGET_STAGED" || $j["release_gate"]==="RELEASE_READY"){exit(1);}
+ if($j["mode"]!=="DISPOSABLE_TARGET_STAGED"
+ || ($j["unmapped_legacy_data_counts"]["leads"]??0)!==1
+ || ($j["unmapped_nonempty_table_count"]??0)<2
+ || $j["release_gate"]==="RELEASE_READY"){exit(1);}
  echo "LEGACY_UUID_AND_ID_STAGING=PASS\n";' "$QA/staged.json"
 
 php <<'PHP'
@@ -128,6 +140,9 @@ $checks=[
 'mapped_legacy_user'=>"SELECT COUNT(*) FROM legacy_identity_maps WHERE source_table='users'",
 'mapped_media_asset'=>"SELECT COUNT(*) FROM legacy_identity_maps WHERE source_table='media_assets'",
 'private_image'=>"SELECT COUNT(*) FROM media_assets WHERE usage_rights='unreviewed'",
+'saved_listing'=>"SELECT COUNT(*) FROM saved_listings",
+'inactive_membership'=>"SELECT COUNT(*) FROM company_user WHERE status='inactive' AND role='member'",
+'original_role_review'=>"SELECT COUNT(*) FROM legacy_company_membership_reviews WHERE source_role='owner' AND decision='needs_independent_approval'",
 'wrong_membership'=>"SELECT COUNT(*) FROM company_user WHERE status<>'inactive' OR role<>'member'",
 'unapproved_roles'=>"SELECT COUNT(*) FROM legacy_company_membership_reviews WHERE decision<>'needs_independent_approval'",
 ];
