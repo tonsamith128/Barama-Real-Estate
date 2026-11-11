@@ -39,6 +39,7 @@ final class BaramaLegacyCloneStager
         $this->source->exec('START TRANSACTION READ ONLY, WITH CONSISTENT SNAPSHOT');
 
         try {
+            $this->assertSourceIntegrity();
             $this->target->beginTransaction();
             $this->createBatch();
             $this->copyCountries();
@@ -99,6 +100,53 @@ final class BaramaLegacyCloneStager
             'customer_email_sent'=>false,
             'release_status'=>'BLOCKED_PENDING_INDEPENDENT_ACCOUNT_MEDIA_CUSTOMER_RECONCILIATION',
         ];
+    }
+
+    /**
+     * The operator's separate inventory is not sufficient by itself.
+     * Refuse even private staging when essential source relationships are
+     * inconsistent, rather than copying a cross-company property.
+     */
+    private function assertSourceIntegrity(): void
+    {
+        $queries=[
+            'cross_company_project'=>"SELECT COUNT(*)
+                FROM properties p JOIN projects j ON p.project_id=j.id
+                WHERE p.company_id IS NOT NULL AND p.company_id<>j.company_id",
+            'unassigned_property'=>"SELECT COUNT(*) FROM properties WHERE company_id IS NULL",
+            'saved_listing_invalid_owner'=>"SELECT COUNT(*)
+                FROM saved_listings s LEFT JOIN users u ON u.id=s.user_id
+                WHERE u.id IS NULL",
+            'saved_listing_invalid_offer'=>"SELECT COUNT(*)
+                FROM saved_listings s LEFT JOIN listings l ON l.id=s.listing_id
+                WHERE l.id IS NULL",
+            'source_account_email_collisions'=>"SELECT COUNT(*) FROM
+                (SELECT LOWER(TRIM(email)) AS e,COUNT(*) AS total FROM users
+                 GROUP BY LOWER(TRIM(email)) HAVING COUNT(*)>1) t",
+            'source_media_unknown_type'=>"SELECT COUNT(*) FROM media_attachments
+                WHERE entity_type NOT IN ('company','project','property','listing')",
+            'source_media_orphan_company'=>"SELECT COUNT(*)
+                FROM media_attachments x LEFT JOIN companies c ON c.id=x.entity_id
+                WHERE x.entity_type='company' AND c.id IS NULL",
+            'source_media_orphan_project'=>"SELECT COUNT(*)
+                FROM media_attachments x LEFT JOIN projects p ON p.id=x.entity_id
+                WHERE x.entity_type='project' AND p.id IS NULL",
+            'source_media_orphan_property'=>"SELECT COUNT(*)
+                FROM media_attachments x LEFT JOIN properties p ON p.id=x.entity_id
+                WHERE x.entity_type='property' AND p.id IS NULL",
+            'source_media_orphan_listing'=>"SELECT COUNT(*)
+                FROM media_attachments x LEFT JOIN listings l ON l.id=x.entity_id
+                WHERE x.entity_type='listing' AND l.id IS NULL",
+            'source_country_mismatch'=>"SELECT COUNT(*)
+                FROM locations c JOIN locations p ON c.parent_id=p.id
+                WHERE c.country_code IS NOT NULL AND p.country_code IS NOT NULL
+                  AND c.country_code<>p.country_code",
+        ];
+        foreach($queries as $name=>$sql) {
+            if((int)$this->source->query($sql)->fetchColumn()!==0) {
+                throw new RuntimeException('Source integrity gate blocked: '.$name);
+            }
+        }
     }
 
     private function assertEmptyTarget(): void
