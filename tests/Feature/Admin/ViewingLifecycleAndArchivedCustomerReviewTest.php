@@ -266,6 +266,27 @@ final class ViewingLifecycleAndArchivedCustomerReviewTest extends TestCase
         ]);
     }
 
+    public function test_unpublished_offer_cannot_be_confirmed_or_rescheduled(): void
+    {
+        $listing=$this->published('unpublished-offer');
+        $customer=User::factory()->create();
+        $manager=User::factory()->create();
+        $this->membership($manager,$listing);
+        $viewing=$this->requestViewing($customer,$listing);
+        $listing->update(['status'=>'draft']);
+        $this->actingAs($manager)->post(route('developer.viewings.decide',$viewing),[
+            'decision'=>'confirmed',
+        ])->assertSessionHasErrors('decision');
+        $this->post(route('developer.viewings.propose',$viewing),[
+            'proposed_at'=>now()->addDays(7)->format('Y-m-d H:i:s'),
+        ])->assertSessionHasErrors('decision');
+        $this->assertSame('pending',$viewing->fresh()->status);
+        $this->assertDatabaseCount('viewing_events',1);
+        $this->actingAs($customer)->patch(route('account.viewings.cancel',$viewing))
+            ->assertRedirect();
+        $this->assertSame('cancelled',$viewing->fresh()->status);
+    }
+
     public function test_revoked_company_role_cannot_change_an_existing_viewing(): void
     {
         $listing=$this->published('role-revoked');
