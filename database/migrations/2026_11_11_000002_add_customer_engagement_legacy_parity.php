@@ -76,6 +76,10 @@ return new class extends Migration
             throw new RuntimeException('Cannot discard historical viewing-request evidence.');
         }
 
+        // Check all destructive conditions BEFORE changing any schema.
+        if (DB::table('saved_searches')->whereRaw('LENGTH(name) > 70')->exists()) {
+            throw new RuntimeException('Cannot truncate saved-search names during rollback.');
+        }
         Schema::table('viewing_requests', function (Blueprint $table): void {
             $table->dropForeign(['legacy_company_id']);
             $table->dropColumn([
@@ -93,11 +97,6 @@ return new class extends Migration
                 'legacy_last_checked_at',
             ]);
         });
-        // Refuse a destructive width reduction when longer names exist.
-        if (DB::table('saved_searches')
-            ->whereRaw('LENGTH(name) > 70')->exists()) {
-            throw new RuntimeException('Cannot truncate saved-search names during rollback.');
-        }
         Schema::table('saved_searches', function (Blueprint $table): void {
             $table->string('name', 70)->change();
         });
