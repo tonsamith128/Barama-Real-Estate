@@ -131,6 +131,70 @@ try {
             ['media_attachments','media_assets'],
             'SELECT COUNT(*) FROM media_attachments x LEFT JOIN media_assets m ON x.media_asset_id=m.id WHERE m.id IS NULL',
         ],
+        'missing_saved_listing_user' => [
+            ['saved_listings','users'],
+            'SELECT COUNT(*) FROM saved_listings x LEFT JOIN users u ON x.user_id=u.id WHERE u.id IS NULL',
+        ],
+        'missing_saved_listing_listing' => [
+            ['saved_listings','listings'],
+            'SELECT COUNT(*) FROM saved_listings x LEFT JOIN listings l ON x.listing_id=l.id WHERE l.id IS NULL',
+        ],
+        'missing_role_assignment_user' => [
+            ['user_roles','users'],
+            'SELECT COUNT(*) FROM user_roles x LEFT JOIN users u ON x.user_id=u.id WHERE u.id IS NULL',
+        ],
+        'missing_role_assignment_role' => [
+            ['user_roles','roles'],
+            'SELECT COUNT(*) FROM user_roles x LEFT JOIN roles r ON x.role_id=r.id WHERE r.id IS NULL',
+        ],
+        'missing_role_permission' => [
+            ['role_permissions','permissions'],
+            'SELECT COUNT(*) FROM role_permissions x LEFT JOIN permissions p ON x.permission_id=p.id WHERE p.id IS NULL',
+        ],
+        'orphan_viewing_user' => [
+            ['viewing_requests','users'],
+            'SELECT COUNT(*) FROM viewing_requests x LEFT JOIN users u ON x.user_id=u.id WHERE u.id IS NULL',
+        ],
+        'orphan_viewing_listing' => [
+            ['viewing_requests','listings'],
+            'SELECT COUNT(*) FROM viewing_requests x LEFT JOIN listings l ON x.listing_id=l.id WHERE l.id IS NULL',
+        ],
+        'orphan_viewing_company' => [
+            ['viewing_requests','companies'],
+            'SELECT COUNT(*) FROM viewing_requests x LEFT JOIN companies c ON x.company_id=c.id WHERE c.id IS NULL',
+        ],
+        'orphan_inquiry_listing' => [
+            ['inquiries','listings'],
+            'SELECT COUNT(*) FROM inquiries x LEFT JOIN listings l ON x.listing_id=l.id WHERE x.listing_id IS NOT NULL AND l.id IS NULL',
+        ],
+        'orphan_inquiry_company' => [
+            ['inquiries','companies'],
+            'SELECT COUNT(*) FROM inquiries x LEFT JOIN companies c ON x.company_id=c.id WHERE x.company_id IS NOT NULL AND c.id IS NULL',
+        ],
+        'orphan_lead_company' => [
+            ['leads','companies'],
+            'SELECT COUNT(*) FROM leads x LEFT JOIN companies c ON x.company_id=c.id WHERE c.id IS NULL',
+        ],
+        'missing_media_company' => [
+            ['media_attachments','companies'],
+            "SELECT COUNT(*) FROM media_attachments x LEFT JOIN companies c ON x.entity_id=c.id
+             WHERE x.entity_type='company' AND c.id IS NULL",
+        ],
+        'missing_media_project' => [
+            ['media_attachments','projects'],
+            "SELECT COUNT(*) FROM media_attachments x LEFT JOIN projects p ON x.entity_id=p.id
+             WHERE x.entity_type='project' AND p.id IS NULL",
+        ],
+        'missing_media_property' => [
+            ['media_attachments','properties'],
+            "SELECT COUNT(*) FROM media_attachments x LEFT JOIN properties p ON x.entity_id=p.id
+             WHERE x.entity_type='property' AND p.id IS NULL",
+        ],
+        'missing_media_listing' => [
+            ['media_attachments','listings'],
+            "SELECT COUNT(*) FROM media_attachments x LEFT JOIN listings l ON x.entity_id=l.id
+             WHERE x.entity_type='listing' AND l.id IS NULL",
+        ],
         'unrecognized_attachment_kind' => [
             ['media_attachments'],
             "SELECT COUNT(*) FROM media_attachments WHERE entity_type NOT IN ('company','project','property','listing')",
