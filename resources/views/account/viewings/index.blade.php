@@ -5,7 +5,14 @@
         @forelse($viewings as $viewing)
             <div class="customer-record customer-record--full">
                 <div><strong>{{ $viewing->listing?->property?->title ?? 'Property' }}</strong>
-                    <p>Requested for {{ $viewing->requested_at->format('M j, Y \a\t g:i A') }}</p>
+                    @if($viewing->legacy_uuid)
+                        <p>Historical request · {{ $viewing->legacy_preferred_date?->format('M j, Y') ?? 'Date unavailable' }}
+                            @if($viewing->legacy_preferred_window) · {{ $viewing->legacy_preferred_window }} @endif</p>
+                        <p>Original status: {{ ucfirst(str_replace('_', ' ', $viewing->legacy_original_status ?: 'unknown')) }}.
+                            Archived requests require independent reconfirmation; no appointment is automatically activated.</p>
+                    @else
+                        <p>Requested for {{ $viewing->requested_at->format('M j, Y \a\t g:i A') }}</p>
+                    @endif
                     @if($viewing->message)<p>{{ $viewing->message }}</p>@endif</div>
                 <div><span class="customer-status">{{ ucfirst($viewing->status) }}</span>
                     @if($viewing->status === 'pending')
