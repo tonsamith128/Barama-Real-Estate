@@ -1,0 +1,255 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * INDEPENDENT, READ-ONLY verification of an already staged disposable clone.
+ * No customer values, source UUIDs, old IDs, tokens or passwords are printed.
+ * A successful audit is not a production cutover approval.
+ */
+if (PHP_SAPI !== 'cli' || count($argv)!==1
+    || getenv('APP_ENV')!=='testing'
+    || getenv('BARAMA_REHEARSAL_APPROVED')!=='TWO_DISPOSABLE_CLONES_VERIFIED') {
+    fwrite(STDERR,"RECONCILE_DENIED=OFFLINE_CLONE_TESTING_ONLY\n");
+    exit(3);
+}
+foreach (['SOURCE','TARGET'] as $role) {
+    $database=(string)getenv('BARAMA_'.$role.'_DB');
+    $host=(string)getenv('BARAMA_'.$role.'_HOST');
+    $pattern=$role==='SOURCE'
+        ? '/^barama_legacy_(?:qa|rehearsal)_[a-z0-9_]{4,32}$/D'
+        : '/^barama_laravel_(?:qa|rehearsal)_[a-z0-9_]{4,32}$/D';
+    if (preg_match($pattern,$database)!==1
+        || !in_array($host,['127.0.0.1','localhost'],true)
+        || !getenv('BARAMA_'.$role.'_USER')
+        || !getenv('BARAMA_'.$role.'_PASSWORD')) {
+        fwrite(STDERR,"RECONCILE_DENIED=INVALID_PRIVATE_CLONE_CONFIG\n");
+        exit(3);
+    }
+}
+function readonlyDb(string $role): PDO
+{
+    $db=new PDO(sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+        getenv('BARAMA_'.$role.'_HOST'),
+        (int)(getenv('BARAMA_'.$role.'_PORT')?:3306),
+        getenv('BARAMA_'.$role.'_DB')),
+        getenv('BARAMA_'.$role.'_USER'),
+        getenv('BARAMA_'.$role.'_PASSWORD'), [
+            PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES=>false,
+            PDO::ATTR_TIMEOUT=>5,
+        ]);
+    $db->exec('SET SESSION TRANSACTION READ ONLY');
+    return $db;
+}
+function getRows(PDO $db,string $sql): array
+{
+    $rows=$db->query($sql)->fetchAll();
+    if(count($rows)>100000) {
+        throw new RuntimeException('Audit limit exceeded; use a bounded offline verifier.');
+    }
+    return $rows;
+}
+function oneCount(PDO $db,string $sql): int
+{
+    return (int)$db->query($sql)->fetchColumn();
+}
+try {
+    $source=readonlyDb('SOURCE');
+    $target=readonlyDb('TARGET');
+    if ($source->query('SELECT DATABASE()')->fetchColumn()!==getenv('BARAMA_SOURCE_DB')
+        || $target->query('SELECT DATABASE()')->fetchColumn()!==getenv('BARAMA_TARGET_DB')) {
+        throw new RuntimeException('Schema identity mismatch.');
+    }
+    $batch=getRows($target,'SELECT id,status,mapped_records
+        FROM legacy_import_batches ORDER BY id');
+    if (count($batch)!==1
+        || $batch[0]['status']!=='staged_needs_review') {
+        throw new RuntimeException('Expected exactly one completed private staging batch.');
+    }
+    $batchId=(int)$batch[0]['id'];
+    $tableKinds=[
+        'users'=>'users','locations'=>'locations','amenities'=>'amenities',
+        'companies'=>'companies','projects'=>'projects',
+        'properties'=>'properties','listings'=>'listings',
+        'media_assets'=>'media_assets','media_attachments'=>'media_attachments',
+        'inquiries'=>'inquiries',
+    ];
+    $integrity=[];
+    $maps=[];
+    $reportCounts=[];
+    foreach ($tableKinds as $table=>$destination) {
+        $sourceColumns=$table==='media_attachments' ? 'id,NULL AS uuid' : 'id,uuid';
+        if(in_array($table,
+            ['companies','projects','properties','listings','users','locations','amenities'],true)) {
+            $sourceColumns.=',status';
+        }
+        // The legacy polymorphic attachment has no UUID.
+        $src=getRows($source,'SELECT '.$sourceColumns.' FROM '.$table.' ORDER BY id');
+        $new=getRows($target,
+            'SELECT source_id,source_uuid,target_id,source_status
+             FROM legacy_identity_maps WHERE batch_id='.$batchId.'
+                AND source_table='.$target->quote($table).' ORDER BY source_id');
+        $ids=getRows($target,'SELECT id FROM '.$destination.' ORDER BY id');
+        $validTarget=array_fill_keys(array_map(
+            static fn(array $row):int=>(int)$row['id'],$ids),true);
+        $byOld=[];
+        $byTarget=[];
+        foreach($new as $r) {
+            $oldId=(int)$r['source_id'];
+            $targetId=(int)$r['target_id'];
+            if(isset($byOld[$oldId]) || !isset($validTarget[$targetId])) {
+                $integrity['duplicate_or_missing_mapping_'.$table]=1;
+            }
+            if ($table!=='media_assets' && isset($byTarget[$targetId])) {
+                $integrity['noninjective_mapping_'.$table]=1;
+            }
+            $byOld[$oldId]=$r;
+            $byTarget[$targetId]=true;
+        }
+        foreach($src as $row) {
+            $old=(int)$row['id'];
+            if (!isset($byOld[$old])) {
+                $integrity['missing_source_identity_'.$table]=1;
+                continue;
+            }
+            $sourceUuid=$row['uuid']??null;
+            $mappedUuid=$byOld[$old]['source_uuid'];
+            if ($sourceUuid!==$mappedUuid) {
+                $integrity['legacy_uuid_mismatch_'.$table]=1;
+            }
+            if (isset($row['status'])
+                && $row['status']!==$byOld[$old]['source_status']) {
+                $integrity['source_moderation_status_mismatch_'.$table]=1;
+            }
+        }
+        if(count($src)!==count($new)
+            || count($validTarget)!==count($byTarget)) {
+            $integrity['mapping_row_count_mismatch_'.$table]=1;
+        }
+        $maps[$table]=array_map('intval',array_column($new,'target_id','source_id'));
+        $reportCounts[$table]=[
+            'source'=>count($src),'identity_mappings'=>count($new),
+            'unique_destination_records'=>count($byTarget),
+        ];
+    }
+
+    // Relationship reconciliation cannot trust only row counts. Check exact
+    // old-to-new pairs and ownership for each imported saved listing.
+    $userMap=$maps['users'];
+    $listingMap=$maps['listings'];
+    $sourceSaved=getRows($source,
+        'SELECT user_id,listing_id FROM saved_listings ORDER BY user_id,listing_id');
+    $targetSaved=getRows($target,
+        'SELECT user_id,listing_id FROM saved_listings ORDER BY user_id,listing_id');
+    $savedMap=[];
+    foreach($targetSaved as $row) {
+        $savedMap[(int)$row['user_id'].':'.(int)$row['listing_id']]=true;
+    }
+    foreach($sourceSaved as $row) {
+        $user=$userMap[(int)$row['user_id']]??null;
+        $listing=$listingMap[(int)$row['listing_id']]??null;
+        if($user===null || $listing===null || !isset($savedMap[$user.':'.$listing])) {
+            $integrity['saved_listing_relationship_mismatch']=1;
+        }
+    }
+    if(count($sourceSaved)!==count($targetSaved)) {
+        $integrity['saved_listing_count_mismatch']=1;
+    }
+    $reportCounts['saved_listings']=[
+        'source'=>count($sourceSaved),'target'=>count($targetSaved),
+    ];
+
+    $review=getRows($target, 'SELECT source_company_id,source_user_id,
+         source_role,source_status,target_membership_id,decision
+         FROM legacy_company_membership_reviews WHERE batch_id='.$batchId);
+    $sourceMembers=getRows($source,
+        'SELECT company_id,user_id,member_role,status FROM company_members');
+    $targetMembers=getRows($target,'SELECT id,company_id,user_id,role,status FROM company_user');
+    $memberIndex=[];
+    foreach($targetMembers as $row) {
+        $memberIndex[(int)$row['id']]=$row;
+    }
+    $reviewIndex=[];
+    foreach($review as $row) {
+        $reviewIndex[$row['source_company_id'].':'.$row['source_user_id']]=$row;
+    }
+    foreach($sourceMembers as $row) {
+        $key=$row['company_id'].':'.$row['user_id'];
+        $record=$reviewIndex[$key]??null;
+        $member=$record?($memberIndex[(int)$record['target_membership_id']]??null):null;
+        if ($record===null || $member===null
+            || $record['source_role']!==$row['member_role']
+            || $record['source_status']!==$row['status']
+            || $record['decision']!=='needs_independent_approval'
+            || (int)$member['company_id']!==($maps['companies'][(int)$row['company_id']]??-1)
+            || (int)$member['user_id']!==($userMap[(int)$row['user_id']]??-1)
+            || $member['role']!=='member'
+            || $member['status']!=='inactive') {
+            $integrity['company_membership_or_role_escalation']=1;
+        }
+    }
+    if(count($sourceMembers)!==count($review)
+        || count($targetMembers)!==count($review)) {
+        $integrity['company_membership_review_count_mismatch']=1;
+    }
+    $reportCounts['company_members']=[
+        'source'=>count($sourceMembers),'inactive_target'=>count($targetMembers),
+        'independent_role_reviews'=>count($review),
+    ];
+
+    $unsafeChecks=[
+        'privileged_or_verified_imported_users'=>"SELECT COUNT(*) FROM users
+            WHERE system_role<>'user' OR email_verified_at IS NOT NULL",
+        'published_imported_companies'=>"SELECT COUNT(*) FROM companies
+            WHERE status<>'draft' OR published_at IS NOT NULL",
+        'published_imported_projects'=>"SELECT COUNT(*) FROM projects
+            WHERE status<>'draft' OR published_at IS NOT NULL",
+        'published_imported_properties'=>"SELECT COUNT(*) FROM properties WHERE status<>'draft'",
+        'published_imported_listings'=>"SELECT COUNT(*) FROM listings
+            WHERE status<>'draft' OR published_at IS NOT NULL",
+        'inappropriate_media_rights'=>"SELECT COUNT(*) FROM media_assets
+            WHERE usage_rights<>'unreviewed' OR path NOT LIKE 'private/media/%'",
+    ];
+    foreach($unsafeChecks as $name=>$sql) {
+        if(oneCount($target,$sql)!==0) {
+            $integrity[$name]=1;
+        }
+    }
+
+    $sourceTables=$source->query("SELECT TABLE_NAME FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_TYPE='BASE TABLE'")->fetchAll(PDO::FETCH_COLUMN);
+    $covered=[...array_keys($tableKinds),
+        'saved_listings','company_members','property_amenities','project_amenities',
+        'location_countries','location_data_packs','location_hierarchy_registry'];
+    $unconverted=[];
+    foreach($sourceTables as $table) {
+        if(in_array($table,$covered,true)) {
+            continue;
+        }
+        if(preg_match('/^[a-z][a-z0-9_]*$/D',$table)!==1) {
+            throw new RuntimeException('Unsupported source schema identifier.');
+        }
+        $count=oneCount($source,'SELECT COUNT(*) FROM '.$table);
+        if($count>0) {
+            $unconverted[$table]=$count;
+        }
+    }
+    ksort($unconverted);
+    echo json_encode([
+        'audit'=>'barama-post-stage-reconciliation-v1',
+        'mode'=>'READ_ONLY',
+        'source'=>'isolated_legacy_copy','target'=>'isolated_laravel_copy',
+        'mapped_core_counts'=>$reportCounts,
+        'unconverted_nonempty_source_tables'=>$unconverted,
+        'integrity_blockers'=>array_keys($integrity),
+        'integrity_status'=>$integrity===[]?'MAPPED_CORE_VERIFIED':'FAILED',
+        'production_release_status'=>'BLOCKED_REQUIRES_ALL_CUSTOMER_MODULES_AND_HOST_ACCEPTANCE',
+        'personal_data_printed'=>false,'databases_modified'=>false,
+    ],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR),"\n";
+    exit($integrity===[]?0:2);
+} catch(Throwable $error) {
+    fwrite(STDERR,"RECONCILE_FAILED=PRIVATE_DATA_OR_SCHEMA_VERIFICATION\n");
+    exit(4);
+}

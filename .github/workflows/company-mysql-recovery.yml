@@ -155,6 +155,7 @@ jobs:
       DB_DATABASE: barama_legacy_qa
       DB_USERNAME: barama_legacy_ci
       DB_PASSWORD: ci_only_legacy_password
+      CI_MYSQL_ROOT_PASSWORD: ci_only_legacy_root
     steps:
       - uses: actions/checkout@v4
         with:
@@ -166,3 +167,6 @@ jobs:
           coverage: none
       - name: Rehearse actual pinned archived PHP schema in isolated MySQL
         run: bash scripts/acceptance/legacy-php-schema-replica.sh
+      - name: Rehearse legacy to Laravel private clone staging, identities and media
+        timeout-minutes: 15
+        run: bash scripts/acceptance/legacy-clone-stage-synthetic.sh

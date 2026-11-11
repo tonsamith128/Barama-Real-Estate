@@ -18,7 +18,15 @@ jobs:
           extensions: mbstring, dom, xml, fileinfo, pdo_sqlite, pdo_mysql, curl, openssl, zip, sodium
           coverage: none
       - name: PHP syntax
-        run: find app bootstrap config database routes scripts tests Installer public/installer -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find app bootstrap config database routes scripts tests Installer public/installer support -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Offline rehearsal and hosting checker syntax
+        run: |
+          bash -n scripts/acceptance/legacy-clone-stage-synthetic.sh
+          bash -n support/barama_clone_host_acceptance.sh
+          php -l support/BaramaLegacyCloneStager.php
+          php -l support/barama_isolated_clone_inventory.php
+          php -l support/barama_isolated_media_inventory.php
+          php -l support/barama_isolated_clone_stage.php
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes

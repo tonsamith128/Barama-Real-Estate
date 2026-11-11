@@ -26,7 +26,7 @@ QA="$(mktemp -d /tmp/barama-archived-schema.XXXXXXXX)"
 trap 'rm -rf -- "$QA"' EXIT
 export LEGACY_QA_ROOT="$QA"
 
-for version in 0001 0003 0008 0028 0029; do
+for version in 0001 0003 0006 0008 0028 0029; do
     path="$(git ls-tree -r --name-only "$EXPECTED" application/database/migrations \
         | grep -E "/${version}_[a-z0-9_]+\\.php$" | head -n 1)"
     test -n "$path" || { echo "MISSING_PINNED_LEGACY_MIGRATION=$version"; exit 4; }
@@ -47,7 +47,7 @@ $db = new PDO(sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
 if ($db->query('SELECT DATABASE()')->fetchColumn() !== 'barama_legacy_qa') {
     throw new RuntimeException('Incorrect legacy QA database');
 }
-foreach (['0001', '0003', '0008', '0028', '0029'] as $version) {
+foreach (['0001', '0003', '0006', '0008', '0028', '0029'] as $version) {
     $migration = require $dir.'/'.$version.'.php';
     if (!is_callable($migration)) {
         throw new RuntimeException("Invalid historical schema migration ".$version);
@@ -77,6 +77,18 @@ VALUES ('00000000-0000-4000-8000-000000000004',:location,'Synthetic Realty','qa-
     ->execute(['location' => $province]);
 $company = (int) $db->lastInsertId();
 
+// A real legacy owner and legacy administrative permission must be reviewed,
+// not promoted into privileged Laravel access during conversion.
+$db->prepare("INSERT INTO company_members
+(company_id,user_id,member_role,status,created_at,updated_at)
+VALUES (:company,:owner,'owner','active',NOW(),NOW())")
+    ->execute(['company' => $company, 'owner' => $owner]);
+$db->exec("INSERT INTO roles(name,slug,is_system,created_at,updated_at)
+VALUES ('Legacy Administrator','admin',1,NOW(),NOW())");
+$legacyAdminRole=(int)$db->lastInsertId();
+$db->prepare("INSERT INTO user_roles(user_id,role_id,created_at)
+VALUES (:owner,:role,NOW())")->execute(['owner'=>$owner,'role'=>$legacyAdminRole]);
+
 $db->prepare("INSERT INTO projects
 (uuid,company_id,location_id,name,slug,project_type,status,completion_status)
 VALUES ('00000000-0000-4000-8000-000000000005',:company,:location,'Synthetic Riverside','qa-synthetic-riverside','residential','published','completed')")
@@ -104,6 +116,14 @@ VALUES (:uuid,:property,:slug,:transaction,:status,:price,'USD',:published)")
             'published' => $status === 'published' ? date('Y-m-d H:i:s') : null,
         ]);
 }
+
+$sale=(int)$db->query("SELECT id FROM listings WHERE slug='qa-offer-sale'")->fetchColumn();
+$db->prepare("INSERT INTO saved_listings(user_id,listing_id,created_at)
+VALUES (:owner,:sale,NOW())")->execute(['owner'=>$owner,'sale'=>$sale]);
+$db->prepare("INSERT INTO leads
+(uuid,company_id,contact_name,source,stage,created_at,updated_at)
+VALUES ('00000000-0000-4000-8000-000000000011',:company,'Private Synthetic Lead',
+'inquiry','new',NOW(),NOW())")->execute(['company'=>$company]);
 
 $db->exec("INSERT INTO amenities
 (uuid,name,slug,category,status)
@@ -136,6 +156,10 @@ $checks = [
     'old_property_amenities' => "SELECT COUNT(*) FROM property_amenities WHERE property_id=$property",
     'old_external_location_mapping' => "SELECT COUNT(*) FROM location_hierarchy_registry WHERE external_code='QA-KH-01'",
     'old_country_pack' => "SELECT COUNT(*) FROM location_data_packs WHERE country_code='KH'",
+    'old_saved_listing' => "SELECT COUNT(*) FROM saved_listings WHERE user_id=$owner AND listing_id=$sale",
+    'old_company_owner_membership' => "SELECT COUNT(*) FROM company_members WHERE company_id=$company AND user_id=$owner AND member_role='owner'",
+    'old_admin_role_assignment' => "SELECT COUNT(*) FROM user_roles WHERE user_id=$owner",
+    'old_customer_lead' => "SELECT COUNT(*) FROM leads WHERE company_id=$company",
 ];
 foreach ($checks as $name => $query) {
     $count = (int) $db->query($query)->fetchColumn();
