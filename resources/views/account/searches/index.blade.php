@@ -26,6 +26,10 @@
                     @if(isset($search->filters['max_price']))<span>Maximum USD {{ number_format((float)$search->filters['max_price']) }}</span>@endif
                     @if(empty($search->filters))<span>All available properties</span>@endif
                 </div>
+                @if($search->legacy_review_required)
+                    <p class="customer-status" role="status">Imported search — some historical filters and alerts require your review.
+                        Automatic alerts remain disabled.</p>
+                @endif
                 <div class="customer-search-card__footer">
                     <a class="button" href="{{ route('properties.index', $search->filters) }}">View matches</a>
                     <details><summary>Manage</summary>
