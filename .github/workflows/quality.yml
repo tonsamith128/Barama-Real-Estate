@@ -23,6 +23,8 @@ jobs:
         run: |
           bash -n scripts/acceptance/legacy-clone-stage-synthetic.sh
           bash -n support/barama_clone_host_acceptance.sh
+          bash -n support/barama_real_clone_readonly_preflight.sh
+          bash -n scripts/acceptance/sensitive-restore-replica-qa.sh
           php -l support/BaramaLegacyCloneStager.php
           php -l support/barama_isolated_clone_inventory.php
           php -l support/barama_isolated_media_inventory.php
@@ -38,6 +40,14 @@ jobs:
           fi
           rm -f /tmp/barama-restore-negative.log
           echo "SENSITIVE_RESTORE_PRODUCTION_GUARD=PASS"
+          if APP_ENV=production BARAMA_REHEARSAL_APPROVED=TWO_DISPOSABLE_CLONES_VERIFIED bash support/barama_real_clone_readonly_preflight.sh --preflight > /tmp/barama-preflight-negative.log 2>&1; then
+            echo "FAILED=PRODUCTION_PREFLIGHT_ACCEPTED"; exit 1
+          fi
+          if ! grep -q 'DENIED=PRIVATE_TWO_CLONE_APPROVAL_REQUIRED' /tmp/barama-preflight-negative.log; then
+            echo "FAILED=PRIVATE_CLONE_PREFLIGHT_GUARD"; exit 1
+          fi
+          rm -f /tmp/barama-preflight-negative.log
+          echo "REAL_DATA_CLONE_PRODUCTION_PREFLIGHT_GUARD=PASS"
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes
