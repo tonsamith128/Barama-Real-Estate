@@ -122,6 +122,7 @@ final class ViewingDecisionService
             abort_unless($locked->status === 'reschedule_proposed'
                 && $locked->proposed_at !== null, 409);
             if ($decision === 'accept') {
+                $this->requirePublicOffer($locked);
                 abort_unless($locked->proposed_expires_at?->isFuture(), 409);
                 $this->requireFuture(CarbonImmutable::instance($locked->proposed_at));
             }
