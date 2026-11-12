@@ -1,12 +1,23 @@
-@props(['title' => 'Barama Real Estate'])
+@props(['title' => 'Barama Real Estate', 'metaDescription' => null, 'canonicalUrl' => null, 'socialType' => 'website', 'structuredData' => null])
 @php($appearanceSettings = app(\App\Services\Appearance\SiteAppearanceService::class)->published())
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--barama-primary: {{ $appearanceSettings['primary_color'] }};">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ $appearanceSettings['meta_description'] }}">
+    <meta name="description" content="{{ $metaDescription ?? $appearanceSettings['meta_description'] }}">
     <title>{{ $title }}</title>
+    @if ($canonicalUrl)
+        <link rel="canonical" href="{{ $canonicalUrl }}">
+        <meta property="og:title" content="{{ $title }}">
+        <meta property="og:description" content="{{ $metaDescription ?? $appearanceSettings['meta_description'] }}">
+        <meta property="og:url" content="{{ $canonicalUrl }}">
+        <meta property="og:type" content="{{ $socialType }}">
+        <meta name="twitter:card" content="summary">
+    @endif
+    @if (is_array($structuredData))
+        <script type="application/ld+json">{!! json_encode($structuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) !!}</script>
+    @endif
     @vite(['resources/css/frontend/app.css', 'resources/js/frontend/app.js'])
 </head>
 <body>
