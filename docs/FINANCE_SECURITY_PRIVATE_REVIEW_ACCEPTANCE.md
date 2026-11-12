@@ -36,3 +36,7 @@ The CI fixture uses fabricated records and independently restored MySQL database
 This script is deliberately gated to an isolated GitHub Actions CI MySQL environment and cannot run against a normal server.
 
 A semantic_integrity result of CHECKED_NO_KNOWN_ANOMALIES is NOT a production release approval; release=BLOCKED is unconditional. Required outstanding gates are human financial/security/privacy sign-off, independent real customer/media clone rehearsal, physical aaPanel/cPanel and device tests, all historical table dispositions, stacked PR reconciliation and separately authorized release window.
+
+## Target-side privilege escalation gate
+
+The existing independent Laravel target-clone reconciler now also rejects any `user_capability_grants` on imported accounts mapped through `legacy_identity_maps`, even if the account system role is `user` and its email remains unverified. Synthetic CI inserts and removes a temporary unauthorized billing capability in a disposable target clone to prove this fails closed. This check is read-only when auditing real QA clones; no actual grant changes are performed outside synthetic CI.

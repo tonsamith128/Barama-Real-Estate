@@ -247,6 +247,24 @@ fi
 MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET"     -e "UPDATE company_user SET status='inactive' WHERE status='active'"
 echo "INDEPENDENT_ROLE_ESCALATION_DETECTION=PASS"
 
+# Even normal/unverified Laravel accounts may be accidentally escalated
+# through independent user capability grants. Detect and then revoke this
+# synthetic fixture before final reconciliation.
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET" \
+    -e "INSERT INTO user_capability_grants (user_id,capability,created_at,updated_at) SELECT id,'billing.manage',NOW(),NOW() FROM users LIMIT 1"
+if php support/barama_isolated_clone_reconcile.php > "$QA/capability-escalation.json"; then
+    echo "FAILED=IMPORTED_CAPABILITY_ESCALATION_NOT_DETECTED"; exit 9
+fi
+php -r '
+$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+if(!in_array("imported_account_capabilities_must_be_empty",
+    $j["integrity_blockers"]??[],true)) {exit(1);}
+echo "INDEPENDENT_CAPABILITY_ESCALATION_REJECTED=PASS\n";
+' "$QA/capability-escalation.json"
+MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET" \
+    -e "DELETE FROM user_capability_grants WHERE capability='billing.manage'"
+
+
 MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u "$DB_USERNAME" "$TARGET"     -e "UPDATE legacy_identity_maps SET source_uuid='ffffffff-ffff-4fff-8fff-ffffffffffff' WHERE source_table='users'"
 if php support/barama_isolated_clone_reconcile.php > "$QA/broken-uuid.txt" 2>&1; then
     echo "FAILED=LEGACY_UUID_TAMPER_NOT_DETECTED"; exit 9
