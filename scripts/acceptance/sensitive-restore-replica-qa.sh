@@ -49,6 +49,41 @@ INSERT INTO user_security_factors VALUES (1,0);
 INSERT INTO security_audit_events VALUES (1,'synthetic');
 SQL
 done
+
+# Synthetic ledger fields match pinned historical invoice and security schema.
+for schema in "$A" "$B"; do
+    root_mysql "$schema" <<'SQL'
+ALTER TABLE billing_invoices
+  ADD invoice_number VARCHAR(64) NOT NULL DEFAULT 'QA-INVOICE-1',
+  ADD company_id BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  ADD subscription_id BIGINT UNSIGNED NULL,
+  ADD currency CHAR(3) NOT NULL DEFAULT 'USD',
+  ADD subtotal DECIMAL(18,2) NOT NULL DEFAULT 49.00,
+  ADD discount_total DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+  ADD tax_total DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+  ADD total DECIMAL(18,2) NOT NULL DEFAULT 49.00;
+CREATE TABLE billing_invoice_items (
+  id BIGINT UNSIGNED PRIMARY KEY, invoice_id BIGINT UNSIGNED NOT NULL,
+  quantity DECIMAL(12,2), unit_amount DECIMAL(18,2), line_total DECIMAL(18,2)
+);
+INSERT INTO billing_invoice_items VALUES (1,1,1.00,49.00,49.00);
+ALTER TABLE billing_transactions
+  ADD invoice_id BIGINT UNSIGNED NULL DEFAULT 1,
+  ADD company_id BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  ADD currency CHAR(3) NOT NULL DEFAULT 'USD',
+  ADD status VARCHAR(24) NOT NULL DEFAULT 'completed';
+ALTER TABLE user_security_factors
+  ADD change_passcode_enabled TINYINT NOT NULL DEFAULT 0;
+CREATE TABLE subscription_plans (id BIGINT UNSIGNED PRIMARY KEY);
+CREATE TABLE company_subscriptions (
+  id BIGINT UNSIGNED PRIMARY KEY, company_id BIGINT UNSIGNED NOT NULL,
+  plan_id BIGINT UNSIGNED NOT NULL, status VARCHAR(24) NOT NULL
+);
+INSERT INTO subscription_plans VALUES (1);
+INSERT INTO company_subscriptions VALUES (1,1,1,'inactive');
+SQL
+done
+
 root_mysql -e "GRANT SELECT ON $A.* TO 'barama_legacy_ci'@'%';
  GRANT SELECT ON $B.* TO 'barama_legacy_ci'@'%';"
 
@@ -69,6 +104,80 @@ if(($j["backup_consistency"]??"")!=="TWO_RESTORES_MATCH"
  || ($j["production_release"]??"")!=="BLOCKED_PENDING_OPERATIONAL_DATA_ADAPTERS")
  {exit(1);}
 echo "SENSITIVE_TWO_RESTORE_BASELINE=PASS\n";' "$QA/match.json"
+
+
+export BARAMA_SENSITIVE_RESTORE_VERIFIED=TWO_RESTORES_MATCH
+export BARAMA_RELEASE_REVIEW_APPROVED=PRIVATE_READ_ONLY_ONLY
+
+php support/barama_legacy_finance_security_audit.php --audit > "$QA/finsec-baseline.json"
+php -r '
+$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+if(($j["semantic_integrity"]??"")!=="CHECKED_NO_KNOWN_ANOMALIES"
+  || ($j["two_restore_aggregate_consistency"]??"")!=="MATCH"
+  || ($j["historical_review_queue_counts"]["historical_privileged_role_assignments"]??0)<1
+  || ($j["sensitive_values_or_amounts_printed"]??null)!==false
+  || ($j["database_or_account_mutated"]??null)!==false
+  || ($j["legacy_credentials_or_roles_activated"]??null)!==false
+  || ($j["payments_or_notifications_activated"]??null)!==false
+  || ($j["release"]??null)!=="BLOCKED") { exit(1); }
+echo "FINSEC_READONLY_SEMANTIC_BASELINE=PASS\n";
+' "$QA/finsec-baseline.json"
+
+# Identical corrupted restores must still fail on semantic arithmetic.
+# A full-table HMAC comparator alone would accept identical bad originals.
+for schema in "$A" "$B"; do
+    root_mysql "$schema" -e "UPDATE billing_invoices SET total=48.00 WHERE id=1"
+done
+if php support/barama_legacy_finance_security_audit.php --audit \
+  > "$QA/finsec-matched-bad-arithmetic.json"; then
+    echo "FAILED=MATCHED_BUT_INCORRECT_INVOICE_ACCEPTED"; exit 9
+fi
+php -r '
+$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+if(($j["two_restore_aggregate_consistency"]??"")!=="MATCH"
+ || !in_array("invoice_total_arithmetic_mismatch",$j["blocking_check_names"]??[],true)
+ || ($j["semantic_integrity"]??"")!=="BLOCKED") {exit(1);}
+echo "FINSEC_IDENTICAL_INVALID_LEDGER_BLOCKED=PASS\n";
+' "$QA/finsec-matched-bad-arithmetic.json"
+for schema in "$A" "$B"; do
+    root_mysql "$schema" -e "UPDATE billing_invoices SET total=49.00 WHERE id=1"
+done
+
+# Amount tampering in one restore must block arithmetic and aggregated sums.
+root_mysql "$B" -e "UPDATE billing_invoices SET total=48.00 WHERE id=1"
+if php support/barama_legacy_finance_security_audit.php --audit \
+  > "$QA/finsec-tamper.json"; then
+    echo "FAILED=FINANCIAL_AMOUNT_TAMPER_ACCEPTED"; exit 9
+fi
+php -r '
+$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+if(($j["two_restore_aggregate_consistency"]??"")!=="BLOCKED"
+ || ($j["release"]??"")!=="BLOCKED") {exit(1);}
+echo "FINSEC_INVOICE_TAMPER_BLOCKED=PASS\n";
+' "$QA/finsec-tamper.json"
+root_mysql "$B" -e "UPDATE billing_invoices SET total=49.00 WHERE id=1"
+
+# Divergence in MFA history must also block; nothing is enrolled in Laravel.
+root_mysql "$B" -e "UPDATE user_security_factors SET mfa_enabled=1 WHERE user_id=1"
+if php support/barama_legacy_finance_security_audit.php --audit \
+  > "$QA/finsec-mfa-tamper.json"; then
+    echo "FAILED=FINSEC_PRIVILEGE_DRIFT_ACCEPTED"; exit 9
+fi
+php -r '
+$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+if(($j["two_restore_aggregate_consistency"]??"")!=="BLOCKED"
+ || ($j["release"]??"")!=="BLOCKED") {exit(1);}
+echo "FINSEC_MFA_DRIFT_BLOCKED=PASS\n";
+' "$QA/finsec-mfa-tamper.json"
+root_mysql "$B" -e "UPDATE user_security_factors SET mfa_enabled=0 WHERE user_id=1"
+
+if APP_ENV=production php support/barama_legacy_finance_security_audit.php \
+    --audit > "$QA/finsec-denied.log" 2>&1; then
+    echo "FAILED=PRODUCTION_FINSEC_REVIEW_ACCEPTED"; exit 9
+fi
+grep -q 'FINSEC_AUDIT_DENIED=OFFLINE_TWO_RESTORE_APPROVAL_REQUIRED' \
+    "$QA/finsec-denied.log"
+echo "FINSEC_PRODUCTION_GUARD=PASS"
 
 root_mysql "$B" -e "UPDATE users SET name=CONCAT(name,' ALTERED') WHERE id=1"
 if php support/barama_sensitive_restore_compare.php --compare-restores > "$QA/tamper.json" 2>&1; then

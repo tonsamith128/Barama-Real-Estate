@@ -53,6 +53,15 @@ jobs:
           php -l support/barama_calendar_import_preflight.php
           bash -n scripts/acceptance/calendar-import-preflight-smoke.sh
           bash scripts/acceptance/calendar-import-preflight-smoke.sh
+      - name: Reject production historical finance and security audits
+        run: |
+          set -Eeuo pipefail
+          if APP_ENV=production php support/barama_legacy_finance_security_audit.php --audit > /tmp/barama-finsec-denied.log 2>&1; then
+            echo "FAILED=PRODUCTION_FINSEC_AUDIT_ALLOWED"; exit 1
+          fi
+          grep -q 'FINSEC_AUDIT_DENIED=OFFLINE_TWO_RESTORE_APPROVAL_REQUIRED' /tmp/barama-finsec-denied.log
+          rm -f /tmp/barama-finsec-denied.log
+          echo "HISTORICAL_FINSEC_PRODUCTION_DENIAL=PASS"
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes

@@ -70,3 +70,7 @@ acceptance remains an explicit **NO-GO**.
 This document does **not** claim that the original customer database has
 been restored, that financial ledgers have been migrated, that MFA is
 re-enrolled, or that production is ready.
+
+## Second financial/security semantic review (draft)
+
+The independent offline tool `support/barama_legacy_finance_security_audit.php --audit` runs only after the existing two-restore comparison. It checks invoice, line, discount, tax and total arithmetic; cross-company transaction and subscription references; orphaned role/permission assignments; historical active company memberships; and MFA/passcode and reset-token review counts. It compares monetary aggregates **in memory without printing amounts**. Every historical grant, credential and provider record remains review-only. The audit always reports `release=BLOCKED` even after a clean read-only check. See `docs/FINANCE_SECURITY_PRIVATE_REVIEW_ACCEPTANCE.md`.

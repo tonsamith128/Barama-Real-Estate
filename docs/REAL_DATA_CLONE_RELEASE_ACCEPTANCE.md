@@ -182,3 +182,7 @@ Current stacked drafts: #185 → #186 → #187 → #188 → #189 → #190. Geogr
 **NO-GO until:** every source table including leads, invoices and contact histories is reconciled; actual source UUIDs/IDs and all attachments are mapped; roles and verified emails have safe re-enrollment; live-only updater workers are reviewed; physical aaPanel/cPanel and device matrices pass; encrypted rollback evidence exists; and the owner explicitly approves a production cutover. Green synthetic CI alone is insufficient.
 
 **The production site and live database remain unchanged.**
+
+## Historical finance/security semantic review
+
+After independently verifying `support/barama_sensitive_restore_compare.php --compare-restores` on two private offline restores, run `support/barama_legacy_finance_security_audit.php --audit` using the same localhost SELECT-only credentials plus `BARAMA_SENSITIVE_RESTORE_VERIFIED=TWO_RESTORES_MATCH` and `BARAMA_RELEASE_REVIEW_APPROVED=PRIVATE_READ_ONLY_ONLY`. It reads source clones only, checks financial arithmetic and historical privileges, and never activates operational accounts or payments. Use `docs/FINANCE_SECURITY_PRIVATE_REVIEW_ACCEPTANCE.md` for human review gates. Synthetic CI alone cannot authorize production.

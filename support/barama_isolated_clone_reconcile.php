@@ -350,6 +350,10 @@ try {
     $unsafeChecks=[
         'privileged_or_verified_imported_users'=>"SELECT COUNT(*) FROM users
             WHERE system_role<>'user' OR email_verified_at IS NOT NULL",
+        'imported_account_capabilities_must_be_empty'=>"SELECT COUNT(*)
+            FROM user_capability_grants g
+            JOIN legacy_identity_maps m ON m.target_id=g.user_id
+              AND m.source_table='users' AND m.batch_id=".$batchId,
         'published_imported_companies'=>"SELECT COUNT(*) FROM companies
             WHERE status<>'draft' OR published_at IS NOT NULL",
         'published_imported_projects'=>"SELECT COUNT(*) FROM projects
