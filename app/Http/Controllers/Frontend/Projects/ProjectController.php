@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Frontend\Projects;
 
 use App\Services\Marketplace\PublishedProjectSearch;
+use App\Services\Seo\PublicDetailSeo;
 use App\Domain\RealEstate\MarketplaceStatus;
 use App\Http\Requests\Frontend\Projects\BrowseProjectsRequest;
 use Illuminate\Contracts\View\View;
@@ -21,10 +22,12 @@ final class ProjectController
         ]);
     }
 
-    public function show(string $slug, PublishedProjectSearch $search): View
+    public function show(string $slug, PublishedProjectSearch $search, PublicDetailSeo $seo): View
     {
+        $project = $search->findPublicBySlug($slug)->load('mediaAttachments.asset');
         return view('frontend.projects.show', [
-            'project' => $search->findPublicBySlug($slug)->load('mediaAttachments.asset'),
+            'project' => $project,
+            'seo' => $seo->forProject($project),
         ]);
     }
 }
