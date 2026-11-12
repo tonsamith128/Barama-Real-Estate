@@ -103,3 +103,7 @@ financial/security governance, PR merge checks, license/privacy review and
 a separately authorized production change window.
 
 **As of 2026-11-11, no physical-host or physical-device results are claimed.**
+
+## Evidence control for real physical acceptance
+
+All real aaPanel/cPanel and iPhone/Android/tablet results must be independently observed using disposable QA accounts, with evidence stored privately. The optional private release-evidence validator described in docs/INDEPENDENT_REALDATA_RELEASE_ACCEPTANCE.md checks manifest completeness and evidence hashes but never authenticates reviewer identities or substitutes for physical tests. This physical-device table remains NOT_TESTED until actual operators provide genuine results.

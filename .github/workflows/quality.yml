@@ -62,6 +62,20 @@ jobs:
           grep -q 'FINSEC_AUDIT_DENIED=OFFLINE_TWO_RESTORE_APPROVAL_REQUIRED' /tmp/barama-finsec-denied.log
           rm -f /tmp/barama-finsec-denied.log
           echo "HISTORICAL_FINSEC_PRODUCTION_DENIAL=PASS"
+      - name: Independent private release-evidence gate, negative fixtures and production refusal
+        run: |
+          php -l support/barama_private_release_gate.php
+          bash -n scripts/acceptance/private-release-gate-qa.sh
+          bash scripts/acceptance/private-release-gate-qa.sh
+      - name: Guard integrated real-data rehearsal against production and unapproved use
+        run: |
+          bash -n support/barama_readonly_release_rehearsal.sh
+          if APP_ENV=production bash support/barama_readonly_release_rehearsal.sh --run-readonly > /tmp/barama-readonly-denied.log 2>&1; then
+            echo "FAILED=UNAPPROVED_REHEARSAL_ACCEPTED"; exit 1
+          fi
+          grep -q 'REHEARSAL_DENIED=EXPLICIT_OFFLINE_READ_ONLY_APPROVAL_REQUIRED' /tmp/barama-readonly-denied.log
+          rm -f /tmp/barama-readonly-denied.log
+          echo "ISOLATED_READONLY_OPERATOR_GUARD=PASS"
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes
