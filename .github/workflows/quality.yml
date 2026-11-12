@@ -48,6 +48,11 @@ jobs:
           fi
           rm -f /tmp/barama-preflight-negative.log
           echo "REAL_DATA_CLONE_PRODUCTION_PREFLIGHT_GUARD=PASS"
+      - name: Offline calendar import preflight and malicious fixture rejection
+        run: |
+          php -l support/barama_calendar_import_preflight.php
+          bash -n scripts/acceptance/calendar-import-preflight-smoke.sh
+          bash scripts/acceptance/calendar-import-preflight-smoke.sh
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes
