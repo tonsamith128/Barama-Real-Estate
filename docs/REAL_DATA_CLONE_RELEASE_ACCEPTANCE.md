@@ -186,3 +186,7 @@ Current stacked drafts: #185 → #186 → #187 → #188 → #189 → #190. Geogr
 ## Historical finance/security semantic review
 
 After independently verifying `support/barama_sensitive_restore_compare.php --compare-restores` on two private offline restores, run `support/barama_legacy_finance_security_audit.php --audit` using the same localhost SELECT-only credentials plus `BARAMA_SENSITIVE_RESTORE_VERIFIED=TWO_RESTORES_MATCH` and `BARAMA_RELEASE_REVIEW_APPROVED=PRIVATE_READ_ONLY_ONLY`. It reads source clones only, checks financial arithmetic and historical privileges, and never activates operational accounts or payments. Use `docs/FINANCE_SECURITY_PRIVATE_REVIEW_ACCEPTANCE.md` for human review gates. Synthetic CI alone cannot authorize production.
+
+## Independent review evidence gate (draft)
+
+The operator-only release manifest verifier is documented in docs/INDEPENDENT_REALDATA_RELEASE_ACCEPTANCE.md, alongside the exact private two-restore, sensitive finance/security and clone/media verification sequence. CI verifies only synthetic tamper rejection, not real customer data or actual hosting. The metadata gate is always production NO-GO, even if a reviewer claims every test passed.
