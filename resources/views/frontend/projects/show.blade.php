@@ -1,4 +1,4 @@
-<x-layouts.frontend :title="$project->name . ' — Barama Real Estate'">
+<x-layouts.frontend :title="$project->name . ' — Barama Real Estate'" :meta-description="$seo['description']" :canonical-url="$seo['canonical']" :social-type="$seo['social_type']" :structured-data="$seo['structured_data']">
     <main class="marketplace" id="main-content">
         <nav aria-label="Breadcrumb" class="marketplace__breadcrumb">
             <a href="{{ route('home') }}">Home</a>

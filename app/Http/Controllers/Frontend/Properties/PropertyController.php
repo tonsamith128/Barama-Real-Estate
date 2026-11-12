@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Frontend\Properties;
 use App\Domain\RealEstate\MarketplaceStatus;
 use App\Http\Requests\Frontend\Properties\BrowsePropertiesRequest;
 use App\Services\Marketplace\PublishedListingSearch;
+use App\Services\Seo\PublicDetailSeo;
 use Illuminate\Contracts\View\View;
 
 final class PropertyController
@@ -24,10 +25,12 @@ final class PropertyController
         ]);
     }
 
-    public function show(string $slug, PublishedListingSearch $search): View
+    public function show(string $slug, PublishedListingSearch $search, PublicDetailSeo $seo): View
     {
+        $listing = $search->findPublicBySlug($slug);
         return view('frontend.properties.show', [
-            'listing' => $search->findPublicBySlug($slug),
+            'listing' => $listing,
+            'seo' => $seo->forListing($listing),
         ]);
     }
 }
