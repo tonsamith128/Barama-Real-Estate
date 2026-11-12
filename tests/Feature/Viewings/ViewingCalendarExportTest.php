@@ -156,7 +156,9 @@ final class ViewingCalendarExportTest extends TestCase
             ->get(route('account.viewings.calendar', $viewing))->getContent();
 
         $this->assertStringNotContainsString("\r\nATTENDEE:", $content);
-        $this->assertStringContainsString('\\nATTENDEE:mailto:attacker@example.test\\;', $content);
+        // RFC 5545 folds at 75 octets: unfold before checking escaped text.
+        $unfolded = preg_replace('/\r\n[ \t]/', '', $content);
+        $this->assertStringContainsString('\\nATTENDEE:mailto:attacker@example.test\\;', $unfolded);
         foreach (explode("\r\n", trim($content)) as $line) {
             $this->assertLessThanOrEqual(75, strlen($line));
         }
