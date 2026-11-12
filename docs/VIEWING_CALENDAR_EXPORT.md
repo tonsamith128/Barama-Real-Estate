@@ -26,3 +26,7 @@ No live site, production database or original Pure PHP files were changed.
 - Company exports are deterministically ordered by viewing time and numeric viewing ID, with a maximum of 250 records. Any additional appointments are not included in the one-time file.
 - Calendar event text must never include customer PII, private messages or embedded attendee invitations.
 - Download actions explicitly say **Download calendar (.ics)**. Neither endpoint automatically writes to Google Calendar, Apple Calendar, Outlook or other external calendars; the user imports the file and must import a fresh file if the viewing changes.
+
+## Portability preflight and manual-device gates
+
+A local, read-only file verifier is available in support/barama_calendar_import_preflight.php. Synthetic acceptance cases live in scripts/acceptance/calendar-import-preflight-smoke.sh. See docs/CALENDAR_PORTABILITY_ACCEPTANCE.md for the private operator test commands and manual Apple/Google Calendar import evidence matrix. A preflight pass is not a provider or physical device import.
