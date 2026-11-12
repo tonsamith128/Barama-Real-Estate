@@ -20,6 +20,7 @@
                 <a @class(['is-current'=>$status === $value]) href="{{ route('developer.viewings.index', ['status'=>$value]) }}">{{ $label }}</a>
             @endforeach
         </nav>
+        <p>Download up to 250 upcoming confirmed appointments. Calendar files do not automatically update after a change or cancellation.</p>
         <div class="viewing-list">
             @forelse($viewings as $viewing)
                 <article class="viewing-card">

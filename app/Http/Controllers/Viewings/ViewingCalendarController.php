@@ -52,6 +52,7 @@ final class ViewingCalendarController
             })
             ->with('listing.property')
             ->orderBy('requested_at')
+            ->orderBy('viewing_requests.id')
             ->limit(250)
             ->get();
 

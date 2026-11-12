@@ -19,3 +19,10 @@ Run the new test:
 Then run existing viewing lifecycle, quality and isolated-hosting CI. The PR remains a **draft**, stacked on PR #193. All real database/private-media rehearsal, physical hosting/device checks, reconciliation of stacked branches and finance/security release gates remain outstanding.
 
 No live site, production database or original Pure PHP files were changed.
+
+## Calendar download regression coverage
+
+- Tests protect customer ownership, approval-state revocation, held or withdrawn events, historical imported records and cross-company authorization.
+- Company exports are deterministically ordered by viewing time and numeric viewing ID, with a maximum of 250 records. Any additional appointments are not included in the one-time file.
+- Calendar event text must never include customer PII, private messages or embedded attendee invitations.
+- Download actions explicitly say **Download calendar (.ics)**. Neither endpoint automatically writes to Google Calendar, Apple Calendar, Outlook or other external calendars; the user imports the file and must import a fresh file if the viewing changes.

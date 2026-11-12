@@ -9,6 +9,7 @@
         <a class="button" href="{{ route('properties.index') }}">Browse properties</a>
     </header>
     <section class="customer-card">
+        <p>Calendar files are one-time downloads. Changes or cancellations are not automatically synchronized; download again after an update.</p>
         @forelse($viewings as $viewing)
             <div class="customer-record customer-record--full">
                 <div>
@@ -45,7 +46,7 @@
                     <span class="customer-status">{{ $viewing->legacy_uuid
                         ? 'Needs review' : ucfirst(str_replace('_',' ',$viewing->status)) }}</span>
                     @if(in_array((int) $viewing->id, $calendarExportableIds, true))
-                        <a class="button button--secondary" href="{{ route('account.viewings.calendar', $viewing) }}">Add to calendar (.ics)</a>
+                        <a class="button button--secondary" href="{{ route('account.viewings.calendar', $viewing) }}">Download calendar (.ics)</a>
                     @endif
                     @if($viewing->review_status === 'held')
                         <p>Administration is reviewing this request. You may still cancel it.</p>

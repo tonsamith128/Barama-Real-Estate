@@ -170,4 +170,82 @@ final class ViewingCalendarExportTest extends TestCase
         }
         $this->assertSame(1, substr_count($content, 'BEGIN:VEVENT'));
     }
+
+
+    public function test_calendar_link_disappears_when_listing_is_withdrawn(): void
+    {
+        $owner = User::factory()->create();
+        $confirmed = $this->viewing($owner, 'button');
+
+        $this->actingAs($owner)->get(route('account.viewings.index'))
+            ->assertOk()
+            ->assertSee('Download calendar (.ics)')
+            ->assertSee(route('account.viewings.calendar', $confirmed));
+
+        $confirmed->listing->forceFill(['status' => 'unpublished'])->save();
+
+        $this->get(route('account.viewings.index'))
+            ->assertOk()->assertDontSee('Download calendar (.ics)');
+        $this->get(route('account.viewings.calendar', $confirmed))->assertNotFound();
+    }
+
+    public function test_company_export_button_respects_membership_and_approval(): void
+    {
+        $customer = User::factory()->create();
+        $manager = User::factory()->create();
+        $viewing = $this->viewing($customer, 'membership');
+        $membership = $this->member($manager, $viewing);
+
+        $this->actingAs($manager)->get(route('developer.viewings.index'))
+            ->assertOk()->assertSee('Export confirmed appointments (.ics)');
+
+        $membership->forceFill(['status' => 'inactive'])->save();
+        $this->get(route('developer.viewings.index'))
+            ->assertOk()->assertDontSee('Export confirmed appointments (.ics)');
+        $this->get(route('developer.viewings.calendar'))->assertForbidden();
+
+        $membership->forceFill(['status' => 'active'])->save();
+        $viewing->listing->property->company
+            ->forceFill(['status' => 'pending'])->save();
+        $this->get(route('developer.viewings.index'))
+            ->assertOk()->assertDontSee('Export confirmed appointments (.ics)');
+        $this->get(route('developer.viewings.calendar'))->assertForbidden();
+    }
+
+    public function test_company_calendar_caps_export_at_250_and_orders_same_time_consistently(): void
+    {
+        $customer = User::factory()->create();
+        $manager = User::factory()->create();
+        $first = $this->viewing($customer, 'limit');
+        $this->member($manager, $first);
+
+        $anchor = now()->addDays(2)->startOfMinute();
+        $first->forceFill(['requested_at' => $anchor])->save();
+
+        // All share one approved listing, so authorization and ordering,
+        // not creation of extra catalog records, are under test.
+        for ($i = 1; $i <= 250; $i++) {
+            ViewingRequest::query()->create([
+                'user_id' => $customer->id,
+                'listing_id' => $first->listing_id,
+                'requested_at' => $anchor->copy()->addMinutes($i),
+                'status' => 'confirmed',
+            ]);
+        }
+
+        $response = $this->actingAs($manager)
+            ->get(route('developer.viewings.calendar'));
+        $response->assertOk();
+        $file = $response->getContent();
+        $this->assertSame(250, substr_count($file, 'BEGIN:VEVENT'));
+        $this->assertStringContainsString(
+            'DTSTART:'.$anchor->copy()->utc()->format('Ymd\THis\Z'),
+            $file,
+        );
+        $this->assertStringNotContainsString(
+            'DTSTART:'.$anchor->copy()->addMinutes(250)->utc()->format('Ymd\THis\Z'),
+            $file,
+        );
+        $this->assertSame(250, substr_count($file, 'STATUS:CONFIRMED'));
+    }
 }

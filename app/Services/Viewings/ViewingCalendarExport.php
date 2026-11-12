@@ -36,6 +36,8 @@ final class ViewingCalendarExport
             'X-WR-CALNAME:Barama confirmed viewings',
         ];
 
+        // One DTSTAMP for this export, even when it contains many events.
+        $exportedAt = now()->utc()->format('Ymd\THis\Z');
         foreach ($viewings as $viewing) {
             // No customer name, notes, email, telephone, address or agency
             // contact details are distributed in this downloadable file.
@@ -44,7 +46,7 @@ final class ViewingCalendarExport
             array_push($lines,
                 'BEGIN:VEVENT',
                 'UID:'.$uid.'@calendar.invalid',
-                'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z'),
+                'DTSTAMP:'.$exportedAt,
                 'DTSTART:'.$viewing->requested_at->copy()->utc()->format('Ymd\THis\Z'),
                 'STATUS:CONFIRMED',
                 'SUMMARY:'.$this->escape('Viewing - '.$title),
