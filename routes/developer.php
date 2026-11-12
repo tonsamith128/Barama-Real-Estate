@@ -15,6 +15,7 @@ use App\Http\Controllers\Developer\Projects\ProjectMilestoneController;
 use App\Http\Controllers\Developer\Properties\ListingOfferController;
 use App\Http\Controllers\Developer\Catalog\CatalogAmenityController;
 use App\Http\Controllers\Developer\Team\DeveloperTeamController;
+use App\Http\Controllers\Viewings\ViewingCalendarController;
 use App\Http\Controllers\Developer\Companies\CompanyApplicationController;
 
 Route::middleware(['auth', 'verified'])
@@ -35,6 +36,8 @@ Route::middleware(['auth', 'verified'])
         Route::patch('/inquiries/{inquiry}/respond', [DeveloperInquiryController::class, 'respond'])
             ->middleware('throttle:20,1')->name('inquiries.respond');
         Route::get('/viewings', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'index'])->name('viewings.index');
+        Route::get('/viewings/calendar', [ViewingCalendarController::class, 'company'])
+            ->middleware('throttle:12,1')->name('viewings.calendar');
         Route::post('/viewings/{viewing}/decision', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'decide'])
             ->middleware('throttle:10,1')->name('viewings.decide');
         Route::post('/viewings/{viewing}/propose', [\App\Http\Controllers\Developer\Viewings\DeveloperViewingController::class, 'propose'])

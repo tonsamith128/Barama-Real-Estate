@@ -1,0 +1,21 @@
+# Barama viewing calendar downloads — draft feature
+
+This milestone builds on the confirmed/rescheduled viewing workflow in PR #192.
+
+- A verified customer may download one **current confirmed** appointment under their account at /account/viewings/{viewing}/calendar.
+- An active company owner/manager may download up to 250 upcoming **confirmed** viewings from their authorized companies at /developer/viewings/calendar.
+- At read time, both exports require a published, currently visible listing, an approved parent property and visible company, no administrator hold, no historical legacy UUID, and a scheduled date within six months.
+- Pending appointments and proposed alternate times are not confirmed appointments. They are never exported.
+- The exported calendar deliberately has no location/duration, customer contact details, notes, private links or calendar invite recipients. The property title is UTF-8-safe, RFC 5545-escaped and folded. Downloads are private/no-store and require signed-in, email-verified accounts.
+- Export does not make a standing subscription or public ICS URL. Updating or cancelling an appointment requires re-downloading the calendar item; existing calendar app events do not synchronize automatically.
+- No new migration, notifications, cron, queue, payment, media or server changes. Frontend page layouts are retained; only small download links are added to existing workspace pages.
+
+## Acceptance
+
+Run the new test:
+
+    php artisan test --filter=ViewingCalendarExportTest
+
+Then run existing viewing lifecycle, quality and isolated-hosting CI. The PR remains a **draft**, stacked on PR #193. All real database/private-media rehearsal, physical hosting/device checks, reconciliation of stacked branches and finance/security release gates remain outstanding.
+
+No live site, production database or original Pure PHP files were changed.
