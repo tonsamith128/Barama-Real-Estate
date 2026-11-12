@@ -123,6 +123,26 @@ if(($j["semantic_integrity"]??"")!=="CHECKED_NO_KNOWN_ANOMALIES"
 echo "FINSEC_READONLY_SEMANTIC_BASELINE=PASS\n";
 ' "$QA/finsec-baseline.json"
 
+# Identical corrupted restores must still fail on semantic arithmetic.
+# A full-table HMAC comparator alone would accept identical bad originals.
+for schema in "$A" "$B"; do
+    root_mysql "$schema" -e "UPDATE billing_invoices SET total=48.00 WHERE id=1"
+done
+if php support/barama_legacy_finance_security_audit.php --audit \
+  > "$QA/finsec-matched-bad-arithmetic.json"; then
+    echo "FAILED=MATCHED_BUT_INCORRECT_INVOICE_ACCEPTED"; exit 9
+fi
+php -r '
+$j=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+if(($j["two_restore_aggregate_consistency"]??"")!=="MATCH"
+ || !in_array("invoice_total_arithmetic_mismatch",$j["blocking_check_names"]??[],true)
+ || ($j["semantic_integrity"]??"")!=="BLOCKED") {exit(1);}
+echo "FINSEC_IDENTICAL_INVALID_LEDGER_BLOCKED=PASS\n";
+' "$QA/finsec-matched-bad-arithmetic.json"
+for schema in "$A" "$B"; do
+    root_mysql "$schema" -e "UPDATE billing_invoices SET total=49.00 WHERE id=1"
+done
+
 # Amount tampering in one restore must block arithmetic and aggregated sums.
 root_mysql "$B" -e "UPDATE billing_invoices SET total=48.00 WHERE id=1"
 if php support/barama_legacy_finance_security_audit.php --audit \
