@@ -68,7 +68,13 @@ final class ViewingCalendarExportTest extends TestCase
         $this->get(route('account.viewings.calendar', $confirmed))->assertRedirect();
         $response = $this->actingAs($owner)
             ->get(route('account.viewings.calendar', $confirmed));
-        $response->assertOk()->assertHeader('Cache-Control', 'private, no-store, max-age=0');
+        $response->assertOk();
+        // Symfony may reorder Cache-Control directives; verify their meaning.
+        foreach (['private', 'no-store', 'max-age=0'] as $directive) {
+            $this->assertStringContainsString(
+                $directive, $response->headers->get('Cache-Control', ''),
+            );
+        }
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
         $calendar = $response->getContent();
         $this->assertStringContainsString("BEGIN:VCALENDAR\r\n", $calendar);
