@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Account\Dashboard\DashboardController;
+use App\Http\Controllers\Account\Activity\CustomerActivityController;
 use App\Http\Controllers\Account\Inquiries\AccountInquiryController;
 use App\Http\Controllers\Account\Notifications\NotificationController;
 use App\Http\Controllers\Account\Profile\ProfileController;
 use App\Http\Controllers\Account\SavedListings\SavedListingsController;
 use App\Http\Controllers\Account\SavedSearches\SavedSearchController;
 use App\Http\Controllers\Account\Viewings\ViewingRequestController;
+use App\Http\Controllers\Viewings\ViewingCalendarController;
 use App\Http\Controllers\Account\Inquiries\AccountInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,18 +35,36 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
             ->middleware('throttle:12,1')->name('searches.store');
         Route::patch('/searches/{savedSearch}', [SavedSearchController::class, 'rename'])
             ->middleware('throttle:12,1')->name('searches.rename');
+        Route::patch('/searches/{savedSearch}/review', [SavedSearchController::class, 'review'])
+            ->middleware('throttle:12,1')->name('searches.review');
         Route::delete('/searches/{savedSearch}', [SavedSearchController::class, 'destroy'])
             ->middleware('throttle:12,1')->name('searches.destroy');
+
+        Route::get('/activity', [CustomerActivityController::class, 'index'])->name('activity.index');
+        Route::post('/activity/comparison/{listing}', [CustomerActivityController::class, 'compare'])
+            ->middleware('throttle:20,1')->name('activity.comparison.store');
+        Route::delete('/activity/comparison/{listing}', [CustomerActivityController::class, 'removeComparison'])
+            ->middleware('throttle:20,1')->name('activity.comparison.destroy');
+        Route::post('/activity/recent/{listing}', [CustomerActivityController::class, 'remember'])
+            ->middleware('throttle:20,1')->name('activity.recent.store');
+        Route::delete('/activity/recent/{listing}', [CustomerActivityController::class, 'forget'])
+            ->middleware('throttle:20,1')->name('activity.recent.destroy');
+        Route::delete('/activity/recent', [CustomerActivityController::class, 'clear'])
+            ->middleware('throttle:10,1')->name('activity.recent.clear');
 
         Route::get('/inquiries', AccountInquiryController::class)->name('inquiries.index');
         Route::get('/inquiries/{inquiry}', [AccountInquiryThreadController::class, 'show'])->name('inquiries.show');
         Route::post('/inquiries/{inquiry}/messages', [AccountInquiryThreadController::class, 'store'])
             ->middleware('throttle:8,1')->name('inquiries.messages.store');
         Route::get('/viewings', [ViewingRequestController::class, 'index'])->name('viewings.index');
+        Route::get('/viewings/{viewing}/calendar', [ViewingCalendarController::class, 'customer'])
+            ->middleware('throttle:12,1')->name('viewings.calendar');
         Route::post('/viewings/{listing}', [ViewingRequestController::class, 'store'])
             ->middleware('throttle:5,1')->name('viewings.store');
         Route::patch('/viewings/{viewing}/cancel', [ViewingRequestController::class, 'cancel'])
             ->name('viewings.cancel');
+        Route::post('/viewings/{viewing}/reschedule-response', [ViewingRequestController::class, 'respond'])
+            ->middleware('throttle:10,1')->name('viewings.respond');
 
         Route::get('/notifications', [NotificationController::class, 'index'])
             ->name('notifications.index');

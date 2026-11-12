@@ -3,7 +3,7 @@
         <div><p class="admin-eyebrow">Administration / Marketplace</p>
             <h1>Catalog Moderation</h1>
             <p>Review projects and property listings, onboard verified companies and preserve review history.</p></div>
-        <a href="{{ route('admin.dashboard') }}">Admin Dashboard</a>
+        <div><a href="{{ route('admin.company-media.index') }}">Company Media Reviews</a> · <a href="{{ route('admin.dashboard') }}">Admin Dashboard</a></div>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -16,6 +16,36 @@
             <label>Verified owner's registered email <input name="owner_email" type="email" required value="{{ old('owner_email') }}"></label>
             <button type="submit">Create and approve company</button>
         </form>
+    </section>
+
+    <section class="admin-card">
+        <h2>Pending company reviews</h2>
+        <p>Approve verified company submissions, or return them to their owners with a reason. Only pending companies can be reviewed.</p>
+        <div class="catalog-review-list">
+            @forelse($pendingCompanies as $company)
+                <article class="catalog-review-card">
+                    <div>
+                        <strong>{{ $company->name }}</strong>
+                        <p>{{ ucfirst(str_replace('_', ' ', $company->company_type)) }} · Awaiting review</p>
+                        @if($company->description)<p>{{ $company->description }}</p>@endif
+                    </div>
+                    <div class="catalog-review-actions">
+                        <form method="post" action="{{ route('admin.catalog.companies.decision', $company) }}">@csrf
+                            <input type="hidden" name="decision" value="approved">
+                            <button type="submit">Approve company</button>
+                        </form>
+                        <form method="post" action="{{ route('admin.catalog.companies.decision', $company) }}">@csrf
+                            <input type="hidden" name="decision" value="rejected">
+                            <label>Rejection reason
+                                <textarea name="reason" minlength="10" maxlength="2000" rows="2" required placeholder="Explain what needs to change"></textarea>
+                            </label>
+                            <button type="submit">Request changes</button>
+                        </form>
+                    </div>
+                </article>
+            @empty<p>No pending company reviews.</p>@endforelse
+        </div>
+        {{ $pendingCompanies->links() }}
     </section>
 
     <section class="admin-card">

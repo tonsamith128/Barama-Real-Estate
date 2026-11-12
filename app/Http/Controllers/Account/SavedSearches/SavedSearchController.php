@@ -40,6 +40,19 @@ final class SavedSearchController
         return redirect()->route('account.searches.index')->with('notice', 'Search renamed.');
     }
 
+    public function review(
+        Request $request, SavedSearch $savedSearch, SavedSearchManager $manager,
+    ): RedirectResponse {
+        $request->validate([
+            'accept_supported_filters' => ['required', 'accepted'],
+        ]);
+
+        $manager->acceptImportedFilters($request->user(), $savedSearch);
+
+        return redirect()->route('account.searches.index')
+            ->with('notice', 'Supported filters accepted. Historical alerts remain disabled.');
+    }
+
     public function destroy(
         Request $request, SavedSearch $savedSearch, SavedSearchManager $manager,
     ): RedirectResponse {

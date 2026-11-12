@@ -9,12 +9,14 @@ use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 final class ProjectManager
 {
-    public function __construct(private readonly CompanyCatalogWriter $permissions)
-    {
+    public function __construct(
+        private readonly CompanyCatalogWriter $permissions,
+        private readonly CatalogLocationPolicy $locations,
+        private readonly CatalogRevisionRecorder $revisions,
+    ) {
     }
 
     public function assertOwnerAccess(User $user, Company $company): void
@@ -31,8 +33,10 @@ final class ProjectManager
     public function create(User $user, Company $company, array $data): Project
     {
         $this->permissions->assertCanManage($user, $company);
+        $this->locations->assertSelectable(isset($data['location_id']) ? (int) $data['location_id'] : null);
 
         return DB::transaction(function () use ($user, $company, $data): Project {
+            $this->permissions->assertCanManage($user, $company);
             $project = Project::query()->create([
                 'company_id' => $company->getKey(),
                 'name' => $data['name'],
@@ -40,9 +44,18 @@ final class ProjectManager
                 'project_type' => $data['project_type'],
                 'completion_status' => $data['completion_status'] ?? null,
                 'description' => $data['description'] ?? null,
+                'location_id' => $data['location_id'] ?? null,
+                'address_line' => $data['address_line'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'launch_date' => $data['launch_date'] ?? null,
+                'expected_completion_date' => $data['expected_completion_date'] ?? null,
+                'completed_at' => $data['completed_at'] ?? null,
                 'status' => 'draft',
                 'published_at' => null,
             ]);
+            $this->revisions->record($user, 'project', $project, 'created', null,
+                $this->revisions->snapshot($project, 'project'));
             $this->audit($user, 'developer.project.created', $project);
             return $project;
         });
@@ -51,17 +64,31 @@ final class ProjectManager
     public function revise(User $user, Company $company, Project $project, array $data): void
     {
         $this->assertOwner($user, $company, $project);
-        DB::transaction(function () use ($user, $project, $data): void {
+        $this->locations->assertSelectable(isset($data['location_id']) ? (int) $data['location_id'] : null);
+
+        DB::transaction(function () use ($user, $company, $project, $data): void {
             $locked = Project::query()->lockForUpdate()->findOrFail($project->getKey());
+            $this->assertOwner($user, $company, $locked);
             abort_unless(in_array($locked->status, ['draft', 'rejected'], true), 409);
+            $before = $this->revisions->snapshot($locked, 'project');
+
             $locked->update([
                 'name' => $data['name'],
                 'project_type' => $data['project_type'],
                 'completion_status' => $data['completion_status'] ?? null,
                 'description' => $data['description'] ?? null,
+                'location_id' => $data['location_id'] ?? null,
+                'address_line' => $data['address_line'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'launch_date' => $data['launch_date'] ?? null,
+                'expected_completion_date' => $data['expected_completion_date'] ?? null,
+                'completed_at' => $data['completed_at'] ?? null,
                 'status' => 'draft',
                 'published_at' => null,
             ]);
+            $this->revisions->record($user, 'project', $locked, 'revised', $before,
+                $this->revisions->snapshot($locked, 'project'));
             $this->audit($user, 'developer.project.revised', $locked);
         });
     }
@@ -69,10 +96,16 @@ final class ProjectManager
     public function submit(User $user, Company $company, Project $project): void
     {
         $this->assertOwner($user, $company, $project);
-        DB::transaction(function () use ($user, $project): void {
+        DB::transaction(function () use ($user, $company, $project): void {
             $locked = Project::query()->lockForUpdate()->findOrFail($project->getKey());
+            $this->assertOwner($user, $company, $locked);
             abort_unless($locked->status === 'draft', 409);
+            $this->locations->assertSelectable($locked->location_id !== null
+                ? (int) $locked->location_id : null);
+            $before = $this->revisions->snapshot($locked, 'project');
             $locked->update(['status' => 'pending', 'published_at' => null]);
+            $this->revisions->record($user, 'project', $locked, 'submitted', $before,
+                $this->revisions->snapshot($locked, 'project'));
             $this->audit($user, 'developer.project.submitted', $locked);
         });
     }

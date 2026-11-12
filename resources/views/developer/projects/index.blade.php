@@ -24,6 +24,7 @@
                 @endforeach
             </select></label>
             <label>Description <textarea name="description" maxlength="12000" rows="4">{{ old('description') }}</textarea></label>
+            @include('developer.catalog.project-legacy-fields', ['project' => null])
             <button type="submit">Create private draft</button>
         </form>
     </section>
@@ -33,6 +34,136 @@
             <article class="portfolio-record">
                 <div><strong>{{ $project->name }}</strong><p>Status: {{ ucfirst($project->status) }}</p>
                     <p>Type: {{ str_replace('_',' ',ucfirst($project->project_type)) }}</p></div>
+                <section class="listing-gallery" aria-label="Project photos for {{ $project->name }}">
+                    <p><strong>Project gallery</strong> · {{ $project->mediaAttachments->count() }} / 20 photos</p>
+                    @if($project->mediaAttachments->isNotEmpty())
+                        <ul class="listing-gallery__images">
+                            @foreach($project->mediaAttachments as $photo)
+                                <li>
+                                    @if($project->status === 'draft')
+                                        <img loading="lazy" src="{{ route('developer.projects.gallery.preview', [$company, $project, $photo->asset]) }}"
+                                            alt="{{ $photo->asset->alt_text ?: $project->name }}">
+                                        @if($photo->is_primary)<strong>Primary photo</strong>@endif
+                                        <form method="post" action="{{ route('developer.projects.gallery.order', [$company, $project, $photo]) }}">
+                                            @csrf
+                                            <input type="hidden" name="action" value="primary">
+                                            <button type="submit">Make primary</button>
+                                        </form>
+                                        <form method="post" action="{{ route('developer.projects.gallery.order', [$company, $project, $photo]) }}">
+                                            @csrf
+                                            <input type="hidden" name="action" value="up">
+                                            <button type="submit">Move up</button>
+                                        </form>
+                                        <form method="post" action="{{ route('developer.projects.gallery.order', [$company, $project, $photo]) }}">
+                                            @csrf
+                                            <input type="hidden" name="action" value="down">
+                                            <button type="submit">Move down</button>
+                                        </form>
+                                        <form method="post" action="{{ route('developer.projects.gallery.destroy', [$company, $project, $photo]) }}">
+                                            @csrf @method('DELETE')
+                                            <button type="submit">Remove</button>
+                                        </form>
+                                    @elseif($project->status === 'published')
+                                        <img loading="lazy" src="{{ route('media.demo.show', $photo->asset->checksum_sha256) }}"
+                                            alt="{{ $photo->asset->alt_text ?: $project->name }}">
+                                    @else
+                                        <span>{{ $photo->asset->original_name }} (private during review)</span>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if($project->status === 'draft')
+                        <form method="post" enctype="multipart/form-data"
+                            action="{{ route('developer.projects.gallery.store', [$company, $project]) }}">
+                            @csrf
+                            <label>Upload photo <input type="file" name="image" accept="image/jpeg,image/png,image/webp" required></label>
+                            <label>Image description <input name="alt_text" maxlength="255"></label>
+                            <button type="submit">Add private project photo</button>
+                        </form>
+                    @endif
+                </section>
+                <section class="admin-card">
+                    <h3>Project amenities</h3>
+                    <p>
+                        @forelse($project->amenities as $amenity)
+                            {{ $amenity->name }}@unless($loop->last), @endunless
+                        @empty None selected
+                        @endforelse
+                    </p>
+                    @if(in_array($project->status, ['draft', 'rejected'], true))
+                        <form method="post" action="{{ route('developer.projects.amenities.update', [$company, $project]) }}">
+                            @csrf @method('PUT')
+                            @foreach($amenities as $amenity)
+                                <label><input type="checkbox" name="amenity_ids[]" value="{{ $amenity->id }}"
+                                    @checked($project->amenities->contains('id', $amenity->id))>
+                                    {{ $amenity->name }}
+                                </label>
+                            @endforeach
+                            <button type="submit">Save amenities</button>
+                        </form>
+                    @endif
+                </section>
+                <section class="admin-card">
+                    <h3>Development milestones</h3>
+                    @forelse($project->milestones as $milestone)
+                        <div class="portfolio-record">
+                            <strong>{{ $milestone->title }}</strong>
+                            <p>{{ str_replace('_', ' ', ucfirst($milestone->status)) }}
+                                @if($milestone->target_date) · Target: {{ $milestone->target_date->format('Y-m-d') }} @endif
+                                @if($milestone->completed_date) · Completed: {{ $milestone->completed_date->format('Y-m-d') }} @endif
+                            </p>
+                            @if($milestone->description)<p>{{ $milestone->description }}</p>@endif
+                            @if(in_array($project->status, ['draft', 'rejected'], true))
+                                <details>
+                                    <summary>Edit milestone</summary>
+                                    <form method="post" class="admin-form" action="{{ route('developer.projects.milestones.update', [$company, $project, $milestone]) }}">
+                                        @csrf @method('PUT')
+                                        <label>Title <input name="title" required maxlength="190" value="{{ $milestone->title }}"></label>
+                                        <label>Description <textarea name="description" maxlength="6000">{{ $milestone->description }}</textarea></label>
+                                        <label>Status <select name="status">
+                                            @foreach(['planned','in_progress','completed','delayed'] as $state)
+                                                <option value="{{ $state }}" @selected($milestone->status===$state)>{{ ucfirst(str_replace('_', ' ', $state)) }}</option>
+                                            @endforeach
+                                        </select></label>
+                                        <label>Target date <input type="date" name="target_date" value="{{ $milestone->target_date?->format('Y-m-d') }}"></label>
+                                        <label>Completed date <input type="date" name="completed_date" value="{{ $milestone->completed_date?->format('Y-m-d') }}"></label>
+                                        <button type="submit">Save milestone</button>
+                                    </form>
+                                </details>
+                                @foreach(['up'=>'Move up','down'=>'Move down'] as $direction=>$label)
+                                    <form method="post" action="{{ route('developer.projects.milestones.move', [$company, $project, $milestone]) }}">
+                                        @csrf<input type="hidden" name="direction" value="{{ $direction }}">
+                                        <button type="submit">{{ $label }}</button>
+                                    </form>
+                                @endforeach
+                                <form method="post" action="{{ route('developer.projects.milestones.destroy', [$company, $project, $milestone]) }}">
+                                    @csrf @method('DELETE')
+                                    <button type="submit">Remove milestone</button>
+                                </form>
+                            @endif
+                        </div>
+                    @empty<p>No milestones added yet.</p>@endforelse
+                    @if(in_array($project->status, ['draft', 'rejected'], true))
+                        <details><summary>Add a milestone</summary>
+                            <form method="post" class="admin-form" action="{{ route('developer.projects.milestones.store', [$company, $project]) }}">
+                                @csrf
+                                <label>Title <input name="title" required maxlength="190"></label>
+                                <label>Description <textarea name="description" maxlength="6000"></textarea></label>
+                                <label>Status <select name="status">
+                                    <option value="planned">Planned</option>
+                                    <option value="in_progress">In progress</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="completed">Completed</option>
+                                </select></label>
+                                <label>Target date <input name="target_date" type="date"></label>
+                                <label>Actual completion <input name="completed_date" type="date"></label>
+                                <button type="submit">Create milestone</button>
+                            </form>
+                        </details>
+                    @endif
+                </section>
+                <p><a href="{{ route('developer.projects.history', [$company, $project]) }}">Revision history</a></p>
                 @if(in_array($project->status, ['draft','rejected'], true))
                     <details><summary>Edit project</summary>
                         <form class="admin-form" method="post" action="{{ route('developer.projects.update', [$company, $project]) }}">
@@ -50,6 +181,7 @@
                                 @endforeach
                             </select></label>
                             <label>Description <textarea name="description" rows="3">{{ $project->description }}</textarea></label>
+                            @include('developer.catalog.project-legacy-fields', ['project' => $project])
                             <button type="submit">Save changes</button>
                         </form>
                     </details>

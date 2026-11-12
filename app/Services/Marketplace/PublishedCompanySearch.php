@@ -9,13 +9,31 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class PublishedCompanySearch
 {
-    public function browse(): LengthAwarePaginator
+    /** @param array<string,mixed> $filters validated public company parameters. */
+    public function browse(array $filters = []): LengthAwarePaginator
     {
-        return Company::query()
-            ->publiclyVisible()
-            ->orderBy('name')
-            ->orderBy('id')
-            ->paginate(12);
+        $query = Company::query()->publiclyVisible()
+            ->withCount([
+                'projects as published_projects_count' =>
+                    fn (\Illuminate\Database\Eloquent\Builder $projects) => $projects->publiclyVisible(),
+                'listings as published_listings_count' =>
+                    fn (\Illuminate\Database\Eloquent\Builder $listings) => $listings->visibleToPublic(),
+            ]);
+        $keyword = trim((string) ($filters['q'] ?? ''));
+        if ($keyword !== '') {
+            $query->where(function (\Illuminate\Database\Eloquent\Builder $match) use ($keyword): void {
+                $match->where('name', 'like', '%'.$keyword.'%')
+                    ->orWhere('description', 'like', '%'.$keyword.'%');
+            });
+        }
+        if (!empty($filters['type'])) {
+            $query->where('company_type', $filters['type']);
+        }
+        match ($filters['sort'] ?? 'name') {
+            'newest' => $query->orderByDesc('published_at')->orderByDesc('id'),
+            default => $query->orderBy('name')->orderBy('id'),
+        };
+        return $query->paginate(12)->withQueryString();
     }
 
     public function findPublicBySlug(string $slug): Company

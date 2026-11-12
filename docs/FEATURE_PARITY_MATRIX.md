@@ -64,3 +64,46 @@ See [Policy Center acceptance](POLICY_CENTER_ACCEPTANCE.md) for draft/edit/publi
 ## Dashboard recovery and customer relationships
 
 See [Dashboard/Viewing acceptance](DASHBOARD_VIEWING_ACCEPTANCE.md). When cPanel receives application code before corresponding database migrations, the administrator overview now shows missing-module schema status instead of triggering an unhandled missing-table query. Viewing decisions and inquiry handled status are audited, customer notices are in-app only, and company manager access is tenant-scoped. The real cPanel error log has not yet been reviewed, so the exact 500 root cause remains a hypothesis pending host verification.
+
+
+## November 10 — existing legacy structures, parity-first implementation order
+
+The live aaPanel installation is still a Pure PHP application. The
+owner-run source comparison established 389/389 exact matches against
+`archive/barama-v1-main-before-laravel-20261030`, plus five extra live
+PHP files. This register assesses code-level Laravel replacements; it does
+**not** claim live or database parity.
+
+| Priority | Legacy workflow and reference | Existing Laravel structure to extend | Current gap / next acceptance |
+|---|---|---|---|
+| 1 | Company review and workflow notices (`CompanyController`, `CompanyWorkflowNotificationService`) | `CompanyApplicationService`, `CompanyReviewService`, `CompanyWorkflowNotifier`, Developer/Admin routes | Draft PRs #185 and #186: verify complete owner-review-resubmit flow in real browsers and hosting |
+| 2 | Approved company media, correction permissions (`ApprovedCompanyMediaEditPolicy`, `PublicMediaController`) | `MediaAsset`, `MediaAttachment`, `CompanyMediaRevisionManager`, `PublicMediaAccess`, company directory | This draft branch: display active logo/cover through current-media route, batch fetch, never expose archived/draft assets; host acceptance pending |
+| 3 | Complete property/project/company management (`CatalogLocationEditController`, `ProjectManagementService`, `PropertyManagementService`) | Existing Developer controllers, tenant-scoped writer/review services, Eloquent models | Audit remaining legacy fields, project images, change history, location editing, state transitions; reject cross-company writes |
+| 4 | Page Manager, built-in page editor and footer (`BuiltInPageAdminController`, `PageManagementService`, `FooterContentService`) | `SiteAppearanceService`, `HomePageEditorService`, public About/Contact/FAQ/Legal controllers | Implement per-page sections, footer link groups, draft/publish and safe content validation without replacing existing frontend layout |
+| 5 | Geography hierarchy and location providers (`LocationProviderController`, `GlobalLocationManagementService`) | Geographic model/service foundation in draft PR #184 plus public filters | Unify country/province/city/district hierarchy, migration UUID mapping, search and curated choices; no direct legacy DB migration |
+| 6 | Notifications and safe actions (`NotificationActionController`, `NotificationService`) | `AccountNotification`, owner/admin moderation notices and account notification routes | Reusable recipient-only notification action links, safe server-approved destinations, unread/read-all and workspace navigation; never allow open redirects |
+| 7 | Roles, account security, localization (`RolePermissionGovernanceService`, `LocaleController`, security services) | Laravel `User`, verified roles, explicit media capabilities, middleware | Full role/multi-company capabilities, Khmer/English translations, locale persistence, MFA and security acceptance |
+| 8 | Advanced SEO/search, newsletters and CMS (`SeoController`, `NewsletterController`, `CmsController`) | Existing sitemap, company/property search, homepage builder, contact flow | Structured data, meta management, safe CMS pages and opt-in/out audit without publishing placeholders |
+| 9 | Finance, invoices, payment providers, licensing and updates | Existing licensing bridge and fresh installer | Separate sandbox-backed settlement/payout/refund flows, signed upgrade and rollback; *not implemented*, no live updater execution |
+| 10 | Customer data upgrade and CodeCanyon/cPanel/aaPanel acceptance | QA ZIP, installer and isolated MySQL workflow | Historical-source migration transform, backup/media/identity restoration, full host tests and explicit owner acceptance before cutover |
+
+**Engineering rule:** extend the current Laravel models, services, controllers,
+views and two CSS entrypoints; do not re-add `application/` runtime,
+create separate PHP-only branches, replace the approved public page layout or
+run Laravel migrations on production Pure PHP data.
+
+### Company image presentation acceptance
+
+- Only an approved, currently published company with a primary `logo` or
+  `cover` attachment has a public URL.
+- Asset must have a declared owned or licensed right, an expected private
+  media path and an allowed MIME type; actual private file is verified by
+  `PrivateImageLocator` before delivery.
+- Directory shows only eligible logos. Company detail adds logo/cover
+  inside the existing article structure; no new CSS source or page redesign.
+- The stable company URL is no-store, so approved replacement does not
+  leave a long-lived cache of the previous private file.
+- History attachments, pending revisions, unavailable assets, unpublished
+  companies and cross-company media references do not become public.
+- Automated tests are required but do not replace mobile/device and
+  real aaPanel/cPanel acceptance.

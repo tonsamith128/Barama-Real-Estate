@@ -53,6 +53,7 @@
                     <span class="workspace-nav__label">CUSTOMERS &amp; SUPPORT</span>
                     <a @class(['is-current' => request()->routeIs('admin.inquiries.*')]) href="{{ route('admin.inquiries.index') }}">Customer inquiries</a>
                     <a @class(['is-current' => request()->routeIs('admin.viewings.*')]) href="{{ route('admin.viewings.index') }}">Viewing requests</a>
+                    <a @class(['is-current' => request()->routeIs('admin.customer-recovery.*')]) href="{{ route('admin.customer-recovery.index') }}">Historical customer review</a>
                     <a @class(['is-current' => request()->routeIs('admin.contacts.*')]) href="{{ route('admin.contacts.index') }}">Contact inbox</a>
                     <span class="workspace-nav__label">SYSTEM</span>
                     @if(\App\Services\DemoImport\DemoContentImporter::stagingEnabled())

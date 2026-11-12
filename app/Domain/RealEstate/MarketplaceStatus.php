@@ -20,6 +20,12 @@ final class MarketplaceStatus
         'office', 'retail', 'warehouse', 'industrial', 'hotel', 'commercial', 'other',
     ];
 
+    public const COMPANY_TYPES = ['developer', 'agency', 'property_company', 'owner'];
+
+    public const PROJECT_TYPES = ['residential', 'commercial', 'mixed_use', 'industrial', 'other'];
+
+    public const PROJECT_COMPLETION_STATES = ['planning', 'under_construction', 'completed'];
+
     private function __construct()
     {
     }

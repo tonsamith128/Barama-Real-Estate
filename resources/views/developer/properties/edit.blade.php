@@ -19,12 +19,13 @@
             </select></label>
             <label>Description <textarea name="description" rows="4" maxlength="10000">{{ old('description',$property->description) }}</textarea></label>
             <label>Address <input name="address_line" maxlength="255" value="{{ old('address_line',$property->address_line) }}"></label>
-            <label>Bedrooms <input type="number" name="bedrooms" min="0" max="100" value="{{ old('bedrooms',$property->bedrooms) }}"></label>
-            <label>Bathrooms <input type="number" name="bathrooms" min="0" max="100" value="{{ old('bathrooms',$property->bathrooms) }}"></label>
+            <label>Bedrooms <input type="number" name="bedrooms" min="0" max="100" step="0.5" value="{{ old('bedrooms',$property->bedrooms) }}"></label>
+            <label>Bathrooms <input type="number" name="bathrooms" min="0" max="100" step="0.5" value="{{ old('bathrooms',$property->bathrooms) }}"></label>
             <label>Area <input type="number" name="area_value" min="0" step=".01" value="{{ old('area_value',$property->area_value) }}"></label>
             <label>Area unit <select name="area_unit"><option value="">Not specified</option>
                 @foreach(['m2','sqft','acre','hectare'] as $unit)<option value="{{ $unit }}" @selected(old('area_unit',$property->area_unit)===$unit)>{{ $unit }}</option>@endforeach
             </select></label>
+            @include('developer.catalog.property-legacy-fields', ['property' => $property])
             @foreach($property->listings as $listing)
                 <fieldset><legend>Listing: {{ $listing->transaction_type }}</legend>
                     <label>Transaction <select name="transaction_type">
@@ -35,6 +36,7 @@
                         @foreach(['USD','KHR'] as $currency)<option value="{{ $currency }}" @selected(old('currency',$listing->currency)===$currency)>{{ $currency }}</option>@endforeach
                     </select></label>
                     <label>Negotiable <input type="checkbox" name="negotiable" value="1" @checked(old('negotiable',$listing->negotiable))></label>
+                    @include('developer.catalog.listing-legacy-fields', ['listing' => $listing])
                 </fieldset>
             @endforeach
             <button type="submit">Save draft changes</button>

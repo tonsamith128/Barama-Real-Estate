@@ -25,10 +25,26 @@ final class PublishedListingSearch
                 $property->where(function (Builder $match) use ($keyword): void {
                     $match->where('title', 'like', '%'.$keyword.'%')
                         ->orWhere('reference_code', 'like', '%'.$keyword.'%')
+                        ->orWhere('address_line', 'like', '%'.$keyword.'%')
                         ->orWhereHas('company', fn (Builder $company) => $company
                             ->where('name', 'like', '%'.$keyword.'%'));
                 });
             });
+        }
+
+        $location = trim((string) ($filters['location'] ?? ''));
+        if ($location !== '') {
+            $query->whereHas('property', function (\Illuminate\Database\Eloquent\Builder $property) use ($location): void {
+                $property->where(function (\Illuminate\Database\Eloquent\Builder $match) use ($location): void {
+                    $match->where('address_line', 'like', '%'.$location.'%')
+                        ->orWhereHas('location', fn (\Illuminate\Database\Eloquent\Builder $area) =>
+                            $area->where('name', 'like', '%'.$location.'%'));
+                });
+            });
+        }
+        if (isset($filters['min_bedrooms'])) {
+            $query->whereHas('property', fn (\Illuminate\Database\Eloquent\Builder $property) =>
+                $property->where('bedrooms', '>=', $filters['min_bedrooms']));
         }
 
         if (!empty($filters['offer'])) {
@@ -62,7 +78,7 @@ final class PublishedListingSearch
     {
         return Listing::query()
             ->visibleToPublic()
-            ->with(['property.company', 'property.project', 'mediaAttachments.asset'])
+            ->with(['property.company', 'property.project', 'property.amenities' => fn ($query) => $query->active(), 'mediaAttachments.asset'])
             ->where('slug', $slug)
             ->firstOrFail();
     }

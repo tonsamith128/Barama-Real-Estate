@@ -2,7 +2,7 @@
     <header class="admin-heading"><div><p class="admin-eyebrow">Administration / Media</p>
         <h1>Media Library</h1>
         <p>Search private image inventory and manage descriptive and usage-rights metadata.</p></div>
-        <a href="{{ route('admin.dashboard') }}">Dashboard</a></header>
+        <div><a href="{{ route('admin.company-media.index') }}">Company Media Reviews</a> · <a href="{{ route('admin.dashboard') }}">Dashboard</a></div></header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
     @unless($metadataReady)

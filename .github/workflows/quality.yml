@@ -18,7 +18,64 @@ jobs:
           extensions: mbstring, dom, xml, fileinfo, pdo_sqlite, pdo_mysql, curl, openssl, zip, sodium
           coverage: none
       - name: PHP syntax
-        run: find app bootstrap config database routes scripts tests Installer public/installer -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find app bootstrap config database routes scripts tests Installer public/installer support -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Offline rehearsal and hosting checker syntax
+        run: |
+          bash -n scripts/acceptance/legacy-clone-stage-synthetic.sh
+          bash -n support/barama_clone_host_acceptance.sh
+          bash -n support/barama_real_clone_readonly_preflight.sh
+          bash -n scripts/acceptance/sensitive-restore-replica-qa.sh
+          php -l support/BaramaLegacyCloneStager.php
+          php -l support/barama_isolated_clone_inventory.php
+          php -l support/barama_isolated_media_inventory.php
+          php -l support/barama_isolated_clone_stage.php
+      - name: Refuse unsafe sensitive legacy backup comparison
+        run: |
+          set -Eeuo pipefail
+          if APP_ENV=production php support/barama_sensitive_restore_compare.php --compare-restores > /tmp/barama-restore-negative.log 2>&1; then
+            echo "FAILED=PRODUCTION_RESTORE_COMPARISON_ACCEPTED"; exit 1
+          fi
+          if ! grep -q 'RESTORE_DENIED=PRIVATE_TESTING_ONLY' /tmp/barama-restore-negative.log; then
+            echo "FAILED=RESTORE_GUARD_MESSAGE"; exit 1
+          fi
+          rm -f /tmp/barama-restore-negative.log
+          echo "SENSITIVE_RESTORE_PRODUCTION_GUARD=PASS"
+          if APP_ENV=production BARAMA_REHEARSAL_APPROVED=TWO_DISPOSABLE_CLONES_VERIFIED bash support/barama_real_clone_readonly_preflight.sh --preflight > /tmp/barama-preflight-negative.log 2>&1; then
+            echo "FAILED=PRODUCTION_PREFLIGHT_ACCEPTED"; exit 1
+          fi
+          if ! grep -q 'DENIED=PRIVATE_TWO_CLONE_APPROVAL_REQUIRED' /tmp/barama-preflight-negative.log; then
+            echo "FAILED=PRIVATE_CLONE_PREFLIGHT_GUARD"; exit 1
+          fi
+          rm -f /tmp/barama-preflight-negative.log
+          echo "REAL_DATA_CLONE_PRODUCTION_PREFLIGHT_GUARD=PASS"
+      - name: Offline calendar import preflight and malicious fixture rejection
+        run: |
+          php -l support/barama_calendar_import_preflight.php
+          bash -n scripts/acceptance/calendar-import-preflight-smoke.sh
+          bash scripts/acceptance/calendar-import-preflight-smoke.sh
+      - name: Reject production historical finance and security audits
+        run: |
+          set -Eeuo pipefail
+          if APP_ENV=production php support/barama_legacy_finance_security_audit.php --audit > /tmp/barama-finsec-denied.log 2>&1; then
+            echo "FAILED=PRODUCTION_FINSEC_AUDIT_ALLOWED"; exit 1
+          fi
+          grep -q 'FINSEC_AUDIT_DENIED=OFFLINE_TWO_RESTORE_APPROVAL_REQUIRED' /tmp/barama-finsec-denied.log
+          rm -f /tmp/barama-finsec-denied.log
+          echo "HISTORICAL_FINSEC_PRODUCTION_DENIAL=PASS"
+      - name: Independent private release-evidence gate, negative fixtures and production refusal
+        run: |
+          php -l support/barama_private_release_gate.php
+          bash -n scripts/acceptance/private-release-gate-qa.sh
+          bash scripts/acceptance/private-release-gate-qa.sh
+      - name: Guard integrated real-data rehearsal against production and unapproved use
+        run: |
+          bash -n support/barama_readonly_release_rehearsal.sh
+          if APP_ENV=production bash support/barama_readonly_release_rehearsal.sh --run-readonly > /tmp/barama-readonly-denied.log 2>&1; then
+            echo "FAILED=UNAPPROVED_REHEARSAL_ACCEPTED"; exit 1
+          fi
+          grep -q 'REHEARSAL_DENIED=EXPLICIT_OFFLINE_READ_ONLY_APPROVAL_REQUIRED' /tmp/barama-readonly-denied.log
+          rm -f /tmp/barama-readonly-denied.log
+          echo "ISOLATED_READONLY_OPERATOR_GUARD=PASS"
       - name: Native Laravel structure and exactly two CSS sources
         run: php scripts/verify-structure.php
       - name: Reject retired application runtimes
