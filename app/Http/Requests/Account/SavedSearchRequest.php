@@ -20,6 +20,8 @@ final class SavedSearchRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:3', 'max:70'],
             'q' => ['nullable', 'string', 'max:100'],
+            'location' => ['nullable', 'string', 'max:100'],
+            'min_bedrooms' => ['nullable', 'integer', 'min:1', 'max:20'],
             'offer' => ['nullable', Rule::in(['sale', 'rent'])],
             'type' => ['nullable', Rule::in(MarketplaceStatus::PROPERTY_TYPES)],
             'sort' => ['nullable', Rule::in(['newest', 'oldest', 'price_asc', 'price_desc'])],
