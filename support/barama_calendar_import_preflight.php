@@ -98,6 +98,10 @@ final class BaramaCalendarImportPreflight
     }
 }
 
+// Allow Laravel feature tests to validate the *real* exporter with this verifier.
+// Direct CLI execution alone runs the file-reading/reporting entrypoint.
+if (isset($_SERVER['SCRIPT_FILENAME'])
+    && realpath((string) $_SERVER['SCRIPT_FILENAME']) === __FILE__) {
 $options = getopt('', ['file:', 'mode:', 'expected-events:']);
 $file = $options['file'] ?? null;
 $mode = $options['mode'] ?? null;
@@ -134,4 +138,5 @@ try {
     echo 'REASON='.($e instanceof RuntimeException
         ? $e->getMessage() : 'INTERNAL_VALIDATION_ERROR')."\n";
     exit(2);
+}
 }

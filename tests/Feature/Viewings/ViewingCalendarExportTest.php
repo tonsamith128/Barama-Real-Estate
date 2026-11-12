@@ -248,4 +248,33 @@ final class ViewingCalendarExportTest extends TestCase
         );
         $this->assertSame(250, substr_count($file, 'STATUS:CONFIRMED'));
     }
+
+
+    public function test_real_laravel_downloads_pass_offline_calendar_contract(): void
+    {
+        require_once base_path('support/barama_calendar_import_preflight.php');
+
+        $customer = User::factory()->create();
+        $manager = User::factory()->create();
+        $confirmed = $this->viewing($customer, 'contract');
+        $this->member($manager, $confirmed);
+
+        $customerContent = $this->actingAs($customer)
+            ->get(route('account.viewings.calendar', $confirmed))
+            ->assertOk()->getContent();
+        [$customerCount, $customerMode] = \BaramaCalendarImportPreflight::verify(
+            $customerContent, 'customer', 1
+        );
+        $this->assertSame(1, $customerCount);
+        $this->assertSame('customer', $customerMode);
+
+        $companyContent = $this->actingAs($manager)
+            ->get(route('developer.viewings.calendar'))
+            ->assertOk()->getContent();
+        [$companyCount, $companyMode] = \BaramaCalendarImportPreflight::verify(
+            $companyContent, 'company', 1
+        );
+        $this->assertSame(1, $companyCount);
+        $this->assertSame('company', $companyMode);
+    }
 }

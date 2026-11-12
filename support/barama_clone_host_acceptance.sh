@@ -82,6 +82,15 @@ for protected in /.env /vendor/autoload.php /storage/app/installed.lock \
         *) echo "FAILED=PRIVATE_ROUTE_EXPOSURE_OR_REDIRECT"; exit 2 ;;
     esac
 done
+echo "========== UNAUTHENTICATED QA CALENDAR ENDPOINTS =========="
+# No session cookie and no real viewing identifier: deny calendar bytes.
+for calendar_path in /account/viewings/2147483647/calendar /developer/viewings/calendar; do
+    calendar_code="$(fetch_code "$calendar_path")"
+    case "$calendar_code" in
+        301|302|303|307|308|401|403|404) echo "ANONYMOUS_CALENDAR_DENIAL=PASS" ;;
+        *) echo "FAILED=ANONYMOUS_CALENDAR_EXPOSURE"; exit 2 ;;
+    esac
+done
 echo "TLS_AND_PRIVATE_ACCESS=PASS"
 echo "DEVICE_AND_USER_JOURNEYS=REQUIRES_MANUAL_EVIDENCE"
 echo "CUSTOMER_MIGRATION=NOT_PERFORMED"

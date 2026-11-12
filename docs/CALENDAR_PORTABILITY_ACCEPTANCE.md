@@ -43,3 +43,7 @@ Host verification: Execute the existing read-only host acceptance probe on separ
 ## Release decision
 
 Synthetic CI passes do not satisfy real-device/provider imports, physical host QA, two authorized independent restored legacy database/media copies, historic financial/security governance, or stacked PR reconciliation. Maintain draft PR state and production NO-GO until those gates are independently witnessed.
+
+## Integrated Laravel and QA-host probes
+
+The Laravel calendar feature suite now runs the independent preflight against the actual customer and company HTTP downloads, rather than only generated fixtures. The existing standalone aaPanel/cPanel QA-host probe also checks that anonymous requests to the customer/company calendar routes cannot return HTTP 200 calendar content. Neither probe authenticates users, imports into external providers or accesses a production installation.
