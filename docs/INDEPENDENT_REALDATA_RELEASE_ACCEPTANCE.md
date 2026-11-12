@@ -46,3 +46,11 @@ This confirms missing, falsified, duplicated or path-traversal evidence fails cl
 ## Remains blocked
 
 Real original-database/media rehearsal, independently verified financial/security/privacy approvals, actual aaPanel/cPanel and physical-device tests, approved operational legacy adapters, branch reconciliation and separate authorized production rollout/rollback window.
+
+## Single approved read-only operator command
+
+On the isolated, reviewed and completely clean Git checkout (not the production webroot), with all THREE disposable schema names, localhost SELECT-only source/restored connections, the owner-only private evidence directory, the independently verified restored backup and an explicit approved operator action, set BARAMA_EXPECTED_GIT_SHA to the checkout's full SHA and BARAMA_WORKFLOW_RUN_APPROVED=READ_ONLY_INSPECTION. Execute:
+
+    bash support/barama_readonly_release_rehearsal.sh --run-readonly
+
+The wrapper verifies the pinned checkout and forbidden production configuration, then runs the two-restore comparison, financial/security semantic audit, and separate read-only customer/media/target plan preflight in that order. It writes only private sanitized reports and checksums under a new 0700 directory. The wrapper calls neither the importer --stage nor any migration or production deployment command. A successful result still reports PRODUCTION_RELEASE=BLOCKED, because independent financial/security/privacy approval, real hosts/devices and the actual destination staging require separate authorization and evidence.
