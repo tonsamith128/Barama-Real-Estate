@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Account\Viewings;
 use App\Models\Listing;
 use App\Models\ViewingRequest;
 use App\Services\Viewings\ViewingDecisionService;
+use App\Services\Viewings\ViewingCalendarExport;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,13 +15,23 @@ use Illuminate\View\View;
 
 final class ViewingRequestController
 {
-    public function index(Request $request): View
+    public function index(Request $request, ViewingCalendarExport $calendar): View
     {
+        $viewings = ViewingRequest::query()
+            ->where('user_id', $request->user()->getKey())
+            ->with(['listing.property', 'events'])
+            ->latest()->paginate(10);
+
+        // Compute links from the same database-level conditions as downloads.
+        // Ineligible historic, withdrawn, held and proposed events show no link.
+        $exportableIds = $calendar->eligible()
+            ->where('user_id', $request->user()->getKey())
+            ->whereKey($viewings->getCollection()->modelKeys())
+            ->pluck('viewing_requests.id')->all();
+
         return view('account.viewings.index', [
-            'viewings' => ViewingRequest::query()
-                ->where('user_id', $request->user()->getKey())
-                ->with(['listing.property', 'events'])
-                ->latest()->paginate(10),
+            'viewings' => $viewings,
+            'calendarExportableIds' => $exportableIds,
         ]);
     }
 

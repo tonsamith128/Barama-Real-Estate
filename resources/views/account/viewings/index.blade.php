@@ -44,8 +44,7 @@
                 <div>
                     <span class="customer-status">{{ $viewing->legacy_uuid
                         ? 'Needs review' : ucfirst(str_replace('_',' ',$viewing->status)) }}</span>
-                    @if(!$viewing->legacy_uuid && $viewing->status === 'confirmed'
-                        && $viewing->review_status === 'clear' && $viewing->requested_at->isFuture())
+                    @if(in_array((int) $viewing->id, $calendarExportableIds, true))
                         <a class="button button--secondary" href="{{ route('account.viewings.calendar', $viewing) }}">Add to calendar (.ics)</a>
                     @endif
                     @if($viewing->review_status === 'held')

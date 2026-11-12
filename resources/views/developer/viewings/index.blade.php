@@ -6,7 +6,9 @@
             <p>Manage viewing approvals, propose alternative times and review customer responses for your approved companies.</p>
         </div>
         <div class="viewing-actions">
-            <a href="{{ route('developer.viewings.calendar') }}">Export confirmed appointments (.ics)</a>
+            @if($canExportCalendar)
+                <a href="{{ route('developer.viewings.calendar') }}">Export confirmed appointments (.ics)</a>
+            @endif
             <a href="{{ route('developer.dashboard') }}">Developer Dashboard</a>
         </div>
     </header>
