@@ -10,6 +10,7 @@ use App\Http\Controllers\Account\Profile\ProfileController;
 use App\Http\Controllers\Account\SavedListings\SavedListingsController;
 use App\Http\Controllers\Account\SavedSearches\SavedSearchController;
 use App\Http\Controllers\Account\Viewings\ViewingRequestController;
+use App\Http\Controllers\Viewings\ViewingCalendarController;
 use App\Http\Controllers\Account\Inquiries\AccountInquiryThreadController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,6 +57,8 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])
         Route::post('/inquiries/{inquiry}/messages', [AccountInquiryThreadController::class, 'store'])
             ->middleware('throttle:8,1')->name('inquiries.messages.store');
         Route::get('/viewings', [ViewingRequestController::class, 'index'])->name('viewings.index');
+        Route::get('/viewings/{viewing}/calendar', [ViewingCalendarController::class, 'customer'])
+            ->middleware('throttle:12,1')->name('viewings.calendar');
         Route::post('/viewings/{listing}', [ViewingRequestController::class, 'store'])
             ->middleware('throttle:5,1')->name('viewings.store');
         Route::patch('/viewings/{viewing}/cancel', [ViewingRequestController::class, 'cancel'])

@@ -5,7 +5,12 @@
             <h1>Property Viewing Requests</h1>
             <p>Manage viewing approvals, propose alternative times and review customer responses for your approved companies.</p>
         </div>
-        <a href="{{ route('developer.dashboard') }}">Developer Dashboard</a>
+        <div class="viewing-actions">
+            @if($canExportCalendar)
+                <a href="{{ route('developer.viewings.calendar') }}">Export confirmed appointments (.ics)</a>
+            @endif
+            <a href="{{ route('developer.dashboard') }}">Developer Dashboard</a>
+        </div>
     </header>
     @if(session('notice'))<p class="admin-notice" role="status">{{ session('notice') }}</p>@endif
     @if($errors->any())<div class="admin-notice" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -15,6 +20,7 @@
                 <a @class(['is-current'=>$status === $value]) href="{{ route('developer.viewings.index', ['status'=>$value]) }}">{{ $label }}</a>
             @endforeach
         </nav>
+        <p>Download up to 250 upcoming confirmed appointments. Calendar files do not automatically update after a change or cancellation.</p>
         <div class="viewing-list">
             @forelse($viewings as $viewing)
                 <article class="viewing-card">

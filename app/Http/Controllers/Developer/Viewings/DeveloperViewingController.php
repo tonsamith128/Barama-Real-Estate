@@ -47,9 +47,15 @@ final class DeveloperViewingController
         } elseif ($status !== 'all') {
             $query->where('status', $status);
         }
+        $canExportCalendar = $request->user()->companyMemberships()
+            ->where('status', 'active')->whereIn('role', ['owner','manager'])
+            ->whereHas('company', fn (Builder $company) => $company->where('status', 'approved'))
+            ->exists();
+
         return view('developer.viewings.index', [
             'viewings' => $query->paginate(10)->withQueryString(),
             'status' => $status,
+            'canExportCalendar' => $canExportCalendar,
         ]);
     }
 
